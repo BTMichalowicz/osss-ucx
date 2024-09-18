@@ -11,8 +11,8 @@
 rm -rf bin
 
 # --- Set OSSS bins from build directory
-oshcc="../../build/build/bin/oshcc"
-oshrun="../../build/build/bin/oshrun"
+oshcc="../build/build/bin/oshcc"
+oshrun="../build/build/bin/oshrun"
 
 # --- Create build directory for tests
 mkdir bin
@@ -22,23 +22,23 @@ flags="--bind-to core --map-by core"
 hline="-------------------------------"
 
 
-# # --- Hello world
-# echo $hline ; echo "  Running Hello World test" ; echo $hline
-# $oshcc hello_world.c -o ./bin/hello_world
-# $oshrun $flags -np 20 ./bin/hello_world
-# echo
+# --- Hello world
+echo $hline ; echo "  Running Hello World test" ; echo $hline
+$oshcc hello_world.c -o ./bin/hello_world
+$oshrun $flags -np 20 ./bin/hello_world
+echo
 
-# # --- shmem_put
-# echo $hline ; echo "  Running shmem_put test" ; echo $hline
-# $oshcc shmem_put.c -o ./bin/shmem_put
-# $oshrun $flags -np 2 ./bin/shmem_put
-# echo
+# --- shmem_put
+echo $hline ; echo "  Running shmem_put test" ; echo $hline
+$oshcc shmem_put.c -o ./bin/shmem_put
+$oshrun $flags -np 2 ./bin/shmem_put
+echo
 
-# # --- shmem_info
-# echo $hline ; echo "  Running shmem_info test" ; echo $hline
-# $oshcc shmem_info.c -o ./bin/shmem_info
-# $oshrun $flags -np 2 ./bin/shmem_info
-# echo
+# --- shmem_info
+echo $hline ; echo "  Running shmem_info test" ; echo $hline
+$oshcc shmem_info.c -o ./bin/shmem_info
+$oshrun $flags -np 2 ./bin/shmem_info
+echo
 
 # --- shmem_team_create_ctx
 echo $hline ; echo "  Running shmem_team_create_ctx test" ; echo $hline
@@ -46,4 +46,9 @@ $oshcc shmem_team_create_ctx.c -o ./bin/shmem_team_create_ctx
 $oshrun $flags -np 2 ./bin/shmem_team_create_ctx
 echo
 
+# --- shmem_ctx_get_team
+echo $hline ; echo "  Running shmem_ctx_get_team test" ; echo $hline
+$oshcc shmem_ctx_get_team.c -o ./bin/shmem_ctx_get_team
+$oshrun $flags -np 2 ./bin/shmem_ctx_get_team
+echo
 

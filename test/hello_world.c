@@ -1,5 +1,5 @@
-#include "../../build/build/include/shmem.h"
-#include "../../build/build/include/shmem/defs.h"
+#include "../build/build/include/shmem.h"
+#include "../build/build/include/shmem/defs.h"
 
 #include <stdio.h>
 

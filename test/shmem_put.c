@@ -1,4 +1,4 @@
-#include "../../build/build/include/shmem.h"
+#include "../build/build/include/shmem.h"
 #include <stdio.h>
 
 int main(void) {

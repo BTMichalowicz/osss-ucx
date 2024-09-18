@@ -45,8 +45,9 @@ int shmem_team_split_2d(shmem_team_t parent_team, int xrange,
                         shmem_team_t *yaxis_team);
 void shmem_team_destroy(shmem_team_t team);
 /////////////////////////////////////////////////////////
-// XXX:
+// FIXME: Getting UCX "was not returned to mpool devx dbrec" warnings
 int shmem_team_create_ctx(shmem_team_t team, long options, shmem_ctx_t *ctxp);
+int shmem_ctx_get_team(shmem_ctx_t ctx, shmem_team_t *team);
 /////////////////////////////////////////////////////////
 
 #endif  /* ! _SHMEM_API_TEAMS_H */
