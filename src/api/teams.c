@@ -132,3 +132,23 @@ shmem_team_destroy(shmem_team_t team)
 
     shmemc_team_destroy(th);
 }
+
+/////////////////////////////////////////////////////////
+// XXX:
+int
+shmem_team_create_ctx(shmem_team_t team, long options, shmem_ctx_t *ctxp)
+{
+    if (team != SHMEM_TEAM_INVALID) {
+        shmemc_team_h th = (shmemc_team_h) team;
+        int ret = shmemc_context_create(th, options, (shmemc_context_h *) ctxp);
+        if (ret != 0) {
+            /* Handle error and cleanup if necessary */
+            return ret;
+        }
+        return 0;
+    } else {
+        return -1;
+    }
+}
+/////////////////////////////////////////////////////////
+
