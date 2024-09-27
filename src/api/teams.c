@@ -133,34 +133,59 @@ shmem_team_destroy(shmem_team_t team)
     shmemc_team_destroy(th);
 }
 
-/////////////////////////////////////////////////////////
-// FIXME: Getting UCX "was not returned to mpool devx dbrec" warnings
 int
 shmem_team_create_ctx(shmem_team_t team, long options, shmem_ctx_t *ctxp)
 {
-    if (team != SHMEM_TEAM_INVALID) {
-        shmemc_team_h th = (shmemc_team_h) team;
-        int ret = shmemc_context_create(th, options, (shmemc_context_h *) ctxp);
-        if (ret != 0) {
-            /* Handle error and cleanup if necessary */
-            return ret;
-        }
-        return 0;
-    } else {
+    if (team == SHMEM_TEAM_INVALID) {
         return -1;
     }
+
+    shmemc_team_h th = (shmemc_team_h) team;
+    if (th == NULL) {
+        return -1;
+    }
+
+    int ret = shmemc_context_create(th, options, (shmemc_context_h *) ctxp);
+    if (ret != 0) {
+        return ret;
+    }
+
+    return 0;
 }
 
-int shmem_ctx_get_team(shmem_ctx_t ctx, shmem_team_t *team)
+int
+shmem_ctx_get_team(shmem_ctx_t ctx, shmem_team_t *team)
 {
     if (ctx == SHMEM_CTX_INVALID) {
         return -1;
     }
 
     shmemc_context_h ch = (shmemc_context_h) ctx;
+    if (ch == NULL) {
+        return -1;
+    }
+    
+    if (ch->team == NULL) {
+        return -1;
+    }
+
     *team = (shmem_team_t) ch->team;
 
     return 0;
 }
-/////////////////////////////////////////////////////////
+
+int
+shmem_team_sync(shmem_team_t team)
+{
+    /* Validate the team handle */
+    if (team == SHMEM_TEAM_INVALID || team == NULL) {
+        return -1;
+    }
+
+    /* Cast the team to the communication layer's team handle */
+    shmemc_team_h th = (shmemc_team_h) team;
+    
+    /* Delegate the synchronization to the communication layer */
+    return shmemc_team_sync(th);
+}
 

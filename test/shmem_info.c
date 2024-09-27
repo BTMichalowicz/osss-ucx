@@ -7,7 +7,6 @@ int main(void) {
   int mype = shmem_my_pe();
   int npes = shmem_n_pes();
 
-  /* Check for OpenSHMEM version by querying version-specific features */
   int major, minor;
   shmem_info_get_version(&major, &minor);
   
@@ -15,13 +14,11 @@ int main(void) {
     printf("OpenSHMEM version: %d.%d\n", major, minor);
   }
 
-  /* Check for the presence of teams and contexts */
-  if ( mype == 0 ) {
-    #ifdef SHMEM_HAS_TEAMS
-    printf("This implementation supports teams and contexts.\n");
-    #else
-    printf("This implementation does not support teams and contexts.\n");
-    #endif
+  char impl_name[256];
+  shmem_info_get_name(impl_name);
+  
+  if (mype == 0) {
+    printf("OpenSHMEM implementation: %s\n", impl_name);
   }
 
   shmem_finalize();

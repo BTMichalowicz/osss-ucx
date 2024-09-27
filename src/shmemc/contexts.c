@@ -184,7 +184,6 @@ shmemc_alloc_contexts(shmemc_team_h th)
  *
  * Return 0 on success, non-zero on failure
  */
-
 int
 shmemc_context_create(shmemc_team_h th, long options, shmemc_context_h *ctxp)
 {
@@ -206,9 +205,9 @@ shmemc_context_create(shmemc_team_h th, long options, shmemc_context_h *ctxp)
         const int ret = shmemc_ucx_context_progress(ch);
 
         if (ret != 0) {
+            shmemu_fatal("shmemc_context_create: shmemc_ucx_context_progress failed with ret=%d", ret);
             free(ch);
             return ret;
-            /* NOT REACHED */
         }
         shmemc_ucx_make_eps(ch);
 
@@ -216,7 +215,6 @@ shmemc_context_create(shmemc_team_h th, long options, shmemc_context_h *ctxp)
 
         if (s != UCS_OK) {
             shmemu_fatal("cannot complete new context worker wireup");
-            /* NOT REACHED */
         }
     }
 
@@ -228,6 +226,7 @@ shmemc_context_create(shmemc_team_h th, long options, shmemc_context_h *ctxp)
 
     *ctxp = ch;
 
+    shmemu_warn("shmemc_context_create: Context created successfully, ctx=%p", (void *)ch);
     return 0;
 }
 
@@ -235,7 +234,6 @@ shmemc_context_create(shmemc_team_h th, long options, shmemc_context_h *ctxp)
  * zap existing context.  Illegal to zap default context, so I will
  * interpret that as "to be avoided" and continue
  */
-
 void
 shmemc_context_destroy(shmem_ctx_t ctx)
 {

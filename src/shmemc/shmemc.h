@@ -136,6 +136,7 @@ int shmemc_team_split_2d(shmemc_team_h parh,
 
 void shmemc_team_destroy(shmemc_team_h th);
 
+int shmemc_team_sync(shmemc_team_h th);
 /*
  * -- AMOs -------------------------------------------------------------------
  */

@@ -371,3 +371,36 @@ shmemc_team_destroy(shmemc_team_h th)
         /* NOT REACHED */
     }
 }
+
+
+int
+shmemc_team_sync(shmemc_team_h th)
+{
+    /* Validate the team handle */
+    if (th == NULL) {
+        shmemu_warn("shmemc_team_sync: Invalid team handle (NULL)");
+        return -1;
+    }
+
+    /* Iterate through all contexts within the team */
+    for (size_t i = 0; i < th->nctxts; ++i) {
+        shmemc_context_h ch = th->ctxts[i];
+
+        /* Validate the context handle */
+        if (ch == NULL) {
+            shmemu_warn("shmemc_team_sync: Context at index %zu is NULL", i);
+            continue; /* Skip to the next context */
+        }
+
+        /* Perform a fence operation to synchronize */
+        ucs_status_t status = ucp_worker_fence(ch->w);
+        if (status != UCS_OK) {
+            shmemu_warn("shmemc_team_sync: ucp_worker_fence failed on context %zu with status %s", 
+                        i, ucs_status_string(status));
+            return -1;
+        }
+    }
+
+    /* Successful synchronization across all contexts */
+    return 0;
+}

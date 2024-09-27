@@ -40,6 +40,6 @@ export SHMEM_LAUNCHER="$OMPI_BIN/mpiexec"
 echo $HLINE
 echo "            COMPILING"
 echo $HLINE
-make -j $(( $(nproc) - 2 )) install
+make -j $(( $(nproc) - 1 )) install
 
 
