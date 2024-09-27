@@ -226,7 +226,6 @@ shmemc_context_create(shmemc_team_h th, long options, shmemc_context_h *ctxp)
 
     *ctxp = ch;
 
-    shmemu_warn("shmemc_context_create: Context created successfully, ctx=%p", (void *)ch);
     return 0;
 }
 
