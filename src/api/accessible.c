@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmemu.h"
@@ -14,22 +14,18 @@
 #define shmem_addr_accessible pshmem_addr_accessible
 #endif /* ENABLE_PSHMEM */
 
-int
-shmem_pe_accessible(int pe)
-{
-    const int s = shmemc_pe_accessible(pe);
+int shmem_pe_accessible(int pe) {
+  const int s = shmemc_pe_accessible(pe);
 
-    logger(LOG_INFO, "%s(pe=%d) -> %d", __func__, pe, s);
+  logger(LOG_INFO, "%s(pe=%d) -> %d", __func__, pe, s);
 
-    return s;
+  return s;
 }
 
-int
-shmem_addr_accessible(const void *addr, int pe)
-{
-    const int s = shmemc_addr_accessible(addr, pe);
+int shmem_addr_accessible(const void *addr, int pe) {
+  const int s = shmemc_addr_accessible(addr, pe);
 
-    logger(LOG_INFO, "%s(addr=%p, pe=%d) -> %d", __func__, addr, pe, s);
+  logger(LOG_INFO, "%s(addr=%p, pe=%d) -> %d", __func__, addr, pe, s);
 
-    return s;
+  return s;
 }

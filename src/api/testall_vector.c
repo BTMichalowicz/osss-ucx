@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -38,70 +38,51 @@
 #define shmem_size_test_all_vector pshmem_size_test_all_vector
 #pragma weak shmem_ptrdiff_test_all_vector = pshmem_ptrdiff_test_all_vector
 #define shmem_ptrdiff_test_all_vector pshmem_ptrdiff_test_all_vector
-#endif  /* ENABLE_PSHMEM */
+#endif /* ENABLE_PSHMEM */
 
-#define SHMEM_TYPE_TEST_ALL_VECTOR(_opname, _type, _size)               \
-    int                                                                 \
-    shmem_##_opname##_test_all_vector(_type *ivars, size_t nelems,      \
-                                      const int *status,                \
-                                      int cmp, _type *cmp_values)       \
-    {                                                                   \
-        SHMEMT_MUTEX_PROTECT                                            \
-            (                                                           \
-             switch (cmp) {                                             \
-             case SHMEM_CMP_EQ:                                         \
-                 return shmemc_ctx_test_all_vector_eq##_size(SHMEM_CTX_DEFAULT, \
-                                                             (int##_size##_t *) ivars, \
-                                                             nelems,    \
-                                                             status,    \
-                                                             cmp_values); \
-                 break;                                                 \
-             case SHMEM_CMP_NE:                                         \
-                 return shmemc_ctx_test_all_vector_ne##_size(SHMEM_CTX_DEFAULT, \
-                                                             (int##_size##_t *) ivars, \
-                                                             nelems,    \
-                                                             status,    \
-                                                             cmp_values); \
-                 break;                                                 \
-             case SHMEM_CMP_GT:                                         \
-                 return shmemc_ctx_test_all_vector_gt##_size(SHMEM_CTX_DEFAULT, \
-                                                             (int##_size##_t *) ivars, \
-                                                             nelems,    \
-                                                             status,    \
-                                                             cmp_values); \
-                 break;                                                 \
-             case SHMEM_CMP_LE:                                         \
-                 return shmemc_ctx_test_all_vector_le##_size(SHMEM_CTX_DEFAULT, \
-                                                             (int##_size##_t *) ivars, \
-                                                             nelems,    \
-                                                             status,    \
-                                                             cmp_values); \
-                 break;                                                 \
-             case SHMEM_CMP_LT:                                         \
-                 return shmemc_ctx_test_all_vector_lt##_size(SHMEM_CTX_DEFAULT, \
-                                                             (int##_size##_t *) ivars, \
-                                                             nelems,    \
-                                                             status,    \
-                                                             cmp_values); \
-                 break;                                                 \
-             case SHMEM_CMP_GE:                                         \
-                 return shmemc_ctx_test_all_vector_ge##_size(SHMEM_CTX_DEFAULT, \
-                                                             (int##_size##_t *) ivars, \
-                                                             nelems,    \
-                                                             status,    \
-                                                             cmp_values); \
-                 break;                                                 \
-             default:                                                   \
-                 shmemu_fatal(MODULE ": unknown operator (code %d) in \"%s\"", \
-                              cmp,                                      \
-                              __func__                                  \
-                              );                                        \
-                 return -1;                                             \
-                 /* NOT REACHED */                                      \
-                 break;                                                 \
-             }                                                          \
-                                                                        ); \
-    }
+#define SHMEM_TYPE_TEST_ALL_VECTOR(_opname, _type, _size)                      \
+  int shmem_##_opname##_test_all_vector(_type *ivars, size_t nelems,           \
+                                        const int *status, int cmp,            \
+                                        _type *cmp_values) {                   \
+    SHMEMT_MUTEX_PROTECT(switch (cmp) {                                        \
+      case SHMEM_CMP_EQ:                                                       \
+        return shmemc_ctx_test_all_vector_eq##_size(                           \
+            SHMEM_CTX_DEFAULT, (int##_size##_t *)ivars, nelems, status,        \
+            cmp_values);                                                       \
+        break;                                                                 \
+      case SHMEM_CMP_NE:                                                       \
+        return shmemc_ctx_test_all_vector_ne##_size(                           \
+            SHMEM_CTX_DEFAULT, (int##_size##_t *)ivars, nelems, status,        \
+            cmp_values);                                                       \
+        break;                                                                 \
+      case SHMEM_CMP_GT:                                                       \
+        return shmemc_ctx_test_all_vector_gt##_size(                           \
+            SHMEM_CTX_DEFAULT, (int##_size##_t *)ivars, nelems, status,        \
+            cmp_values);                                                       \
+        break;                                                                 \
+      case SHMEM_CMP_LE:                                                       \
+        return shmemc_ctx_test_all_vector_le##_size(                           \
+            SHMEM_CTX_DEFAULT, (int##_size##_t *)ivars, nelems, status,        \
+            cmp_values);                                                       \
+        break;                                                                 \
+      case SHMEM_CMP_LT:                                                       \
+        return shmemc_ctx_test_all_vector_lt##_size(                           \
+            SHMEM_CTX_DEFAULT, (int##_size##_t *)ivars, nelems, status,        \
+            cmp_values);                                                       \
+        break;                                                                 \
+      case SHMEM_CMP_GE:                                                       \
+        return shmemc_ctx_test_all_vector_ge##_size(                           \
+            SHMEM_CTX_DEFAULT, (int##_size##_t *)ivars, nelems, status,        \
+            cmp_values);                                                       \
+        break;                                                                 \
+      default:                                                                 \
+        shmemu_fatal(MODULE ": unknown operator (code %d) in \"%s\"", cmp,     \
+                     __func__);                                                \
+        return -1;                                                             \
+        /* NOT REACHED */                                                      \
+        break;                                                                 \
+    });                                                                        \
+  }
 
 SHMEM_TYPE_TEST_ALL_VECTOR(short, short, 16)
 SHMEM_TYPE_TEST_ALL_VECTOR(int, int, 32)

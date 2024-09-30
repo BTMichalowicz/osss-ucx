@@ -3,7 +3,7 @@
 #ifndef _TABLE_H
 #define _TABLE_H 1
 
-#define COLL_NAME_MAX 64         /* longer than any name */
+#define COLL_NAME_MAX 64 /* longer than any name */
 
 /*
  * most collectives are either just an op, or have 32/64 bit
@@ -13,14 +13,14 @@
 typedef void (*coll_fn_t)();
 
 typedef struct sized_op {
-    const char op[COLL_NAME_MAX];
-    coll_fn_t f32;
-    coll_fn_t f64;
+  const char op[COLL_NAME_MAX];
+  coll_fn_t f32;
+  coll_fn_t f64;
 } sized_op_t;
 
 typedef struct unsized_op {
-    const char op[COLL_NAME_MAX];
-    coll_fn_t f;
+  const char op[COLL_NAME_MAX];
+  coll_fn_t f;
 } unsized_op_t;
 
 /*
@@ -28,15 +28,15 @@ typedef struct unsized_op {
  */
 
 typedef struct coll_ops {
-    sized_op_t   alltoall;
-    sized_op_t   alltoalls;
-    sized_op_t   collect;
-    sized_op_t   fcollect;
-    sized_op_t   broadcast;
-    unsized_op_t barrier;
-    unsized_op_t barrier_all;
-    unsized_op_t sync;
-    unsized_op_t sync_all;
+  sized_op_t alltoall;
+  sized_op_t alltoalls;
+  sized_op_t collect;
+  sized_op_t fcollect;
+  sized_op_t broadcast;
+  unsized_op_t barrier;
+  unsized_op_t barrier_all;
+  unsized_op_t sync;
+  unsized_op_t sync_all;
 } coll_ops_t;
 
 extern coll_ops_t colls;

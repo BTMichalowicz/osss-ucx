@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -12,50 +12,49 @@
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_float_atomic_swap_nbi = pshmem_ctx_float_atomic_swap_nbi
 #define shmem_ctx_float_atomic_swap_nbi pshmem_ctx_float_atomic_swap_nbi
-#pragma weak shmem_ctx_double_atomic_swap_nbi = pshmem_ctx_double_atomic_swap_nbi
+#pragma weak shmem_ctx_double_atomic_swap_nbi =                                \
+    pshmem_ctx_double_atomic_swap_nbi
 #define shmem_ctx_double_atomic_swap_nbi pshmem_ctx_double_atomic_swap_nbi
 #pragma weak shmem_ctx_int_atomic_swap_nbi = pshmem_ctx_int_atomic_swap_nbi
 #define shmem_ctx_int_atomic_swap_nbi pshmem_ctx_int_atomic_swap_nbi
 #pragma weak shmem_ctx_long_atomic_swap_nbi = pshmem_ctx_long_atomic_swap_nbi
 #define shmem_ctx_long_atomic_swap_nbi pshmem_ctx_long_atomic_swap_nbi
-#pragma weak shmem_ctx_longlong_atomic_swap_nbi = pshmem_ctx_longlong_atomic_swap_nbi
+#pragma weak shmem_ctx_longlong_atomic_swap_nbi =                              \
+    pshmem_ctx_longlong_atomic_swap_nbi
 #define shmem_ctx_longlong_atomic_swap_nbi pshmem_ctx_longlong_atomic_swap_nbi
 #pragma weak shmem_ctx_uint_atomic_swap_nbi = pshmem_ctx_uint_atomic_swap_nbi
 #define shmem_ctx_uint_atomic_swap_nbi pshmem_ctx_uint_atomic_swap_nbi
 #pragma weak shmem_ctx_ulong_atomic_swap_nbi = pshmem_ctx_ulong_atomic_swap_nbi
 #define shmem_ctx_ulong_atomic_swap_nbi pshmem_ctx_ulong_atomic_swap_nbi
-#pragma weak shmem_ctx_ulonglong_atomic_swap_nbi = pshmem_ctx_ulonglong_atomic_swap_nbi
+#pragma weak shmem_ctx_ulonglong_atomic_swap_nbi =                             \
+    pshmem_ctx_ulonglong_atomic_swap_nbi
 #define shmem_ctx_ulonglong_atomic_swap_nbi pshmem_ctx_ulonglong_atomic_swap_nbi
 #pragma weak shmem_ctx_int32_atomic_swap_nbi = pshmem_ctx_int32_atomic_swap_nbi
 #define shmem_ctx_int32_atomic_swap_nbi pshmem_ctx_int32_atomic_swap_nbi
 #pragma weak shmem_ctx_int64_atomic_swap_nbi = pshmem_ctx_int64_atomic_swap_nbi
 #define shmem_ctx_int64_atomic_swap_nbi pshmem_ctx_int64_atomic_swap_nbi
-#pragma weak shmem_ctx_uint32_atomic_swap_nbi = pshmem_ctx_uint32_atomic_swap_nbi
+#pragma weak shmem_ctx_uint32_atomic_swap_nbi =                                \
+    pshmem_ctx_uint32_atomic_swap_nbi
 #define shmem_ctx_uint32_atomic_swap_nbi pshmem_ctx_uint32_atomic_swap_nbi
-#pragma weak shmem_ctx_uint64_atomic_swap_nbi = pshmem_ctx_uint64_atomic_swap_nbi
+#pragma weak shmem_ctx_uint64_atomic_swap_nbi =                                \
+    pshmem_ctx_uint64_atomic_swap_nbi
 #define shmem_ctx_uint64_atomic_swap_nbi pshmem_ctx_uint64_atomic_swap_nbi
 #pragma weak shmem_ctx_size_atomic_swap_nbi = pshmem_ctx_size_atomic_swap_nbi
 #define shmem_ctx_size_atomic_swap_nbi pshmem_ctx_size_atomic_swap_nbi
-#pragma weak shmem_ctx_ptrdiff_atomic_swap_nbi = pshmem_ctx_ptrdiff_atomic_swap_nbi
+#pragma weak shmem_ctx_ptrdiff_atomic_swap_nbi =                               \
+    pshmem_ctx_ptrdiff_atomic_swap_nbi
 #define shmem_ctx_ptrdiff_atomic_swap_nbi pshmem_ctx_ptrdiff_atomic_swap_nbi
 #endif /* ENABLE_PSHMEM */
 
-#define SHMEM_CTX_TYPE_SWAP_NBI(_name, _type)                           \
-    void                                                                \
-    shmem_ctx_##_name##_atomic_swap_nbi(shmem_ctx_t ctx,                \
-                                        _type *fetch,                   \
-                                        _type *target,                  \
-                                        _type value,                    \
-                                        int pe)                         \
-    {                                                                   \
-        SHMEMU_CHECK_INIT();                                            \
-        SHMEMU_CHECK_SYMMETRIC(target, 3);                              \
-                                                                        \
-        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_swap(ctx,                     \
-                                               target,                  \
-                                               &value, sizeof(value),   \
-                                               pe, fetch));             \
-    }
+#define SHMEM_CTX_TYPE_SWAP_NBI(_name, _type)                                  \
+  void shmem_ctx_##_name##_atomic_swap_nbi(                                    \
+      shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe) {     \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_SYMMETRIC(target, 3);                                         \
+                                                                               \
+    SHMEMT_MUTEX_NOPROTECT(                                                    \
+        shmemc_ctx_swap(ctx, target, &value, sizeof(value), pe, fetch));       \
+  }
 
 SHMEM_CTX_TYPE_SWAP_NBI(int, int)
 SHMEM_CTX_TYPE_SWAP_NBI(long, long)

@@ -4,38 +4,32 @@
 #include "shmemu.h"
 #include "collectives/table.h"
 
-#define TRY(_cname)                                             \
-    {                                                           \
-        const int s = register_##_cname(proc.env.coll._cname);  \
-                                                                \
-        if (s != 0) {                                           \
-            shmemu_fatal("couldn't register collective "        \
-                         "\"%s\" (s = %d)",                     \
-                         #_cname, s);                           \
-        }                                                       \
-    }
+#define TRY(_cname)                                                            \
+  {                                                                            \
+    const int s = register_##_cname(proc.env.coll._cname);                     \
+                                                                               \
+    if (s != 0) {                                                              \
+      shmemu_fatal("couldn't register collective "                             \
+                   "\"%s\" (s = %d)",                                          \
+                   #_cname, s);                                                \
+    }                                                                          \
+  }
 
-void
-collectives_init(void)
-{
-    TRY(alltoall);
-    TRY(alltoalls);
-    TRY(collect);
-    TRY(fcollect);
-    TRY(barrier);
-    TRY(barrier_all);
-    TRY(sync);
-    TRY(sync_all);
-    TRY(broadcast);
+void collectives_init(void) {
+  TRY(alltoall);
+  TRY(alltoalls);
+  TRY(collect);
+  TRY(fcollect);
+  TRY(barrier);
+  TRY(barrier_all);
+  TRY(sync);
+  TRY(sync_all);
+  TRY(broadcast);
 
-    /* TODO reductions */
+  /* TODO reductions */
 }
 
-void
-collectives_finalize(void)
-{
-    return;
-}
+void collectives_finalize(void) { return; }
 
 /*
  * hand off the SHMEM API to the dispatchers
@@ -48,30 +42,24 @@ collectives_finalize(void)
 #define shmem_alltoall64 pshmem_alltoall64
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_alltoall32(void *target, const void *source, size_t nelems,
-                 int PE_start, int logPE_stride, int PE_size, long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%p, %p, %lu, %d, %d, %d, %p)",
-           __func__,
-           target, source, nelems, PE_start, logPE_stride, PE_size, pSync);
+void shmem_alltoall32(void *target, const void *source, size_t nelems,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-    colls.alltoall.f32(target, source, nelems,
-                       PE_start, logPE_stride, PE_size, pSync);
+  colls.alltoall.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
+                     pSync);
 }
 
-void
-shmem_alltoall64(void *target, const void *source, size_t nelems,
-                 int PE_start, int logPE_stride, int PE_size, long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%p, %p, %lu, %d, %d, %d, %p)",
-           __func__,
-           target, source, nelems, PE_start, logPE_stride, PE_size, pSync);
+void shmem_alltoall64(void *target, const void *source, size_t nelems,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-    colls.alltoall.f64(target, source, nelems,
-                       PE_start, logPE_stride, PE_size, pSync);
+  colls.alltoall.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
+                     pSync);
 }
 
 #ifdef ENABLE_PSHMEM
@@ -81,44 +69,26 @@ shmem_alltoall64(void *target, const void *source, size_t nelems,
 #define shmem_alltoalls64 pshmem_alltoalls64
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_alltoalls32(void *target, const void *source,
-                  ptrdiff_t dst, ptrdiff_t sst, size_t nelems,
-                  int PE_start, int logPE_stride, int PE_size,
-                  long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%p, %p, %lu, %lu, %lu, %d, %d, %d, %p)",
-           __func__,
-           target, source,
-           dst, sst, nelems,
-           PE_start, logPE_stride, PE_size,
-           pSync);
+void shmem_alltoalls32(void *target, const void *source, ptrdiff_t dst,
+                       ptrdiff_t sst, size_t nelems, int PE_start,
+                       int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %lu, %lu, %d, %d, %d, %p)", __func__,
+         target, source, dst, sst, nelems, PE_start, logPE_stride, PE_size,
+         pSync);
 
-    colls.alltoalls.f32(target, source,
-                        dst, sst, nelems,
-                        PE_start, logPE_stride, PE_size,
-                        pSync);
+  colls.alltoalls.f32(target, source, dst, sst, nelems, PE_start, logPE_stride,
+                      PE_size, pSync);
 }
 
-void
-shmem_alltoalls64(void *target, const void *source,
-                  ptrdiff_t dst, ptrdiff_t sst, size_t nelems,
-                  int PE_start, int logPE_stride, int PE_size,
-                  long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%p, %p, %lu, %lu, %lu, %d, %d, %d, %p)",
-           __func__,
-           target, source,
-           dst, sst, nelems,
-           PE_start, logPE_stride, PE_size,
-           pSync);
+void shmem_alltoalls64(void *target, const void *source, ptrdiff_t dst,
+                       ptrdiff_t sst, size_t nelems, int PE_start,
+                       int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %lu, %lu, %d, %d, %d, %p)", __func__,
+         target, source, dst, sst, nelems, PE_start, logPE_stride, PE_size,
+         pSync);
 
-    colls.alltoalls.f64(target, source,
-                        dst, sst, nelems,
-                        PE_start, logPE_stride, PE_size,
-                        pSync);
+  colls.alltoalls.f64(target, source, dst, sst, nelems, PE_start, logPE_stride,
+                      PE_size, pSync);
 }
 
 #ifdef ENABLE_PSHMEM
@@ -128,30 +98,22 @@ shmem_alltoalls64(void *target, const void *source,
 #define shmem_collect64 pshmem_collect64
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_collect32(void *target, const void *source, size_t nelems,
-                int PE_start, int logPE_stride, int PE_size, long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%p, %p, %lu, %d, %d, %d, %p)",
-           __func__,
-           target, source, nelems, PE_start, logPE_stride, PE_size, pSync);
+void shmem_collect32(void *target, const void *source, size_t nelems,
+                     int PE_start, int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-    colls.collect.f32(target, source, nelems,
-                      PE_start, logPE_stride, PE_size, pSync);
+  colls.collect.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
+                    pSync);
 }
 
-void
-shmem_collect64(void *target, const void *source, size_t nelems,
-                int PE_start, int logPE_stride, int PE_size, long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%p, %p, %lu, %d, %d, %d, %p)",
-           __func__,
-           target, source, nelems, PE_start, logPE_stride, PE_size, pSync);
+void shmem_collect64(void *target, const void *source, size_t nelems,
+                     int PE_start, int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-    colls.collect.f64(target, source, nelems,
-                      PE_start, logPE_stride, PE_size, pSync);
+  colls.collect.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
+                    pSync);
 }
 
 #ifdef ENABLE_PSHMEM
@@ -161,30 +123,24 @@ shmem_collect64(void *target, const void *source, size_t nelems,
 #define shmem_fcollect64 pshmem_fcollect64
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_fcollect32(void *target, const void *source, size_t nelems,
-                 int PE_start, int logPE_stride, int PE_size, long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%p, %p, %lu, %d, %d, %d, %p)",
-           __func__,
-           target, source, nelems, PE_start, logPE_stride, PE_size, pSync);
+void shmem_fcollect32(void *target, const void *source, size_t nelems,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-    colls.fcollect.f32(target, source, nelems,
-                       PE_start, logPE_stride, PE_size, pSync);
+  colls.fcollect.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
+                     pSync);
 }
 
-void
-shmem_fcollect64(void *target, const void *source, size_t nelems,
-                 int PE_start, int logPE_stride, int PE_size, long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%p, %p, %lu, %d, %d, %d, %p)",
-           __func__,
-           target, source, nelems, PE_start, logPE_stride, PE_size, pSync);
+void shmem_fcollect64(void *target, const void *source, size_t nelems,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-    colls.fcollect.f64(target, source, nelems,
-                       PE_start, logPE_stride, PE_size, pSync);
+  colls.fcollect.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
+                     pSync);
 }
 
 #ifdef ENABLE_PSHMEM
@@ -192,15 +148,11 @@ shmem_fcollect64(void *target, const void *source, size_t nelems,
 #define shmem_barrier pshmem_barrier
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%d, %d, %d, %p)",
-           __func__,
-           PE_start, logPE_stride, PE_size, pSync);
+void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
+         logPE_stride, PE_size, pSync);
 
-    colls.barrier.f(PE_start, logPE_stride, PE_size, pSync);
+  colls.barrier.f(PE_start, logPE_stride, PE_size, pSync);
 }
 
 /*
@@ -214,12 +166,10 @@ extern long *shmemc_sync_all_psync;
 #define shmem_barrier_all pshmem_barrier_all
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_barrier_all(void)
-{
-    logger(LOG_COLLECTIVES, "%s()", __func__);
+void shmem_barrier_all(void) {
+  logger(LOG_COLLECTIVES, "%s()", __func__);
 
-    colls.barrier_all.f(shmemc_barrier_all_psync);
+  colls.barrier_all.f(shmemc_barrier_all_psync);
 }
 
 #ifdef ENABLE_PSHMEM
@@ -227,15 +177,11 @@ shmem_barrier_all(void)
 #define shmem_sync pshmem_sync
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%d, %d, %d, %p)",
-           __func__,
-           PE_start, logPE_stride, PE_size, pSync);
+void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
+         logPE_stride, PE_size, pSync);
 
-    colls.sync.f(PE_start, logPE_stride, PE_size, pSync);
+  colls.sync.f(PE_start, logPE_stride, PE_size, pSync);
 }
 
 #ifdef ENABLE_PSHMEM
@@ -243,12 +189,10 @@ shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
 #define shmem_sync_all pshmem_sync_all
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_sync_all(void)
-{
-    logger(LOG_COLLECTIVES, "%s()", __func__);
+void shmem_sync_all(void) {
+  logger(LOG_COLLECTIVES, "%s()", __func__);
 
-    colls.sync_all.f(shmemc_sync_all_psync);
+  colls.sync_all.f(shmemc_sync_all_psync);
 }
 
 #ifdef ENABLE_PSHMEM
@@ -258,34 +202,24 @@ shmem_sync_all(void)
 #define shmem_broadcast64 pshmem_broadcast64
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_broadcast32(void *target, const void *source,
-                  size_t nelems, int PE_root, int PE_start,
-                  int logPE_stride, int PE_size, long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%p, %p, %lu, %d, %d, %d, %p)",
-           __func__,
-           target, source, nelems, PE_start, logPE_stride, PE_size, pSync);
+void shmem_broadcast32(void *target, const void *source, size_t nelems,
+                       int PE_root, int PE_start, int logPE_stride, int PE_size,
+                       long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-    colls.broadcast.f32(target, source,
-                        nelems, PE_root, PE_start,
-                        logPE_stride, PE_size, pSync);
+  colls.broadcast.f32(target, source, nelems, PE_root, PE_start, logPE_stride,
+                      PE_size, pSync);
 }
 
-void
-shmem_broadcast64(void *target, const void *source,
-                  size_t nelems, int PE_root, int PE_start,
-                  int logPE_stride, int PE_size, long *pSync)
-{
-    logger(LOG_COLLECTIVES,
-           "%s(%p, %p, %lu, %d, %d, %d, %p)",
-           __func__,
-           target, source, nelems, PE_start, logPE_stride, PE_size, pSync);
+void shmem_broadcast64(void *target, const void *source, size_t nelems,
+                       int PE_root, int PE_start, int logPE_stride, int PE_size,
+                       long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-    colls.broadcast.f64(target, source,
-                        nelems, PE_root, PE_start,
-                        logPE_stride, PE_size, pSync);
+  colls.broadcast.f64(target, source, nelems, PE_root, PE_start, logPE_stride,
+                      PE_size, pSync);
 }
 
 /*

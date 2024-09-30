@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -12,17 +12,24 @@
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_uint_atomic_fetch_xor = pshmem_ctx_uint_atomic_fetch_xor
 #define shmem_ctx_uint_atomic_fetch_xor pshmem_ctx_uint_atomic_fetch_xor
-#pragma weak shmem_ctx_ulong_atomic_fetch_xor = pshmem_ctx_ulong_atomic_fetch_xor
+#pragma weak shmem_ctx_ulong_atomic_fetch_xor =                                \
+    pshmem_ctx_ulong_atomic_fetch_xor
 #define shmem_ctx_ulong_atomic_fetch_xor pshmem_ctx_ulong_atomic_fetch_xor
-#pragma weak shmem_ctx_ulonglong_atomic_fetch_xor = pshmem_ctx_ulonglong_atomic_fetch_xor
-#define shmem_ctx_ulonglong_atomic_fetch_xor pshmem_ctx_ulonglong_atomic_fetch_xor
-#pragma weak shmem_ctx_int32_atomic_fetch_xor = pshmem_ctx_int32_atomic_fetch_xor
+#pragma weak shmem_ctx_ulonglong_atomic_fetch_xor =                            \
+    pshmem_ctx_ulonglong_atomic_fetch_xor
+#define shmem_ctx_ulonglong_atomic_fetch_xor                                   \
+  pshmem_ctx_ulonglong_atomic_fetch_xor
+#pragma weak shmem_ctx_int32_atomic_fetch_xor =                                \
+    pshmem_ctx_int32_atomic_fetch_xor
 #define shmem_ctx_int32_atomic_fetch_xor pshmem_ctx_int32_atomic_fetch_xor
-#pragma weak shmem_ctx_int64_atomic_fetch_xor = pshmem_ctx_int64_atomic_fetch_xor
+#pragma weak shmem_ctx_int64_atomic_fetch_xor =                                \
+    pshmem_ctx_int64_atomic_fetch_xor
 #define shmem_ctx_int64_atomic_fetch_xor pshmem_ctx_int64_atomic_fetch_xor
-#pragma weak shmem_ctx_uint32_atomic_fetch_xor = pshmem_ctx_uint32_atomic_fetch_xor
+#pragma weak shmem_ctx_uint32_atomic_fetch_xor =                               \
+    pshmem_ctx_uint32_atomic_fetch_xor
 #define shmem_ctx_uint32_atomic_fetch_xor pshmem_ctx_uint32_atomic_fetch_xor
-#pragma weak shmem_ctx_uint64_atomic_fetch_xor = pshmem_ctx_uint64_atomic_fetch_xor
+#pragma weak shmem_ctx_uint64_atomic_fetch_xor =                               \
+    pshmem_ctx_uint64_atomic_fetch_xor
 #define shmem_ctx_uint64_atomic_fetch_xor pshmem_ctx_uint64_atomic_fetch_xor
 #endif /* ENABLE_PSHMEM */
 

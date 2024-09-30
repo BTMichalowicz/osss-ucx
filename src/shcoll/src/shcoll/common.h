@@ -1,7 +1,7 @@
 #ifndef _SHCOLL_COMMON_H
 #define _SHCOLL_COMMON_H 1
 
-#include <stddef.h>             /* ptrdiff_t */
+#include <stddef.h> /* ptrdiff_t */
 
 #define SHCOLL_BCAST_SYNC_SIZE 2
 

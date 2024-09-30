@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmemc.h"
@@ -208,7 +208,8 @@ API_DECL_PUTMEM_SIGNAL()
 #define shmem_ctx_float_put_signal_nbi pshmem_ctx_float_put_signal_nbi
 #pragma weak shmem_ctx_double_put_signal_nbi = pshmem_ctx_double_put_signal_nbi
 #define shmem_ctx_double_put_signal_nbi pshmem_ctx_double_put_signal_nbi
-#pragma weak shmem_ctx_longdouble_put_signal_nbi = pshmem_ctx_longdouble_put_signal_nbi
+#pragma weak shmem_ctx_longdouble_put_signal_nbi =                             \
+    pshmem_ctx_longdouble_put_signal_nbi
 #define shmem_ctx_longdouble_put_signal_nbi pshmem_ctx_longdouble_put_signal_nbi
 #pragma weak shmem_ctx_char_put_signal_nbi = pshmem_ctx_char_put_signal_nbi
 #define shmem_ctx_char_put_signal_nbi pshmem_ctx_char_put_signal_nbi
@@ -220,7 +221,8 @@ API_DECL_PUTMEM_SIGNAL()
 #define shmem_ctx_int_put_signal_nbi pshmem_ctx_int_put_signal_nbi
 #pragma weak shmem_ctx_long_put_signal_nbi = pshmem_ctx_long_put_signal_nbi
 #define shmem_ctx_long_put_signal_nbi pshmem_ctx_long_put_signal_nbi
-#pragma weak shmem_ctx_longlong_put_signal_nbi = pshmem_ctx_longlong_put_signal_nbi
+#pragma weak shmem_ctx_longlong_put_signal_nbi =                               \
+    pshmem_ctx_longlong_put_signal_nbi
 #define shmem_ctx_longlong_put_signal_nbi pshmem_ctx_longlong_put_signal_nbi
 #pragma weak shmem_ctx_uchar_put_signal_nbi = pshmem_ctx_uchar_put_signal_nbi
 #define shmem_ctx_uchar_put_signal_nbi pshmem_ctx_uchar_put_signal_nbi
@@ -230,7 +232,8 @@ API_DECL_PUTMEM_SIGNAL()
 #define shmem_ctx_uint_put_signal_nbi pshmem_ctx_uint_put_signal_nbi
 #pragma weak shmem_ctx_ulong_put_signal_nbi = pshmem_ctx_ulong_put_signal_nbi
 #define shmem_ctx_ulong_put_signal_nbi pshmem_ctx_ulong_put_signal_nbi
-#pragma weak shmem_ctx_ulonglong_put_signal_nbi = pshmem_ctx_ulonglong_put_signal_nbi
+#pragma weak shmem_ctx_ulonglong_put_signal_nbi =                              \
+    pshmem_ctx_ulonglong_put_signal_nbi
 #define shmem_ctx_ulonglong_put_signal_nbi pshmem_ctx_ulonglong_put_signal_nbi
 #pragma weak shmem_ctx_int8_put_signal_nbi = pshmem_ctx_int8_put_signal_nbi
 #define shmem_ctx_int8_put_signal_nbi pshmem_ctx_int8_put_signal_nbi
@@ -395,14 +398,11 @@ API_DECL_SIZED_PUT_SIGNAL_NBI(128)
 SHMEM_CTX_DECL_PUTMEM_SIGNAL_NBI()
 API_DECL_PUTMEM_SIGNAL_NBI()
 
-uint64_t
-shmem_signal_fetch(const uint64_t *sig_addr)
-{
-    uint64_t v;
+uint64_t shmem_signal_fetch(const uint64_t *sig_addr) {
+  uint64_t v;
 
-    SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_fetch(SHMEM_CTX_DEFAULT,
-                                            (uint64_t *) sig_addr,
-                                            sizeof(*sig_addr),
-                                            shmemc_my_pe(), &v));
-    return v;
+  SHMEMT_MUTEX_NOPROTECT(
+      shmemc_ctx_fetch(SHMEM_CTX_DEFAULT, (uint64_t *)sig_addr,
+                       sizeof(*sig_addr), shmemc_my_pe(), &v));
+  return v;
 }

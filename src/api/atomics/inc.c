@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -36,19 +36,14 @@
 #define shmem_ctx_ptrdiff_atomic_inc pshmem_ctx_ptrdiff_atomic_inc
 #endif /* ENABLE_PSHMEM */
 
-#define SHMEM_CTX_TYPE_INC(_name, _type)                                \
-    void                                                                \
-    shmem_ctx_##_name##_atomic_inc(shmem_ctx_t ctx,                     \
-                                   _type *target,                       \
-                                   int pe)                              \
-    {                                                                   \
-        _type one = 1;                                                  \
-                                                                        \
-        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_add(ctx,                      \
-                                              target,                   \
-                                              &one, sizeof(one),        \
-                                              pe));                     \
-    }
+#define SHMEM_CTX_TYPE_INC(_name, _type)                                       \
+  void shmem_ctx_##_name##_atomic_inc(shmem_ctx_t ctx, _type *target,          \
+                                      int pe) {                                \
+    _type one = 1;                                                             \
+                                                                               \
+    SHMEMT_MUTEX_NOPROTECT(                                                    \
+        shmemc_ctx_add(ctx, target, &one, sizeof(one), pe));                   \
+  }
 
 SHMEM_CTX_TYPE_INC(int, int)
 SHMEM_CTX_TYPE_INC(long, long)

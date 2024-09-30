@@ -3,7 +3,7 @@
 #ifndef _SHMEMA_MEMALLOC_H
 #define _SHMEMA_MEMALLOC_H 1
 
-#include <sys/types.h>          /* size_t */
+#include <sys/types.h> /* size_t */
 
 /*
  * memory allocation

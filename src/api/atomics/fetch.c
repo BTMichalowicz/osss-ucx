@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -24,7 +24,8 @@
 #define shmem_ctx_uint_atomic_fetch pshmem_ctx_uint_atomic_fetch
 #pragma weak shmem_ctx_ulong_atomic_fetch = pshmem_ctx_ulong_atomic_fetch
 #define shmem_ctx_ulong_atomic_fetch pshmem_ctx_ulong_atomic_fetch
-#pragma weak shmem_ctx_ulonglong_atomic_fetch = pshmem_ctx_ulonglong_atomic_fetch
+#pragma weak shmem_ctx_ulonglong_atomic_fetch =                                \
+    pshmem_ctx_ulonglong_atomic_fetch
 #define shmem_ctx_ulonglong_atomic_fetch pshmem_ctx_ulonglong_atomic_fetch
 #pragma weak shmem_ctx_int32_atomic_fetch = pshmem_ctx_int32_atomic_fetch
 #define shmem_ctx_int32_atomic_fetch pshmem_ctx_int32_atomic_fetch
@@ -40,20 +41,15 @@
 #define shmem_ctx_ptrdiff_atomic_fetch pshmem_ctx_ptrdiff_atomic_fetch
 #endif /* ENABLE_PSHMEM */
 
-#define SHMEM_CTX_TYPE_FETCH(_name, _type)                              \
-    _type                                                               \
-    shmem_ctx_##_name##_atomic_fetch(shmem_ctx_t ctx,                   \
-                                     const _type *target, int pe)       \
-    {                                                                   \
-        _type v;                                                        \
-                                                                        \
-        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_fetch(ctx,                    \
-                                                (_type *) target,       \
-                                                sizeof(*target),        \
-                                                pe,                     \
-                                                &v));                   \
-        return v;                                                       \
-    }
+#define SHMEM_CTX_TYPE_FETCH(_name, _type)                                     \
+  _type shmem_ctx_##_name##_atomic_fetch(shmem_ctx_t ctx, const _type *target, \
+                                         int pe) {                             \
+    _type v;                                                                   \
+                                                                               \
+    SHMEMT_MUTEX_NOPROTECT(                                                    \
+        shmemc_ctx_fetch(ctx, (_type *)target, sizeof(*target), pe, &v));      \
+    return v;                                                                  \
+  }
 
 SHMEM_CTX_TYPE_FETCH(float, float)
 SHMEM_CTX_TYPE_FETCH(double, double)

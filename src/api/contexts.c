@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -22,7 +22,7 @@
  * instantiated at all times
  */
 
-shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmemc_default_context;
+shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t)&shmemc_default_context;
 
 /*
  * create new context with supplied options
@@ -30,44 +30,31 @@ shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmemc_default_context;
  * Return 1 on success, 0 on failure
  */
 
-int
-shmem_ctx_create(long options, shmem_ctx_t *ctxp)
-{
-    int s;
+int shmem_ctx_create(long options, shmem_ctx_t *ctxp) {
+  int s;
 
-    SHMEMU_CHECK_INIT();
+  SHMEMU_CHECK_INIT();
 
-    /* defaults to world team */
-    SHMEMT_MUTEX_PROTECT(s = shmemc_context_create(SHMEM_TEAM_WORLD,
-                                                   options,
-                                                   (shmemc_context_h *) ctxp));
+  /* defaults to world team */
+  SHMEMT_MUTEX_PROTECT(s = shmemc_context_create(SHMEM_TEAM_WORLD, options,
+                                                 (shmemc_context_h *)ctxp));
 
-    logger(LOG_CONTEXTS,
-           "%s(options=%#lx, ctxp->%p)",
-           __func__,
-           options, *ctxp
-           );
+  logger(LOG_CONTEXTS, "%s(options=%#lx, ctxp->%p)", __func__, options, *ctxp);
 
-    return s;
+  return s;
 }
 
 /*
  * zap context
  */
 
-void
-shmem_ctx_destroy(shmem_ctx_t ctx)
-{
-    SHMEMU_CHECK_INIT();
-    SHMEMU_CHECK_SAME_THREAD(ctx);
+void shmem_ctx_destroy(shmem_ctx_t ctx) {
+  SHMEMU_CHECK_INIT();
+  SHMEMU_CHECK_SAME_THREAD(ctx);
 
-    SHMEMT_MUTEX_PROTECT(shmemc_context_destroy(ctx));
+  SHMEMT_MUTEX_PROTECT(shmemc_context_destroy(ctx));
 
-    logger(LOG_CONTEXTS,
-           "%s(ctx=%p)",
-           __func__,
-           ctx
-           );
+  logger(LOG_CONTEXTS, "%s(ctx=%p)", __func__, ctx);
 }
 
 #ifdef ENABLE_EXPERIMENTAL
@@ -76,20 +63,16 @@ shmem_ctx_destroy(shmem_ctx_t ctx)
  * tell OpenSHMEM there's region of communication coming up
  */
 
-void
-shmemx_ctx_session_start(shmem_ctx_t ctx)
-{
-    NO_WARN_UNUSED(ctx);
+void shmemx_ctx_session_start(shmem_ctx_t ctx) {
+  NO_WARN_UNUSED(ctx);
 
-    SHMEMU_CHECK_INIT();
+  SHMEMU_CHECK_INIT();
 }
 
-void
-shmemx_ctx_session_estop(shmem_ctx_t ctx)
-{
-    NO_WARN_UNUSED(ctx);
+void shmemx_ctx_session_estop(shmem_ctx_t ctx) {
+  NO_WARN_UNUSED(ctx);
 
-    SHMEMU_CHECK_INIT();
+  SHMEMU_CHECK_INIT();
 }
 
-#endif  /* ENABLE_EXPERIMENTAL */
+#endif /* ENABLE_EXPERIMENTAL */
