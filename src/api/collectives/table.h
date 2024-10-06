@@ -12,6 +12,9 @@
 
 typedef void (*coll_fn_t)();
 
+// TODO: if this doesn't work, switch typed_op to use coll_fn_t instead
+typedef int (*typed_coll_fn_t)(shmem_team_t, void *, const void *, size_t);
+
 typedef struct sized_op {
   const char op[COLL_NAME_MAX];
   coll_fn_t f32;
@@ -23,12 +26,24 @@ typedef struct unsized_op {
   coll_fn_t f;
 } unsized_op_t;
 
+typedef struct typed_op {
+  const char op[COLL_NAME_MAX];
+  typed_coll_fn_t f;
+} typed_op_t;
+
+//////////////////////////////////////////////////////////////
+// typedef struct operation {
+//   const char op[COLL_NAME_MAX];
+//   coll_fn_t f;
+// } operation_t;
+//////////////////////////////////////////////////////////////
+
 /*
  * there are various untyped reduction kinds
  */
 
 typedef struct coll_ops {
-  sized_op_t alltoall;
+  typed_op_t alltoall;
   sized_op_t alltoalls;
   sized_op_t collect;
   sized_op_t fcollect;
@@ -45,14 +60,14 @@ extern coll_ops_t colls;
  * return zero if registered OK, non-zero otherwise
  */
 
-int register_barrier_all(const char *name);
-int register_sync_all(const char *name);
-int register_barrier(const char *name);
-int register_sync(const char *name);
-int register_broadcast(const char *name);
-int register_alltoall(const char *name);
-int register_alltoalls(const char *name);
-int register_collect(const char *name);
-int register_fcollect(const char *name);
+int register_barrier_all(const char *op);
+int register_sync_all(const char *op);
+int register_barrier(const char *op);
+int register_sync(const char *op);
+int register_broadcast(const char *op);
+int register_alltoall(const char *op);
+int register_alltoalls(const char *op);
+int register_collect(const char *op);
+int register_fcollect(const char *op);
 
 #endif

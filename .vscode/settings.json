@@ -8,6 +8,9 @@
         "vector": "c",
         "string_view": "c",
         "initializer_list": "c",
-        "ranges": "c"
+        "ranges": "c",
+        "typeinfo": "c",
+        "utility": "c",
+        "shcoll.h": "c"
     }
 }

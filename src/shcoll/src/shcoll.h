@@ -3,6 +3,8 @@
 
 /* #include <shmem.h> */
 
+#define SHMEM_SUCCESS 0
+
 #include <shcoll/common.h>
 /* #include <shcoll/compat.h> */
 

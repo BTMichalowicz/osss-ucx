@@ -1,0 +1,4 @@
+- shmem_alltoall
+    - Deprecate sized variants
+    - Test all different collectives algorithms
+    -  
