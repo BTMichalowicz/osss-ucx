@@ -11,6 +11,7 @@
         "ranges": "c",
         "typeinfo": "c",
         "utility": "c",
-        "shcoll.h": "c"
+        "shcoll.h": "c",
+        "cstdint": "c"
     }
 }

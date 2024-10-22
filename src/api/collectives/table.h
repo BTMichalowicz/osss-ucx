@@ -44,7 +44,8 @@ typedef struct typed_op {
 
 typedef struct coll_ops {
   typed_op_t alltoall;
-  sized_op_t alltoalls;
+  // sized_op_t alltoalls;
+  typed_op_t alltoalls;
   sized_op_t collect;
   sized_op_t fcollect;
   sized_op_t broadcast;
