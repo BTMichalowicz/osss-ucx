@@ -35,7 +35,6 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
   alltoall_rounds_sync = rounds_sync;
 }
 
-
 #define ALLTOALL_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)                \
   inline static int alltoall_helper_##_algo##_barrier(                         \
       void *dest, const void *source, size_t nelems, int PE_start,             \
@@ -82,8 +81,8 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
       }                                                                        \
     }                                                                          \
                                                                                \
-    /* Final synchronization after all puts */                                \
-    if (shmem_team_sync(SHMEM_TEAM_WORLD) != SHMEM_SUCCESS) {                 \
+    /* Final synchronization after all puts */                                 \
+    if (shmem_team_sync(SHMEM_TEAM_WORLD) != SHMEM_SUCCESS) {                  \
       return -1;                                                               \
     }                                                                          \
                                                                                \
@@ -134,7 +133,7 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
     shmem_fence();                                                             \
                                                                                \
     /* Final synchronization */                                                \
-    if (shmem_team_sync(SHMEM_TEAM_WORLD) != SHMEM_SUCCESS) {                 \
+    if (shmem_team_sync(SHMEM_TEAM_WORLD) != SHMEM_SUCCESS) {                  \
       return -1;                                                               \
     }                                                                          \
                                                                                \
@@ -183,7 +182,7 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
     memcpy(dest_ptr, source_ptr, nelems);                                      \
                                                                                \
     /* Final synchronization */                                                \
-    if (shmem_team_sync(SHMEM_TEAM_WORLD) != SHMEM_SUCCESS) {                 \
+    if (shmem_team_sync(SHMEM_TEAM_WORLD) != SHMEM_SUCCESS) {                  \
       return -1;                                                               \
     }                                                                          \
                                                                                \
@@ -450,7 +449,8 @@ SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned char,
 SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned short,
                            ushort)
 SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned int, uint)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned long, ulong)
+SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned long,
+                           ulong)
 SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned long long,
                            ulonglong)
 SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, int8_t, int8)
@@ -494,4 +494,3 @@ SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, size_t, size)
 SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, ptrdiff_t, ptrdiff)
 
 // @formatter:on
-

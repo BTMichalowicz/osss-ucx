@@ -31,20 +31,12 @@ typedef struct typed_op {
   typed_coll_fn_t f;
 } typed_op_t;
 
-//////////////////////////////////////////////////////////////
-// typedef struct operation {
-//   const char op[COLL_NAME_MAX];
-//   coll_fn_t f;
-// } operation_t;
-//////////////////////////////////////////////////////////////
-
 /*
  * there are various untyped reduction kinds
  */
 
 typedef struct coll_ops {
   typed_op_t alltoall;
-  // sized_op_t alltoalls;
   typed_op_t alltoalls;
   sized_op_t collect;
   sized_op_t fcollect;
