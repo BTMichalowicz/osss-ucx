@@ -16,7 +16,8 @@ typedef struct unsized_op {
   coll_fn_t f;
 } unsized_op_t;
 
-// TODO: if this doesn't work, switch typed_op to use coll_fn_t instead
+// FIXME: this only works for alltoall. Need this to be more generic and 
+//        apply to all collectives.
 typedef int (*typed_coll_fn_t)(shmem_team_t, void *, const void *, size_t);
 typedef struct typed_op {
   const char op[COLL_NAME_MAX];
