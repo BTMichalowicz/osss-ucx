@@ -223,17 +223,6 @@ static typed_op_t alltoall_tab[] = {
 
     TYPED_LAST};
 
-// static sized_op_t alltoall_tab[] = {
-//     SIZED_REG(alltoall, shift_exchange_barrier),
-//     SIZED_REG(alltoall, shift_exchange_counter),
-//     SIZED_REG(alltoall, shift_exchange_signal),
-//     SIZED_REG(alltoall, xor_pairwise_exchange_barrier),
-//     SIZED_REG(alltoall, color_pairwise_exchange_signal),
-//     SIZED_REG(alltoall, color_pairwise_exchange_barrier),
-//     SIZED_REG(alltoall, color_pairwise_exchange_counter),
-//     SIZED_LAST};
-
-
 static typed_op_t alltoalls_tab[] = {
     TYPED_REG(alltoalls, shift_exchange_barrier, float),
     TYPED_REG(alltoalls, shift_exchange_barrier, double),
@@ -411,21 +400,6 @@ static typed_op_t alltoalls_tab[] = {
     TYPED_REG(alltoalls, color_pairwise_exchange_counter, ptrdiff),
 
     TYPED_LAST};
-
-// static sized_op_t alltoalls_tab[] = {
-//     SIZED_REG(alltoalls, shift_exchange_barrier),
-//     SIZED_REG(alltoalls, shift_exchange_counter),
-//     SIZED_REG(alltoalls, shift_exchange_barrier_nbi),
-//     SIZED_REG(alltoalls, shift_exchange_counter_nbi),
-//     SIZED_REG(alltoalls, xor_pairwise_exchange_barrier),
-//     SIZED_REG(alltoalls, xor_pairwise_exchange_counter),
-//     SIZED_REG(alltoalls, xor_pairwise_exchange_barrier_nbi),
-//     SIZED_REG(alltoalls, xor_pairwise_exchange_counter_nbi),
-//     SIZED_REG(alltoalls, color_pairwise_exchange_barrier),
-//     SIZED_REG(alltoalls, color_pairwise_exchange_counter),
-//     SIZED_REG(alltoalls, color_pairwise_exchange_barrier_nbi),
-//     SIZED_REG(alltoalls, color_pairwise_exchange_counter_nbi),
-//     SIZED_LAST};
 
 //////////////////////////////////////////////////////////////
 static sized_op_t collect_tab[] = {SIZED_REG(collect, linear),

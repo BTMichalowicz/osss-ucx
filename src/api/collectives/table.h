@@ -5,27 +5,19 @@
 
 #define COLL_NAME_MAX 64 /* longer than any name */
 
-/*
- * most collectives are either just an op, or have 32/64 bit
- * components
- */
-
 typedef void (*coll_fn_t)();
-
-// TODO: if this doesn't work, switch typed_op to use coll_fn_t instead
-typedef int (*typed_coll_fn_t)(shmem_team_t, void *, const void *, size_t);
-
 typedef struct sized_op {
   const char op[COLL_NAME_MAX];
   coll_fn_t f32;
   coll_fn_t f64;
 } sized_op_t;
-
 typedef struct unsized_op {
   const char op[COLL_NAME_MAX];
   coll_fn_t f;
 } unsized_op_t;
 
+// TODO: if this doesn't work, switch typed_op to use coll_fn_t instead
+typedef int (*typed_coll_fn_t)(shmem_team_t, void *, const void *, size_t);
 typedef struct typed_op {
   const char op[COLL_NAME_MAX];
   typed_coll_fn_t f;
