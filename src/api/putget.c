@@ -487,6 +487,8 @@ SHMEM_CTX_PUTMEM_NBI()
 #pragma weak shmem_ptrdiff_iput = pshmem_ptrdiff_iput
 #define shmem_ptrdiff_iput pshmem_ptrdiff_iput
 
+// TODO: where is iput?
+
 #pragma weak shmem_float_put_nbi = pshmem_float_put_nbi
 #define shmem_float_put_nbi pshmem_float_put_nbi
 #pragma weak shmem_double_put_nbi = pshmem_double_put_nbi

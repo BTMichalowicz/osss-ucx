@@ -16,9 +16,6 @@ typedef struct unsized_op {
   coll_fn_t f;
 } unsized_op_t;
 
-// FIXME: this only works for alltoall. Need this to be more generic and 
-//        apply to all collectives.
-// typedef int (*typed_coll_fn_t)(shmem_team_t, void *, const void *, size_t);
 typedef int (*typed_coll_fn_t)();
 typedef struct typed_op {
   const char op[COLL_NAME_MAX];
@@ -31,7 +28,7 @@ typedef struct typed_op {
 
 typedef struct coll_ops {
   typed_op_t alltoall;
-  sized_op_t alltoalls;
+  typed_op_t alltoalls;
   sized_op_t collect;
   sized_op_t fcollect;
   sized_op_t broadcast;
