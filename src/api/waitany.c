@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -37,71 +37,50 @@
 #define shmem_size_wait_until_any pshmem_size_wait_until_any
 #pragma weak shmem_ptrdiff_wait_until_any = pshmem_ptrdiff_wait_until_any
 #define shmem_ptrdiff_wait_until_any pshmem_ptrdiff_wait_until_any
-#endif  /* ENABLE_PSHMEM */
+#endif /* ENABLE_PSHMEM */
 
-#define SHMEM_TYPE_WAIT_UNTIL_ANY(_opname, _type, _size)                \
-    size_t                                                              \
-    shmem_##_opname##_wait_until_any(_type *ivars,                      \
-                                     size_t nelems,                     \
-                                     const int *status,                 \
-                                     int cmp, _type cmp_value)          \
-    {                                                                   \
-        SHMEMT_MUTEX_PROTECT                                            \
-            (                                                           \
-             switch (cmp) {                                             \
-             case SHMEM_CMP_EQ:                                         \
-             return shmemc_ctx_wait_until_any_eq##_size(SHMEM_CTX_DEFAULT, \
-                                                        (int##_size##_t *) ivars, \
-                                                        nelems,         \
-                                                        status,         \
-                                                        cmp_value);     \
-             break;                                                     \
-             case SHMEM_CMP_NE:                                         \
-             return shmemc_ctx_wait_until_any_ne##_size(SHMEM_CTX_DEFAULT, \
-                                                        (int##_size##_t *) ivars, \
-                                                        nelems,         \
-                                                        status,         \
-                                                        cmp_value);     \
-             break;                                                     \
-             case SHMEM_CMP_GT:                                         \
-             return shmemc_ctx_wait_until_any_gt##_size(SHMEM_CTX_DEFAULT, \
-                                                        (int##_size##_t *) ivars, \
-                                                        nelems,         \
-                                                        status,         \
-                                                        cmp_value);     \
-             break;                                                     \
-             case SHMEM_CMP_LE:                                         \
-             return shmemc_ctx_wait_until_any_le##_size(SHMEM_CTX_DEFAULT, \
-                                                        (int##_size##_t *) ivars, \
-                                                        nelems,         \
-                                                        status,         \
-                                                        cmp_value);     \
-             break;                                                     \
-             case SHMEM_CMP_LT:                                         \
-             return shmemc_ctx_wait_until_any_lt##_size(SHMEM_CTX_DEFAULT, \
-                                                        (int##_size##_t *) ivars, \
-                                                        nelems,         \
-                                                        status,         \
-                                                        cmp_value);     \
-             break;                                                     \
-             case SHMEM_CMP_GE:                                         \
-             return shmemc_ctx_wait_until_any_ge##_size(SHMEM_CTX_DEFAULT, \
-                                                        (int##_size##_t *) ivars, \
-                                                        nelems,         \
-                                                        status,         \
-                                                        cmp_value);     \
-             break;                                                     \
-             default:                                                   \
-             shmemu_fatal("unknown operator (code %d) in \"%s\"",       \
-                          cmp,                                          \
-                          __func__                                      \
-                          );                                            \
-             return -1;                                                 \
-             /* NOT REACHED */                                          \
-             break;                                                     \
-             }                                                          \
-                                                                        ); \
-    }
+#define SHMEM_TYPE_WAIT_UNTIL_ANY(_opname, _type, _size)                       \
+  size_t shmem_##_opname##_wait_until_any(_type *ivars, size_t nelems,         \
+                                          const int *status, int cmp,          \
+                                          _type cmp_value) {                   \
+    SHMEMT_MUTEX_PROTECT(switch (cmp) {                                        \
+      case SHMEM_CMP_EQ:                                                       \
+        return shmemc_ctx_wait_until_any_eq##_size(SHMEM_CTX_DEFAULT,          \
+                                                   (int##_size##_t *)ivars,    \
+                                                   nelems, status, cmp_value); \
+        break;                                                                 \
+      case SHMEM_CMP_NE:                                                       \
+        return shmemc_ctx_wait_until_any_ne##_size(SHMEM_CTX_DEFAULT,          \
+                                                   (int##_size##_t *)ivars,    \
+                                                   nelems, status, cmp_value); \
+        break;                                                                 \
+      case SHMEM_CMP_GT:                                                       \
+        return shmemc_ctx_wait_until_any_gt##_size(SHMEM_CTX_DEFAULT,          \
+                                                   (int##_size##_t *)ivars,    \
+                                                   nelems, status, cmp_value); \
+        break;                                                                 \
+      case SHMEM_CMP_LE:                                                       \
+        return shmemc_ctx_wait_until_any_le##_size(SHMEM_CTX_DEFAULT,          \
+                                                   (int##_size##_t *)ivars,    \
+                                                   nelems, status, cmp_value); \
+        break;                                                                 \
+      case SHMEM_CMP_LT:                                                       \
+        return shmemc_ctx_wait_until_any_lt##_size(SHMEM_CTX_DEFAULT,          \
+                                                   (int##_size##_t *)ivars,    \
+                                                   nelems, status, cmp_value); \
+        break;                                                                 \
+      case SHMEM_CMP_GE:                                                       \
+        return shmemc_ctx_wait_until_any_ge##_size(SHMEM_CTX_DEFAULT,          \
+                                                   (int##_size##_t *)ivars,    \
+                                                   nelems, status, cmp_value); \
+        break;                                                                 \
+      default:                                                                 \
+        shmemu_fatal("unknown operator (code %d) in \"%s\"", cmp, __func__);   \
+        return -1;                                                             \
+        /* NOT REACHED */                                                      \
+        break;                                                                 \
+    });                                                                        \
+  }
 
 SHMEM_TYPE_WAIT_UNTIL_ANY(short, short, 16)
 SHMEM_TYPE_WAIT_UNTIL_ANY(int, int, 32)

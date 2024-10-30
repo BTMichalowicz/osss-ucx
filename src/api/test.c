@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -38,56 +38,43 @@
 #define shmem_size_test pshmem_size_test
 #pragma weak shmem_ptrdiff_test = pshmem_ptrdiff_test
 #define shmem_ptrdiff_test pshmem_ptrdiff_test
-#endif  /* ENABLE_PSHMEM */
+#endif /* ENABLE_PSHMEM */
 
-#define SHMEM_TYPE_TEST(_opname, _type, _size)                          \
-    int                                                                 \
-    shmem_##_opname##_test(_type *ivar, int cmp, _type cmp_value)       \
-    {                                                                   \
-        SHMEMT_MUTEX_NOPROTECT                                          \
-            (                                                           \
-             switch (cmp) {                                             \
-             case SHMEM_CMP_EQ:                                         \
-                 return shmemc_ctx_test_eq##_size(SHMEM_CTX_DEFAULT,    \
-                                                  (int##_size##_t *) ivar, \
-                                                  cmp_value);           \
-                 break;                                                 \
-             case SHMEM_CMP_NE:                                         \
-                 return shmemc_ctx_test_ne##_size(SHMEM_CTX_DEFAULT,    \
-                                                  (int##_size##_t *) ivar, \
-                                                  cmp_value);           \
-                 break;                                                 \
-             case SHMEM_CMP_GT:                                         \
-                 return shmemc_ctx_test_gt##_size(SHMEM_CTX_DEFAULT,    \
-                                                  (int##_size##_t *) ivar, \
-                                                  cmp_value);           \
-                 break;                                                 \
-             case SHMEM_CMP_LE:                                         \
-                 return shmemc_ctx_test_le##_size(SHMEM_CTX_DEFAULT,    \
-                                                  (int##_size##_t *) ivar, \
-                                                  cmp_value);           \
-                 break;                                                 \
-             case SHMEM_CMP_LT:                                         \
-                 return shmemc_ctx_test_lt##_size(SHMEM_CTX_DEFAULT,    \
-                                                  (int##_size##_t *) ivar, \
-                                                  cmp_value);           \
-                 break;                                                 \
-             case SHMEM_CMP_GE:                                         \
-                 return shmemc_ctx_test_ge##_size(SHMEM_CTX_DEFAULT,    \
-                                                  (int##_size##_t *) ivar, \
-                                                  cmp_value);           \
-                 break;                                                 \
-             default:                                                   \
-                 shmemu_fatal(MODULE ": unknown operator (code %d) in \"%s\"", \
-                              cmp,                                      \
-                              __func__                                  \
-                              );                                        \
-                 return -1;                                             \
-                 /* NOT REACHED */                                      \
-                 break;                                                 \
-             }                                                          \
-                                                                        ); \
-    }
+#define SHMEM_TYPE_TEST(_opname, _type, _size)                                 \
+  int shmem_##_opname##_test(_type *ivar, int cmp, _type cmp_value) {          \
+    SHMEMT_MUTEX_NOPROTECT(switch (cmp) {                                      \
+      case SHMEM_CMP_EQ:                                                       \
+        return shmemc_ctx_test_eq##_size(SHMEM_CTX_DEFAULT,                    \
+                                         (int##_size##_t *)ivar, cmp_value);   \
+        break;                                                                 \
+      case SHMEM_CMP_NE:                                                       \
+        return shmemc_ctx_test_ne##_size(SHMEM_CTX_DEFAULT,                    \
+                                         (int##_size##_t *)ivar, cmp_value);   \
+        break;                                                                 \
+      case SHMEM_CMP_GT:                                                       \
+        return shmemc_ctx_test_gt##_size(SHMEM_CTX_DEFAULT,                    \
+                                         (int##_size##_t *)ivar, cmp_value);   \
+        break;                                                                 \
+      case SHMEM_CMP_LE:                                                       \
+        return shmemc_ctx_test_le##_size(SHMEM_CTX_DEFAULT,                    \
+                                         (int##_size##_t *)ivar, cmp_value);   \
+        break;                                                                 \
+      case SHMEM_CMP_LT:                                                       \
+        return shmemc_ctx_test_lt##_size(SHMEM_CTX_DEFAULT,                    \
+                                         (int##_size##_t *)ivar, cmp_value);   \
+        break;                                                                 \
+      case SHMEM_CMP_GE:                                                       \
+        return shmemc_ctx_test_ge##_size(SHMEM_CTX_DEFAULT,                    \
+                                         (int##_size##_t *)ivar, cmp_value);   \
+        break;                                                                 \
+      default:                                                                 \
+        shmemu_fatal(MODULE ": unknown operator (code %d) in \"%s\"", cmp,     \
+                     __func__);                                                \
+        return -1;                                                             \
+        /* NOT REACHED */                                                      \
+        break;                                                                 \
+    });                                                                        \
+  }
 
 SHMEM_TYPE_TEST(short, short, 16)
 SHMEM_TYPE_TEST(int, int, 32)

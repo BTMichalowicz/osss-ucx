@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -23,67 +23,51 @@
  *
  */
 
-static const shmemu_version_t v = { .major = 1, .minor = 4 };
+static const shmemu_version_t v = {.major = 1, .minor = 4};
 
-#define SHMEM_DEPRECATE_VOID_AMO1(_old, _new, _name, _type)             \
-    void                                                                \
-    shmem_##_name##_##_old(_type *target, int pe)                       \
-    {                                                                   \
-        deprecate(__func__, &v);                                        \
-        shmem_##_name##_atomic_##_new(target, pe);                      \
-    }
+#define SHMEM_DEPRECATE_VOID_AMO1(_old, _new, _name, _type)                    \
+  void shmem_##_name##_##_old(_type *target, int pe) {                         \
+    deprecate(__func__, &v);                                                   \
+    shmem_##_name##_atomic_##_new(target, pe);                                 \
+  }
 
-#define SHMEM_DEPRECATE_VOID_AMO2(_old, _new, _name, _type)             \
-    void                                                                \
-    shmem_##_name##_##_old(_type *target, _type value, int pe)          \
-    {                                                                   \
-        deprecate(__func__, &v);                                        \
-        shmem_##_name##_atomic_##_new(target, value, pe);               \
-    }
+#define SHMEM_DEPRECATE_VOID_AMO2(_old, _new, _name, _type)                    \
+  void shmem_##_name##_##_old(_type *target, _type value, int pe) {            \
+    deprecate(__func__, &v);                                                   \
+    shmem_##_name##_atomic_##_new(target, value, pe);                          \
+  }
 
-#define SHMEM_DEPRECATE_VOID_AMO3(_old, _new, _name, _type)             \
-    void                                                                \
-    shmem_##_name##_##_old(_type *target,                               \
-                           _type cond, _type value,                     \
-                           int pe)                                      \
-    {                                                                   \
-        deprecate(__func__, &v);                                        \
-        shmem_##_name##_atomic_##_new(target, cond, value, pe);         \
-    }
+#define SHMEM_DEPRECATE_VOID_AMO3(_old, _new, _name, _type)                    \
+  void shmem_##_name##_##_old(_type *target, _type cond, _type value,          \
+                              int pe) {                                        \
+    deprecate(__func__, &v);                                                   \
+    shmem_##_name##_atomic_##_new(target, cond, value, pe);                    \
+  }
 
-#define SHMEM_DEPRECATE_AMO1(_old, _new, _name, _type)     \
-    _type                                                  \
-    shmem_##_name##_##_old(_type *target, int pe)          \
-    {                                                      \
-        deprecate(__func__, &v);                           \
-        return shmem_##_name##_atomic_##_new(target, pe);  \
-    }
+#define SHMEM_DEPRECATE_AMO1(_old, _new, _name, _type)                         \
+  _type shmem_##_name##_##_old(_type *target, int pe) {                        \
+    deprecate(__func__, &v);                                                   \
+    return shmem_##_name##_atomic_##_new(target, pe);                          \
+  }
 
-#define SHMEM_DEPRECATE_CONST_AMO1(_old, _new, _name, _type)        \
-    _type                                                           \
-    shmem_##_name##_##_old(const _type *target, int pe)             \
-    {                                                               \
-        deprecate(__func__, &v);                                    \
-        return shmem_##_name##_atomic_##_new(target, pe);           \
-    }
+#define SHMEM_DEPRECATE_CONST_AMO1(_old, _new, _name, _type)                   \
+  _type shmem_##_name##_##_old(const _type *target, int pe) {                  \
+    deprecate(__func__, &v);                                                   \
+    return shmem_##_name##_atomic_##_new(target, pe);                          \
+  }
 
-#define SHMEM_DEPRECATE_AMO2(_old, _new, _name, _type)                  \
-    _type                                                               \
-    shmem_##_name##_##_old(_type *target, _type value, int pe)          \
-    {                                                                   \
-        deprecate(__func__, &v);                                        \
-        return shmem_##_name##_atomic_##_new(target, value, pe);        \
-    }
+#define SHMEM_DEPRECATE_AMO2(_old, _new, _name, _type)                         \
+  _type shmem_##_name##_##_old(_type *target, _type value, int pe) {           \
+    deprecate(__func__, &v);                                                   \
+    return shmem_##_name##_atomic_##_new(target, value, pe);                   \
+  }
 
-#define SHMEM_DEPRECATE_AMO3(_old, _new, _name, _type)                  \
-    _type                                                               \
-    shmem_##_name##_##_old(_type *target,                               \
-                           _type cond, _type value,                     \
-                           int pe)                                      \
-    {                                                                   \
-        deprecate(__func__, &v);                                        \
-        return shmem_##_name##_atomic_##_new(target, cond, value, pe);  \
-    }
+#define SHMEM_DEPRECATE_AMO3(_old, _new, _name, _type)                         \
+  _type shmem_##_name##_##_old(_type *target, _type cond, _type value,         \
+                               int pe) {                                       \
+    deprecate(__func__, &v);                                                   \
+    return shmem_##_name##_atomic_##_new(target, cond, value, pe);             \
+  }
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_int_set = pshmem_int_set

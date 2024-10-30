@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmemu.h"
@@ -16,13 +16,11 @@
  * query thread level support
  */
 
-void
-shmem_query_thread(int *provided)
-{
-    SHMEMU_CHECK_INIT();
-    SHMEMU_CHECK_NOT_NULL(provided, 1);
+void shmem_query_thread(int *provided) {
+  SHMEMU_CHECK_INIT();
+  SHMEMU_CHECK_NOT_NULL(provided, 1);
 
-    logger(LOG_INFO, "%s() -> %d", __func__, proc.td.osh_tl);
+  logger(LOG_INFO, "%s() -> %d", __func__, proc.td.osh_tl);
 
-    *provided = proc.td.osh_tl;
+  *provided = proc.td.osh_tl;
 }

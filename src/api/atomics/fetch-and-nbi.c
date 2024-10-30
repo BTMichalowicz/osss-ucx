@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -12,17 +12,24 @@
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_uint_atomic_fetch_and_nbi = pshmem_uint_atomic_fetch_and_nbi
 #define shmem_uint_atomic_fetch_and_nbi pshmem_uint_atomic_fetch_and_nbi
-#pragma weak shmem_ulong_atomic_fetch_and_nbi = pshmem_ulong_atomic_fetch_and_nbi
+#pragma weak shmem_ulong_atomic_fetch_and_nbi =                                \
+    pshmem_ulong_atomic_fetch_and_nbi
 #define shmem_ulong_atomic_fetch_and_nbi pshmem_ulong_atomic_fetch_and_nbi
-#pragma weak shmem_ulonglong_atomic_fetch_and_nbi = pshmem_ulonglong_atomic_fetch_and_nbi
-#define shmem_ulonglong_atomic_fetch_and_nbi pshmem_ulonglong_atomic_fetch_and_nbi
-#pragma weak shmem_int32_atomic_fetch_and_nbi = pshmem_int32_atomic_fetch_and_nbi
+#pragma weak shmem_ulonglong_atomic_fetch_and_nbi =                            \
+    pshmem_ulonglong_atomic_fetch_and_nbi
+#define shmem_ulonglong_atomic_fetch_and_nbi                                   \
+  pshmem_ulonglong_atomic_fetch_and_nbi
+#pragma weak shmem_int32_atomic_fetch_and_nbi =                                \
+    pshmem_int32_atomic_fetch_and_nbi
 #define shmem_int32_atomic_fetch_and_nbi pshmem_int32_atomic_fetch_and_nbi
-#pragma weak shmem_int64_atomic_fetch_and_nbi = pshmem_int64_atomic_fetch_and_nbi
+#pragma weak shmem_int64_atomic_fetch_and_nbi =                                \
+    pshmem_int64_atomic_fetch_and_nbi
 #define shmem_int64_atomic_fetch_and_nbi pshmem_int64_atomic_fetch_and_nbi
-#pragma weak shmem_uint32_atomic_fetch_and_nbi = pshmem_uint32_atomic_fetch_and_nbi
+#pragma weak shmem_uint32_atomic_fetch_and_nbi =                               \
+    pshmem_uint32_atomic_fetch_and_nbi
 #define shmem_uint32_atomic_fetch_and_nbi pshmem_uint32_atomic_fetch_and_nbi
-#pragma weak shmem_uint64_atomic_fetch_and_nbi = pshmem_uint64_atomic_fetch_and_nbi
+#pragma weak shmem_uint64_atomic_fetch_and_nbi =                               \
+    pshmem_uint64_atomic_fetch_and_nbi
 #define shmem_uint64_atomic_fetch_and_nbi pshmem_uint64_atomic_fetch_and_nbi
 #endif /* ENABLE_PSHMEM */
 

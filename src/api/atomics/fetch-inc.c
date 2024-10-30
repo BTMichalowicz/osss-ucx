@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -14,43 +14,47 @@
 #define shmem_ctx_int_atomic_fetch_inc pshmem_ctx_int_atomic_fetch_inc
 #pragma weak shmem_ctx_long_atomic_fetch_inc = pshmem_ctx_long_atomic_fetch_inc
 #define shmem_ctx_long_atomic_fetch_inc pshmem_ctx_long_atomic_fetch_inc
-#pragma weak shmem_ctx_longlong_atomic_fetch_inc = pshmem_ctx_longlong_atomic_fetch_inc
+#pragma weak shmem_ctx_longlong_atomic_fetch_inc =                             \
+    pshmem_ctx_longlong_atomic_fetch_inc
 #define shmem_ctx_longlong_atomic_fetch_inc pshmem_ctx_longlong_atomic_fetch_inc
 #pragma weak shmem_ctx_uint_atomic_fetch_inc = pshmem_ctx_uint_atomic_fetch_inc
 #define shmem_ctx_uint_atomic_fetch_inc pshmem_ctx_uint_atomic_fetch_inc
-#pragma weak shmem_ctx_ulong_atomic_fetch_inc = pshmem_ctx_ulong_atomic_fetch_inc
+#pragma weak shmem_ctx_ulong_atomic_fetch_inc =                                \
+    pshmem_ctx_ulong_atomic_fetch_inc
 #define shmem_ctx_ulong_atomic_fetch_inc pshmem_ctx_ulong_atomic_fetch_inc
-#pragma weak shmem_ctx_ulonglong_atomic_fetch_inc = pshmem_ctx_ulonglong_atomic_fetch_inc
-#define shmem_ctx_ulonglong_atomic_fetch_inc pshmem_ctx_ulonglong_atomic_fetch_inc
-#pragma weak shmem_ctx_int32_atomic_fetch_inc = pshmem_ctx_int32_atomic_fetch_inc
+#pragma weak shmem_ctx_ulonglong_atomic_fetch_inc =                            \
+    pshmem_ctx_ulonglong_atomic_fetch_inc
+#define shmem_ctx_ulonglong_atomic_fetch_inc                                   \
+  pshmem_ctx_ulonglong_atomic_fetch_inc
+#pragma weak shmem_ctx_int32_atomic_fetch_inc =                                \
+    pshmem_ctx_int32_atomic_fetch_inc
 #define shmem_ctx_int32_atomic_fetch_inc pshmem_ctx_int32_atomic_fetch_inc
-#pragma weak shmem_ctx_int64_atomic_fetch_inc = pshmem_ctx_int64_atomic_fetch_inc
+#pragma weak shmem_ctx_int64_atomic_fetch_inc =                                \
+    pshmem_ctx_int64_atomic_fetch_inc
 #define shmem_ctx_int64_atomic_fetch_inc pshmem_ctx_int64_atomic_fetch_inc
-#pragma weak shmem_ctx_uint32_atomic_fetch_inc = pshmem_ctx_uint32_atomic_fetch_inc
+#pragma weak shmem_ctx_uint32_atomic_fetch_inc =                               \
+    pshmem_ctx_uint32_atomic_fetch_inc
 #define shmem_ctx_uint32_atomic_fetch_inc pshmem_ctx_uint32_atomic_fetch_inc
-#pragma weak shmem_ctx_uint64_atomic_fetch_inc = pshmem_ctx_uint64_atomic_fetch_inc
+#pragma weak shmem_ctx_uint64_atomic_fetch_inc =                               \
+    pshmem_ctx_uint64_atomic_fetch_inc
 #define shmem_ctx_uint64_atomic_fetch_inc pshmem_ctx_uint64_atomic_fetch_inc
 #pragma weak shmem_ctx_size_atomic_fetch_inc = pshmem_ctx_size_atomic_fetch_inc
 #define shmem_ctx_size_atomic_fetch_inc pshmem_ctx_size_atomic_fetch_inc
-#pragma weak shmem_ctx_ptrdiff_atomic_fetch_inc = pshmem_ctx_ptrdiff_atomic_fetch_inc
+#pragma weak shmem_ctx_ptrdiff_atomic_fetch_inc =                              \
+    pshmem_ctx_ptrdiff_atomic_fetch_inc
 #define shmem_ctx_ptrdiff_atomic_fetch_inc pshmem_ctx_ptrdiff_atomic_fetch_inc
 #endif /* ENABLE_PSHMEM */
 
-#define SHMEM_CTX_TYPE_FINC(_name, _type)                               \
-    _type                                                               \
-    shmem_ctx_##_name##_atomic_fetch_inc(shmem_ctx_t ctx,               \
-                                         _type *target,                 \
-                                         int pe)                        \
-    {                                                                   \
-        _type one = 1;                                                  \
-        _type v;                                                        \
-                                                                        \
-        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_fadd(ctx,                     \
-                                               target,                  \
-                                               &one, sizeof(one),       \
-                                               pe, &v));                \
-        return v;                                                       \
-    }
+#define SHMEM_CTX_TYPE_FINC(_name, _type)                                      \
+  _type shmem_ctx_##_name##_atomic_fetch_inc(shmem_ctx_t ctx, _type *target,   \
+                                             int pe) {                         \
+    _type one = 1;                                                             \
+    _type v;                                                                   \
+                                                                               \
+    SHMEMT_MUTEX_NOPROTECT(                                                    \
+        shmemc_ctx_fadd(ctx, target, &one, sizeof(one), pe, &v));              \
+    return v;                                                                  \
+  }
 
 SHMEM_CTX_TYPE_FINC(int, int)
 SHMEM_CTX_TYPE_FINC(long, long)

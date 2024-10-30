@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "*.rmd": "markdown",
+        "array": "c",
+        "deque": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "vector": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "ranges": "c",
+        "typeinfo": "c",
+        "utility": "c",
+        "shcoll.h": "c",
+        "cstdint": "c"
+    }
+}

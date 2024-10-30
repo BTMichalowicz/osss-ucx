@@ -7,4 +7,4 @@
 
 int reverse_bits(int number, int nbits);
 
-#endif //OPENSHMEM_COLLECTIVE_ROUTINES_BITHACKS_H
+#endif // OPENSHMEM_COLLECTIVE_ROUTINES_BITHACKS_H

@@ -3,6 +3,8 @@
 #ifndef _SHMEM_API_TEAMS_H
 #define _SHMEM_API_TEAMS_H 1
 
+#include <shmem/defs.h>
+
 /*
  * an opaque OpenSHMEM team
  */
@@ -42,5 +44,8 @@ int shmem_team_split_2d(shmem_team_t parent_team, int xrange,
                         long yaxis_mask,
                         shmem_team_t *yaxis_team);
 void shmem_team_destroy(shmem_team_t team);
+int shmem_team_create_ctx(shmem_team_t team, long options, shmem_ctx_t *ctxp);
+int shmem_ctx_get_team(shmem_ctx_t ctx, shmem_team_t *team);
+int shmem_team_sync(shmem_team_t team);
 
 #endif  /* ! _SHMEM_API_TEAMS_H */

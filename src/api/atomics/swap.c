@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -40,22 +40,18 @@
 #define shmem_ctx_ptrdiff_atomic_swap pshmem_ctx_ptrdiff_atomic_swap
 #endif /* ENABLE_PSHMEM */
 
-#define SHMEM_CTX_TYPE_SWAP(_name, _type)                               \
-    _type                                                               \
-    shmem_ctx_##_name##_atomic_swap(shmem_ctx_t ctx,                    \
-                                    _type *target, _type value, int pe) \
-    {                                                                   \
-        _type v;                                                        \
-                                                                        \
-        SHMEMU_CHECK_INIT();                                            \
-        SHMEMU_CHECK_SYMMETRIC(target, 2);                              \
-                                                                        \
-        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_swap(ctx,                     \
-                                               target,                  \
-                                               &value, sizeof(value),   \
-                                               pe, &v));                \
-        return v;                                                       \
-    }
+#define SHMEM_CTX_TYPE_SWAP(_name, _type)                                      \
+  _type shmem_ctx_##_name##_atomic_swap(shmem_ctx_t ctx, _type *target,        \
+                                        _type value, int pe) {                 \
+    _type v;                                                                   \
+                                                                               \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_SYMMETRIC(target, 2);                                         \
+                                                                               \
+    SHMEMT_MUTEX_NOPROTECT(                                                    \
+        shmemc_ctx_swap(ctx, target, &value, sizeof(value), pe, &v));          \
+    return v;                                                                  \
+  }
 
 SHMEM_CTX_TYPE_SWAP(int, int)
 SHMEM_CTX_TYPE_SWAP(long, long)

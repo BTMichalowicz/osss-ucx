@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmemc.h"
@@ -14,30 +14,26 @@
 #define shmem_n_pes pshmem_n_pes
 #endif /* ENABLE_PSHMEM */
 
-int
-shmem_my_pe(void)
-{
-    int my;
+int shmem_my_pe(void) {
+  int my;
 
-    SHMEMU_CHECK_INIT();
+  SHMEMU_CHECK_INIT();
 
-    my = shmemc_my_pe();
+  my = shmemc_my_pe();
 
-    logger(LOG_RANKS, "%s() -> %d", __func__, my);
+  logger(LOG_RANKS, "%s() -> %d", __func__, my);
 
-    return my;
+  return my;
 }
 
-int
-shmem_n_pes(void)
-{
-    int n;
+int shmem_n_pes(void) {
+  int n;
 
-    SHMEMU_CHECK_INIT();
+  SHMEMU_CHECK_INIT();
 
-    n = shmemc_n_pes();
+  n = shmemc_n_pes();
 
-    logger(LOG_RANKS, "%s() -> %d", __func__, n);
+  logger(LOG_RANKS, "%s() -> %d", __func__, n);
 
-    return n;
+  return n;
 }

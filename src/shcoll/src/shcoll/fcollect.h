@@ -1,14 +1,10 @@
 #ifndef _SHCOLL_FCOLLECT_H
 #define _SHCOLL_FCOLLECT_H 1
 
-#define SHCOLL_FCOLLECT_DECLARATION(_name, _size)               \
-    void shcoll_fcollect##_size##_##_name(void *dest,           \
-                                          const void *source,   \
-                                          size_t nelems,        \
-                                          int PE_start,         \
-                                          int logPE_stride,     \
-                                          int PE_size,          \
-                                          long *pSync);
+#define SHCOLL_FCOLLECT_DECLARATION(_name, _size)                              \
+  void shcoll_fcollect##_size##_##_name(                                       \
+      void *dest, const void *source, size_t nelems, int PE_start,             \
+      int logPE_stride, int PE_size, long *pSync);
 
 SHCOLL_FCOLLECT_DECLARATION(linear, 32)
 SHCOLL_FCOLLECT_DECLARATION(linear, 64)

@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmemu.h"
@@ -17,12 +17,10 @@
 #define shmem_ctx_quiet pshmem_ctx_quiet
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_ctx_quiet(shmem_ctx_t ctx)
-{
-    logger(LOG_QUIET, "%s(ctx=%lu)", __func__, shmemc_context_id(ctx));
+void shmem_ctx_quiet(shmem_ctx_t ctx) {
+  logger(LOG_QUIET, "%s(ctx=%lu)", __func__, shmemc_context_id(ctx));
 
-    SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_quiet(ctx));
+  SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_quiet(ctx));
 }
 
 #ifdef ENABLE_PSHMEM
@@ -30,10 +28,8 @@ shmem_ctx_quiet(shmem_ctx_t ctx)
 #define shmem_quiet pshmem_quiet
 #endif /* ENABLE_PSHMEM */
 
-void
-shmem_quiet(void)
-{
-    logger(LOG_QUIET, "%s()", __func__);
+void shmem_quiet(void) {
+  logger(LOG_QUIET, "%s()", __func__);
 
-    SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_quiet(SHMEM_CTX_DEFAULT));
+  SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_quiet(SHMEM_CTX_DEFAULT));
 }

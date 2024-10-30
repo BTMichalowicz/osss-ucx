@@ -6,6 +6,10 @@
 #include <shmem/defs.h>
 #include <shmem/depr.h>
 
+//////////////////////////
+#include <shmem/teams.h>
+//////////////////////////
+
 #include <sys/types.h>
 #include <stddef.h>               /* ptrdiff_t */
 #include <stdint.h>               /* sized int types */
@@ -3279,18 +3283,47 @@ extern "C"
     API_COLLECT_NAME_SIZE(collect, 32)
     API_COLLECT_NAME_SIZE(collect, 64)
 
+
+//////////////////////////////////////////////////////////////////////////////////
     /**
      * all-to-all collectives
      */
+#define API_ALLTOALL_TYPE(_type, _typename) \
+    int shmem_##_typename##_alltoall(shmem_team_t team, _type *dest, const _type *source, size_t nelems);
 
-#define API_ALLTOALL_SIZE(_size)                                        \
-    /* see \ref shmem_alltoall64() */                                   \
-    void shmem_alltoall##_size(void *target, const void *source, size_t nelems, \
-                               int PE_start, int logPE_stride, int PE_size, \
-                               long *pSync);
+    API_ALLTOALL_TYPE(float, float)
+    API_ALLTOALL_TYPE(double, double)
+    API_ALLTOALL_TYPE(long double, longdouble)
+    API_ALLTOALL_TYPE(char, char)
+    API_ALLTOALL_TYPE(signed char, schar)
+    API_ALLTOALL_TYPE(short, short)
+    API_ALLTOALL_TYPE(int, int)
+    API_ALLTOALL_TYPE(long, long)
+    API_ALLTOALL_TYPE(long long, longlong)
+    API_ALLTOALL_TYPE(unsigned char, uchar)
+    API_ALLTOALL_TYPE(unsigned short, ushort)
+    API_ALLTOALL_TYPE(unsigned int, uint)
+    API_ALLTOALL_TYPE(unsigned long, ulong)
+    API_ALLTOALL_TYPE(unsigned long long, ulonglong)
+    API_ALLTOALL_TYPE(int8_t, int8)
+    API_ALLTOALL_TYPE(int16_t, int16)
+    API_ALLTOALL_TYPE(int32_t, int32)
+    API_ALLTOALL_TYPE(int64_t, int64)
+    API_ALLTOALL_TYPE(uint8_t, uint8)
+    API_ALLTOALL_TYPE(uint16_t, uint16)
+    API_ALLTOALL_TYPE(uint32_t, uint32)
+    API_ALLTOALL_TYPE(uint64_t, uint64)
+    API_ALLTOALL_TYPE(size_t, size)
+    API_ALLTOALL_TYPE(ptrdiff_t, ptrdiff)
 
-    API_ALLTOALL_SIZE(32)
-    API_ALLTOALL_SIZE(64)
+// #define API_ALLTOALL_SIZE(_size)                                        \
+//     /* see \ref shmem_alltoall64() */                                   \
+//     void shmem_alltoall##_size(void *target, const void *source, size_t nelems, \
+//                                int PE_start, int logPE_stride, int PE_size, \
+//                                long *pSync);
+
+//     API_ALLTOALL_SIZE(32)
+//     API_ALLTOALL_SIZE(64)
 
 #define API_ALLTOALLS_SIZE(_size)                                       \
     /* see \ref shmem_alltoalls64() */                                  \
@@ -3301,6 +3334,8 @@ extern "C"
 
     API_ALLTOALLS_SIZE(32)
     API_ALLTOALLS_SIZE(64)
+
+//////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Contexts-based API
@@ -3369,6 +3404,8 @@ extern "C"
      *
      */
 #include <shmem/teams.h>
+
+
 
     /*
      * C11 Generics

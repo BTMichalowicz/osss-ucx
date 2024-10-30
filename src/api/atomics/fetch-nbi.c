@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -14,29 +14,40 @@
 #define shmem_ctx_int_atomic_fetch_nbi pshmem_ctx_int_atomic_fetch_nbi
 #pragma weak shmem_ctx_long_atomic_fetch_nbi = pshmem_ctx_long_atomic_fetch_nbi
 #define shmem_ctx_long_atomic_fetch_nbi pshmem_ctx_long_atomic_fetch_nbi
-#pragma weak shmem_ctx_longlong_atomic_fetch_nbi = pshmem_ctx_longlong_atomic_fetch_nbi
+#pragma weak shmem_ctx_longlong_atomic_fetch_nbi =                             \
+    pshmem_ctx_longlong_atomic_fetch_nbi
 #define shmem_ctx_longlong_atomic_fetch_nbi pshmem_ctx_longlong_atomic_fetch_nbi
-#pragma weak shmem_ctx_float_atomic_fetch_nbi = pshmem_ctx_float_atomic_fetch_nbi
+#pragma weak shmem_ctx_float_atomic_fetch_nbi =                                \
+    pshmem_ctx_float_atomic_fetch_nbi
 #define shmem_ctx_float_atomic_fetch_nbi pshmem_ctx_float_atomic_fetch_nbi
-#pragma weak shmem_ctx_double_atomic_fetch_nbi = pshmem_ctx_double_atomic_fetch_nbi
+#pragma weak shmem_ctx_double_atomic_fetch_nbi =                               \
+    pshmem_ctx_double_atomic_fetch_nbi
 #define shmem_ctx_double_atomic_fetch_nbi pshmem_ctx_double_atomic_fetch_nbi
 #pragma weak shmem_ctx_uint_atomic_fetch_nbi = pshmem_ctx_uint_atomic_fetch_nbi
 #define shmem_ctx_uint_atomic_fetch_nbi pshmem_ctx_uint_atomic_fetch_nbi
-#pragma weak shmem_ctx_ulong_atomic_fetch_nbi = pshmem_ctx_ulong_atomic_fetch_nbi
+#pragma weak shmem_ctx_ulong_atomic_fetch_nbi =                                \
+    pshmem_ctx_ulong_atomic_fetch_nbi
 #define shmem_ctx_ulong_atomic_fetch_nbi pshmem_ctx_ulong_atomic_fetch_nbi
-#pragma weak shmem_ctx_ulonglong_atomic_fetch_nbi = pshmem_ctx_ulonglong_atomic_fetch_nbi
-#define shmem_ctx_ulonglong_atomic_fetch_nbi pshmem_ctx_ulonglong_atomic_fetch_nbi
-#pragma weak shmem_ctx_int32_atomic_fetch_nbi = pshmem_ctx_int32_atomic_fetch_nbi
+#pragma weak shmem_ctx_ulonglong_atomic_fetch_nbi =                            \
+    pshmem_ctx_ulonglong_atomic_fetch_nbi
+#define shmem_ctx_ulonglong_atomic_fetch_nbi                                   \
+  pshmem_ctx_ulonglong_atomic_fetch_nbi
+#pragma weak shmem_ctx_int32_atomic_fetch_nbi =                                \
+    pshmem_ctx_int32_atomic_fetch_nbi
 #define shmem_ctx_int32_atomic_fetch_nbi pshmem_ctx_int32_atomic_fetch_nbi
-#pragma weak shmem_ctx_int64_atomic_fetch_nbi = pshmem_ctx_int64_atomic_fetch_nbi
+#pragma weak shmem_ctx_int64_atomic_fetch_nbi =                                \
+    pshmem_ctx_int64_atomic_fetch_nbi
 #define shmem_ctx_int64_atomic_fetch_nbi pshmem_ctx_int64_atomic_fetch_nbi
-#pragma weak shmem_ctx_uint32_atomic_fetch_nbi = pshmem_ctx_uint32_atomic_fetch_nbi
+#pragma weak shmem_ctx_uint32_atomic_fetch_nbi =                               \
+    pshmem_ctx_uint32_atomic_fetch_nbi
 #define shmem_ctx_uint32_atomic_fetch_nbi pshmem_ctx_uint32_atomic_fetch_nbi
-#pragma weak shmem_ctx_uint64_atomic_fetch_nbi = pshmem_ctx_uint64_atomic_fetch_nbi
+#pragma weak shmem_ctx_uint64_atomic_fetch_nbi =                               \
+    pshmem_ctx_uint64_atomic_fetch_nbi
 #define shmem_ctx_uint64_atomic_fetch_nbi pshmem_ctx_uint64_atomic_fetch_nbi
 #pragma weak shmem_ctx_size_atomic_fetch_nbi = pshmem_ctx_size_atomic_fetch_nbi
 #define shmem_ctx_size_atomic_fetch_nbi pshmem_ctx_size_atomic_fetch_nbi
-#pragma weak shmem_ctx_ptrdiff_atomic_fetch_nbi = pshmem_ctx_ptrdiff_atomic_fetch_nbi
+#pragma weak shmem_ctx_ptrdiff_atomic_fetch_nbi =                              \
+    pshmem_ctx_ptrdiff_atomic_fetch_nbi
 #define shmem_ctx_ptrdiff_atomic_fetch_nbi pshmem_ctx_ptrdiff_atomic_fetch_nbi
 #endif /* ENABLE_PSHMEM */
 
@@ -44,18 +55,12 @@
  * NB currently using blocking as first hack
  */
 
-#define SHMEM_CTX_TYPE_FETCH_NBI(_name, _type)                          \
-    void                                                                \
-    shmem_ctx_##_name##_atomic_fetch_nbi(shmem_ctx_t ctx,               \
-                                         _type *fetch,                  \
-                                         const _type *target, int pe)   \
-    {                                                                   \
-        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_fetch(ctx,                    \
-                                                (_type *) target,       \
-                                                sizeof(*target),        \
-                                                pe,                     \
-                                                fetch));                \
-    }
+#define SHMEM_CTX_TYPE_FETCH_NBI(_name, _type)                                 \
+  void shmem_ctx_##_name##_atomic_fetch_nbi(shmem_ctx_t ctx, _type *fetch,     \
+                                            const _type *target, int pe) {     \
+    SHMEMT_MUTEX_NOPROTECT(                                                    \
+        shmemc_ctx_fetch(ctx, (_type *)target, sizeof(*target), pe, fetch));   \
+  }
 
 SHMEM_CTX_TYPE_FETCH_NBI(float, float)
 SHMEM_CTX_TYPE_FETCH_NBI(double, double)
