@@ -18,7 +18,8 @@ typedef struct unsized_op {
 
 // FIXME: this only works for alltoall. Need this to be more generic and 
 //        apply to all collectives.
-typedef int (*typed_coll_fn_t)(shmem_team_t, void *, const void *, size_t);
+// typedef int (*typed_coll_fn_t)(shmem_team_t, void *, const void *, size_t);
+typedef int (*typed_coll_fn_t)();
 typedef struct typed_op {
   const char op[COLL_NAME_MAX];
   typed_coll_fn_t f;

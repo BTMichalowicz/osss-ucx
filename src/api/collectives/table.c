@@ -21,8 +21,11 @@
   { "", NULL }
 
 //////////////////////////////////////////////////////////////
-#define TYPED_REG( _op, _algo, _typename )                                       \
-  { #_algo, (typed_coll_fn_t)shcoll_##_typename##_##_op##_##_algo }
+// #define TYPED_REG(_op, _algo, _typename)                                       \
+//   { #_algo, (typed_coll_fn_t)shcoll_##_typename##_##_op##_##_algo }
+
+#define TYPED_REG(_op, _algo, _typename)                                       \
+  { #_algo, shcoll_##_typename##_##_op##_##_algo }
 #define TYPED_LAST                                                             \
   { "", NULL }
 
@@ -120,7 +123,7 @@ static typed_op_t alltoall_tab[] = {
     TYPED_REG(alltoall, shift_exchange_signal, uint64),
     TYPED_REG(alltoall, shift_exchange_signal, size),
     TYPED_REG(alltoall, shift_exchange_signal, ptrdiff),
-    
+
     TYPED_REG(alltoall, xor_pairwise_exchange_barrier, float),
     TYPED_REG(alltoall, xor_pairwise_exchange_barrier, double),
     TYPED_REG(alltoall, xor_pairwise_exchange_barrier, longdouble),
@@ -223,8 +226,7 @@ static typed_op_t alltoall_tab[] = {
 
     TYPED_LAST};
 
-static sized_op_t
-alltoalls_tab[] = {
+static sized_op_t alltoalls_tab[] = {
     SIZED_REG(alltoalls, shift_exchange_barrier),
     SIZED_REG(alltoalls, shift_exchange_counter),
     SIZED_REG(alltoalls, shift_exchange_barrier_nbi),
@@ -237,8 +239,7 @@ alltoalls_tab[] = {
     SIZED_REG(alltoalls, color_pairwise_exchange_counter),
     SIZED_REG(alltoalls, color_pairwise_exchange_barrier_nbi),
     SIZED_REG(alltoalls, color_pairwise_exchange_counter_nbi),
-    SIZED_LAST
-};
+    SIZED_LAST};
 
 //////////////////////////////////////////////////////////////
 static sized_op_t collect_tab[] = {SIZED_REG(collect, linear),
@@ -321,7 +322,8 @@ static int register_unsized(unsized_op_t *tabp, const char *op, coll_fn_t *fn) {
   return -1;
 }
 
-static int register_typed(typed_op_t *tabp, const char *op, typed_coll_fn_t *fn) {
+static int register_typed(typed_op_t *tabp, const char *op,
+                          typed_coll_fn_t *fn) {
   typed_op_t *p;
 
   for (p = tabp; p->f != NULL; ++p) {
@@ -354,9 +356,9 @@ coll_ops_t colls;
     return register_unsized(_coll##_tab, op, &colls._coll.f);                  \
   }
 
-#define REGISTER_TYPED(_coll) \
-  int register_##_coll(const char *op) { \
-    return register_typed(_coll##_tab, op, &colls._coll.f); \
+#define REGISTER_TYPED(_coll)                                                  \
+  int register_##_coll(const char *op) {                                       \
+    return register_typed(_coll##_tab, op, &colls._coll.f);                    \
   }
 
 REGISTER_TYPED(alltoall)

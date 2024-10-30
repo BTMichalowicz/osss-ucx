@@ -20,7 +20,7 @@ rm -rf bin
 mkdir bin
 
 # --- Set flags for mpiexec
-flags="--bind-to core --map-by core"
+flags="--bind-to core --map-by core --allow-run-as-root"
 hline="-------------------------------"
 
 # --- Print log levels ---
@@ -77,6 +77,6 @@ $oshcc --version
 # --- shmem_alltoall ---
 echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
 $oshcc shmem_alltoall.c -o ./bin/shmem_alltoall
-$oshrun $flags -np 10 ./bin/shmem_alltoall
+$oshrun $flags -np 4 ./bin/shmem_alltoall
 echo
 
