@@ -48,7 +48,7 @@ void test_alltoalls() {
         shmem_barrier_all();
 
         // Perform all-to-all communication
-        shmem_int_alltoalls(dest, source, NELEMS, 1, 1, 0, 0, npes, NULL, NULL);
+        shmem_int_alltoalls(SHMEM_TEAM_WORLD, dest, source, 1, 1, NELEMS);
 
         // Synchronize after all-to-all
         shmem_barrier_all();
@@ -86,4 +86,9 @@ void test_alltoalls() {
     // Free allocated memory
     shmem_free(source);
     shmem_free(dest);
+}
+
+int main() {
+    test_alltoalls();
+    return 0;
 }
