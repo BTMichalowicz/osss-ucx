@@ -1,13 +1,42 @@
+/**
+ * @file alltoalls.h
+ * @brief Header file for strided all-to-all collective operations
+ *
+ * This header declares the interfaces for strided all-to-all collective
+ * operations using different algorithms and synchronization methods:
+ * - Shift exchange
+ * - XOR pairwise exchange
+ * - Color pairwise exchange
+ *
+ * Each algorithm has variants using different synchronization:
+ * - Barrier-based
+ * - Signal-based
+ * - Counter-based
+ */
+
 #ifndef _SHCOLL_ALLTOALLS_H
 #define _SHCOLL_ALLTOALLS_H 1
 
 #include <shmem/teams.h>
 
+/**
+ * @brief Macro to declare type-specific strided alltoall implementation
+ *
+ * @param _algo Algorithm name
+ * @param _type Data type
+ * @param _typename Type name string
+ */
 #define SHCOLL_ALLTOALLS_DECLARATION(_algo, _type, _typename)                  \
   int shcoll_##_typename##_alltoalls_##_algo(                                  \
       shmem_team_t team, _type *dest, const _type *source, ptrdiff_t dst,      \
       ptrdiff_t sst, size_t nelems);
 
+/**
+ * @brief Macro to declare strided alltoall implementations for all supported
+ * types
+ *
+ * @param _algo Algorithm name to generate declarations for
+ */
 #define DECLARE_ALLTOALLS_TYPES(_algo)                                         \
   SHCOLL_ALLTOALLS_DECLARATION(_algo, float, float)                            \
   SHCOLL_ALLTOALLS_DECLARATION(_algo, double, double)                          \
@@ -34,6 +63,7 @@
   SHCOLL_ALLTOALLS_DECLARATION(_algo, size_t, size)                            \
   SHCOLL_ALLTOALLS_DECLARATION(_algo, ptrdiff_t, ptrdiff)
 
+/* Declare all algorithm variants */
 DECLARE_ALLTOALLS_TYPES(shift_exchange_barrier)
 DECLARE_ALLTOALLS_TYPES(shift_exchange_counter)
 DECLARE_ALLTOALLS_TYPES(shift_exchange_signal)

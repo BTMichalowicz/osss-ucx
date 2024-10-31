@@ -1,3 +1,19 @@
+/**
+ * @file alltoalls.c
+ * @brief Implementation of strided all-to-all collective operations
+ *
+ * This file contains implementations of strided all-to-all collective
+ * operations using different algorithms and synchronization methods:
+ * - Shift exchange
+ * - XOR pairwise exchange
+ * - Color pairwise exchange
+ *
+ * Each algorithm has variants using different synchronization:
+ * - Barrier-based
+ * - Signal-based
+ * - Counter-based
+ */
+
 /* For license: see LICENSE file at top-level */
 
 #include "shcoll.h"
@@ -7,6 +23,13 @@
 #include <limits.h>
 #include <assert.h>
 
+/**
+ * @brief Helper macro to define barrier-based alltoalls implementations
+ *
+ * @param _algo Algorithm name
+ * @param _peer Function to determine peer PE
+ * @param _cond Additional condition for participation
+ */
 #define ALLTOALLS_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)               \
   inline static int alltoalls_helper_##_algo##_barrier(                        \
       void *dest, const void *source, ptrdiff_t dst_stride,                    \
@@ -38,6 +61,13 @@
   }
 
 // FIXME: test to make sure this works
+/**
+ * @brief Helper macro to define signal-based alltoalls implementations
+ *
+ * @param _algo Algorithm name
+ * @param _peer Function to determine peer PE
+ * @param _cond Additional condition for participation
+ */
 #define ALLTOALLS_HELPER_SIGNAL_DEFINITION(_algo, _peer, _cond)                \
   inline static int alltoalls_helper_##_algo##_signal(                         \
       void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,            \
@@ -84,6 +114,13 @@
   }
 
 // FIXME: test to make sure this works
+/**
+ * @brief Helper macro to define counter-based alltoalls implementations
+ *
+ * @param _algo Algorithm name
+ * @param _peer Function to determine peer PE
+ * @param _cond Additional condition for participation
+ */
 #define ALLTOALLS_HELPER_COUNTER_DEFINITION(_algo, _peer, _cond)               \
   inline static int alltoalls_helper_##_algo##_counter(                        \
       void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,            \
@@ -126,8 +163,11 @@
     return 0;                                                                  \
   }
 
+/** @brief Calculate peer PE using shift pattern */
 #define SHIFT_PEER(I, ME, NPES) (((ME) + (I)) % (NPES))
+/** @brief Calculate peer PE using XOR pattern */
 #define XOR_PEER(I, ME, NPES) ((ME) ^ (I))
+/** @brief Calculate peer PE using color pattern */
 #define COLOR_PEER(I, ME, NPES) ((((ME) / 2) * 2 + 1 - ((ME) % 2)) ^ (I))
 #define XOR_COND 1
 #define COLOR_COND ((me_as % 2) == 0 || (me_as + 1) < PE_size)
@@ -146,6 +186,13 @@ ALLTOALLS_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER, COLOR_CO
 ALLTOALLS_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER, COLOR_COND)
 // clang-format on
 
+/**
+ * @brief Define type-specific alltoalls implementation
+ *
+ * @param _algo Algorithm name
+ * @param _type Data type
+ * @param _typename Type name string
+ */
 #define SHCOLL_ALLTOALLS_DEFINITION(_algo, _type, _typename)                   \
   int shcoll_##_typename##_alltoalls_##_algo(                                  \
       shmem_team_t team, _type *dest, const _type *source, ptrdiff_t dst,      \
@@ -176,6 +223,11 @@ ALLTOALLS_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER, COLOR_C
 //                                    PE_start, logPE_stride, PE_size);           \
 //   }
 
+/**
+ * @brief Define alltoalls implementations for all supported types
+ *
+ * @param _algo Algorithm name to generate implementations for
+ */
 #define DEFINE_SHCOLL_ALLTOALLS_TYPES(_algo)                                   \
   SHCOLL_ALLTOALLS_DEFINITION(_algo, float, float)                             \
   SHCOLL_ALLTOALLS_DEFINITION(_algo, double, double)                           \

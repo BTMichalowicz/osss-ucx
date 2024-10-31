@@ -1,3 +1,19 @@
+/**
+ * @file alltoall.c
+ * @brief Implementation of all-to-all collective operations
+ *
+ * This file contains implementations of all-to-all collective operations using
+ * different algorithms and synchronization methods:
+ * - Shift exchange
+ * - XOR pairwise exchange
+ * - Color pairwise exchange
+ *
+ * Each algorithm has variants using different synchronization:
+ * - Barrier-based
+ * - Signal-based
+ * - Counter-based
+ */
+
 /*
  * For license: see LICENSE file at top-level
  */
@@ -9,6 +25,14 @@
 #include <limits.h>
 #include <assert.h>
 
+/**
+ * @brief Calculate edge color for color pairwise exchange algorithm
+ *
+ * @param i Current iteration index
+ * @param me Current PE index
+ * @param npes Total number of PEs
+ * @return Edge color value
+ */
 inline static int edge_color(int i, int me, int npes) {
   int chr_idx;
   int v;
@@ -29,12 +53,24 @@ inline static int edge_color(int i, int me, int npes) {
   }
 }
 
+/** @brief Number of rounds between synchronizations */
 static int alltoall_rounds_sync = INT32_MAX;
 
+/**
+ * @brief Set number of rounds between synchronizations for alltoalls
+ * @param rounds_sync Number of rounds between synchronizations
+ */
 void shcoll_set_alltoalls_round_sync(int rounds_sync) {
   alltoall_rounds_sync = rounds_sync;
 }
 
+/**
+ * @brief Helper macro to define barrier-based alltoall implementations
+ *
+ * @param _algo Algorithm name
+ * @param _peer Function to determine peer PE
+ * @param _cond Additional condition for participation
+ */
 #define ALLTOALL_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)                \
   inline static int alltoall_helper_##_algo##_barrier(                         \
       void *dest, const void *source, size_t nelems, int PE_start,             \
@@ -91,6 +127,13 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
   }
 
 // FIXME: test to make sure this works
+/**
+ * @brief Helper macro to define counter-based alltoall implementations
+ *
+ * @param _algo Algorithm name
+ * @param _peer Function to determine peer PE
+ * @param _cond Additional condition for participation
+ */
 #define ALLTOALL_HELPER_COUNTER_DEFINITION(_algo, _peer, _cond)                \
   inline static int alltoall_helper_##_algo##_counter(                         \
       void *dest, const void *source, size_t nelems, int PE_start,             \
@@ -143,6 +186,13 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
   }
 
 // FIXME: test to make sure this works
+/**
+ * @brief Helper macro to define signal-based alltoall implementations
+ *
+ * @param _algo Algorithm name
+ * @param _peer Function to determine peer PE
+ * @param _cond Additional condition for participation
+ */
 #define ALLTOALL_HELPER_SIGNAL_DEFINITION(_algo, _peer, _cond)                 \
   inline static int alltoall_helper_##_algo##_signal(                          \
       void *dest, const void *source, size_t nelems, int PE_start,             \
@@ -194,12 +244,14 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
 
 // @formatter:off
 
+/** @brief Calculate peer PE using shift pattern */
 #define SHIFT_PEER(I, ME, NPES) (((ME) + (I)) % (NPES))
 ALLTOALL_HELPER_BARRIER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
 ALLTOALL_HELPER_COUNTER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
 ALLTOALL_HELPER_SIGNAL_DEFINITION(shift_exchange, SHIFT_PEER,
                                   PE_size - 1 <= SHCOLL_ALLTOALL_SYNC_SIZE)
 
+/** @brief Calculate peer PE using XOR pattern */
 #define XOR_PEER(I, ME, NPES) ((I) ^ (ME))
 #define XOR_COND (((PE_size - 1) & PE_size) == 0)
 
@@ -209,6 +261,7 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(xor_pairwise_exchange, XOR_PEER,
                                   XOR_COND &&PE_size - 1 <=
                                       SHCOLL_ALLTOALL_SYNC_SIZE)
 
+/** @brief Calculate peer PE using color pattern */
 #define COLOR_PEER(I, ME, NPES) edge_color(I, ME, NPES)
 #define COLOR_COND (PE_size % 2 == 0)
 
@@ -222,6 +275,13 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
 
 // @formatter:on
 
+/**
+ * @brief Define type-specific alltoall implementation
+ *
+ * @param _algo Algorithm name
+ * @param _type Data type
+ * @param _typename Type name string
+ */
 #define SHCOLL_ALLTOALL_DEFINITION(_algo, _type, _typename)                    \
   int shcoll_##_typename##_alltoall_##_algo(                                   \
       shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
@@ -238,6 +298,11 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
 
 // @formatter:off
 
+/**
+ * @brief Define alltoall implementations for all supported types
+ *
+ * @param _algo Algorithm name to generate implementations for
+ */
 #define DEFINE_SHCOLL_ALLTOALL_TYPES(_algo)                                    \
   SHCOLL_ALLTOALL_DEFINITION(_algo, float, float)                              \
   SHCOLL_ALLTOALL_DEFINITION(_algo, double, double)                            \

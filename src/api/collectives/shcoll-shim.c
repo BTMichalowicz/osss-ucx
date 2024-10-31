@@ -1,9 +1,25 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file shcoll-shim.c
+ * @brief Implementation of OpenSHMEM collective operations
+ *
+ * This file contains the implementation of OpenSHMEM collective operations
+ * including:
+ * - Initialization and finalization of collectives
+ * - All-to-all operations (alltoall, alltoalls)
+ * - Collection operations (collect, fcollect)
+ * - Barrier and synchronization operations
+ * - Broadcast operations
+ * - Reduction operations
+ */
 
 #include "thispe.h"
 #include "shmemu.h"
 #include "collectives/table.h"
 
+/**
+ * @brief Helper macro to register collective operations
+ * @param _cname Name of the collective operation to register
+ */
 #define TRY(_cname)                                                            \
   {                                                                            \
     const int s = register_##_cname(proc.env.coll._cname);                     \
@@ -15,6 +31,12 @@
     }                                                                          \
   }
 
+/**
+ * @brief Initialize all collective operations
+ *
+ * Registers implementations for all collective operations including:
+ * alltoall, alltoalls, collect, fcollect, barrier, sync, and broadcast
+ */
 void collectives_init(void) {
   TRY(alltoall);
   TRY(alltoalls);
@@ -29,11 +51,16 @@ void collectives_init(void) {
   /* TODO: reductions */
 }
 
+/**
+ * @brief Cleanup and finalize collective operations
+ */
 void collectives_finalize(void) { return; }
 
 /**
- * shmem_alltoall
+ * @defgroup alltoall All-to-all Operations
+ * @{
  */
+
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_int_alltoall = pshmem_int_alltoall
 #define shmem_int_alltoall pshmem_int_alltoall
@@ -67,6 +94,11 @@ void collectives_finalize(void) { return; }
 #define shmem_ptrdiff_alltoall pshmem_ptrdiff_alltoall
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to generate typed all-to-all collective operations
+ * @param _type The C data type
+ * @param _typename The type name string
+ */
 #define SHMEM_TYPENAME_ALLTOALL(_type, _typename)                              \
   int shmem_##_typename##_alltoall(shmem_team_t team, _type *dest,             \
                                    const _type *source, size_t nelems) {       \
@@ -100,9 +132,13 @@ SHMEM_TYPENAME_ALLTOALL(uint64_t, uint64)
 SHMEM_TYPENAME_ALLTOALL(size_t, size)
 SHMEM_TYPENAME_ALLTOALL(ptrdiff_t, ptrdiff)
 
+/** @} */
+
 /**
- * shmem_alltoalls
+ * @defgroup alltoalls Strided All-to-all Operations
+ * @{
  */
+
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_int_alltoalls = pshmem_int_alltoalls
 #define shmem_int_alltoalls pshmem_int_alltoalls
@@ -136,6 +172,11 @@ SHMEM_TYPENAME_ALLTOALL(ptrdiff_t, ptrdiff)
 #define shmem_ptrdiff_alltoalls pshmem_ptrdiff_alltoalls
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to generate typed strided all-to-all collective operations
+ * @param _type The C data type
+ * @param _typename The type name string
+ */
 #define SHMEM_TYPENAME_ALLTOALLS(_type, _typename)                             \
   int shmem_##_typename##_alltoalls(shmem_team_t team, _type *dest,            \
                                     const _type *source, ptrdiff_t dst,        \
@@ -170,10 +211,13 @@ SHMEM_TYPENAME_ALLTOALLS(uint64_t, uint64)
 SHMEM_TYPENAME_ALLTOALLS(size_t, size)
 SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
 
-//////////////////////////////////////////////////////////////////////
+/** @} */
+
 /**
- * shmem_collect
+ * @defgroup collect Collection Operations
+ * @{
  */
+
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_collect32 = pshmem_collect32
 #define shmem_collect32 pshmem_collect32
@@ -181,6 +225,17 @@ SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
 #define shmem_collect64 pshmem_collect64
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Collect 32-bit data from all PEs in a set
+ *
+ * @param target Address of symmetric data object to receive collected data
+ * @param source Address of symmetric data object containing data to collect
+ * @param nelems Number of elements in source array
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 void shmem_collect32(void *target, const void *source, size_t nelems,
                      int PE_start, int logPE_stride, int PE_size, long *pSync) {
   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
@@ -190,6 +245,17 @@ void shmem_collect32(void *target, const void *source, size_t nelems,
                     pSync);
 }
 
+/**
+ * @brief Collect 64-bit data from all PEs in a set
+ *
+ * @param target Address of symmetric data object to receive collected data
+ * @param source Address of symmetric data object containing data to collect
+ * @param nelems Number of elements in source array
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 void shmem_collect64(void *target, const void *source, size_t nelems,
                      int PE_start, int logPE_stride, int PE_size, long *pSync) {
   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
@@ -198,11 +264,14 @@ void shmem_collect64(void *target, const void *source, size_t nelems,
   colls.collect.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
                     pSync);
 }
-//////////////////////////////////////////////////////////////////////
+
+/** @} */
 
 /**
- * shmem_fcollect
+ * @defgroup fcollect Fixed-Length Collection Operations
+ * @{
  */
+
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_fcollect32 = pshmem_fcollect32
 #define shmem_fcollect32 pshmem_fcollect32
@@ -210,6 +279,17 @@ void shmem_collect64(void *target, const void *source, size_t nelems,
 #define shmem_fcollect64 pshmem_fcollect64
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Fixed-length collect of 32-bit data from all PEs in a set
+ *
+ * @param target Address of symmetric data object to receive collected data
+ * @param source Address of symmetric data object containing data to collect
+ * @param nelems Number of elements in source array
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 void shmem_fcollect32(void *target, const void *source, size_t nelems,
                       int PE_start, int logPE_stride, int PE_size,
                       long *pSync) {
@@ -220,6 +300,17 @@ void shmem_fcollect32(void *target, const void *source, size_t nelems,
                      pSync);
 }
 
+/**
+ * @brief Fixed-length collect of 64-bit data from all PEs in a set
+ *
+ * @param target Address of symmetric data object to receive collected data
+ * @param source Address of symmetric data object containing data to collect
+ * @param nelems Number of elements in source array
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 void shmem_fcollect64(void *target, const void *source, size_t nelems,
                       int PE_start, int logPE_stride, int PE_size,
                       long *pSync) {
@@ -230,14 +321,26 @@ void shmem_fcollect64(void *target, const void *source, size_t nelems,
                      pSync);
 }
 
+/** @} */
+
 /**
- * shmem_barrier
+ * @defgroup barrier Barrier Operations
+ * @{
  */
+
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_barrier = pshmem_barrier
 #define shmem_barrier pshmem_barrier
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Barrier synchronization across a set of PEs
+ *
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync) {
   logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
          logPE_stride, PE_size, pSync);
@@ -256,17 +359,35 @@ extern long *shmemc_sync_all_psync;
 #define shmem_barrier_all pshmem_barrier_all
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Barrier synchronization across all PEs
+ */
 void shmem_barrier_all(void) {
   logger(LOG_COLLECTIVES, "%s()", __func__);
 
   colls.barrier_all.f(shmemc_barrier_all_psync);
 }
 
+/** @} */
+
+/**
+ * @defgroup sync Synchronization Operations
+ * @{
+ */
+
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_sync = pshmem_sync
 #define shmem_sync pshmem_sync
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Synchronize across a set of PEs
+ *
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync) {
   logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
          logPE_stride, PE_size, pSync);
@@ -279,11 +400,21 @@ void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync) {
 #define shmem_sync_all pshmem_sync_all
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Synchronize across all PEs
+ */
 void shmem_sync_all(void) {
   logger(LOG_COLLECTIVES, "%s()", __func__);
 
   colls.sync_all.f(shmemc_sync_all_psync);
 }
+
+/** @} */
+
+/**
+ * @defgroup broadcast Broadcast Operations
+ * @{
+ */
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_broadcast32 = pshmem_broadcast32
@@ -292,6 +423,18 @@ void shmem_sync_all(void) {
 #define shmem_broadcast64 pshmem_broadcast64
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Broadcast 32-bit data from one PE to a set of PEs
+ *
+ * @param target Address of symmetric data object to receive broadcast data
+ * @param source Address of symmetric data object containing data to broadcast
+ * @param nelems Number of elements in source array
+ * @param PE_root PE number of root PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 void shmem_broadcast32(void *target, const void *source, size_t nelems,
                        int PE_root, int PE_start, int logPE_stride, int PE_size,
                        long *pSync) {
@@ -302,6 +445,18 @@ void shmem_broadcast32(void *target, const void *source, size_t nelems,
                       PE_size, pSync);
 }
 
+/**
+ * @brief Broadcast 64-bit data from one PE to a set of PEs
+ *
+ * @param target Address of symmetric data object to receive broadcast data
+ * @param source Address of symmetric data object containing data to broadcast
+ * @param nelems Number of elements in source array
+ * @param PE_root PE number of root PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 void shmem_broadcast64(void *target, const void *source, size_t nelems,
                        int PE_root, int PE_start, int logPE_stride, int PE_size,
                        long *pSync) {
@@ -312,8 +467,11 @@ void shmem_broadcast64(void *target, const void *source, size_t nelems,
                       PE_size, pSync);
 }
 
-/*
- * -- WIP ----------------------------------------------------------
+/** @} */
+
+/**
+ * @defgroup reductions Reduction Operations
+ * @{
  */
 
 #include "collectives/reductions.h"
@@ -329,3 +487,5 @@ void shmem_broadcast64(void *target, const void *source, size_t nelems,
  *
  */
 SHIM_REDUCE_ALL(rec_dbl)
+
+/** @} */
