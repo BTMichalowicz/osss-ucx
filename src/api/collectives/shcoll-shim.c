@@ -100,7 +100,9 @@ SHMEM_TYPENAME_ALLTOALL(uint64_t, uint64)
 SHMEM_TYPENAME_ALLTOALL(size_t, size)
 SHMEM_TYPENAME_ALLTOALL(ptrdiff_t, ptrdiff)
 
-//////////////////////////////////////////////////////////////////////////////////
+/**
+ * shmem_alltoalls
+ */
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_int_alltoalls = pshmem_int_alltoalls
 #define shmem_int_alltoalls pshmem_int_alltoalls
@@ -168,58 +170,10 @@ SHMEM_TYPENAME_ALLTOALLS(uint64_t, uint64)
 SHMEM_TYPENAME_ALLTOALLS(size_t, size)
 SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
 
-
-
-
-// #ifdef ENABLE_PSHMEM
-// #pragma weak shmem_alltoalls32 = pshmem_alltoalls32
-// #define shmem_alltoalls32 pshmem_alltoalls32
-// #pragma weak shmem_alltoalls64 = pshmem_alltoalls64
-// #define shmem_alltoalls64 pshmem_alltoalls64
-// #endif /* ENABLE_PSHMEM */
-
-// void
-// shmem_alltoalls32(void *target, const void *source,
-//                   ptrdiff_t dst, ptrdiff_t sst, size_t nelems,
-//                   int PE_start, int logPE_stride, int PE_size,
-//                   long *pSync)
-// {
-//     logger(LOG_COLLECTIVES,
-//            "%s(%p, %p, %lu, %lu, %lu, %d, %d, %d, %p)",
-//            __func__,
-//            target, source,
-//            dst, sst, nelems,
-//            PE_start, logPE_stride, PE_size,
-//            pSync);
-
-//     colls.alltoalls.f32(target, source,
-//                         dst, sst, nelems,
-//                         PE_start, logPE_stride, PE_size,
-//                         pSync);
-// }
-
-// void
-// shmem_alltoalls64(void *target, const void *source,
-//                   ptrdiff_t dst, ptrdiff_t sst, size_t nelems,
-//                   int PE_start, int logPE_stride, int PE_size,
-//                   long *pSync)
-// {
-//     logger(LOG_COLLECTIVES,
-//            "%s(%p, %p, %lu, %lu, %lu, %d, %d, %d, %p)",
-//            __func__,
-//            target, source,
-//            dst, sst, nelems,
-//            PE_start, logPE_stride, PE_size,
-//            pSync);
-
-//     colls.alltoalls.f64(target, source,
-//                         dst, sst, nelems,
-//                         PE_start, logPE_stride, PE_size,
-//                         pSync);
-// }
-
-//////////////////////////////////////////////////////////////////////////////////
-
+//////////////////////////////////////////////////////////////////////
+/**
+ * shmem_collect
+ */
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_collect32 = pshmem_collect32
 #define shmem_collect32 pshmem_collect32
@@ -244,7 +198,11 @@ void shmem_collect64(void *target, const void *source, size_t nelems,
   colls.collect.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
                     pSync);
 }
+//////////////////////////////////////////////////////////////////////
 
+/**
+ * shmem_fcollect
+ */
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_fcollect32 = pshmem_fcollect32
 #define shmem_fcollect32 pshmem_fcollect32
@@ -272,6 +230,9 @@ void shmem_fcollect64(void *target, const void *source, size_t nelems,
                      pSync);
 }
 
+/**
+ * shmem_barrier
+ */
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_barrier = pshmem_barrier
 #define shmem_barrier pshmem_barrier

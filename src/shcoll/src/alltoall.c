@@ -238,263 +238,41 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
 
 // @formatter:off
 
-// TODO: make this less redundant
+#define DEFINE_SHCOLL_ALLTOALL_TYPES(_algo)                                    \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, float, float)                              \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, double, double)                            \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, long double, longdouble)                   \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, char, char)                                \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, signed char, schar)                        \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, short, short)                              \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, int, int)                                  \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, long, long)                                \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, long long, longlong)                       \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, unsigned char, uchar)                      \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, unsigned short, ushort)                    \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, unsigned int, uint)                        \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, unsigned long, ulong)                      \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, unsigned long long, ulonglong)             \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, int8_t, int8)                              \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, int16_t, int16)                            \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, int32_t, int32)                            \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, int64_t, int64)                            \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, uint8_t, uint8)                            \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, uint16_t, uint16)                          \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, uint32_t, uint32)                          \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, uint64_t, uint64)                          \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, size_t, size)                              \
+  SHCOLL_ALLTOALL_DEFINITION(_algo, ptrdiff_t, ptrdiff)
 
-/* shift_exchange_barrier */
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, float, float)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, double, double)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, long double, longdouble)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, char, char)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, signed char, schar)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, short, short)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, int, int)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, long, long)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, long long, longlong)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, unsigned char, uchar)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, unsigned short, ushort)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, unsigned int, uint)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, unsigned long, ulong)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, unsigned long long,
-                           ulonglong)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, int8_t, int8)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, int16_t, int16)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, int32_t, int32)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, int64_t, int64)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, uint8_t, uint8)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, uint16_t, uint16)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, uint32_t, uint32)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, uint64_t, uint64)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, size_t, size)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, ptrdiff_t, ptrdiff)
-
-/* shift_exchange_counter */
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, float, float)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, double, double)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, long double, longdouble)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, char, char)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, signed char, schar)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, short, short)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, int, int)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, long, long)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, long long, longlong)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, unsigned char, uchar)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, unsigned short, ushort)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, unsigned int, uint)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, unsigned long, ulong)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, unsigned long long,
-                           ulonglong)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, int8_t, int8)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, int16_t, int16)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, int32_t, int32)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, int64_t, int64)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, uint8_t, uint8)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, uint16_t, uint16)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, uint32_t, uint32)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, uint64_t, uint64)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, size_t, size)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_counter, ptrdiff_t, ptrdiff)
-
-/* shift_exchange_signal */
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, float, float)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, double, double)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, long double, longdouble)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, char, char)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, signed char, schar)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, short, short)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, int, int)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, long, long)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, long long, longlong)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, unsigned char, uchar)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, unsigned short, ushort)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, unsigned int, uint)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, unsigned long, ulong)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, unsigned long long, ulonglong)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, int8_t, int8)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, int16_t, int16)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, int32_t, int32)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, int64_t, int64)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, uint8_t, uint8)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, uint16_t, uint16)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, uint32_t, uint32)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, uint64_t, uint64)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, size_t, size)
-SHCOLL_ALLTOALL_DEFINITION(shift_exchange_signal, ptrdiff_t, ptrdiff)
-
-/* xor_pairwise_exchange_barrier */
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, float, float)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, double, double)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, long double,
-                           longdouble)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, char, char)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, signed char, schar)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, short, short)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, int, int)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, long, long)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, long long, longlong)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, unsigned char, uchar)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, unsigned short,
-                           ushort)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, unsigned int, uint)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, unsigned long, ulong)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, unsigned long long,
-                           ulonglong)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, int8_t, int8)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, int16_t, int16)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, int32_t, int32)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, int64_t, int64)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, uint8_t, uint8)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, uint16_t, uint16)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, uint32_t, uint32)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, uint64_t, uint64)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, size_t, size)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_barrier, ptrdiff_t, ptrdiff)
-
-/* xor_pairwise_exchange_counter */
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, float, float)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, double, double)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, long double,
-                           longdouble)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, char, char)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, signed char, schar)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, short, short)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, int, int)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, long, long)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, long long, longlong)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, unsigned char, uchar)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, unsigned short,
-                           ushort)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, unsigned int, uint)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, unsigned long, ulong)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, unsigned long long,
-                           ulonglong)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, int8_t, int8)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, int16_t, int16)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, int32_t, int32)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, int64_t, int64)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, uint8_t, uint8)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, uint16_t, uint16)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, uint32_t, uint32)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, uint64_t, uint64)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, size_t, size)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_counter, ptrdiff_t, ptrdiff)
-
-/* xor_pairwise_exchange_signal */
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, float, float)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, double, double)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, long double,
-                           longdouble)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, char, char)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, signed char, schar)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, short, short)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, int, int)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, long, long)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, long long, longlong)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, unsigned char, uchar)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, unsigned short, ushort)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, unsigned int, uint)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, unsigned long, ulong)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, unsigned long long,
-                           ulonglong)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, int8_t, int8)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, int16_t, int16)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, int32_t, int32)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, int64_t, int64)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, uint8_t, uint8)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, uint16_t, uint16)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, uint32_t, uint32)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, uint64_t, uint64)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, size_t, size)
-SHCOLL_ALLTOALL_DEFINITION(xor_pairwise_exchange_signal, ptrdiff_t, ptrdiff)
-
-/* color_pairwise_exchange_barrier */
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, float, float)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, double, double)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, long double,
-                           longdouble)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, char, char)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, signed char, schar)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, short, short)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, int, int)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, long, long)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, long long, longlong)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, unsigned char,
-                           uchar)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, unsigned short,
-                           ushort)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, unsigned int, uint)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, unsigned long,
-                           ulong)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, unsigned long long,
-                           ulonglong)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, int8_t, int8)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, int16_t, int16)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, int32_t, int32)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, int64_t, int64)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, uint8_t, uint8)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, uint16_t, uint16)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, uint32_t, uint32)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, uint64_t, uint64)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, size_t, size)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_barrier, ptrdiff_t, ptrdiff)
-
-/* color_pairwise_exchange_counter */
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, float, float)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, double, double)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, long double,
-                           longdouble)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, char, char)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, signed char, schar)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, short, short)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, int, int)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, long, long)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, long long, longlong)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned char,
-                           uchar)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned short,
-                           ushort)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned int, uint)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned long,
-                           ulong)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, unsigned long long,
-                           ulonglong)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, int8_t, int8)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, int16_t, int16)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, int32_t, int32)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, int64_t, int64)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, uint8_t, uint8)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, uint16_t, uint16)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, uint32_t, uint32)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, uint64_t, uint64)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, size_t, size)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_counter, ptrdiff_t, ptrdiff)
-
-/* color_pairwise_exchange_signal */
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, float, float)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, double, double)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, long double,
-                           longdouble)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, char, char)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, signed char, schar)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, short, short)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, int, int)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, long, long)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, long long, longlong)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, unsigned char, uchar)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, unsigned short,
-                           ushort)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, unsigned int, uint)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, unsigned long, ulong)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, unsigned long long,
-                           ulonglong)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, int8_t, int8)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, int16_t, int16)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, int32_t, int32)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, int64_t, int64)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, uint8_t, uint8)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, uint16_t, uint16)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, uint32_t, uint32)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, uint64_t, uint64)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, size_t, size)
-SHCOLL_ALLTOALL_DEFINITION(color_pairwise_exchange_signal, ptrdiff_t, ptrdiff)
+/* Define for all algorithms */
+DEFINE_SHCOLL_ALLTOALL_TYPES(shift_exchange_barrier)
+DEFINE_SHCOLL_ALLTOALL_TYPES(shift_exchange_counter)
+DEFINE_SHCOLL_ALLTOALL_TYPES(shift_exchange_signal)
+DEFINE_SHCOLL_ALLTOALL_TYPES(xor_pairwise_exchange_barrier)
+DEFINE_SHCOLL_ALLTOALL_TYPES(xor_pairwise_exchange_counter)
+DEFINE_SHCOLL_ALLTOALL_TYPES(xor_pairwise_exchange_signal)
+DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_barrier)
+DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_counter)
+DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
 
 // @formatter:on
