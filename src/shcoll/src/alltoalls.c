@@ -7,54 +7,6 @@
 #include <limits.h>
 #include <assert.h>
 
-// #define ALLTOALLS_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)               \
-//   inline static int alltoalls_helper_##_algo##_barrier(                        \
-//       void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,            \
-//       size_t nelems, int PE_start, int logPE_stride, int PE_size) {            \
-//     const int stride = 1 << logPE_stride;                                      \
-//     const int me = shmem_my_pe();                                              \
-//     uint8_t *dest_ptr = (uint8_t *)dest;                                       \
-//     const uint8_t *source_ptr = (uint8_t *)source;                             \
-//                                                                                \
-//     /* Get my index in the active set */                                       \
-//     int me_as = (me - PE_start) / stride;                                      \
-//     if (me_as < 0 || me_as >= PE_size || _cond == 0) {                         \
-//       return -1;                                                               \
-//     }                                                                          \
-//                                                                                \
-//     /* Base address for my section of dest array */                            \
-//     uint8_t *dest_base = dest_ptr + me_as * nelems * dst;                      \
-//                                                                                \
-//     /* Send data round-robin, starting with next PE */                         \
-//     int peer = PE_start + ((me_as + 1) % PE_size) * stride;                    \
-//     const int start_pe = peer;                                                 \
-//                                                                                \
-//     do {                                                                       \
-//       /* Calculate peer's position in active set */                            \
-//       int peer_as = (peer - PE_start) / stride;                                \
-//                                                                                \
-//       /* Source data comes from peer's section */                              \
-//       const uint8_t *src = source_ptr + peer_as * nelems * sst;                \
-//       uint8_t *dst = dest_base;                                                \
-//                                                                                \
-//       /* Put data to peer with stride */                                       \
-//       for (size_t i = 0; i < nelems; i++) {                                    \
-//         shmem_putmem(dst, src, 1, peer);                                       \
-//         src += sst;                                                            \
-//         dst += (ptrdiff_t)dst;                                                 \
-//       }                                                                        \
-//                                                                                \
-//       /* Move to next peer */                                                  \
-//       peer = PE_start + ((peer_as + 1) % PE_size) * stride;                    \
-//                                                                                \
-//     } while (peer != start_pe);                                                \
-//                                                                                \
-//     shmem_fence();                                                             \
-//     shmem_barrier_all();                                                       \
-//                                                                                \
-//     return 0;                                                                  \
-//   }
-
 #define ALLTOALLS_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)               \
   inline static int alltoalls_helper_##_algo##_barrier(                        \
       void *dest, const void *source, ptrdiff_t dst_stride,                    \
@@ -85,7 +37,7 @@
     return 0;                                                                  \
   }
 
-// TODO: test to make sure this works
+// FIXME: test to make sure this works
 #define ALLTOALLS_HELPER_SIGNAL_DEFINITION(_algo, _peer, _cond)                \
   inline static int alltoalls_helper_##_algo##_signal(                         \
       void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,            \
@@ -131,7 +83,7 @@
     return 0;                                                                  \
   }
 
-// TODO: test to make sure this works
+// FIXME: test to make sure this works
 #define ALLTOALLS_HELPER_COUNTER_DEFINITION(_algo, _peer, _cond)               \
   inline static int alltoalls_helper_##_algo##_counter(                        \
       void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,            \
@@ -225,6 +177,9 @@ ALLTOALLS_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER, COLOR_C
 //   }
 
 // clang-format off
+
+// TODO: make this less redundant
+
 /* shift_exchange_barrier */
 SHCOLL_ALLTOALLS_DEFINITION(shift_exchange_barrier, float, float)
 SHCOLL_ALLTOALLS_DEFINITION(shift_exchange_barrier, double, double)

@@ -48,6 +48,22 @@ static sized_op_t broadcast_tab[] = {SIZED_REG(broadcast, linear),
                                      SIZED_LAST};
 
 //////////////////////////////////////////////////////////////
+// static sized_op_t alltoall_tab[] = {
+//     SIZED_REG(alltoall, shift_exchange_barrier),
+//     SIZED_REG(alltoall, shift_exchange_counter),
+//     SIZED_REG(alltoall, shift_exchange_barrier_nbi),
+//     SIZED_REG(alltoall, shift_exchange_counter_nbi),
+//     SIZED_REG(alltoall, xor_pairwise_exchange_barrier),
+//     SIZED_REG(alltoall, xor_pairwise_exchange_counter),
+//     SIZED_REG(alltoall, xor_pairwise_exchange_barrier_nbi),
+//     SIZED_REG(alltoall, xor_pairwise_exchange_counter_nbi),
+//     SIZED_REG(alltoall, color_pairwise_exchange_barrier),
+//     SIZED_REG(alltoall, color_pairwise_exchange_counter),
+//     SIZED_REG(alltoall, color_pairwise_exchange_barrier_nbi),
+//     SIZED_REG(alltoall, color_pairwise_exchange_counter_nbi),
+//     SIZED_LAST};
+
+// TODO: make this less redundant
 static typed_op_t alltoall_tab[] = {
     TYPED_REG(alltoall, shift_exchange_barrier, float),
     TYPED_REG(alltoall, shift_exchange_barrier, double),
@@ -241,6 +257,7 @@ static typed_op_t alltoall_tab[] = {
 //     SIZED_REG(alltoalls, color_pairwise_exchange_counter_nbi),
 //     SIZED_LAST};
 
+// TODO: make this less redundant
 static typed_op_t alltoalls_tab[] = {
     TYPED_REG(alltoalls, shift_exchange_barrier, float),
     TYPED_REG(alltoalls, shift_exchange_barrier, double),
@@ -539,6 +556,10 @@ coll_ops_t colls;
     return register_typed(_coll##_tab, op, &colls._coll.f);                    \
   }
 
+
+// REGISTER_SIZED(alltoall)
+// REGISTER_SIZED(alltoalls)
+
 REGISTER_TYPED(alltoall)
 REGISTER_TYPED(alltoalls)
 REGISTER_SIZED(broadcast)
@@ -551,5 +572,5 @@ REGISTER_UNSIZED(sync)
 REGISTER_UNSIZED(sync_all)
 
 /*
- * TODO reductions
+ * TODO: reductions
  */

@@ -7,6 +7,9 @@
   int shcoll_##_typename##_alltoall_##_algo(                                    \
        shmem_team_t team, _type *dest, const _type *source, size_t nelems);
 
+
+// TODO: make this less redundant
+
 /* shift_exchange_barrier */
 SHCOLL_ALLTOALL_DECLARATION(shift_exchange_barrier, float, float)
 SHCOLL_ALLTOALL_DECLARATION(shift_exchange_barrier, double, double)

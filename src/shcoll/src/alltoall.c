@@ -90,6 +90,7 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
     return 0;                                                                  \
   }
 
+// FIXME: test to make sure this works
 #define ALLTOALL_HELPER_COUNTER_DEFINITION(_algo, _peer, _cond)                \
   inline static int alltoall_helper_##_algo##_counter(                         \
       void *dest, const void *source, size_t nelems, int PE_start,             \
@@ -141,6 +142,7 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
     return 0;                                                                  \
   }
 
+// FIXME: test to make sure this works
 #define ALLTOALL_HELPER_SIGNAL_DEFINITION(_algo, _peer, _cond)                 \
   inline static int alltoall_helper_##_algo##_signal(                          \
       void *dest, const void *source, size_t nelems, int PE_start,             \
@@ -235,6 +237,8 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
   }
 
 // @formatter:off
+
+// TODO: make this less redundant
 
 /* shift_exchange_barrier */
 SHCOLL_ALLTOALL_DEFINITION(shift_exchange_barrier, float, float)
