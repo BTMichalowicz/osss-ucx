@@ -243,3 +243,5 @@ SHCOLL_ALLTOALLS_DECLARATION(color_pairwise_exchange_signal, size_t, size)
 SHCOLL_ALLTOALLS_DECLARATION(color_pairwise_exchange_signal, ptrdiff_t, ptrdiff)
 
 #endif /* ! _SHCOLL_ALLTOALLS_H */
+
+

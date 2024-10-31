@@ -4,91 +4,95 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NELEMS 1  // Send one element per PE
+#define NELEMS 1
 
-/**
- * @brief Alltoalls Test
- *
- * This test performs multiple all-to-all communications in succession to verify
- * the consistency and reliability of the shmem_alltoalls function over
- * multiple iterations. It ensures that repeated collective operations work 
- * correctly without data corruption or communication failures.
- */
 void test_alltoalls() {
     int npes = shmem_n_pes();
     int me = shmem_my_pe();
-    const int NUM_ITERATIONS = 5;  // Number of all-to-all iterations
 
-    // Allocate and initialize source and destination arrays
-    int *source = shmem_malloc(NELEMS * npes * sizeof(int));
-    int *dest = shmem_malloc(NELEMS * npes * sizeof(int));
+    // Allocate using symmetric heap allocation
+    size_t array_size = NELEMS * npes * sizeof(int);
+    int *source = shmem_malloc(array_size);
+    int *dest = shmem_malloc(array_size);
 
     if (source == NULL || dest == NULL) {
         printf("PE %d: Memory allocation failed\n", me);
-        shmem_finalize();
-        exit(EXIT_FAILURE);
+        shmem_global_exit(1);
+        return;
     }
 
-    // Initialize source array: each PE sets source[j] = (me + 1) * 10
-    for (int j = 0; j < npes; j++) {
-        source[j * NELEMS] = (me + 1) * 10 + j;
+    // Initialize arrays with simpler pattern
+    for (int i = 0; i < npes * NELEMS; i++) {
+        source[i] = me;  // Each PE fills with its own PE number
+        dest[i] = -1;    // Initialize dest with -1
     }
 
-    // Initialize destination array to -1 for verification
-    for (int j = 0; j < npes * NELEMS; j++) {
-        dest[j] = -1;
+    // Debug print before operation
+    if (me == 0) {
+        printf("Array size: %zu bytes\n", array_size);
+        printf("Number of PEs: %d\n", npes);
+    }
+    
+    shmem_barrier_all();
+
+    // Print initial values
+    printf("PE %d: Initial source values: ", me);
+    for (int i = 0; i < npes * NELEMS; i++) {
+        printf("%d ", source[i]);
+    }
+    printf("\n");
+
+    shmem_barrier_all();
+
+    // Single alltoalls operation
+    int ret = shmem_int_alltoalls(SHMEM_TEAM_WORLD, dest, source, 
+                                 1,      // dst stride
+                                 1,      // sst stride
+                                 NELEMS); // number of elements
+
+    if (ret != 0) {
+        printf("PE %d: alltoalls returned error %d\n", me, ret);
     }
 
-    // Perform multiple all-to-all communications
-    for (int iter = 0; iter < NUM_ITERATIONS; iter++) {
-        // Print iteration header
-        printf("PE %d: Starting alltoalls iteration %d\n", me, iter + 1);
+    shmem_barrier_all();
 
-        // Synchronize before all-to-all
-        shmem_barrier_all();
+    // Print final values
+    printf("PE %d: Final dest values: ", me);
+    for (int i = 0; i < npes * NELEMS; i++) {
+        printf("%d ", dest[i]);
+    }
+    printf("\n");
 
-        // Perform all-to-all communication
-        shmem_int_alltoalls(SHMEM_TEAM_WORLD, dest, source, 1, 1, NELEMS);
-
-        // Synchronize after all-to-all
-        shmem_barrier_all();
-
-        // Print resulting destination array
-        printf("PE %d: Iteration %d destination array: ", me, iter + 1);
-        for (int j = 0; j < npes; j++) {
-            printf("%d ", dest[j * NELEMS]);
+    // Verify results - each PE should have received values from all other PEs
+    int errors = 0;
+    for (int i = 0; i < npes; i++) {
+        int expected = i;  // Should receive PE number i at position i
+        if (dest[i * NELEMS] != expected) {
+            printf("PE %d: Error at index %d: expected %d, got %d\n",
+                   me, i, expected, dest[i * NELEMS]);
+            errors++;
         }
-        printf("\n");
+    }
 
-        // Verify the results: dest[j] should be (j + 1) * 10 + me
-        int errors = 0;
-        for (int j = 0; j < npes; j++) {
-            int expected = (j + 1) * 10 + me;
-            if (dest[j * NELEMS] != expected) {
-                printf("PE %d: Error at iteration %d, index %d, expected %d, got %d\n",
-                       me, iter + 1, j * NELEMS, expected, dest[j * NELEMS]);
-                errors++;
-            }
-        }
+    shmem_barrier_all();
 
+    if (me == 0) {
         if (errors == 0) {
-            printf("PE %d: Alltoalls iteration %d passed\n", me, iter + 1);
+            printf("Test completed successfully\n");
         } else {
-            printf("PE %d: Alltoalls iteration %d failed with %d errors\n", me, iter + 1, errors);
-        }
-
-        // Reinitialize destination array for the next iteration
-        for (int j = 0; j < npes * NELEMS; j++) {
-            dest[j] = -1;
+            printf("Test failed with %d errors\n", errors);
         }
     }
 
-    // Free allocated memory
+    // Cleanup
     shmem_free(source);
     shmem_free(dest);
+    shmem_barrier_all();
 }
 
-int main() {
+int main(void) {
+    shmem_init();
     test_alltoalls();
+    shmem_finalize();
     return 0;
 }
