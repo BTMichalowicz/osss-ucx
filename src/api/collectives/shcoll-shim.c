@@ -213,17 +213,84 @@ SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
 
 /** @} */
 
+////////////////////////////////////////////////////////////
 /**
  * @defgroup collect Collection Operations
  * @{
  */
 
-#ifdef ENABLE_PSHMEM
-#pragma weak shmem_collect32 = pshmem_collect32
-#define shmem_collect32 pshmem_collect32
-#pragma weak shmem_collect64 = pshmem_collect64
-#define shmem_collect64 pshmem_collect64
-#endif /* ENABLE_PSHMEM */
+// #ifdef ENABLE_PSHMEM
+// #pragma weak shmem_int_collect = pshmem_int_collect
+// #define shmem_int_collect pshmem_int_collect
+// #pragma weak shmem_long_collect = pshmem_long_collect
+// #define shmem_long_collect pshmem_long_collect
+// #pragma weak shmem_longlong_collect = pshmem_longlong_collect
+// #define shmem_longlong_collect pshmem_longlong_collect
+// #pragma weak shmem_float_collect = pshmem_float_collect
+// #define shmem_float_collect pshmem_float_collect
+// #pragma weak shmem_double_collect = pshmem_double_collect
+// #define shmem_double_collect pshmem_double_collect
+// #pragma weak shmem_longdouble_collect = pshmem_longdouble_collect
+// #define shmem_longdouble_collect pshmem_longdouble_collect
+// #pragma weak shmem_uint_collect = pshmem_uint_collect
+// #define shmem_uint_collect pshmem_uint_collect
+// #pragma weak shmem_ulong_collect = pshmem_ulong_collect
+// #define shmem_ulong_collect pshmem_ulong_collect
+// #pragma weak shmem_ulonglong_collect = pshmem_ulonglong_collect
+// #define shmem_ulonglong_collect pshmem_ulonglong_collect
+// #pragma weak shmem_int32_collect = pshmem_int32_collect
+// #define shmem_int32_collect pshmem_int32_collect
+// #pragma weak shmem_int64_collect = pshmem_int64_collect
+// #define shmem_int64_collect pshmem_int64_collect
+// #pragma weak shmem_uint32_collect = pshmem_uint32_collect
+// #define shmem_uint32_collect pshmem_uint32_collect
+// #pragma weak shmem_uint64_collect = pshmem_uint64_collect
+// #define shmem_uint64_collect pshmem_uint64_collect
+// #pragma weak shmem_size_collect = pshmem_size_collect
+// #define shmem_size_collect pshmem_size_collect
+// #pragma weak shmem_ptrdiff_collect = pshmem_ptrdiff_collect
+// #define shmem_ptrdiff_collect pshmem_ptrdiff_collect
+// #endif /* ENABLE_PSHMEM */
+
+// #define SHMEM_TYPENAME_COLLECT(_type, _typename)                               \
+//   int shmem_##_typename##_collect(shmem_team_t team, _type *dest,              \
+//                                   const _type *source, size_t nelems) {        \
+//     logger(LOG_COLLECTIVES, "%s(%p, %p, %lu)", __func__, dest, source,         \
+//            nelems);                                                            \
+//     colls.collect.f(team, dest, source, nelems);                               \
+//   }
+
+// SHMEM_TYPENAME_COLLECT(float, float)
+// SHMEM_TYPENAME_COLLECT(double, double)
+// SHMEM_TYPENAME_COLLECT(long double, longdouble)
+// SHMEM_TYPENAME_COLLECT(char, char)
+// SHMEM_TYPENAME_COLLECT(signed char, schar)
+// SHMEM_TYPENAME_COLLECT(short, short)
+// SHMEM_TYPENAME_COLLECT(int, int)
+// SHMEM_TYPENAME_COLLECT(long, long)
+// SHMEM_TYPENAME_COLLECT(long long, longlong)
+// SHMEM_TYPENAME_COLLECT(unsigned char, uchar)
+// SHMEM_TYPENAME_COLLECT(unsigned short, ushort)
+// SHMEM_TYPENAME_COLLECT(unsigned int, uint)
+// SHMEM_TYPENAME_COLLECT(unsigned long, ulong)
+// SHMEM_TYPENAME_COLLECT(unsigned long long, ulonglong)
+// SHMEM_TYPENAME_COLLECT(int8_t, int8)
+// SHMEM_TYPENAME_COLLECT(int16_t, int16)
+// SHMEM_TYPENAME_COLLECT(int32_t, int32)
+// SHMEM_TYPENAME_COLLECT(int64_t, int64)
+// SHMEM_TYPENAME_COLLECT(uint8_t, uint8)
+// SHMEM_TYPENAME_COLLECT(uint16_t, uint16)
+// SHMEM_TYPENAME_COLLECT(uint32_t, uint32)
+// SHMEM_TYPENAME_COLLECT(uint64_t, uint64)
+// SHMEM_TYPENAME_COLLECT(size_t, size)
+// SHMEM_TYPENAME_COLLECT(ptrdiff_t, ptrdiff)
+
+// #ifdef ENABLE_PSHMEM
+// #pragma weak shmem_collect32 = pshmem_collect32
+// #define shmem_collect32 pshmem_collect32
+// #pragma weak shmem_collect64 = pshmem_collect64
+// #define shmem_collect64 pshmem_collect64
+// #endif /* ENABLE_PSHMEM */
 
 /**
  * @brief Collect 32-bit data from all PEs in a set
@@ -237,13 +304,17 @@ SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
  * @param pSync Symmetric work array
  */
 void shmem_collect32(void *target, const void *source, size_t nelems,
-                     int PE_start, int logPE_stride, int PE_size, long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+                     int PE_start, int logPE_stride, int PE_size, long
+                     *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__,
+  target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
   colls.collect.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
                     pSync);
 }
+
+////////////////////////////////////////////////////////////
 
 /**
  * @brief Collect 64-bit data from all PEs in a set

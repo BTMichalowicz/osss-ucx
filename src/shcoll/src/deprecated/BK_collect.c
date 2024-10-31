@@ -461,7 +461,6 @@ inline static void collect_helper_bruck_no_rotate(void *dest,
   shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, barrier_pSync);
 }
 
-
 #define SHCOLL_COLLECT_DEFINITION(_name, _size)                                \
   void shcoll_collect##_size##_##_name(                                        \
       void *dest, const void *source, size_t nelems, int PE_start,             \
@@ -470,6 +469,7 @@ inline static void collect_helper_bruck_no_rotate(void *dest,
                            PE_start, logPE_stride, PE_size, pSync);            \
   }
 
+/* @formatter:off */
 
 SHCOLL_COLLECT_DEFINITION(linear, 32)
 SHCOLL_COLLECT_DEFINITION(linear, 64)
@@ -495,52 +495,4 @@ SHCOLL_COLLECT_DEFINITION(bruck, 64)
 SHCOLL_COLLECT_DEFINITION(bruck_no_rotate, 32)
 SHCOLL_COLLECT_DEFINITION(bruck_no_rotate, 64)
 
-
-
-
-
-
-// #define SHCOLL_COLLECT_DEFINITION(_name, _type, _typename)                     \
-//   int shcoll_##_typename##_collect_##_name(                                    \
-//       shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
-//     return collect_helper_##_name(team, dest, source, sizeof(_type) * nelems); \
-//   }
-
-// /* Define all types for each algorithm */
-// #define DEFINE_SHCOLL_COLLECT_TYPES(_algo)                                     \
-//   SHCOLL_COLLECT_DEFINITION(_algo, float, float)                               \
-//   SHCOLL_COLLECT_DEFINITION(_algo, double, double)                             \
-//   SHCOLL_COLLECT_DEFINITION(_algo, long double, longdouble)                    \
-//   SHCOLL_COLLECT_DEFINITION(_algo, char, char)                                 \
-//   SHCOLL_COLLECT_DEFINITION(_algo, signed char, schar)                         \
-//   SHCOLL_COLLECT_DEFINITION(_algo, short, short)                               \
-//   SHCOLL_COLLECT_DEFINITION(_algo, int, int)                                   \
-//   SHCOLL_COLLECT_DEFINITION(_algo, long, long)                                 \
-//   SHCOLL_COLLECT_DEFINITION(_algo, long long, longlong)                        \
-//   SHCOLL_COLLECT_DEFINITION(_algo, unsigned char, uchar)                       \
-//   SHCOLL_COLLECT_DEFINITION(_algo, unsigned short, ushort)                     \
-//   SHCOLL_COLLECT_DEFINITION(_algo, unsigned int, uint)                         \
-//   SHCOLL_COLLECT_DEFINITION(_algo, unsigned long, ulong)                       \
-//   SHCOLL_COLLECT_DEFINITION(_algo, unsigned long long, ulonglong)              \
-//   SHCOLL_COLLECT_DEFINITION(_algo, int8_t, int8)                               \
-//   SHCOLL_COLLECT_DEFINITION(_algo, int16_t, int16)                             \
-//   SHCOLL_COLLECT_DEFINITION(_algo, int32_t, int32)                             \
-//   SHCOLL_COLLECT_DEFINITION(_algo, int64_t, int64)                             \
-//   SHCOLL_COLLECT_DEFINITION(_algo, uint8_t, uint8)                             \
-//   SHCOLL_COLLECT_DEFINITION(_algo, uint16_t, uint16)                           \
-//   SHCOLL_COLLECT_DEFINITION(_algo, uint32_t, uint32)                           \
-//   SHCOLL_COLLECT_DEFINITION(_algo, uint64_t, uint64)                           \
-//   SHCOLL_COLLECT_DEFINITION(_algo, size_t, size)                               \
-//   SHCOLL_COLLECT_DEFINITION(_algo, ptrdiff_t, ptrdiff)
-
-// /* Define implementations for all algorithms */
-// DEFINE_SHCOLL_COLLECT_TYPES(linear)
-// DEFINE_SHCOLL_COLLECT_TYPES(all_linear)
-// DEFINE_SHCOLL_COLLECT_TYPES(all_linear1)
-// DEFINE_SHCOLL_COLLECT_TYPES(rec_dbl)
-// DEFINE_SHCOLL_COLLECT_TYPES(rec_dbl_signal)
-// DEFINE_SHCOLL_COLLECT_TYPES(ring)
-// DEFINE_SHCOLL_COLLECT_TYPES(bruck)
-// DEFINE_SHCOLL_COLLECT_TYPES(bruck_no_rotate)
-
-
+/* @formatter:on */

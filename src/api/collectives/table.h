@@ -51,6 +51,7 @@ typedef struct coll_ops {
   typed_op_t alltoall;      /**< All-to-all operation */
   typed_op_t alltoalls;     /**< Strided all-to-all operation */
   sized_op_t collect;       /**< Collect operation */
+  // typed_op_t collect;       /**< Collect operation */
   sized_op_t fcollect;      /**< Ordered collect operation */
   sized_op_t broadcast;     /**< Broadcast operation */
   unsized_op_t barrier;     /**< Team barrier operation */
