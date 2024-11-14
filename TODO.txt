@@ -1,11 +1,16 @@
-- table.c, alltoalls.c/h, alltoall.c/h
-    - Reduce code redundancy by way of macros
+- All collectives
+    - Check the logger string format in shcoll-shim.c
+    - Add deprecation warnings for sized variants
+    - Add a checker to make sure sure src and dest data are on the
+      symmetric heap
+
 
 - shmem_alltoall
+    - Check to see if we can use previous helpers instead of my new crap
     - Deprecate sized variants
     - Test/tweak all different collectives algorithms
 
 - shmem_alltoalls
+    - Check to see if we can use previous helpers instead of my new crap
     - Deprecate sized variants
     - Test/tweak all different collectives algorithms
-

@@ -80,8 +80,15 @@ $oshcc --version
 # $oshrun $flags -np 4 ./bin/shmem_alltoall
 # echo
 
-# --- shmem_alltoalls ---
-echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
-$oshcc shmem_alltoalls.c -o ./bin/shmem_alltoalls
-$oshrun $flags -np 4 ./bin/shmem_alltoalls
+# # --- shmem_alltoalls ---
+# echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
+# $oshcc shmem_alltoalls.c -o ./bin/shmem_alltoalls
+# $oshrun $flags -np 4 ./bin/shmem_alltoalls
+# echo
+
+# --- shmem_collect ---
+echo $hline ; echo "  Running shmem_collect test" ; echo $hline
+$oshcc shmem_collect.c -o ./bin/shmem_collect
+$oshrun $flags -np 2 ./bin/shmem_collect
 echo
+

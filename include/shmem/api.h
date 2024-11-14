@@ -3099,16 +3099,46 @@ API_BROADCAST_SIZE(64)
  * collects
  */
 
-#define API_COLLECT_NAME_SIZE(_opname, _size)                                  \
-  /* see \ref shmem_##_opname##64() */                                         \
-  void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
-                              int PE_start, int logPE_stride, int PE_size,     \
-                              long *pSync);
+#define API_COLLECT_TYPE(_type, _typename)                                     \
+  int shmem_##_typename##_collect(shmem_team_t team, _type *dest,              \
+                                  const _type *source, size_t nelems);
 
-API_COLLECT_NAME_SIZE(fcollect, 32)
-API_COLLECT_NAME_SIZE(fcollect, 64)
-API_COLLECT_NAME_SIZE(collect, 32)
-API_COLLECT_NAME_SIZE(collect, 64)
+API_COLLECT_TYPE(float, float)
+API_COLLECT_TYPE(double, double)
+API_COLLECT_TYPE(long double, longdouble)
+API_COLLECT_TYPE(char, char)
+API_COLLECT_TYPE(signed char, schar)
+API_COLLECT_TYPE(short, short)
+API_COLLECT_TYPE(int, int)
+API_COLLECT_TYPE(long, long)
+API_COLLECT_TYPE(long long, longlong)
+API_COLLECT_TYPE(unsigned char, uchar)
+API_COLLECT_TYPE(unsigned short, ushort)
+API_COLLECT_TYPE(unsigned int, uint)
+API_COLLECT_TYPE(unsigned long, ulong)
+API_COLLECT_TYPE(unsigned long long, ulonglong)
+API_COLLECT_TYPE(int8_t, int8)
+API_COLLECT_TYPE(int16_t, int16)
+API_COLLECT_TYPE(int32_t, int32)
+API_COLLECT_TYPE(int64_t, int64)
+API_COLLECT_TYPE(uint8_t, uint8)
+API_COLLECT_TYPE(uint16_t, uint16)
+API_COLLECT_TYPE(uint32_t, uint32)
+API_COLLECT_TYPE(uint64_t, uint64)
+API_COLLECT_TYPE(size_t, size)
+API_COLLECT_TYPE(ptrdiff_t, ptrdiff)
+
+// TODO: deprecate this
+// #define API_COLLECT_NAME_SIZE(_opname, _size)                                  \
+//   /* see \ref shmem_##_opname##64() */                                         \
+//   void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
+//                               int PE_start, int logPE_stride, int PE_size,     \
+//                               long *pSync);
+
+// API_COLLECT_NAME_SIZE(fcollect, 32)
+// API_COLLECT_NAME_SIZE(fcollect, 64)
+// API_COLLECT_NAME_SIZE(collect, 32)
+// API_COLLECT_NAME_SIZE(collect, 64)
 
 //////////////////////////////////////////////////////////////////////////////////
 /**

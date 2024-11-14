@@ -12,6 +12,7 @@
 /** Maximum length for collective operation names */
 #define COLL_NAME_MAX 64
 
+/******************************************************** */
 /** Function pointer type for collective operations without type information */
 typedef void (*coll_fn_t)();
 
@@ -33,8 +34,9 @@ typedef struct unsized_op {
   coll_fn_t f;                  /**< Implementation function */
 } unsized_op_t;
 
+/******************************************************** */
 /** Function pointer type for typed collective operations */
-typedef int (*typed_coll_fn_t)();
+typedef int (*typed_coll_fn_t)(); // FIXME: should this be void?
 
 /**
  * @brief Structure for typed collective operations
@@ -44,14 +46,14 @@ typedef struct typed_op {
   typed_coll_fn_t f;            /**< Implementation function */
 } typed_op_t;
 
+/******************************************************** */
 /**
  * @brief Structure containing all collective operation implementations
  */
 typedef struct coll_ops {
   typed_op_t alltoall;      /**< All-to-all operation */
   typed_op_t alltoalls;     /**< Strided all-to-all operation */
-  sized_op_t collect;       /**< Collect operation */
-  // typed_op_t collect;       /**< Collect operation */
+  typed_op_t collect;       /**< Collect operation */
   sized_op_t fcollect;      /**< Ordered collect operation */
   sized_op_t broadcast;     /**< Broadcast operation */
   unsized_op_t barrier;     /**< Team barrier operation */

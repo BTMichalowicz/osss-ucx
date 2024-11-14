@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 
+/******************************************************** */
 /**
  * @brief Macro to register a sized collective operation with 32/64-bit variants
  * @param _op The collective operation name
@@ -56,6 +57,7 @@
 #define UNSIZED_LAST                                                           \
   { "", NULL }
 
+/******************************************************** */
 /**
  * @brief Macro to register a typed collective operation for a specific type
  * @param _op The collective operation name
@@ -104,6 +106,7 @@
 #define UNTYPED_LAST                                                           \
   { "", NULL }
 
+/******************************************************** */
 /**
  * @brief Table of alltoall collective algorithms for all types
  */
@@ -137,15 +140,16 @@ static typed_op_t alltoalls_tab[] = {
 /**
  * @brief Table of collect collective algorithms
  */
-static sized_op_t collect_tab[] = {SIZED_REG(collect, linear),
-                                   SIZED_REG(collect, all_linear),
-                                   SIZED_REG(collect, all_linear1),
-                                   SIZED_REG(collect, rec_dbl),
-                                   SIZED_REG(collect, rec_dbl_signal),
-                                   SIZED_REG(collect, ring),
-                                   SIZED_REG(collect, bruck),
-                                   SIZED_REG(collect, bruck_no_rotate),
-                                   SIZED_LAST};
+static typed_op_t collect_tab[] = {
+    TYPED_REG_FOR_ALL_TYPES(collect, linear),
+    TYPED_REG_FOR_ALL_TYPES(collect, all_linear),
+    TYPED_REG_FOR_ALL_TYPES(collect, all_linear1),
+    TYPED_REG_FOR_ALL_TYPES(collect, rec_dbl),
+    TYPED_REG_FOR_ALL_TYPES(collect, rec_dbl_signal),
+    TYPED_REG_FOR_ALL_TYPES(collect, ring),
+    TYPED_REG_FOR_ALL_TYPES(collect, bruck),
+    TYPED_REG_FOR_ALL_TYPES(collect, bruck_no_rotate),
+    TYPED_LAST};
 
 /**
  * @brief Table of fcollect collective algorithms
@@ -207,8 +211,8 @@ static sized_op_t broadcast_tab[] = {SIZED_REG(broadcast, linear),
                                      SIZED_REG(broadcast, knomial_tree_signal),
                                      SIZED_REG(broadcast, scatter_collect),
                                      SIZED_LAST};
-//////////////////////////////////////////////////////////////////////
 
+/******************************************************** */
 /**
  * @brief Register a sized collective operation
  * @param tabp Pointer to the operation table
@@ -273,6 +277,7 @@ static int register_typed(typed_op_t *tabp, const char *op,
   return -1;
 }
 
+/******************************************************** */
 /**
  * @brief Global structure holding all collective operation function pointers
  */
@@ -306,17 +311,12 @@ coll_ops_t colls;
     return register_typed(_coll##_tab, op, &colls._coll.f);                    \
   }
 
-// REGISTER_SIZED(alltoall)
-// REGISTER_SIZED(alltoalls)
-// REGISTER_SIZED(broadcast)
-// REGISTER_SIZED(collect)
-// REGISTER_SIZED(fcollect)
-
 REGISTER_TYPED(alltoall)
 REGISTER_TYPED(alltoalls)
-REGISTER_SIZED(broadcast)
-REGISTER_SIZED(collect)
+REGISTER_TYPED(collect)
+
 REGISTER_SIZED(fcollect)
+REGISTER_SIZED(broadcast)
 
 REGISTER_UNSIZED(barrier)
 REGISTER_UNSIZED(barrier_all)

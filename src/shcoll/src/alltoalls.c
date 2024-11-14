@@ -192,6 +192,8 @@ ALLTOALLS_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER, COLOR_C
  * @param _algo Algorithm name
  * @param _type Data type
  * @param _typename Type name string
+
+ FIXME: is the stride being used correctly? Do we need the stide arg?
  */
 #define SHCOLL_ALLTOALLS_DEFINITION(_algo, _type, _typename)                   \
   int shcoll_##_typename##_alltoalls_##_algo(                                  \
@@ -208,20 +210,6 @@ ALLTOALLS_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER, COLOR_C
     }                                                                          \
     return 0;                                                                  \
   }
-
-// #define SHCOLL_ALLTOALLS_DEFINITION(_algo, _type, _typename)                   \
-//   int shcoll_##_typename##_alltoalls_##_algo(                                  \
-//       shmem_team_t team, _type *dest, const _type *source,                     \
-//       ptrdiff_t dst, ptrdiff_t sst, size_t nelems) {                          \
-//     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);        \
-//     int logPE_stride = 0;                                                      \
-//     int PE_size = shmem_team_n_pes(team);                                     \
-//     return alltoalls_helper_##_algo(dest, source,                             \
-//                                    dst * sizeof(_type),                        \
-//                                    sst * sizeof(_type),                        \
-//                                    nelems * sizeof(_type),                     \
-//                                    PE_start, logPE_stride, PE_size);           \
-//   }
 
 /**
  * @brief Define alltoalls implementations for all supported types
