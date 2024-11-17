@@ -10,7 +10,8 @@
 #define COLLECTIVES_DEFAULT_SYNC "binomial_tree"
 #define COLLECTIVES_DEFAULT_SYNC_ALL "binomial_tree"
 #define COLLECTIVES_DEFAULT_BROADCAST "binomial_tree"
-#define COLLECTIVES_DEFAULT_COLLECT "bruck"
+// #define COLLECTIVES_DEFAULT_COLLECT "bruck"
+#define COLLECTIVES_DEFAULT_COLLECT "simple"
 #define COLLECTIVES_DEFAULT_FCOLLECT "bruck_inplace"
 #define COLLECTIVES_DEFAULT_REDUCTIONS "rec_dbl"
 

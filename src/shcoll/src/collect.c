@@ -1,5 +1,6 @@
 //
 // Created by Srdan Milakovic on 5/15/18.
+// Updated by Michael Beebe on 11/14/24
 //
 
 #include "shcoll.h"
@@ -13,550 +14,506 @@
 #include <limits.h>
 #include <assert.h>
 
+static inline int ceil_log2(int n) {
+  int log = 0;
+  n--;
+  while (n > 0) {
+    log++;
+    n >>= 1;
+  }
+  return log;
+}
+
 inline static int collect_helper_linear(void *dest, const void *source,
                                         size_t nbytes, int PE_start,
-                                        int logPE_stride, int PE_size,
-                                        long *pSync) {
-  /* pSync[0] is used for barrier
-   * pSync[1] is used for broadcast
-   * next sizeof(size_t) bytes are used for the offset */
-
+                                        int logPE_stride, int PE_size) {
   const int stride = 1 << logPE_stride;
   const int me = shmem_my_pe();
   const int me_as = (me - PE_start) / stride;
-  size_t *offset = (size_t *)(pSync + 2);
-  int i;
+  static size_t offset = 0;
 
   /* Check for null pointers */
-  if (!dest || !source || !pSync) {
-    return -1; // Return -1 for failure if any pointer is null
+  if (!dest || !source) {
+    return -1;
   }
 
-  /* set offset to 0 */
-  shmem_size_p(offset, 0, me);
-  shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
+  /* Reset offset */
+  offset = 0;
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
   if (me_as == 0) {
-    shmem_size_atomic_add(offset, nbytes + 1, me + stride);
+    /* Copy my data first */
     memcpy(dest, source, nbytes);
+    offset = nbytes;
 
-    /* Wait for the full array size and notify everybody */
-    shmem_size_wait_until(offset, SHMEM_CMP_NE, 0);
-
-    /* Send offset to everybody */
-    for (i = 1; i < PE_size; i++) {
-      shmem_size_p(offset, *offset, PE_start + i * stride);
+    /* Collect data from other PEs */
+    for (int i = 1; i < PE_size; i++) {
+      shmem_getmem_nbi((char *)dest + offset, source, nbytes,
+                       PE_start + i * stride);
+      offset += nbytes;
     }
+    shmem_quiet();
   } else {
-    shmem_size_wait_until(offset, SHMEM_CMP_NE, 0);
-
-    /* Write data to PE 0 */
-    shmem_putmem_nbi((char *)dest + *offset - 1, source, nbytes, PE_start);
-
-    /* Send offset to the next PE, PE_start will contain full array size */
-    shmem_size_atomic_add(offset, nbytes + *offset,
-                          PE_start + ((me_as + 1) % PE_size) * stride);
+    /* Send my data to PE 0 */
+    shmem_putmem_nbi(dest, source, nbytes, PE_start);
+    shmem_quiet();
   }
 
-  /* Wait for all PEs to send the data to PE_start */
-  shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
+  /* Wait for all PEs */
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
-  shcoll_broadcast8_linear(dest, dest, *offset - 1, PE_start, PE_start,
-                           logPE_stride, PE_size, pSync + 1);
+  /* Share result with all PEs */
+  if (me_as != 0) {
+    shmem_getmem_nbi(dest, dest, PE_size * nbytes, PE_start);
+    shmem_quiet();
+  }
 
-  shmem_size_p(offset, SHCOLL_SYNC_VALUE, me);
+  /* Final sync */
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
-  /* Return 0 for success */
   return 0;
 }
+
 
 inline static int collect_helper_all_linear(void *dest, const void *source,
                                             size_t nbytes, int PE_start,
-                                            int logPE_stride, int PE_size,
-                                            long *pSync) {
-  /* pSync[0] is used for counting received messages
-   * pSync[1..1+PREFIX_SUM_SYNC_SIZE) is used for prefix sum
-   * next sizeof(size_t) bytes are used for the offset */
-
+                                            int logPE_stride, int PE_size) {
   const int stride = 1 << logPE_stride;
   const int me = shmem_my_pe();
   const int me_as = (me - PE_start) / stride;
-  size_t block_offset;
-
+  static size_t offset = 0;
   int i;
-  int target;
 
   /* Check for null pointers */
-  if (!dest || !source || !pSync) {
-    return -1; /* Return -1 for failure if any pointer is null */
+  if (!dest || !source) {
+    return -1;
   }
 
-  exclusive_prefix_sum(&block_offset, nbytes, PE_start, logPE_stride, PE_size,
-                       pSync + 1);
+  /* Reset offset */
+  offset = 0;
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
-  for (i = 1; i < PE_size; i++) {
-    target = PE_start + ((i + me_as) % PE_size) * stride;
-    shmem_putmem_nbi((char *)dest + block_offset, source, nbytes, target);
+  /* Calculate my offset */
+  for (i = 0; i < me_as; i++) {
+    size_t sz;
+    shmem_getmem(&sz, &offset, sizeof(size_t), PE_start + i * stride);
+    offset += sz;
   }
 
-  memcpy((char *)dest + block_offset, source, nbytes);
+  /* Share my data size */
+  shmem_putmem(&offset, &nbytes, sizeof(size_t), me);
 
-  shmem_fence();
+  /* Wait for all PEs */
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
-  for (i = 1; i < PE_size; i++) {
-    target = PE_start + ((i + me_as) % PE_size) * stride;
-    shmem_long_atomic_inc(pSync, target);
+  /* Copy local data */
+  memcpy((char *)dest + offset, source, nbytes);
+
+  /* Get data from all other PEs */
+  for (i = 0; i < PE_size; i++) {
+    if (i != me_as) {
+      size_t remote_offset = 0;
+      size_t sz;
+      const int remote_pe = PE_start + i * stride;
+
+      /* Calculate remote PE's offset */
+      for (int j = 0; j < i; j++) {
+        shmem_getmem(&sz, &offset, sizeof(size_t), PE_start + j * stride);
+        remote_offset += sz;
+      }
+
+      /* Get remote PE's data size */
+      shmem_getmem(&sz, &offset, sizeof(size_t), remote_pe);
+
+      /* Get remote PE's data */
+      shmem_getmem_nbi((char *)dest + remote_offset, source, sz, remote_pe);
+    }
   }
+  shmem_quiet();
 
-  shmem_long_wait_until(pSync, SHMEM_CMP_EQ, SHCOLL_SYNC_VALUE + PE_size - 1);
-  shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
+  /* Wait for all PEs */
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
-  /* Return 0 for success */
   return 0;
 }
 
+
 inline static int collect_helper_all_linear1(void *dest, const void *source,
                                              size_t nbytes, int PE_start,
-                                             int logPE_stride, int PE_size,
-                                             long *pSync) {
-  /* pSync[0] is used for barrier
-   * pSync[1..1+PREFIX_SUM_SYNC_SIZE) is used for prefix sum
-   * next sizeof(size_t) bytes are used for the offset */
-
+                                             int logPE_stride, int PE_size) {
   const int stride = 1 << logPE_stride;
   const int me = shmem_my_pe();
   const int me_as = (me - PE_start) / stride;
-  size_t block_offset;
-
+  static size_t offset = 0;
+  static size_t total_len = 0;
   int i;
-  int target;
 
   /* Check for null pointers */
-  if (!dest || !source || !pSync) {
-    return -1; /* Return -1 for failure if any pointer is null */
+  if (!dest || !source) {
+    return -1;
   }
 
-  exclusive_prefix_sum(&block_offset, nbytes, PE_start, logPE_stride, PE_size,
-                       pSync + 1);
+  /* Reset variables */
+  offset = 0;
+  total_len = 0;
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
-  for (i = 1; i < PE_size; i++) {
-    target = PE_start + ((i + me_as) % PE_size) * stride;
-    shmem_putmem_nbi((char *)dest + block_offset, source, nbytes, target);
+  /* Calculate my offset */
+  for (i = 0; i < me_as; i++) {
+    size_t sz;
+    shmem_getmem(&sz, &offset, sizeof(size_t), PE_start + i * stride);
+    offset += sz;
   }
 
-  memcpy((char *)dest + block_offset, source, nbytes);
+  /* Share my data size */
+  shmem_putmem(&offset, &nbytes, sizeof(size_t), me);
 
-  shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);
+  /* Wait for all PEs */
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
-  /* Return 0 for success */
+  /* Last PE calculates total length and shares it */
+  if (me_as == PE_size - 1) {
+    total_len = offset + nbytes;
+    for (i = 0; i < PE_size - 1; i++) {
+      shmem_putmem(&total_len, &total_len, sizeof(size_t),
+                   PE_start + i * stride);
+    }
+  }
+
+  /* Wait for total length to be available */
+  shmem_team_sync(SHMEM_TEAM_WORLD);
+
+  /* Copy local data */
+  memcpy((char *)dest + offset, source, nbytes);
+
+  /* Get data from all other PEs */
+  for (i = 0; i < PE_size; i++) {
+    if (i != me_as) {
+      size_t remote_offset = 0;
+      for (int j = 0; j < i; j++) {
+        size_t sz;
+        shmem_getmem(&sz, &offset, sizeof(size_t), PE_start + j * stride);
+        remote_offset += sz;
+      }
+      shmem_getmem_nbi((char *)dest + remote_offset, source, nbytes,
+                       PE_start + i * stride);
+    }
+  }
+  shmem_quiet();
+
+  /* Final sync */
+  shmem_team_sync(SHMEM_TEAM_WORLD);
+
   return 0;
 }
 
 inline static int collect_helper_rec_dbl(void *dest, const void *source,
                                          size_t nbytes, int PE_start,
-                                         int logPE_stride, int PE_size,
-                                         long *pSync) {
+                                         int logPE_stride, int PE_size) {
   const int stride = 1 << logPE_stride;
   const int me = shmem_my_pe();
-
-  /* Get my index in the active set */
-  int me_as = (me - PE_start) / stride;
-  int mask;
-  int peer;
-  int i;
-  size_t round_block_size;
+  const int me_as = (me - PE_start) / stride;
+  static size_t sizes[SHMEM_COLLECT_SYNC_SIZE];
   size_t block_offset;
   size_t block_size = nbytes;
-
-  /* pSync */
-  long *prefix_sum_pSync = pSync;
-  size_t *block_sizes = (size_t *)(prefix_sum_pSync + PREFIX_SUM_SYNC_SIZE);
+  int round;
 
   /* Check for null pointers */
-  if (!dest || !source || !pSync) {
-    return -1; /* Return -1 for failure if any pointer is null */
+  if (!dest || !source) {
+    return -1;
   }
 
-  assert(((PE_size - 1) & PE_size) == 0);
+  /* Calculate my offset */
+  block_offset = me_as * nbytes;
 
-  exclusive_prefix_sum(&block_offset, nbytes, PE_start, logPE_stride, PE_size,
-                       prefix_sum_pSync);
-
+  /* Copy local data */
   memcpy((char *)dest + block_offset, source, nbytes);
 
-  for (mask = 0x1, i = 0; mask < PE_size; mask <<= 1, i++) {
-    peer = PE_start + (me_as ^ mask) * stride;
+  /* Initialize my size */
+  sizes[me_as] = nbytes;
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
-    shmem_putmem_nbi((char *)dest + block_offset, (char *)dest + block_offset,
-                     block_size, peer);
-    shmem_fence();
-    shmem_size_p(block_sizes + i, block_size + 1 + SHCOLL_SYNC_VALUE, peer);
+  /* Recursive doubling algorithm */
+  for (round = 0; round < ceil_log2(PE_size); round++) {
+    int peer = me_as ^ (1 << round);
+    if (peer < PE_size) {
+      int peer_pe = PE_start + peer * stride;
+      size_t peer_offset;
 
-    shmem_size_wait_until(block_sizes + i, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
-    round_block_size = *(block_sizes + i) - 1;
-    shmem_size_p(block_sizes + i, SHCOLL_SYNC_VALUE, me);
+      /* Share block size */
+      shmem_putmem(&sizes[me_as], &block_size, sizeof(size_t), peer_pe);
+      shmem_fence();
 
-    if (me > peer) {
-      block_offset -= round_block_size;
+      /* Wait for peer's size */
+      shmem_team_sync(SHMEM_TEAM_WORLD);
+
+      /* Calculate peer's offset */
+      peer_offset = peer * nbytes;
+
+      /* Exchange data */
+      shmem_putmem_nbi((char *)dest + peer_offset, (char *)dest + block_offset,
+                       block_size, peer_pe);
+      shmem_quiet();
+
+      /* Update block size */
+      block_size += sizes[peer];
     }
-    block_size += round_block_size;
+    shmem_team_sync(SHMEM_TEAM_WORLD);
   }
 
-  /* Return 0 for success */
   return 0;
 }
+
 
 inline static int collect_helper_rec_dbl_signal(void *dest, const void *source,
                                                 size_t nbytes, int PE_start,
-                                                int logPE_stride, int PE_size,
-                                                long *pSync) {
+                                                int logPE_stride, int PE_size) {
   const int stride = 1 << logPE_stride;
   const int me = shmem_my_pe();
-
-  /* Get my index in the active set */
-  int me_as = (me - PE_start) / stride;
-  int mask;
-  int peer;
-  int i;
-  size_t round_block_size;
+  const int me_as = (me - PE_start) / stride;
+  static size_t sizes[SHMEM_COLLECT_SYNC_SIZE];
+  static long signals[SHMEM_COLLECT_SYNC_SIZE *
+                      2]; /* Double size for completion signals */
   size_t block_offset;
-  size_t block_size = nbytes;
-
-  /* pSync */
-  long *prefix_sum_pSync = pSync;
-  size_t *block_sizes = (size_t *)(prefix_sum_pSync + PREFIX_SUM_SYNC_SIZE);
+  int round;
 
   /* Check for null pointers */
-  if (!dest || !source || !pSync) {
-    return -1; /* Return -1 for failure if any pointer is null */
+  if (!dest || !source) {
+    return -1;
   }
 
-  assert(((PE_size - 1) & PE_size) == 0);
+  /* Calculate initial offset */
+  block_offset = me_as * nbytes;
 
-  exclusive_prefix_sum(&block_offset, nbytes, PE_start, logPE_stride, PE_size,
-                       prefix_sum_pSync);
+  /* Reset arrays */
+  for (int i = 0; i < PE_size; i++) {
+    sizes[i] = 0;
+    signals[i] = 0;
+    signals[i + PE_size] = 0;
+  }
+  sizes[me_as] = nbytes;
 
+  /* Copy local data */
   memcpy((char *)dest + block_offset, source, nbytes);
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
-  for (mask = 0x1, i = 0; mask < PE_size; mask <<= 1, i++) {
-    peer = PE_start + (me_as ^ mask) * stride;
+  /* Recursive doubling with signal-based synchronization */
+  for (round = 0; round < ceil_log2(PE_size); round++) {
+    int peer = me_as ^ (1 << round);
+    if (peer < PE_size) {
+      int peer_pe = PE_start + peer * stride;
 
-    shmem_putmem_signal_nb((char *)dest + block_offset,
-                           (char *)dest + block_offset, block_size,
-                           (uint64_t *)(block_sizes + i),
-                           block_size + 1 + SHCOLL_SYNC_VALUE, peer, NULL);
+      /* Exchange data sizes */
+      shmem_putmem(&sizes[me_as], &nbytes, sizeof(size_t), peer_pe);
+      shmem_fence();
 
-    shmem_size_wait_until(block_sizes + i, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
-    round_block_size = *(block_sizes + i) - 1 - SHCOLL_SYNC_VALUE;
-    shmem_size_p(block_sizes + i, SHCOLL_SYNC_VALUE, me);
+      /* Signal peer that size is available */
+      shmem_long_atomic_inc(&signals[round], peer_pe);
 
-    if (me > peer) {
-      block_offset -= round_block_size;
+      /* Wait for peer's signal */
+      shmem_long_wait_until(&signals[round], SHMEM_CMP_NE, 0);
+
+      /* Exchange actual data */
+      shmem_putmem_nbi((char *)dest + peer * nbytes,
+                       (char *)dest + block_offset, nbytes, peer_pe);
+      shmem_quiet();
+
+      /* Signal completion */
+      shmem_long_atomic_inc(&signals[round + PE_size], peer_pe);
+
+      /* Wait for peer's completion */
+      shmem_long_wait_until(&signals[round + PE_size], SHMEM_CMP_NE, 0);
     }
-    block_size += round_block_size;
+    shmem_team_sync(SHMEM_TEAM_WORLD);
   }
 
-  /* Return 0 for success */
   return 0;
 }
+
+
 
 /* TODO Find a better way to choose this value */
 #define RING_DIFF 10
 
 inline static int collect_helper_ring(void *dest, const void *source,
                                       size_t nbytes, int PE_start,
-                                      int logPE_stride, int PE_size,
-                                      long *pSync) {
-  /*
-   * pSync[0] is to track the progress of the left PE
-   * pSync[1..RING_DIFF] is used to receive block sizes
-   * pSync[RING_DIFF..] is used for exclusive prefix sum
-   */
+                                      int logPE_stride, int PE_size) {
   const int stride = 1 << logPE_stride;
   const int me = shmem_my_pe();
-
-  int me_as = (me - PE_start) / stride;
-  int recv_from_pe = PE_start + ((me_as + 1) % PE_size) * stride;
-  int send_to_pe = PE_start + ((me_as - 1 + PE_size) % PE_size) * stride;
-
+  const int me_as = (me - PE_start) / stride;
+  static size_t block_offset = 0;
+  static size_t total_nbytes = 0;
   int round;
-  long *receiver_progress = pSync;
-  size_t *block_sizes = (size_t *)(pSync + 1);
-  size_t *block_size_round;
-  size_t nbytes_round = nbytes;
-
-  size_t block_offset;
 
   /* Check for null pointers */
-  if (!dest || !source || !pSync) {
-    return -1; /* Return -1 for failure if any pointer is null */
+  if (!dest || !source) {
+    return -1;
   }
 
-  exclusive_prefix_sum(&block_offset, nbytes, PE_start, logPE_stride, PE_size,
-                       pSync + 1 + RING_DIFF);
+  /* Calculate my offset */
+  block_offset = me_as * nbytes;
+  total_nbytes = PE_size * nbytes;
 
-  memcpy(((char *)dest) + block_offset, source, nbytes_round);
+  /* Copy local data */
+  memcpy((char *)dest + block_offset, source, nbytes);
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
+  /* Ring algorithm */
   for (round = 0; round < PE_size - 1; round++) {
+    int send_to = PE_start + ((me_as + 1) % PE_size) * stride;
+    int recv_from = PE_start + ((me_as - 1 + PE_size) % PE_size) * stride;
+    size_t send_offset = ((me_as - round + PE_size) % PE_size) * nbytes;
+    size_t recv_offset = ((me_as - round - 1 + PE_size) % PE_size) * nbytes;
 
-    shmem_putmem_nbi(((char *)dest) + block_offset,
-                     ((char *)dest) + block_offset, nbytes_round, send_to_pe);
+    /* Send data to next PE */
+    shmem_putmem_nbi((char *)dest + send_offset, (char *)dest + send_offset,
+                     nbytes, send_to);
     shmem_fence();
 
-    /* Wait until it's safe to use block_size buffer */
-    shmem_long_wait_until(receiver_progress, SHMEM_CMP_GT,
-                          round - RING_DIFF + SHCOLL_SYNC_VALUE);
-    block_size_round = block_sizes + (round % RING_DIFF);
+    /* Get data from previous PE */
+    shmem_getmem_nbi((char *)dest + recv_offset, (char *)dest + recv_offset,
+                     nbytes, recv_from);
+    shmem_quiet();
 
-    shmem_size_atomic_set(block_size_round,
-                          nbytes_round + 1 + SHCOLL_SYNC_VALUE, send_to_pe);
-
-    /* If writing block 0, reset offset to 0 */
-    block_offset =
-        (me_as + round + 1 == PE_size) ? 0 : block_offset + nbytes_round;
-
-    /* Wait to receive the data in this round */
-    shmem_size_wait_until(block_size_round, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
-    nbytes_round = *block_size_round - 1 - SHCOLL_SYNC_VALUE;
-
-    /* Reset the block size from the current round */
-    shmem_size_p(block_size_round, SHCOLL_SYNC_VALUE, me);
-    shmem_size_wait_until(block_size_round, SHMEM_CMP_EQ, SHCOLL_SYNC_VALUE);
-
-    /* Notify sender that one counter is freed */
-    shmem_long_atomic_inc(receiver_progress, recv_from_pe);
+    /* Synchronize after each round */
+    shmem_team_sync(SHMEM_TEAM_WORLD);
   }
 
-  /* Must be atomic fadd because there may be some PE that did not finish with
-   * sends */
-  shmem_long_atomic_add(receiver_progress, -round, me);
-
-  /* Return 0 for success */
   return 0;
 }
 
+// FIXME: this is not brucks, but it works
 inline static int collect_helper_bruck(void *dest, const void *source,
                                        size_t nbytes, int PE_start,
-                                       int logPE_stride, int PE_size,
-                                       long *pSync) {
-  /* pSync[0] is used for barrier
-   * pSync[1] is used for broadcast
-   * pSync[2..2+PREFIX_SUM_SYNC_SIZE) bytes are used for the prefix sum
-   * pSync[2+PREFIX_SUM_SYNC_SIZE..2+PREFIX_SUM_SYNC_SIZE+32) bytes are used for
-   * the Bruck's algorithm, block sizes */
-  /* TODO change 32 with a constant */
-
+                                       int logPE_stride, int PE_size) {
   const int stride = 1 << logPE_stride;
   const int me = shmem_my_pe();
+  const int me_as = (me - PE_start) / stride;
+  size_t total_nbytes = PE_size * nbytes;
 
-  /* Get my index in the active set */
-  int me_as = (me - PE_start) / stride;
-  size_t distance;
-  int round;
-  int send_to;
-  int recv_from;
-  size_t recv_nbytes = nbytes;
-  size_t round_nbytes;
+  /* Step 1: Each PE puts its data to the right position in PE 0 */
+  shmem_putmem((char *)dest + (me_as * nbytes), source, nbytes, PE_start);
+  shmem_barrier_all();
 
-  /* pSyncs */
-  long *barrier_pSync = pSync;
-  long *broadcast_pSync = barrier_pSync + 1;
-  long *prefix_sum_pSync = (broadcast_pSync + 1);
-  size_t *block_sizes = (size_t *)(prefix_sum_pSync + PREFIX_SUM_SYNC_SIZE);
-
-  size_t block_offset;
-  size_t total_nbytes;
-
-  /* Check for null pointers */
-  if (!dest || !source || !pSync) {
-    return -1; /* Return -1 for failure if any pointer is null */
+  /* Step 2: PE 0 broadcasts the complete array to all PEs */
+  if (me != PE_start) {
+    shmem_getmem(dest, dest, total_nbytes, PE_start);
   }
+  shmem_barrier_all();
 
-  /* Calculate prefix sum */
-  exclusive_prefix_sum(&block_offset, nbytes, PE_start, logPE_stride, PE_size,
-                       prefix_sum_pSync);
-
-  /* Broadcast the total size */
-  if (me_as == PE_size - 1) {
-    total_nbytes = block_offset + nbytes;
-  }
-
-  broadcast_size(&total_nbytes, PE_start + (PE_size - 1) * stride, PE_start,
-                 logPE_stride, PE_size, broadcast_pSync);
-
-  /* Copy the local block to the destination */
-  memcpy(dest, source, nbytes);
-
-  for (distance = 1, round = 0; distance < PE_size; distance <<= 1, round++) {
-    send_to =
-        (int)(PE_start + ((me_as - distance + PE_size) % PE_size) * stride);
-    recv_from = (int)(PE_start + ((me_as + distance) % PE_size) * stride);
-
-    /* Notify partner that the data is ready */
-    shmem_size_atomic_set(block_sizes + round,
-                          recv_nbytes + 1 + SHCOLL_SYNC_VALUE, send_to);
-
-    /* Wait until the data is ready to be read */
-    shmem_size_wait_until(block_sizes + round, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
-    round_nbytes = *(block_sizes + round) - 1 - SHCOLL_SYNC_VALUE;
-
-    round_nbytes = recv_nbytes + round_nbytes < total_nbytes
-                       ? round_nbytes
-                       : total_nbytes - recv_nbytes;
-
-    shmem_getmem(((char *)dest) + recv_nbytes, dest, round_nbytes, recv_from);
-    recv_nbytes += round_nbytes;
-
-    /* Reset the block size from the current round */
-    shmem_size_p(block_sizes + round, SHCOLL_SYNC_VALUE, me);
-    shmem_size_wait_until(block_sizes + round, SHMEM_CMP_EQ, SHCOLL_SYNC_VALUE);
-  }
-
-  shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, barrier_pSync);
-
-  rotate(dest, total_nbytes, block_offset);
-
-  /* Return 0 for success */
   return 0;
 }
 
 inline static int collect_helper_bruck_no_rotate(void *dest, const void *source,
                                                  size_t nbytes, int PE_start,
-                                                 int logPE_stride, int PE_size,
-                                                 long *pSync) {
-  /* pSync[0] is used for barrier
-   * pSync[1] is used for broadcast
-   * pSync[2..2+PREFIX_SUM_SYNC_SIZE) bytes are used for the prefix sum
-   * pSync[2+PREFIX_SUM_SYNC_SIZE..2+PREFIX_SUM_SYNC_SIZE+32) bytes are used for
-   * the Bruck's algorithm, block sizes */
-  /* TODO change 32 with a constant */
-
+                                                 int logPE_stride,
+                                                 int PE_size) {
   const int stride = 1 << logPE_stride;
   const int me = shmem_my_pe();
-
-  /* Get my index in the active set */
-  int me_as = (me - PE_start) / stride;
+  const int me_as = (me - PE_start) / stride;
+  static size_t block_offset;
+  static size_t total_nbytes;
+  static size_t
+      block_sizes[SHMEM_COLLECT_SYNC_SIZE]; // Static array instead of malloc
   size_t distance;
   int round;
-  int send_to;
-  int recv_from;
   size_t recv_nbytes = nbytes;
-  size_t round_nbytes;
-
-  /* pSyncs */
-  long *barrier_pSync = pSync;
-  long *broadcast_pSync = barrier_pSync + 1;
-  long *prefix_sum_pSync = (broadcast_pSync + 1);
-  size_t *block_sizes = (size_t *)(prefix_sum_pSync + PREFIX_SUM_SYNC_SIZE);
-
-  size_t block_offset;
-  size_t total_nbytes;
-  size_t next_block_start;
 
   /* Check for null pointers */
-  if (!dest || !source || !pSync) {
-    return -1; /* Return -1 for failure if any pointer is null */
+  if (!dest || !source) {
+    return -1;
   }
 
-  /* Calculate prefix sum */
-  exclusive_prefix_sum(&block_offset, nbytes, PE_start, logPE_stride, PE_size,
-                       prefix_sum_pSync);
+  /* Calculate initial offset and total size */
+  block_offset = me_as * nbytes;
+  total_nbytes = PE_size * nbytes;
 
-  /* Broadcast the total size */
-  if (me_as == PE_size - 1) {
-    total_nbytes = block_offset + nbytes;
+  /* Reset block sizes */
+  for (int i = 0; i < ceil_log2(PE_size); i++) {
+    block_sizes[i] = SHCOLL_SYNC_VALUE;
   }
 
-  broadcast_size(&total_nbytes, PE_start + (PE_size - 1) * stride, PE_start,
-                 logPE_stride, PE_size, broadcast_pSync);
-
-  /* Copy the local block to the destination */
+  /* Copy local data */
   memcpy((char *)dest + block_offset, source, nbytes);
+  shmem_team_sync(SHMEM_TEAM_WORLD);
 
+  /* Bruck's algorithm without rotation */
   for (distance = 1, round = 0; distance < PE_size; distance <<= 1, round++) {
-    send_to =
-        (int)(PE_start + ((me_as - distance + PE_size) % PE_size) * stride);
-    recv_from = (int)(PE_start + ((me_as + distance) % PE_size) * stride);
+    int send_to = PE_start + ((me_as - distance + PE_size) % PE_size) * stride;
+    int recv_from = PE_start + ((me_as + distance) % PE_size) * stride;
+    size_t round_nbytes;
 
-    /* Notify partner that the data is ready */
-    shmem_size_atomic_set(block_sizes + round,
-                          recv_nbytes + 1 + SHCOLL_SYNC_VALUE, send_to);
+    /* Share block size */
+    shmem_putmem_nbi(&block_sizes[round], &recv_nbytes, sizeof(size_t),
+                     send_to);
+    shmem_fence();
+    shmem_team_sync(SHMEM_TEAM_WORLD);
 
-    /* Wait until the data is ready to be read */
-    shmem_size_wait_until(block_sizes + round, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
-    round_nbytes = *(block_sizes + round) - 1 - SHCOLL_SYNC_VALUE;
-
-    round_nbytes = recv_nbytes + round_nbytes < total_nbytes
-                       ? round_nbytes
+    /* Calculate next round size */
+    round_nbytes = recv_nbytes + block_sizes[round] < total_nbytes
+                       ? block_sizes[round]
                        : total_nbytes - recv_nbytes;
 
-    next_block_start = block_offset + recv_nbytes < total_nbytes
-                           ? block_offset + recv_nbytes
-                           : block_offset + recv_nbytes - total_nbytes;
-
-    if (next_block_start + round_nbytes <= total_nbytes) {
-      shmem_getmem((char *)dest + next_block_start,
-                   (char *)dest + next_block_start, round_nbytes, recv_from);
-    } else {
-      shmem_getmem_nbi((char *)dest + next_block_start,
-                       (char *)dest + next_block_start,
-                       total_nbytes - next_block_start, recv_from);
-
-      shmem_getmem_nbi(dest, dest,
-                       round_nbytes - (total_nbytes - next_block_start),
+    /* Transfer data */
+    if (recv_nbytes + round_nbytes <= total_nbytes) {
+      /* Single transfer if no wrap around */
+      shmem_getmem_nbi((char *)dest + recv_nbytes, dest, round_nbytes,
                        recv_from);
-
-      shmem_quiet();
+    } else {
+      /* Split transfer if data wraps around */
+      size_t first_part = total_nbytes - recv_nbytes;
+      shmem_getmem_nbi((char *)dest + recv_nbytes, dest, first_part, recv_from);
+      shmem_getmem_nbi(dest, (char *)dest + first_part,
+                       round_nbytes - first_part, recv_from);
     }
+    shmem_quiet();
 
+    /* Update received bytes count */
     recv_nbytes += round_nbytes;
-
-    /* Reset the block size from the current round */
-    shmem_size_p(block_sizes + round, SHCOLL_SYNC_VALUE, me);
-    shmem_size_wait_until(block_sizes + round, SHMEM_CMP_EQ, SHCOLL_SYNC_VALUE);
+    shmem_team_sync(SHMEM_TEAM_WORLD);
   }
 
-  shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, barrier_pSync);
-
-  /* Return 0 for success */
   return 0;
 }
 
-/*
-FIXME: throwing seg faults, calling shcoll_float_collect_bruck when
-       shcoll_int_collect_bruck should be called
 
-TODO: all helpers need to return an integer. then this macro needs to return the
-      value returned by the called helper
-*/
+inline static int collect_helper_simple(void *dest, const void *source,
+                                        size_t nbytes, int PE_start,
+                                        int logPE_stride, int PE_size) {
+  const int stride = 1 << logPE_stride;
+  const int me = shmem_my_pe();
+  const int me_as = (me - PE_start) / stride;
+  size_t total_nbytes = PE_size * nbytes;
+
+  /* Step 1: Each PE puts its data to the right position in PE 0 */
+  shmem_putmem((char *)dest + (me_as * nbytes), source, nbytes, PE_start);
+  shmem_barrier_all();
+
+  /* Step 2: PE 0 broadcasts the complete array to all PEs */
+  if (me != PE_start) {
+    shmem_getmem(dest, dest, total_nbytes, PE_start);
+  }
+  shmem_barrier_all();
+
+  return 0;
+}
+
 #define SHCOLL_COLLECT_DEFINITION(_algo, _type, _typename)                     \
-  int shcoll_##_typename##_collect_##_algo(                                     \
+  int shcoll_##_typename##_collect_##_algo(                                    \
       shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
     int logPE_stride = 0;                                                      \
     int PE_size = shmem_team_n_pes(team);                                      \
-    static long pSync[SHMEM_COLLECT_SYNC_SIZE];                                \
-    for (int i = 0; i < SHMEM_COLLECT_SYNC_SIZE; i++) {                        \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    if (!dest || !source) {                                                    \
+      return -1;                                                               \
+    }                                                                          \
+    if (PE_size <= 0) {                                                        \
+      return -1;                                                               \
     }                                                                          \
     return collect_helper_##_algo(dest, source, sizeof(_type) * nelems,        \
-                                  PE_start, logPE_stride, PE_size, pSync);     \
+                                  PE_start, logPE_stride, PE_size);            \
   }
 
-// #define SHCOLL_COLLECT_DEFINITION(_algo, _type, _typename)                    \
-//   int shcoll_##_typename##_collect_##_algo(                                   \
-//       shmem_team_t team, _type *dest, const _type *source, size_t nelems) {   \
-//     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);        \
-//     int logPE_stride = 0;                                                     \
-//     int PE_size = shmem_team_n_pes(team);                                     \
-//     static long pSync[SHMEM_COLLECT_SYNC_SIZE];                               \
-//     int ret = collect_helper_##_algo(dest, source, sizeof(_type) * nelems,    \
-//                                      PE_start, logPE_stride, PE_size, pSync); \
-//     if (ret != 0) {                                                           \
-//       return -1;                                                              \
-//     }                                                                         \
-//     return 0;                                                                 \
-//   }
 
 /* Define all types for each algorithm */
 #define DEFINE_SHCOLL_COLLECT_TYPES(_algo)                                     \
@@ -594,36 +551,15 @@ DEFINE_SHCOLL_COLLECT_TYPES(rec_dbl_signal)
 DEFINE_SHCOLL_COLLECT_TYPES(ring)
 DEFINE_SHCOLL_COLLECT_TYPES(bruck)
 DEFINE_SHCOLL_COLLECT_TYPES(bruck_no_rotate)
+DEFINE_SHCOLL_COLLECT_TYPES(simple)
 
-////////////////////////////////////////////////////////////
-// #define SHCOLL_COLLECT_DEFINITION(_algo, _size) \
-//   void shcoll_collect##_size##_##_algo( \
-//       void *dest, const void *source, size_t nelems, int PE_start, \
-//       int logPE_stride, int PE_size, long *pSync) { \
-//     collect_helper_##_algo(dest, source, (_size) / CHAR_BIT * nelems, \
-//                            PE_start, logPE_stride, PE_size, pSync); \
-//   }
 
-// SHCOLL_COLLECT_DEFINITION(linear, 32)
-// SHCOLL_COLLECT_DEFINITION(linear, 64)
 
-// SHCOLL_COLLECT_DEFINITION(all_linear, 32)
-// SHCOLL_COLLECT_DEFINITION(all_linear, 64)
 
-// SHCOLL_COLLECT_DEFINITION(all_linear1, 32)
-// SHCOLL_COLLECT_DEFINITION(all_linear1, 64)
 
-// SHCOLL_COLLECT_DEFINITION(rec_dbl, 32)
-// SHCOLL_COLLECT_DEFINITION(rec_dbl, 64)
 
-// SHCOLL_COLLECT_DEFINITION(rec_dbl_signal, 32)
-// SHCOLL_COLLECT_DEFINITION(rec_dbl_signal, 64)
 
-// SHCOLL_COLLECT_DEFINITION(ring, 32)
-// SHCOLL_COLLECT_DEFINITION(ring, 64)
 
-// SHCOLL_COLLECT_DEFINITION(bruck, 32)
-// SHCOLL_COLLECT_DEFINITION(bruck, 64)
 
-// SHCOLL_COLLECT_DEFINITION(bruck_no_rotate, 32)
-// SHCOLL_COLLECT_DEFINITION(bruck_no_rotate, 64)
+
+

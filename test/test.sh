@@ -89,6 +89,6 @@ $oshcc --version
 # --- shmem_collect ---
 echo $hline ; echo "  Running shmem_collect test" ; echo $hline
 $oshcc shmem_collect.c -o ./bin/shmem_collect
-$oshrun $flags -np 2 ./bin/shmem_collect
+$oshrun $flags -np 4 ./bin/shmem_collect
 echo
 

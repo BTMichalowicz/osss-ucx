@@ -1,6 +1,8 @@
 #!/bin/bash
 
+
 HLINE="--------------------------------------------"
+pwd=$(pwd)
 
 # --- Clean up generated files
 echo $HLINE
@@ -41,4 +43,12 @@ echo "            COMPILING"
 echo $HLINE
 make -j $(( $(nproc) - 1 )) install
 
+
+
+
+# --- Run test script
+echo ; echo ; echo ; echo
+cd $pwd
+cd test
+./test.sh
 

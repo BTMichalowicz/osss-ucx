@@ -149,6 +149,7 @@ static typed_op_t collect_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(collect, ring),
     TYPED_REG_FOR_ALL_TYPES(collect, bruck),
     TYPED_REG_FOR_ALL_TYPES(collect, bruck_no_rotate),
+    TYPED_REG_FOR_ALL_TYPES(collect, simple),
     TYPED_LAST};
 
 /**
