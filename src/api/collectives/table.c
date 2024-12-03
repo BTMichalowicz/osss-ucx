@@ -155,17 +155,30 @@ static typed_op_t collect_tab[] = {
 /**
  * @brief Table of fcollect collective algorithms
  */
-static sized_op_t fcollect_tab[] = {SIZED_REG(fcollect, linear),
-                                    SIZED_REG(fcollect, all_linear),
-                                    SIZED_REG(fcollect, all_linear1),
-                                    SIZED_REG(fcollect, rec_dbl),
-                                    SIZED_REG(fcollect, ring),
-                                    SIZED_REG(fcollect, bruck),
-                                    SIZED_REG(fcollect, bruck_no_rotate),
-                                    SIZED_REG(fcollect, bruck_signal),
-                                    SIZED_REG(fcollect, bruck_inplace),
-                                    SIZED_REG(fcollect, neighbor_exchange),
-                                    SIZED_LAST};
+static typed_op_t fcollect_tab[] = {
+    TYPED_REG_FOR_ALL_TYPES(fcollect, linear),
+    TYPED_REG_FOR_ALL_TYPES(fcollect, all_linear),
+    TYPED_REG_FOR_ALL_TYPES(fcollect, all_linear1),
+    TYPED_REG_FOR_ALL_TYPES(fcollect, rec_dbl),
+    TYPED_REG_FOR_ALL_TYPES(fcollect, ring),
+    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck),
+    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_no_rotate),
+    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_signal),
+    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_inplace),
+    TYPED_REG_FOR_ALL_TYPES(fcollect, neighbor_exchange),
+    TYPED_LAST};
+
+// static sized_op_t fcollect_tab[] = {SIZED_REG(fcollect, linear),
+//                                     SIZED_REG(fcollect, all_linear),
+//                                     SIZED_REG(fcollect, all_linear1),
+//                                     SIZED_REG(fcollect, rec_dbl),
+//                                     SIZED_REG(fcollect, ring),
+//                                     SIZED_REG(fcollect, bruck),
+//                                     SIZED_REG(fcollect, bruck_no_rotate),
+//                                     SIZED_REG(fcollect, bruck_signal),
+//                                     SIZED_REG(fcollect, bruck_inplace),
+//                                     SIZED_REG(fcollect, neighbor_exchange),
+//                                     SIZED_LAST};
 
 /**
  * @brief Table of barrier_all collective algorithms
@@ -315,8 +328,8 @@ coll_ops_t colls;
 REGISTER_TYPED(alltoall)
 REGISTER_TYPED(alltoalls)
 REGISTER_TYPED(collect)
-
-REGISTER_SIZED(fcollect)
+REGISTER_TYPED(fcollect)
+// REGISTER_SIZED(fcollect)
 REGISTER_SIZED(broadcast)
 
 REGISTER_UNSIZED(barrier)

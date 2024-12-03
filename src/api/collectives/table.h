@@ -36,7 +36,7 @@ typedef struct unsized_op {
 
 /******************************************************** */
 /** Function pointer type for typed collective operations */
-typedef int (*typed_coll_fn_t)(); // FIXME: should this be void?
+typedef int (*typed_coll_fn_t)();
 
 /**
  * @brief Structure for typed collective operations
@@ -54,7 +54,8 @@ typedef struct coll_ops {
   typed_op_t alltoall;      /**< All-to-all operation */
   typed_op_t alltoalls;     /**< Strided all-to-all operation */
   typed_op_t collect;       /**< Collect operation */
-  sized_op_t fcollect;      /**< Ordered collect operation */
+  // sized_op_t fcollect;      /**< Ordered collect operation */
+  typed_op_t fcollect;      /**< Ordered collect operation */
   sized_op_t broadcast;     /**< Broadcast operation */
   unsized_op_t barrier;     /**< Team barrier operation */
   unsized_op_t barrier_all; /**< Global barrier operation */

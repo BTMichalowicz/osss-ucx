@@ -213,7 +213,6 @@ SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
 
 /** @} */
 
-////////////////////////////////////////////////////////////
 /**
  * @defgroup collect Collection Operations
  * @{
@@ -303,57 +302,6 @@ SHMEM_TYPENAME_COLLECT(uint64_t, uint64)
 SHMEM_TYPENAME_COLLECT(size_t, size)
 SHMEM_TYPENAME_COLLECT(ptrdiff_t, ptrdiff)
 
-// #ifdef ENABLE_PSHMEM
-// #pragma weak shmem_collect32 = pshmem_collect32
-// #define shmem_collect32 pshmem_collect32
-// #pragma weak shmem_collect64 = pshmem_collect64
-// #define shmem_collect64 pshmem_collect64
-// #endif /* ENABLE_PSHMEM */
-
-// /**
-//  * @brief Collect 32-bit data from all PEs in a set
-//  *
-//  * @param target Address of symmetric data object to receive collected data
-//  * @param source Address of symmetric data object containing data to collect
-//  * @param nelems Number of elements in source array
-//  * @param PE_start First PE in the active set
-//  * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
-//  * @param PE_size Number of PEs in the active set
-//  * @param pSync Symmetric work array
-//  */
-// void shmem_collect32(void *target, const void *source, size_t nelems,
-//                      int PE_start, int logPE_stride, int PE_size, long
-//                      *pSync) {
-//   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__,
-//   target,
-//          source, nelems, PE_start, logPE_stride, PE_size, pSync);
-
-//   colls.collect.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
-//                     pSync);
-// }
-
-// /**
-//  * @brief Collect 64-bit data from all PEs in a set
-//  *
-//  * @param target Address of symmetric data object to receive collected data
-//  * @param source Address of symmetric data object containing data to collect
-//  * @param nelems Number of elements in source array
-//  * @param PE_start First PE in the active set
-//  * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
-//  * @param PE_size Number of PEs in the active set
-//  * @param pSync Symmetric work array
-//  */
-// void shmem_collect64(void *target, const void *source, size_t nelems,
-//                      int PE_start, int logPE_stride, int PE_size, long *pSync) {
-//   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
-//          source, nelems, PE_start, logPE_stride, PE_size, pSync);
-
-//   colls.collect.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
-//                     pSync);
-// }
-
-////////////////////////////////////////////////////////////
-
 /** @} */
 
 /**
@@ -362,53 +310,88 @@ SHMEM_TYPENAME_COLLECT(ptrdiff_t, ptrdiff)
  */
 
 #ifdef ENABLE_PSHMEM
-#pragma weak shmem_fcollect32 = pshmem_fcollect32
-#define shmem_fcollect32 pshmem_fcollect32
-#pragma weak shmem_fcollect64 = pshmem_fcollect64
-#define shmem_fcollect64 pshmem_fcollect64
+#pragma weak shmem_float_fcollect = pshmem_float_fcollect
+#define shmem_float_fcollect pshmem_float_fcollect
+#pragma weak shmem_double_fcollect = pshmem_double_fcollect
+#define shmem_double_fcollect pshmem_double_fcollect
+#pragma weak shmem_longdouble_fcollect = pshmem_longdouble_fcollect
+#define shmem_longdouble_fcollect pshmem_longdouble_fcollect
+#pragma weak shmem_char_fcollect = pshmem_char_fcollect
+#define shmem_char_fcollect pshmem_char_fcollect
+#pragma weak shmem_schar_fcollect = pshmem_schar_fcollect
+#define shmem_schar_fcollect pshmem_schar_fcollect
+#pragma weak shmem_short_fcollect = pshmem_short_fcollect
+#define shmem_short_fcollect pshmem_short_fcollect
+#pragma weak shmem_int_fcollect = pshmem_int_fcollect
+#define shmem_int_fcollect pshmem_int_fcollect
+#pragma weak shmem_long_fcollect = pshmem_long_fcollect
+#define shmem_long_fcollect pshmem_long_fcollect
+#pragma weak shmem_longlong_fcollect = pshmem_longlong_fcollect
+#define shmem_longlong_fcollect pshmem_longlong_fcollect
+#pragma weak shmem_uchar_fcollect = pshmem_uchar_fcollect
+#define shmem_uchar_fcollect pshmem_uchar_fcollect
+#pragma weak shmem_ushort_fcollect = pshmem_ushort_fcollect
+#define shmem_ushort_fcollect pshmem_ushort_fcollect
+#pragma weak shmem_uint_fcollect = pshmem_uint_fcollect
+#define shmem_uint_fcollect pshmem_uint_fcollect
+#pragma weak shmem_ulong_fcollect = pshmem_ulong_fcollect
+#define shmem_ulong_fcollect pshmem_ulong_fcollect
+#pragma weak shmem_ulonglong_fcollect = pshmem_ulonglong_fcollect
+#define shmem_ulonglong_fcollect pshmem_ulonglong_fcollect
+#pragma weak shmem_int8_fcollect = pshmem_int8_fcollect
+#define shmem_int8_fcollect pshmem_int8_fcollect
+#pragma weak shmem_int16_fcollect = pshmem_int16_fcollect
+#define shmem_int16_fcollect pshmem_int16_fcollect
+#pragma weak shmem_int32_fcollect = pshmem_int32_fcollect
+#define shmem_int32_fcollect pshmem_int32_fcollect
+#pragma weak shmem_int64_fcollect = pshmem_int64_fcollect
+#define shmem_int64_fcollect pshmem_int64_fcollect
+#pragma weak shmem_uint8_fcollect = pshmem_uint8_fcollect
+#define shmem_uint8_fcollect pshmem_uint8_fcollect
+#pragma weak shmem_uint16_fcollect = pshmem_uint16_fcollect
+#define shmem_uint16_fcollect pshmem_uint16_fcollect
+#pragma weak shmem_uint32_fcollect = pshmem_uint32_fcollect
+#define shmem_uint32_fcollect pshmem_uint32_fcollect
+#pragma weak shmem_uint64_fcollect = pshmem_uint64_fcollect
+#define shmem_uint64_fcollect pshmem_uint64_fcollect
+#pragma weak shmem_size_fcollect = pshmem_size_fcollect
+#define shmem_size_fcollect pshmem_size_fcollect
+#pragma weak shmem_ptrdiff_fcollect = pshmem_ptrdiff_fcollect
+#define shmem_ptrdiff_fcollect pshmem_ptrdiff_fcollect
 #endif /* ENABLE_PSHMEM */
 
-/**
- * @brief Fixed-length collect of 32-bit data from all PEs in a set
- *
- * @param target Address of symmetric data object to receive collected data
- * @param source Address of symmetric data object containing data to collect
- * @param nelems Number of elements in source array
- * @param PE_start First PE in the active set
- * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
- * @param PE_size Number of PEs in the active set
- * @param pSync Symmetric work array
- */
-void shmem_fcollect32(void *target, const void *source, size_t nelems,
-                      int PE_start, int logPE_stride, int PE_size,
-                      long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
-         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+#define SHMEM_TYPENAME_FCOLLECT(_type, _typename)                              \
+  int shmem_##_typename##_fcollect(shmem_team_t team, _type *dest,             \
+                                   const _type *source, size_t nelems) {       \
+    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, dest, source,      \
+           nelems);                                                            \
+    colls.fcollect.f(team, dest, source, nelems);                              \
+  }
 
-  colls.fcollect.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
-                     pSync);
-}
-
-/**
- * @brief Fixed-length collect of 64-bit data from all PEs in a set
- *
- * @param target Address of symmetric data object to receive collected data
- * @param source Address of symmetric data object containing data to collect
- * @param nelems Number of elements in source array
- * @param PE_start First PE in the active set
- * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
- * @param PE_size Number of PEs in the active set
- * @param pSync Symmetric work array
- */
-void shmem_fcollect64(void *target, const void *source, size_t nelems,
-                      int PE_start, int logPE_stride, int PE_size,
-                      long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
-         source, nelems, PE_start, logPE_stride, PE_size, pSync);
-
-  colls.fcollect.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
-                     pSync);
-}
+SHMEM_TYPENAME_FCOLLECT(float, float)
+SHMEM_TYPENAME_FCOLLECT(double, double)
+SHMEM_TYPENAME_FCOLLECT(long double, longdouble)
+SHMEM_TYPENAME_FCOLLECT(char, char)
+SHMEM_TYPENAME_FCOLLECT(signed char, schar)
+SHMEM_TYPENAME_FCOLLECT(short, short)
+SHMEM_TYPENAME_FCOLLECT(int, int)
+SHMEM_TYPENAME_FCOLLECT(long, long)
+SHMEM_TYPENAME_FCOLLECT(long long, longlong)
+SHMEM_TYPENAME_FCOLLECT(unsigned char, uchar)
+SHMEM_TYPENAME_FCOLLECT(unsigned short, ushort)
+SHMEM_TYPENAME_FCOLLECT(unsigned int, uint)
+SHMEM_TYPENAME_FCOLLECT(unsigned long, ulong)
+SHMEM_TYPENAME_FCOLLECT(unsigned long long, ulonglong)
+SHMEM_TYPENAME_FCOLLECT(int8_t, int8)
+SHMEM_TYPENAME_FCOLLECT(int16_t, int16)
+SHMEM_TYPENAME_FCOLLECT(int32_t, int32)
+SHMEM_TYPENAME_FCOLLECT(int64_t, int64)
+SHMEM_TYPENAME_FCOLLECT(uint8_t, uint8)
+SHMEM_TYPENAME_FCOLLECT(uint16_t, uint16)
+SHMEM_TYPENAME_FCOLLECT(uint32_t, uint32)
+SHMEM_TYPENAME_FCOLLECT(uint64_t, uint64)
+SHMEM_TYPENAME_FCOLLECT(size_t, size)
+SHMEM_TYPENAME_FCOLLECT(ptrdiff_t, ptrdiff)
 
 /** @} */
 

@@ -3128,17 +3128,46 @@ API_COLLECT_TYPE(uint64_t, uint64)
 API_COLLECT_TYPE(size_t, size)
 API_COLLECT_TYPE(ptrdiff_t, ptrdiff)
 
-// TODO: deprecate this
-// #define API_COLLECT_NAME_SIZE(_opname, _size)                                  \
-//   /* see \ref shmem_##_opname##64() */                                         \
-//   void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
-//                               int PE_start, int logPE_stride, int PE_size,     \
-//                               long *pSync);
+#define API_FCOLLECT_TYPE(_type, _typename)                                    \
+  int shmem_##_typename##_fcollect(shmem_team_t team, _type *dest,             \
+                                   const _type *source, size_t nelems);
 
-// API_COLLECT_NAME_SIZE(fcollect, 32)
-// API_COLLECT_NAME_SIZE(fcollect, 64)
-// API_COLLECT_NAME_SIZE(collect, 32)
-// API_COLLECT_NAME_SIZE(collect, 64)
+API_FCOLLECT_TYPE(float, float)
+API_FCOLLECT_TYPE(double, double)
+API_FCOLLECT_TYPE(long double, longdouble)
+API_FCOLLECT_TYPE(char, char)
+API_FCOLLECT_TYPE(signed char, schar)
+API_FCOLLECT_TYPE(short, short)
+API_FCOLLECT_TYPE(int, int)
+API_FCOLLECT_TYPE(long, long)
+API_FCOLLECT_TYPE(long long, longlong)
+API_FCOLLECT_TYPE(unsigned char, uchar)
+API_FCOLLECT_TYPE(unsigned short, ushort)
+API_FCOLLECT_TYPE(unsigned int, uint)
+API_FCOLLECT_TYPE(unsigned long, ulong)
+API_FCOLLECT_TYPE(unsigned long long, ulonglong)
+API_FCOLLECT_TYPE(int8_t, int8)
+API_FCOLLECT_TYPE(int16_t, int16)
+API_FCOLLECT_TYPE(int32_t, int32)
+API_FCOLLECT_TYPE(int64_t, int64)
+API_FCOLLECT_TYPE(uint8_t, uint8)
+API_FCOLLECT_TYPE(uint16_t, uint16)
+API_FCOLLECT_TYPE(uint32_t, uint32)
+API_FCOLLECT_TYPE(uint64_t, uint64)
+API_FCOLLECT_TYPE(size_t, size)
+API_FCOLLECT_TYPE(ptrdiff_t, ptrdiff)
+
+// TODO: deprecate this
+#define API_COLLECT_NAME_SIZE(_opname, _size)                                  \
+  /* see \ref shmem_##_opname##64() */                                         \
+  void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
+                              int PE_start, int logPE_stride, int PE_size,     \
+                              long *pSync);
+
+API_COLLECT_NAME_SIZE(fcollect, 32)
+API_COLLECT_NAME_SIZE(fcollect, 64)
+API_COLLECT_NAME_SIZE(collect, 32)
+API_COLLECT_NAME_SIZE(collect, 64)
 
 //////////////////////////////////////////////////////////////////////////////////
 /**
