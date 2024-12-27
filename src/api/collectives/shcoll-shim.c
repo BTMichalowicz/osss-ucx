@@ -51,6 +51,11 @@ void collectives_init(void) {
   /* TODO: reductions */
 }
 
+//
+// FIXME: do the collectives that return int need to return an int here,
+//        or do is returning an int in the internal helpers enough?
+//
+
 /**
  * @brief Cleanup and finalize collective operations
  */
@@ -400,26 +405,6 @@ SHMEM_TYPENAME_FCOLLECT(ptrdiff_t, ptrdiff)
  * @{
  */
 
-#ifdef ENABLE_PSHMEM
-#pragma weak shmem_barrier = pshmem_barrier
-#define shmem_barrier pshmem_barrier
-#endif /* ENABLE_PSHMEM */
-
-/**
- * @brief Barrier synchronization across a set of PEs
- *
- * @param PE_start First PE in the active set
- * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
- * @param PE_size Number of PEs in the active set
- * @param pSync Symmetric work array
- */
-void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
-         logPE_stride, PE_size, pSync);
-
-  colls.barrier.f(PE_start, logPE_stride, PE_size, pSync);
-}
-
 /*
  * sync variables supplied by me
  */
@@ -442,6 +427,7 @@ void shmem_barrier_all(void) {
 
 /** @} */
 
+///////////////////////////////////////////////////////////////////////
 /**
  * @defgroup sync Synchronization Operations
  * @{
@@ -452,20 +438,26 @@ void shmem_barrier_all(void) {
 #define shmem_sync pshmem_sync
 #endif /* ENABLE_PSHMEM */
 
-/**
- * @brief Synchronize across a set of PEs
- *
- * @param PE_start First PE in the active set
- * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
- * @param PE_size Number of PEs in the active set
- * @param pSync Symmetric work array
- */
-void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync) {
+//
+// TODO: deprecate this
+//
+
+/* PE-based synchronization function */
+void shmem_sync(int PE_start, int logPE_stride, int PE_size,
+                      long *pSync) {
   logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
          logPE_stride, PE_size, pSync);
-
   colls.sync.f(PE_start, logPE_stride, PE_size, pSync);
 }
+
+// /* Team-based synchronization function */
+// int shmem_sync(shmem_team_t team) {
+//   logger(LOG_COLLECTIVES, "%s(%p)", __func__, team);
+//   colls.sync.f(team);
+//   return 0; /* Assuming success */
+// }
+
+///////////////////////////////////////////////////////////////////////
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_sync_all = pshmem_sync_all
@@ -484,7 +476,7 @@ void shmem_sync_all(void) {
 /** @} */
 
 /**
- * @defgroup broadcast Broadcast Operations
+ * @defgroup Broadcast Operations
  * @{
  */
 

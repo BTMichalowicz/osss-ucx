@@ -28,10 +28,12 @@
 extern "C" {
 #endif /* __cplusplus */
 
+////////////////////////////////////////////////////////////////////////////////
 /*
  * start/stop & query
  */
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief initializes the OpenSHMEM environment on the calling PE.
  *
@@ -58,6 +60,7 @@ extern "C" {
  */
 void start_pes(int npes) _DEPRECATED_BY(shmem_init, 1.2);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief initializes the OpenSHMEM environment on the calling PE.
  * @page shmem_init
@@ -77,6 +80,7 @@ void start_pes(int npes) _DEPRECATED_BY(shmem_init, 1.2);
  */
 void shmem_init(void);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief initializes the OpenSHMEM environment on the calling PE
  * and requests a threading support level
@@ -101,6 +105,7 @@ void shmem_init(void);
  */
 int shmem_init_thread(int requested, int *provided);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief finalizes the OpenSHMEM environment on the calling PE.
  * @page shmem_finalize
@@ -122,8 +127,10 @@ int shmem_init_thread(int requested, int *provided);
  */
 void shmem_finalize(void);
 
+////////////////////////////////////////////////////////////////////////////////
 #if 1
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief is the OpenSHMEM environment initialized on the calling PE?
  * @page shmem_initialized
@@ -143,6 +150,7 @@ void shmem_finalize(void);
  */
 int shmem_initialized(void);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief has the openSHMEM environment been finalized on the calling PE?
  * @page shmem_finalized
@@ -164,6 +172,7 @@ int shmem_finalized(void);
 
 #endif /* PR470 */
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief causes immediate exit from the OpenSHMEM program on all PEs.
  * @page shmem_global_exit
@@ -186,6 +195,7 @@ int shmem_finalized(void);
  */
 void shmem_global_exit(int status);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief returns the "rank" or identity of the calling PE
  * @page _my_pe
@@ -195,6 +205,7 @@ void shmem_global_exit(int status);
  */
 int _my_pe(void) _WUR _DEPRECATED_BY(shmem_my_pe, 1.2);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief returns the "rank" or identity of the calling PE
  * @page shmem_my_pe
@@ -214,6 +225,7 @@ int _my_pe(void) _WUR _DEPRECATED_BY(shmem_my_pe, 1.2);
  */
 int shmem_my_pe(void) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief These routines return the number of PEs in the program
  *
@@ -222,6 +234,7 @@ int shmem_my_pe(void) _WUR;
  */
 int _num_pes(void) _WUR _DEPRECATED_BY(shmem_n_pes, 1.2);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief returns the number of PEs in the program
  *
@@ -243,6 +256,7 @@ int _num_pes(void) _WUR _DEPRECATED_BY(shmem_n_pes, 1.2);
  */
 int shmem_n_pes(void) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Supplies the supported threading level to the caller
  *
@@ -262,6 +276,7 @@ int shmem_n_pes(void) _WUR;
  */
 void shmem_query_thread(int *provided);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief determines the major.minor version numbers of this release.
  * @page shmem_info_get_version
@@ -284,6 +299,7 @@ void shmem_query_thread(int *provided);
  */
 void shmem_info_get_version(int *major, int *minor);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief determines a vandor-supplied name for this release.
  * @page shmem_info_get_name
@@ -305,6 +321,7 @@ void shmem_info_get_version(int *major, int *minor);
  */
 void shmem_info_get_name(char *name);
 
+////////////////////////////////////////////////////////////////////////////////
 #ifdef PR463
 /*
  * https://github.com/openshmem-org/specification/issues/463
@@ -315,6 +332,8 @@ void shmem_info_get_version_number(int *version);
 void shmem_info_get_vendor_version(int *major, int *minor, int *patch);
 void shmem_info_get_vendor_version_number(int *version);
 #endif
+
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Allows the user to control profiling
  * @section Synopsis
@@ -335,10 +354,12 @@ void shmem_info_get_vendor_version_number(int *version);
  */
 void shmem_pcontrol(const int level, ...);
 
+////////////////////////////////////////////////////////////////////////////////
 /*
  * I/O
  */
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUTGET(_opname, _name, _type)                             \
   /* see \ref shmem_ctx_long_##_opname() */                                    \
   void shmem_ctx_##_name##_##_opname(shmem_ctx_t ctx, _type *dest,             \
@@ -403,6 +424,7 @@ API_DECL_CTX_PUTGET(get, ptrdiff, ptrdiff_t)
 
 #undef API_DECL_CTX_PUTGET
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_PUTGET(_opname, _name, _type)                                 \
   void shmem_##_name##_##_opname(_type *dest, const _type *src, size_t nelems, \
                                  int pe);                                      \
@@ -464,6 +486,7 @@ API_DECL_PUTGET(get, ptrdiff, ptrdiff_t)
 
 #undef API_DECL_PUTGET
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUTGET_SIZE(_opname, _size)                               \
   /* see \ref shmem_ctx_long_##_opname() */                                    \
   void shmem_ctx_##_opname##_size(shmem_ctx_t ctx, void *dest,                 \
@@ -490,6 +513,7 @@ API_DECL_CTX_PUTGET_SIZE(get, 128)
 
 #undef API_DECL_CTX_PUTGET_SIZE
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_PUTGET_SIZE(_opname, _size)                                   \
   void shmem_##_opname##_size(void *dest, const void *src, size_t nelems,      \
                               int pe);                                         \
@@ -512,6 +536,7 @@ API_DECL_PUTGET_SIZE(get, 128)
 
 #undef API_DECL_PUTGET_SIZE
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUTGET_MEM(_opname)                                       \
   /* see \ref shmem_ctx_long_##_opname() */                                    \
   void shmem_ctx_##_opname##mem(shmem_ctx_t ctx, void *dest, const void *src,  \
@@ -525,6 +550,7 @@ API_DECL_CTX_PUTGET_MEM(get)
 
 #undef API_DECL_CTX_PUTGET_MEM
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_PUTGET_MEM(_opname)                                           \
   void shmem_##_opname##mem(void *dest, const void *src, size_t nelems,        \
                             int pe);                                           \
@@ -536,6 +562,7 @@ API_DECL_PUTGET_MEM(get)
 
 #undef API_DECL_PUTGET_MEM
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_CTX_DECL_P(_name, _type)                                           \
   /* see \ref shmem_ctx_long_p() */                                            \
   void shmem_ctx_##_name##_p(shmem_ctx_t ctx, _type *dest, _type src, int pe);
@@ -567,6 +594,7 @@ API_CTX_DECL_P(ptrdiff, ptrdiff_t)
 
 #undef API_CTX_DECL_P
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_P(_name, _type)                                               \
   void shmem_##_name##_p(_type *dest, _type src, int pe);
 
@@ -597,6 +625,7 @@ API_DECL_P(ptrdiff, ptrdiff_t)
 
 #undef API_DECL_P
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_CTX_DECL_G(_name, _type)                                           \
   /* see \ref shmem_ctx_long_g() */                                            \
   _type shmem_ctx_##_name##_g(shmem_ctx_t ctx, const _type *src, int pe);
@@ -628,6 +657,7 @@ API_CTX_DECL_G(ptrdiff, ptrdiff_t)
 
 #undef API_CTX_DECL_G
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_G(_name, _type)                                               \
   _type shmem_##_name##_g(const _type *src, int pe);
 
@@ -658,6 +688,7 @@ API_DECL_G(ptrdiff, ptrdiff_t)
 
 #undef API_DECL_G
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUT_SIGNAL(_name, _type)                                  \
   void shmem_ctx_##_name##_put_signal(                                         \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems,           \
@@ -688,6 +719,7 @@ API_DECL_CTX_PUT_SIGNAL(uint64, uint64_t);
 API_DECL_CTX_PUT_SIGNAL(size, size_t);
 API_DECL_CTX_PUT_SIGNAL(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUT_SIGNAL_NBI(_name, _type)                              \
   void shmem_ctx_##_name##_put_signal_nbi(                                     \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems,           \
@@ -718,6 +750,7 @@ API_DECL_CTX_PUT_SIGNAL_NBI(uint64, uint64_t);
 API_DECL_CTX_PUT_SIGNAL_NBI(size, size_t);
 API_DECL_CTX_PUT_SIGNAL_NBI(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_PUT_SIGNAL(_name, _type)                                      \
   void shmem_##_name##_put_signal(_type *dest, const _type *src,               \
                                   size_t nelems, uint64_t *sig_addr,           \
@@ -748,6 +781,7 @@ API_DECL_PUT_SIGNAL(uint64, uint64_t);
 API_DECL_PUT_SIGNAL(size, size_t);
 API_DECL_PUT_SIGNAL(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_PUT_SIGNAL_NBI(_name, _type)                                  \
   void shmem_##_name##_put_signal_nbi(_type *dest, const _type *src,           \
                                       size_t nelems, uint64_t *sig_addr,       \
@@ -778,6 +812,7 @@ API_DECL_PUT_SIGNAL_NBI(uint64, uint64_t);
 API_DECL_PUT_SIGNAL_NBI(size, size_t);
 API_DECL_PUT_SIGNAL_NBI(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUT_SIGNAL_SIZE(_size)                                    \
   /* see \ref shmem_ctx_long_put_signal() */                                   \
   void shmem_ctx_put##_size##_signal(                                          \
@@ -796,6 +831,7 @@ API_DECL_CTX_PUT_SIGNAL_SIZE(128)
 
 #undef API_DECL_CTX_PUT_SIGNAL_SIZE
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUTMEM_SIGNAL()                                           \
   void shmem_ctx_putmem_signal(shmem_ctx_t ctx, void *dest, const void *src,   \
                                size_t nelems, uint64_t *sig_addr,              \
@@ -808,6 +844,7 @@ API_DECL_CTX_PUTMEM_SIGNAL()
 
 #undef API_DECL_CTX_PUTMEM_SIGNAL
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_PUT_SIGNAL_SIZE(_size)                                        \
   /* see \ref shmem_long_put_signal() */                                       \
   void shmem_put##_size##_signal(void *dest, const void *src, size_t nelems,   \
@@ -826,6 +863,7 @@ API_DECL_PUT_SIGNAL_SIZE(128)
 
 #undef API_DECL_PUT_SIGNAL_SIZE
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_PUTMEM_SIGNAL()                                               \
   void shmem_putmem_signal(void *dest, const void *src, size_t nelems,         \
                            uint64_t *sig_addr, uint64_t signal, int sig_op,    \
@@ -838,6 +876,7 @@ API_DECL_PUTMEM_SIGNAL()
 
 #undef API_DECL_PUTMEM_SIGNAL
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief fetches value of the signal object.
  * @page shmem_signal_fetch
@@ -859,6 +898,7 @@ API_DECL_PUTMEM_SIGNAL()
  */
 uint64_t shmem_signal_fetch(const uint64_t *sig_addr);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief waits for signal object to change value
  * @page shmem_signal_wait_until
@@ -884,42 +924,43 @@ uint64_t shmem_signal_fetch(const uint64_t *sig_addr);
 uint64_t shmem_signal_wait_until(uint64_t *sig_addr, int cmp,
                                  uint64_t cmp_value);
 
-/*
- * barriers & syncs
- */
-
+////////////////////////////////////////////////////////////////////////////////
 /**
- * @brief causes an active set of PEs to synchronize.  Local memory stores
- * complete.
- * @page shmem_sync
- * @section Synopsis
- *
- * @subsection c C/C++
- @code
- void shmem_sync(int PE_start, int logPE_stride, int PE_size,
-                 long *pSync);
- @endcode
- *
- * @param[in] PE_start first PE of the active set
- * @param[in] logPE_stride log2 of stride between PEs
- * @param[in] PE_size number of PEs in the active set
- * @param[in, out] pSync symmetric work array
- *
- * @section Effect
- * PEs in the active set defined by (PE_start, logPE_stride,
- * PE_size) synchronize: no PE from this active set can leave the
- * global barrier until all have arrived.  Local memory loads and store
- * complete before return.  PEs not in the active set do not call
- * shmem_sync().  pSync must be initialized everywhere before
- * use, and, if modified, must be reset to its state before the
- * call.
- *
- * @section Return
- * None.
- *
- */
-void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync);
+  * @brief causes an active set of PEs to synchronize.  Local memory stores
+  * complete.
+  * @page shmem_sync
+  * @section Synopsis
+  *
+  * @subsection c C/C++
+  @code
+  void shmem_sync(int PE_start, int logPE_stride, int PE_size,
+                  long *pSync);
+  @endcode
+  *
+  * @param[in] PE_start first PE of the active set
+  * @param[in] logPE_stride log2 of stride between PEs
+  * @param[in] PE_size number of PEs in the active set
+  * @param[in, out] pSync symmetric work array
+  *
+  * @section Effect
+  * PEs in the active set defined by (PE_start, logPE_stride,
+  * PE_size) synchronize: no PE from this active set can leave the
+  * global barrier until all have arrived.  Local memory loads and store
+  * complete before return.  PEs not in the active set do not call
+  * shmem_sync().  pSync must be initialized everywhere before
+  * use, and, if modified, must be reset to its state before the
+  * call.
+  *
+  * @section Return
+  * None.
+  *
+  */
 
+// TODO: deprecate this, make a team-based sync for the C11 bindings
+void shmem_sync(int PE_start, int logPE_stride, int PE_size,
+                long *pSync);
+
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief causes all PEs to synchronize
  * @page shmem_sync_all
@@ -940,6 +981,7 @@ void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync);
  */
 void shmem_sync_all(void);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief causes an active set of PEs to synchronize
  * @page shmem_barrier
@@ -971,6 +1013,7 @@ void shmem_sync_all(void);
  */
 void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief causes all PEs to synchronize
  * @page shmem_barrier_all
@@ -991,6 +1034,7 @@ void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
  */
 void shmem_barrier_all(void);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief outbound communication completes before any subsequent
  * communication is sent.
@@ -1013,6 +1057,7 @@ void shmem_barrier_all(void);
 void shmem_ctx_fence(shmem_ctx_t ctx);
 void shmem_fence(void);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief causes outbound communication to complete before
  * subsequent puts are sent.
@@ -1035,10 +1080,12 @@ void shmem_fence(void);
 void shmem_ctx_quiet(shmem_ctx_t ctx);
 void shmem_quiet(void);
 
+////////////////////////////////////////////////////////////////////////////////
 /*
  * accessibility
  */
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief checks whether the caller PE can communicate with the named PE
  * @page shmem_pe_accessible
@@ -1058,6 +1105,7 @@ void shmem_quiet(void);
  */
 int shmem_pe_accessible(int pe) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief checks whether the caller PE can communicate with a memory
  * address on the named PE
@@ -1082,6 +1130,7 @@ int shmem_pe_accessible(int pe) _WUR;
  */
 int shmem_addr_accessible(const void *addr, int pe) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief checks whether an address on a target PE can be accessed
  * with a simple load/store operation.
@@ -1104,6 +1153,7 @@ int shmem_addr_accessible(const void *addr, int pe) _WUR;
  */
 void *shmem_ptr(const void *target, int pe) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /*
  * symmetric memory management
  */
@@ -1118,6 +1168,7 @@ void *shmem_ptr(const void *target, int pe) _WUR;
  */
 void *shmalloc(size_t size) _WUR _DEPRECATED_BY(shmem_malloc, 1.2);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief dynamically allocates symmetric memory
  *
@@ -1126,6 +1177,7 @@ void *shmalloc(size_t size) _WUR _DEPRECATED_BY(shmem_malloc, 1.2);
  */
 void shfree(void *ptr) _DEPRECATED_BY(shmem_free, 1.2);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief dynamically allocates symmetric memory
  *
@@ -1134,6 +1186,7 @@ void shfree(void *ptr) _DEPRECATED_BY(shmem_free, 1.2);
  */
 void *shrealloc(void *ptr, size_t size) _WUR _DEPRECATED_BY(shmem_realloc, 1.2);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief dynamically allocates symmetric memory
  *
@@ -1143,6 +1196,7 @@ void *shrealloc(void *ptr, size_t size) _WUR _DEPRECATED_BY(shmem_realloc, 1.2);
 void *shmemalign(size_t alignment, size_t size) _WUR
     _DEPRECATED_BY(shmem_align, 1.2);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief dynamically allocates symmetric memory
  * @page shmem_malloc
@@ -1166,6 +1220,7 @@ void *shmemalign(size_t alignment, size_t size) _WUR
  */
 void *shmem_malloc(size_t size) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief dynamically allocates zeroed symmetric memory
  * @page shmem_calloc
@@ -1190,6 +1245,7 @@ void *shmem_malloc(size_t size) _WUR;
  */
 void *shmem_calloc(size_t count, size_t size) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief dynamically allocates symmetric memory
  * @page shmem_free
@@ -1210,6 +1266,7 @@ void *shmem_calloc(size_t count, size_t size) _WUR;
  */
 void shmem_free(void *ptr);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief dynamically allocates symmetric memory
  * @page shmem_realloc
@@ -1234,6 +1291,7 @@ void shmem_free(void *ptr);
  */
 void *shmem_realloc(void *ptr, size_t size) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief aligns already allocated symmetric memory
  * @page shmem_align
@@ -1258,6 +1316,7 @@ void *shmem_realloc(void *ptr, size_t size) _WUR;
  */
 void *shmem_align(size_t alignment, size_t size) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief dynamically allocates symmetric memory with hints about
  * memory properties
@@ -1285,6 +1344,7 @@ void *shmem_align(size_t alignment, size_t size) _WUR;
  */
 void *shmem_malloc_with_hints(size_t size, long hints) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_TEST_AND_WAIT_UNTIL(_opname, _rettype, _name, _type)          \
   /* see \ref shmem_##_name##_opname() */                                      \
   _rettype shmem_##_name##_##_opname(_type *ivar, int cmp, _type cmp_value)
@@ -1327,6 +1387,7 @@ API_DECL_TEST_AND_WAIT_UNTIL(test, int, uint64, uint64_t);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, size, size_t);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief wait for a symmetric variable to change value with
  *        specified condition
@@ -1368,6 +1429,7 @@ API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ptrdiff, ptrdiff_t);
 
 #undef API_DECL_TEST_AND_WAIT_UNTIL
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_TEST_ALL(_opname, _type)                                      \
   int shmem_##_opname##_test_all(_type *ivars, size_t nelems,                  \
                                  const int *status, int cmp, _type cmp_value)
@@ -1387,6 +1449,7 @@ API_DECL_TEST_ALL(uint64, uint64_t);
 API_DECL_TEST_ALL(size, size_t);
 API_DECL_TEST_ALL(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_TEST_ANY(_opname, _type)                                      \
   size_t shmem_##_opname##_test_any(_type *ivars, size_t nelems,               \
                                     const int *status, int cmp,                \
@@ -1407,6 +1470,7 @@ API_DECL_TEST_ANY(uint64, uint64_t);
 API_DECL_TEST_ANY(size, size_t);
 API_DECL_TEST_ANY(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_TEST_SOME(_opname, _type)                                     \
   size_t shmem_##_opname##_test_some(_type *ivars, size_t nelems,              \
                                      size_t *indices, const int *status,       \
@@ -1427,6 +1491,7 @@ API_DECL_TEST_SOME(uint64, uint64_t);
 API_DECL_TEST_SOME(size, size_t);
 API_DECL_TEST_SOME(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_TEST_ALL_VECTOR(_opname, _type)                               \
   int shmem_##_opname##_test_all_vector(_type *ivars, size_t nelems,           \
                                         const int *status, int cmp,            \
@@ -1447,6 +1512,7 @@ API_DECL_TEST_ALL_VECTOR(uint64, uint64_t);
 API_DECL_TEST_ALL_VECTOR(size, size_t);
 API_DECL_TEST_ALL_VECTOR(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_TEST_ANY_VECTOR(_opname, _type)                               \
   size_t shmem_##_opname##_test_any_vector(_type *ivars, size_t nelems,        \
                                            const int *status, int cmp,         \
@@ -1467,6 +1533,7 @@ API_DECL_TEST_ANY_VECTOR(uint64, uint64_t);
 API_DECL_TEST_ANY_VECTOR(size, size_t);
 API_DECL_TEST_ANY_VECTOR(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_TEST_SOME_VECTOR(_opname, _type)                              \
   size_t shmem_##_opname##_test_some_vector(                                   \
       _type *ivars, size_t nelems, size_t *indices, const int *status,         \
@@ -1487,6 +1554,7 @@ API_DECL_TEST_SOME_VECTOR(uint64, uint64_t);
 API_DECL_TEST_SOME_VECTOR(size, size_t);
 API_DECL_TEST_SOME_VECTOR(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_WAIT_UNTIL_ALL(_opname, _type)                                \
   void shmem_##_opname##_wait_until_all(_type *ivars, size_t nelems,           \
                                         const int *status, int cmp,            \
@@ -1507,6 +1575,7 @@ API_DECL_WAIT_UNTIL_ALL(uint64, uint64_t);
 API_DECL_WAIT_UNTIL_ALL(size, size_t);
 API_DECL_WAIT_UNTIL_ALL(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_WAIT_UNTIL_ANY(_opname, _type)                                \
   size_t shmem_##_opname##_wait_until_any(_type *ivars, size_t nelems,         \
                                           const int *status, int cmp,          \
@@ -1527,6 +1596,7 @@ API_DECL_WAIT_UNTIL_ANY(uint64, uint64_t);
 API_DECL_WAIT_UNTIL_ANY(size, size_t);
 API_DECL_WAIT_UNTIL_ANY(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_WAIT_UNTIL_SOME(_opname, _type)                               \
   size_t shmem_##_opname##_wait_until_some(_type *ivars, size_t nelems,        \
                                            size_t *indices, const int *status, \
@@ -1547,6 +1617,7 @@ API_DECL_WAIT_UNTIL_SOME(uint64, uint64_t);
 API_DECL_WAIT_UNTIL_SOME(size, size_t);
 API_DECL_WAIT_UNTIL_SOME(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_WAIT_UNTIL_ALL_VECTOR(_opname, _type)                         \
   void shmem_##_opname##_wait_until_all_vector(_type *ivars, size_t nelems,    \
                                                const int *status, int cmp,     \
@@ -1567,6 +1638,7 @@ API_DECL_WAIT_UNTIL_ALL_VECTOR(uint64, uint64_t);
 API_DECL_WAIT_UNTIL_ALL_VECTOR(size, size_t);
 API_DECL_WAIT_UNTIL_ALL_VECTOR(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_WAIT_UNTIL_ANY_VECTOR(_opname, _type)                         \
   size_t shmem_##_opname##_wait_until_any_vector(_type *ivars, size_t nelems,  \
                                                  const int *status, int cmp,   \
@@ -1587,6 +1659,7 @@ API_DECL_WAIT_UNTIL_ANY_VECTOR(uint64, uint64_t);
 API_DECL_WAIT_UNTIL_ANY_VECTOR(size, size_t);
 API_DECL_WAIT_UNTIL_ANY_VECTOR(ptrdiff, ptrdiff_t);
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_WAIT_UNTIL_SOME_VECTOR(_opname, _type)                        \
   size_t shmem_##_opname##_wait_until_some_vector(                             \
       _type *ivars, size_t nelems, size_t *indices, const int *status,         \
@@ -1620,6 +1693,7 @@ API_DECL_WAIT_UNTIL_SOME_VECTOR(ptrdiff, ptrdiff_t);
 #undef API_DECL_WAIT_UNTIL_ANY_VECTOR
 #undef API_DECL_WAIT_UNTIL_SOME_VECTOR
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief wait for symmetric variable to change value
  * @page shmem_long_wait
@@ -1665,10 +1739,7 @@ API_DECL_WAIT(uint64, uint64_t)
 API_DECL_WAIT(size, size_t)
 API_DECL_WAIT(ptrdiff, ptrdiff_t)
 
-/*
- * atomic swaps
- */
-
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief swap value into symmetric variable, fetch back old value
  * @page shmem_long_atomic_swap
@@ -1713,6 +1784,7 @@ API_CTX_DECL_SWAP(ptrdiff, ptrdiff_t)
 
 #undef API_CTX_DECL_SWAP
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_CTX_DECL_SWAP_NBI(_name, _type)                                    \
   /* see \ref shmem_ctx_long_atomic_swap_nbi() */                              \
   void shmem_ctx_##_name##_atomic_swap_nbi(                                    \
@@ -1750,6 +1822,7 @@ float shmem_float_swap(float *target, float value, int pe)
 double shmem_double_swap(double *target, double value, int pe)
     _DEPRECATED_BY(shmem_double_atomic_swap, 1.4) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief conditionally swap value into symmetric variable, fetch
  * back old value
@@ -1797,6 +1870,7 @@ API_CTX_DECL_CSWAP(ptrdiff, ptrdiff_t)
 
 #undef API_CTX_DECL_CSWAP
 
+////////////////////////////////////////////////////////////////////////////////
 #define API_CTX_DECL_CSWAP_NBI(_name, _type)                                   \
   /* see \ref shmem_ctx_long_atomic_compare_swap_nbi() */                      \
   void shmem_ctx_##_name##_atomic_compare_swap_nbi(                            \
@@ -1822,6 +1896,7 @@ API_CTX_DECL_CSWAP_NBI(ptrdiff, ptrdiff_t)
 
 #undef API_CTX_DECL_CSWAP_NBI
 
+////////////////////////////////////////////////////////////////////////////////
 long shmem_long_cswap(long *target, long cond, long value, int pe)
     _DEPRECATED_BY(shmem_long_atomic_compare_swap, 1.4) _WUR;
 int shmem_int_cswap(int *target, int cond, int value, int pe)
@@ -1830,10 +1905,7 @@ long long shmem_longlong_cswap(long long *target, long long cond,
                                long long value, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_compare_swap, 1.4) _WUR;
 
-/**
- * atomic fetch-{add,inc} & add,inc
- */
-
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief add value to symmetric variable, fetch back old value
  * @page shmem_long_atomic_fetch_add
@@ -1908,6 +1980,7 @@ int shmem_int_fadd(int *target, int value, int pe)
 long long shmem_longlong_fadd(long long *target, long long value, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_fetch_add, 1.4) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief increment symmetric variable, fetch back old value
  * @page shmem_long_atomic_fetch_inc
@@ -1981,6 +2054,7 @@ int shmem_int_finc(int *target, int pe)
 long long shmem_longlong_finc(long long *target, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_fetch_inc, 1.4) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief add value to symmetric variable
  * @page shmem_long_atomic_inc
@@ -2030,6 +2104,7 @@ void shmem_int_add(int *target, int value, int pe)
 void shmem_longlong_add(long long *target, long long value, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_add, 1.4);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief These routines perform an atomic "or" operation
  * between a data value and the target data object.
@@ -2082,6 +2157,7 @@ SHMEM_DECL_VOID_AMO2(or, uint32, uint32_t)
 /* see \ref shmem_ulong_atomic_or() */
 SHMEM_DECL_VOID_AMO2(or, uint64, uint64_t)
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief These routines perform an atomic "or"
  * operation between a data value and the target data object and
@@ -2151,6 +2227,7 @@ SHMEM_DECL_AMO2_NBI(fetch_or, uint32, uint32_t)
 /* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2_NBI(fetch_or, uint64, uint64_t)
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief These routines perform an atomic "and" operation
  * between a data value and the target data object.
@@ -2218,6 +2295,7 @@ SHMEM_DECL_AMO2_NBI(fetch_and, uint32, uint32_t)
 /* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief These routines perform an atomic "and"
  * operation between a data value and the target data object and
@@ -2287,6 +2365,7 @@ SHMEM_DECL_AMO2_NBI(fetch_and, uint32, uint32_t)
 /* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief These routines perform an atomic "xor" operation
  * between a data value and the target data object.
@@ -2354,6 +2433,7 @@ SHMEM_DECL_AMO2_NBI(fetch_xor, uint32, uint32_t)
 /* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_xor, uint64, uint64_t)
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief These routines perform an atomic "xor"
  * operation between a data value and the target data object and
@@ -2408,6 +2488,7 @@ SHMEM_DECL_AMO2(fetch_xor, uint32, uint32_t)
 /* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, uint64, uint64_t)
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief increment symmetric variable
  * @page shmem_long_atomic_inc
@@ -2457,6 +2538,7 @@ void shmem_int_inc(int *target, int pe)
 void shmem_longlong_inc(long long *target, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_inc, 1.4);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief These routines perform an atomic fetch from a remote PE
  * @page shmem_ctx_long_atomic_fetch
@@ -2559,185 +2641,7 @@ float shmem_float_fetch(const float *dest, int pe)
 double shmem_double_fetch(const double *dest, int pe)
     _DEPRECATED_BY(shmem_double_atomic_fetch, 1.4) _WUR;
 
-/**
- * @brief These routines perform an atomic set of a variable on a
- * remote PE
- * @page shmem_long_atomic_fetch_xor
- * @section Synopsis
- *
- * - C/C++:
- * @code
- long shmem_ulong_atomic_fetch_xor(long *dest, long value, int pe);
- * @endcode
- *
- * @param dest    Address of the symmetric data object where to save
- *                    the data on the target pe.
- * @param value     The value with which the exclusive-or operation is
- *                    atomically performed with the data at address dest.
- * @param pe        An integer that indicates the PE number upon
- *                which dest is to be updated.
- *
- * @section Constraints
- *      - dest must be the address of a symmetric data object.
- *      - If using C/C++, the type of value must match that implied in
- *        the Synopsis section.
- *      - value must be the same type as the target data object.
- *      - This process must be carried out guaranteeing that it will not
- *          be interrupted by any other atomic operation on the
- *          specified type.
- *
- * @section Effect
- *
- * The atomic exclusive-or routines perform an xor-operation between
- * value and the data at address dest on PE pe. The operation must
- * be completed without the possibility of another process updating
- * dest between the time of the fetch and the update.
- *
- * @section Return
- *
- * Value stored previously in remote location.
- *
- */
-SHMEM_DECL_AMO2(fetch_xor, long, long)
-
-/* see \ref shmem_long_atomic_fetch_xor() */
-SHMEM_DECL_AMO2(fetch_xor, ulong, unsigned long)
-/* see \ref shmem_long_atomic_fetch_xor() */
-SHMEM_DECL_AMO2(fetch_xor, uint, unsigned int)
-/* see \ref shmem_long_atomic_fetch_xor() */
-SHMEM_DECL_AMO2(fetch_xor, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_fetch_xor() */
-SHMEM_DECL_AMO2(fetch_xor, int32, int32_t)
-/* see \ref shmem_long_atomic_fetch_xor() */
-SHMEM_DECL_AMO2(fetch_xor, int64, int64_t)
-/* see \ref shmem_uong_atomic_fetch_xor() */
-SHMEM_DECL_AMO2(fetch_xor, uint32, uint32_t)
-/* see \ref shmem_long_atomic_fetch_xor() */
-SHMEM_DECL_AMO2(fetch_xor, uint64, uint64_t)
-
-/**
- * @brief increment symmetric variable
- * @page shmem_long_atomic_inc
- * @section Synopsis
- *
- * @subsection c C/C++
- @code
- void shmem_long_atomic_inc(long *target, int pe);
- @endcode
- *
- * @section Effect
- *
- * atomic increment on another PE
- *
- * @section Return
- * None.
- *
- */
-SHMEM_DECL_VOID_AMO1(inc, long, long)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, int, int)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, longlong, long long)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, uint, unsigned int)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, ulong, unsigned long)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, int32, int32_t)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, int64, int64_t)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, uint32, uint32_t)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, uint64, uint64_t)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, size, size_t)
-/* see \ref shmem_long_atomic_inc() */
-SHMEM_DECL_VOID_AMO1(inc, ptrdiff, ptrdiff_t)
-
-void shmem_long_inc(long *target, int pe)
-    _DEPRECATED_BY(shmem_long_atomic_inc, 1.4);
-void shmem_int_inc(int *target, int pe)
-    _DEPRECATED_BY(shmem_int_atomic_inc, 1.4);
-void shmem_longlong_inc(long long *target, int pe)
-    _DEPRECATED_BY(shmem_longlong_atomic_inc, 1.4);
-
-/**
- * @brief These routines perform an atomic fetch from a remote PE
- * @page shmem_ctx_long_atomic_fetch
- * @section Synopsis
- *
- * - C/C++:
- * @code
- long shmem_ctx_long_atomic_fetch(shmem_ctx_t ctx, const long *dest, int pe);
- * @endcode
- *
- * @param dest    Address of the symmetric data object in which save the
- *                    data on the target pe.
- * @param pe        An integer that indicates the PE number upon
- *                    which dest is to be updated.
- *
- * @section Constraints
- *      - dest must be the address of a symmetric data object.
- *      - If using C/C++, the type of value must match that implied
- *        in the Synopsis section.
- *      - value must be the same type as the target data object.
- *      - This process must be carried out guaranteeing that it will not
- *          be interrupted by any other atomic operation on the
- *          specified type.
- *
- * @section Effect
- *
- * The atomic fetch routines atomically return the value at address
- * "dest" on PE pe. The operation must
- * be completed without the possibility of another process updating
- * dest on PE pe using the same type.
- *
- * @section Return
- * The value stored at address "dest" on PE pe.
- *
- */
-SHMEM_DECL_CONST_AMO1(fetch, long, long)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, int, int)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, float, float)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, double, double)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, longlong, long long)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, uint, unsigned int)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, ulong, unsigned long)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, int32, int32_t)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, int64, int64_t)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, uint32, uint32_t)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, uint64, uint64_t)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, size, size_t)
-/* see \ref shmem_long_atomic_fetch() */
-SHMEM_DECL_CONST_AMO1(fetch, ptrdiff, ptrdiff_t)
-
-int shmem_int_fetch(const int *dest, int pe)
-    _DEPRECATED_BY(shmem_int_atomic_fetch, 1.4) _WUR;
-long shmem_long_fetch(const long *dest, int pe)
-    _DEPRECATED_BY(shmem_long_atomic_fetch, 1.4) _WUR;
-long long shmem_longlong_fetch(const long long *dest, int pe)
-    _DEPRECATED_BY(shmem_longlong_atomic_fetch, 1.4) _WUR;
-float shmem_float_fetch(const float *dest, int pe)
-    _DEPRECATED_BY(shmem_float_atomic_fetch, 1.4) _WUR;
-double shmem_double_fetch(const double *dest, int pe)
-    _DEPRECATED_BY(shmem_double_atomic_fetch, 1.4) _WUR;
-
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief These routines perform an atomic set of a variable on a
  * remote PE
@@ -2817,10 +2721,7 @@ void shmem_float_set(float *dest, float value, int pe)
 void shmem_double_set(double *dest, double value, int pe)
     _DEPRECATED_BY(shmem_double_atomic_set, 1.4);
 
-/*
- * locks/critical section
- */
-
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief claims a distributed lock
  *
@@ -2844,6 +2745,7 @@ void shmem_double_set(double *dest, double value, int pe)
  */
 void shmem_set_lock(long *lock);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief releases a distributed lock
  *
@@ -2866,6 +2768,7 @@ void shmem_set_lock(long *lock);
  */
 void shmem_clear_lock(long *lock);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief tests a distributed lock
  *
@@ -2890,10 +2793,7 @@ void shmem_clear_lock(long *lock);
  */
 int shmem_test_lock(long *lock) _WUR;
 
-/**
- * reductions
- */
-
+////////////////////////////////////////////////////////////////////////////////
 void shmem_long_sum_to_all(long *target, const long *source, int nreduce,
                            int PE_start, int logPE_stride, int PE_size,
                            long *pWrk, long *pSync);
@@ -3082,6 +2982,7 @@ void shmem_double_min_to_all(double *target, const double *source, int nreduce,
                              int PE_start, int logPE_stride, int PE_size,
                              double *pWrk, long *pSync);
 
+////////////////////////////////////////////////////////////////////////////////
 /**
  * broadcasts
  */
@@ -3094,10 +2995,23 @@ void shmem_double_min_to_all(double *target, const double *source, int nreduce,
 
 API_BROADCAST_SIZE(32)
 API_BROADCAST_SIZE(64)
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * collects
  */
+
+// TODO: deprecate this
+#define API_COLLECT_NAME_SIZE(_opname, _size)                                  \
+  /* see \ref shmem_##_opname##64() */                                         \
+  void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
+                              int PE_start, int logPE_stride, int PE_size,     \
+                              long *pSync);
+
+API_COLLECT_NAME_SIZE(fcollect, 32)
+API_COLLECT_NAME_SIZE(fcollect, 64)
+API_COLLECT_NAME_SIZE(collect, 32)
+API_COLLECT_NAME_SIZE(collect, 64)
 
 #define API_COLLECT_TYPE(_type, _typename)                                     \
   int shmem_##_typename##_collect(shmem_team_t team, _type *dest,              \
@@ -3157,18 +3071,6 @@ API_FCOLLECT_TYPE(uint64_t, uint64)
 API_FCOLLECT_TYPE(size_t, size)
 API_FCOLLECT_TYPE(ptrdiff_t, ptrdiff)
 
-// TODO: deprecate this
-#define API_COLLECT_NAME_SIZE(_opname, _size)                                  \
-  /* see \ref shmem_##_opname##64() */                                         \
-  void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
-                              int PE_start, int logPE_stride, int PE_size,     \
-                              long *pSync);
-
-API_COLLECT_NAME_SIZE(fcollect, 32)
-API_COLLECT_NAME_SIZE(fcollect, 64)
-API_COLLECT_NAME_SIZE(collect, 32)
-API_COLLECT_NAME_SIZE(collect, 64)
-
 //////////////////////////////////////////////////////////////////////////////////
 /**
  * all-to-all collectives
@@ -3212,6 +3114,7 @@ API_ALLTOALL_TYPE(ptrdiff_t, ptrdiff)
 API_ALLTOALL_SIZE(32)
 API_ALLTOALL_SIZE(64)
 
+//////////////////////////////////////////////////////////////////////////////////
 #define API_ALLTOALLS_TYPE(_type, _typename)                                   \
   int shmem_##_typename##_alltoalls(shmem_team_t team, _type *dest,            \
                                     const _type *source, ptrdiff_t dst,        \
@@ -3253,7 +3156,6 @@ API_ALLTOALLS_SIZE(32)
 API_ALLTOALLS_SIZE(64)
 
 //////////////////////////////////////////////////////////////////////////////////
-
 /**
  * Contexts-based API
  *
@@ -3289,6 +3191,7 @@ API_ALLTOALLS_SIZE(64)
  */
 int shmem_ctx_create(long options, shmem_ctx_t *ctxp);
 
+//////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief creates a new context
  * @page shmem_ctx_destroy
@@ -3316,6 +3219,7 @@ int shmem_ctx_create(long options, shmem_ctx_t *ctxp);
  */
 void shmem_ctx_destroy(shmem_ctx_t ctx);
 
+//////////////////////////////////////////////////////////////////////////////////
 /*
  * Teams
  *

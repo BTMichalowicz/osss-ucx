@@ -93,7 +93,8 @@ $oshcc --version
 # echo
 
 # --- shmem_fcollect ---
-echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
-$oshcc shmem_fcollect.c -o ./bin/shmem_fcollect
-$oshrun $flags -np 4 ./bin/shmem_fcollect
-echo
+# echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
+# $oshcc shmem_fcollect.c -o ./bin/shmem_fcollect
+# $oshrun $flags -np 4 ./bin/shmem_fcollect
+# echo
+

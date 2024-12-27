@@ -168,18 +168,6 @@ static typed_op_t fcollect_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(fcollect, neighbor_exchange),
     TYPED_LAST};
 
-// static sized_op_t fcollect_tab[] = {SIZED_REG(fcollect, linear),
-//                                     SIZED_REG(fcollect, all_linear),
-//                                     SIZED_REG(fcollect, all_linear1),
-//                                     SIZED_REG(fcollect, rec_dbl),
-//                                     SIZED_REG(fcollect, ring),
-//                                     SIZED_REG(fcollect, bruck),
-//                                     SIZED_REG(fcollect, bruck_no_rotate),
-//                                     SIZED_REG(fcollect, bruck_signal),
-//                                     SIZED_REG(fcollect, bruck_inplace),
-//                                     SIZED_REG(fcollect, neighbor_exchange),
-//                                     SIZED_LAST};
-
 /**
  * @brief Table of barrier_all collective algorithms
  */
@@ -210,6 +198,11 @@ static unsized_op_t barrier_tab[] = {
 /**
  * @brief Table of sync collective algorithms
  */
+// static untyped_op_t sync_tab[] = {
+//     UNTYPED_REG(sync, linear),        UNTYPED_REG(sync, complete_tree),
+//     UNTYPED_REG(sync, binomial_tree), UNTYPED_REG(sync, knomial_tree),
+//     UNTYPED_REG(sync, dissemination), UNTYPED_LAST};
+
 static unsized_op_t sync_tab[] = {
     UNSIZED_REG(sync, linear),        UNSIZED_REG(sync, complete_tree),
     UNSIZED_REG(sync, binomial_tree), UNSIZED_REG(sync, knomial_tree),
@@ -291,6 +284,26 @@ static int register_typed(typed_op_t *tabp, const char *op,
   return -1;
 }
 
+/**
+ * @brief Register an untyped collective operation
+ * @param tabp Pointer to the operation table
+ * @param op Operation name to register
+ * @param fn Pointer to store function pointer
+ * @return 0 on success, -1 if operation not found
+ */
+static int register_untyped(untyped_op_t *tabp, const char *op,
+                           untyped_coll_fn_t *fn) {
+  untyped_op_t *p;
+
+  for (p = tabp; p->f != NULL; ++p) {
+    if (strncmp(op, p->op, COLL_NAME_MAX) == 0) {
+      *fn = p->f;
+      return 0;
+    }
+  }
+  return -1;
+}
+
 /******************************************************** */
 /**
  * @brief Global structure holding all collective operation function pointers
@@ -325,15 +338,26 @@ coll_ops_t colls;
     return register_typed(_coll##_tab, op, &colls._coll.f);                    \
   }
 
+/**
+ * @brief Macro to generate registration function for untyped collectives
+ * @param _coll Collective operation name
+ */
+#define REGISTER_UNTYPED(_coll)                                                \
+  int register_##_coll(const char *op) {                                       \
+    return register_untyped(_coll##_tab, op, &colls._coll.f);                  \
+  }
+
 REGISTER_TYPED(alltoall)
 REGISTER_TYPED(alltoalls)
 REGISTER_TYPED(collect)
 REGISTER_TYPED(fcollect)
-// REGISTER_SIZED(fcollect)
+
 REGISTER_SIZED(broadcast)
 
 REGISTER_UNSIZED(barrier)
 REGISTER_UNSIZED(barrier_all)
+
+// REGISTER_UNTYPED(sync)
 REGISTER_UNSIZED(sync)
 REGISTER_UNSIZED(sync_all)
 
