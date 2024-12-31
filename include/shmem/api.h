@@ -957,8 +957,7 @@ uint64_t shmem_signal_wait_until(uint64_t *sig_addr, int cmp,
   */
 
 // TODO: deprecate this, make a team-based sync for the C11 bindings
-void shmem_sync(int PE_start, int logPE_stride, int PE_size,
-                long *pSync);
+void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync);
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1375,8 +1374,9 @@ API_DECL_TEST_AND_WAIT_UNTIL(test, int, int, int);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, long, long);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, longlong, long long);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, uchar, unsigned char);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, ushort, unsigned short)
-_DEPRECATED;
+API_DECL_TEST_AND_WAIT_UNTIL(test, int, ushort, unsigned short);
+// API_DECL_TEST_AND_WAIT_UNTIL(test, int, ushort, unsigned short)
+// _DEPRECATED;
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, uint, unsigned int);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, ulong, unsigned long);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, ulonglong, unsigned long long);
@@ -2985,8 +2985,73 @@ void shmem_double_min_to_all(double *target, const double *source, int nreduce,
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * broadcasts
+ *
+ * These routines perform a broadcast operation across a team. The root PE 
+ * broadcasts data to all other PEs in the team.
+ *
+ * @param team    The team over which to broadcast
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array on root PE
+ * @param nelems  Number of elements to broadcast
+ * @param PE_root PE number of root PE where data originates
+ * @return        Zero on success, non-zero on failure
  */
+#define API_BROADCAST_TYPE(_type, _typename)                                   \
+  int shmem_##_typename##_broadcast(shmem_team_t team, _type *dest,            \
+                                    const _type *source, size_t nelems,        \
+                                    int PE_root);
 
+API_BROADCAST_TYPE(float, float)
+API_BROADCAST_TYPE(double, double)
+API_BROADCAST_TYPE(long double, longdouble)
+API_BROADCAST_TYPE(char, char)
+API_BROADCAST_TYPE(signed char, schar)
+API_BROADCAST_TYPE(short, short)
+API_BROADCAST_TYPE(int, int)
+API_BROADCAST_TYPE(long, long)
+API_BROADCAST_TYPE(long long, longlong)
+API_BROADCAST_TYPE(unsigned char, uchar)
+API_BROADCAST_TYPE(unsigned short, ushort)
+API_BROADCAST_TYPE(unsigned int, uint)
+API_BROADCAST_TYPE(unsigned long, ulong)
+API_BROADCAST_TYPE(unsigned long long, ulonglong)
+API_BROADCAST_TYPE(int8_t, int8)
+API_BROADCAST_TYPE(int16_t, int16)
+API_BROADCAST_TYPE(int32_t, int32)
+API_BROADCAST_TYPE(int64_t, int64)
+API_BROADCAST_TYPE(uint8_t, uint8)
+API_BROADCAST_TYPE(uint16_t, uint16)
+API_BROADCAST_TYPE(uint32_t, uint32)
+API_BROADCAST_TYPE(uint64_t, uint64)
+API_BROADCAST_TYPE(size_t, size)
+API_BROADCAST_TYPE(ptrdiff_t, ptrdiff)
+
+/**
+ * Generic memory broadcast routine
+ *
+ * @param team    The team over which to broadcast
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array on root PE
+ * @param nelems  Number of elements to broadcast
+ * @param PE_root PE number of root PE where data originates
+ * @return        Zero on success, non-zero on failure
+ */
+int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
+                         size_t nelems, int PE_root);
+
+// TODO: deprecate this
+/**
+ * Legacy broadcast operations (deprecated)
+ *
+ * @param target       Symmetric destination array on all PEs
+ * @param source       Source array on root PE
+ * @param nelems       Number of elements to broadcast
+ * @param PE_root      PE number of root PE where data originates
+ * @param PE_start     First PE number of active set
+ * @param logPE_stride Log2 of stride between consecutive PE numbers
+ * @param PE_size      Number of PEs in active set
+ * @param pSync        Symmetric work array
+ */
 #define API_BROADCAST_SIZE(_size)                                              \
   /* see \ref shmem_broadcast64() */                                           \
   void shmem_broadcast##_size(void *target, const void *source, size_t nelems, \

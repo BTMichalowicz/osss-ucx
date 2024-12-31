@@ -47,8 +47,8 @@ make -j $(( $(nproc) - 1 )) install
 
 
 # --- Run test script
-# echo ; echo ; echo ; echo
-# cd $pwd
-# cd test
-# ./test.sh
+echo ; echo ; echo ; echo
+cd $pwd
+cd test
+./test.sh
 

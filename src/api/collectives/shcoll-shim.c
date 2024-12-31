@@ -441,10 +441,8 @@ void shmem_barrier_all(void) {
 //
 // TODO: deprecate this
 //
-
 /* PE-based synchronization function */
-void shmem_sync(int PE_start, int logPE_stride, int PE_size,
-                      long *pSync) {
+void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync) {
   logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
          logPE_stride, PE_size, pSync);
   colls.sync.f(PE_start, logPE_stride, PE_size, pSync);
@@ -474,6 +472,7 @@ void shmem_sync_all(void) {
 }
 
 /** @} */
+///////////////////////////////////////////////////////////////////////
 
 /**
  * @defgroup Broadcast Operations
@@ -481,57 +480,158 @@ void shmem_sync_all(void) {
  */
 
 #ifdef ENABLE_PSHMEM
-#pragma weak shmem_broadcast32 = pshmem_broadcast32
-#define shmem_broadcast32 pshmem_broadcast32
-#pragma weak shmem_broadcast64 = pshmem_broadcast64
-#define shmem_broadcast64 pshmem_broadcast64
+#pragma weak shmem_float_broadcast = pshmem_float_broadcast
+#define shmem_float_broadcast pshmem_float_broadcast
+#pragma weak shmem_double_broadcast = pshmem_double_broadcast
+#define shmem_double_broadcast pshmem_double_broadcast
+#pragma weak shmem_longdouble_broadcast = pshmem_longdouble_broadcast
+#define shmem_longdouble_broadcast pshmem_longdouble_broadcast
+#pragma weak shmem_char_broadcast = pshmem_char_broadcast
+#define shmem_char_broadcast pshmem_char_broadcast
+#pragma weak shmem_schar_broadcast = pshmem_schar_broadcast
+#define shmem_schar_broadcast pshmem_schar_broadcast
+#pragma weak shmem_short_broadcast = pshmem_short_broadcast
+#define shmem_short_broadcast pshmem_short_broadcast
+#pragma weak shmem_int_broadcast = pshmem_int_broadcast
+#define shmem_int_broadcast pshmem_int_broadcast
+#pragma weak shmem_long_broadcast = pshmem_long_broadcast
+#define shmem_long_broadcast pshmem_long_broadcast
+#pragma weak shmem_longlong_broadcast = pshmem_longlong_broadcast
+#define shmem_longlong_broadcast pshmem_longlong_broadcast
+#pragma weak shmem_uchar_broadcast = pshmem_uchar_broadcast
+#define shmem_uchar_broadcast pshmem_uchar_broadcast
+#pragma weak shmem_ushort_broadcast = pshmem_ushort_broadcast
+#define shmem_ushort_broadcast pshmem_ushort_broadcast
+#pragma weak shmem_uint_broadcast = pshmem_uint_broadcast
+#define shmem_uint_broadcast pshmem_uint_broadcast
+#pragma weak shmem_ulong_broadcast = pshmem_ulong_broadcast
+#define shmem_ulong_broadcast pshmem_ulong_broadcast
+#pragma weak shmem_ulonglong_broadcast = pshmem_ulonglong_broadcast
+#define shmem_ulonglong_broadcast pshmem_ulonglong_broadcast
+#pragma weak shmem_int8_broadcast = pshmem_int8_broadcast
+#define shmem_int8_broadcast pshmem_int8_broadcast
+#pragma weak shmem_int16_broadcast = pshmem_int16_broadcast
+#define shmem_int16_broadcast pshmem_int16_broadcast
+#pragma weak shmem_int32_broadcast = pshmem_int32_broadcast
+#define shmem_int32_broadcast pshmem_int32_broadcast
+#pragma weak shmem_int64_broadcast = pshmem_int64_broadcast
+#define shmem_int64_broadcast pshmem_int64_broadcast
+#pragma weak shmem_uint8_broadcast = pshmem_uint8_broadcast
+#define shmem_uint8_broadcast pshmem_uint8_broadcast
+#pragma weak shmem_uint16_broadcast = pshmem_uint16_broadcast
+#define shmem_uint16_broadcast pshmem_uint16_broadcast
+#pragma weak shmem_uint32_broadcast = pshmem_uint32_broadcast
+#define shmem_uint32_broadcast pshmem_uint32_broadcast
+#pragma weak shmem_uint64_broadcast = pshmem_uint64_broadcast
+#define shmem_uint64_broadcast pshmem_uint64_broadcast
+#pragma weak shmem_size_broadcast = pshmem_size_broadcast
+#define shmem_size_broadcast pshmem_size_broadcast
+#pragma weak shmem_ptrdiff_broadcast = pshmem_ptrdiff_broadcast
+#define shmem_ptrdiff_broadcast pshmem_ptrdiff_broadcast
+
+#pragma weak shmem_broadcastmem = pshmem_broadcastmem
+#define shmem_broadcastmem pshmem_broadcastmem
 #endif /* ENABLE_PSHMEM */
 
-/**
- * @brief Broadcast 32-bit data from one PE to a set of PEs
- *
- * @param target Address of symmetric data object to receive broadcast data
- * @param source Address of symmetric data object containing data to broadcast
- * @param nelems Number of elements in source array
- * @param PE_root PE number of root PE
- * @param PE_start First PE in the active set
- * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
- * @param PE_size Number of PEs in the active set
- * @param pSync Symmetric work array
- */
-void shmem_broadcast32(void *target, const void *source, size_t nelems,
-                       int PE_root, int PE_start, int logPE_stride, int PE_size,
-                       long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
-         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+#define SHMEM_TYPENAME_BROADCAST(_type, _typename)                             \
+  int shmem_##_typename##_broadcast(shmem_team_t team, _type *dest,            \
+                                    const _type *source, size_t nelems) {      \
+    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, dest, source,      \
+           nelems);                                                            \
+    colls.broadcast.f(team, dest, source, nelems);                             \
+  }
 
-  colls.broadcast.f32(target, source, nelems, PE_root, PE_start, logPE_stride,
-                      PE_size, pSync);
+SHMEM_TYPENAME_BROADCAST(float, float)
+SHMEM_TYPENAME_BROADCAST(double, double)
+SHMEM_TYPENAME_BROADCAST(long double, longdouble)
+SHMEM_TYPENAME_BROADCAST(char, char)
+SHMEM_TYPENAME_BROADCAST(signed char, schar)
+SHMEM_TYPENAME_BROADCAST(short, short)
+SHMEM_TYPENAME_BROADCAST(int, int)
+SHMEM_TYPENAME_BROADCAST(long, long)
+SHMEM_TYPENAME_BROADCAST(long long, longlong)
+SHMEM_TYPENAME_BROADCAST(unsigned char, uchar)
+SHMEM_TYPENAME_BROADCAST(unsigned short, ushort)
+SHMEM_TYPENAME_BROADCAST(unsigned int, uint)
+SHMEM_TYPENAME_BROADCAST(unsigned long, ulong)
+SHMEM_TYPENAME_BROADCAST(unsigned long long, ulonglong)
+SHMEM_TYPENAME_BROADCAST(int8_t, int8)
+SHMEM_TYPENAME_BROADCAST(int16_t, int16)
+SHMEM_TYPENAME_BROADCAST(int32_t, int32)
+SHMEM_TYPENAME_BROADCAST(int64_t, int64)
+SHMEM_TYPENAME_BROADCAST(uint8_t, uint8)
+SHMEM_TYPENAME_BROADCAST(uint16_t, uint16)
+SHMEM_TYPENAME_BROADCAST(uint32_t, uint32)
+SHMEM_TYPENAME_BROADCAST(uint64_t, uint64)
+SHMEM_TYPENAME_BROADCAST(size_t, size)
+SHMEM_TYPENAME_BROADCAST(ptrdiff_t, ptrdiff)
+
+int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
+                       size_t nelems, int PE_root) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,
+         nelems, PE_root);
+  colls.broadcast.f(team, dest, source, nelems, PE_root);
 }
 
-/**
- * @brief Broadcast 64-bit data from one PE to a set of PEs
- *
- * @param target Address of symmetric data object to receive broadcast data
- * @param source Address of symmetric data object containing data to broadcast
- * @param nelems Number of elements in source array
- * @param PE_root PE number of root PE
- * @param PE_start First PE in the active set
- * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
- * @param PE_size Number of PEs in the active set
- * @param pSync Symmetric work array
- */
-void shmem_broadcast64(void *target, const void *source, size_t nelems,
-                       int PE_root, int PE_start, int logPE_stride, int PE_size,
-                       long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
-         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+// #ifdef ENABLE_PSHMEM
+// #pragma weak shmem_broadcast32 = pshmem_broadcast32
+// #define shmem_broadcast32 pshmem_broadcast32
+// #pragma weak shmem_broadcast64 = pshmem_broadcast64
+// #define shmem_broadcast64 pshmem_broadcast64
+// #endif /* ENABLE_PSHMEM */
 
-  colls.broadcast.f64(target, source, nelems, PE_root, PE_start, logPE_stride,
-                      PE_size, pSync);
-}
+// /**
+//  * @brief Broadcast 32-bit data from one PE to a set of PEs
+//  *
+//  * @param target Address of symmetric data object to receive broadcast data
+//  * @param source Address of symmetric data object containing data to
+//  broadcast
+//  * @param nelems Number of elements in source array
+//  * @param PE_root PE number of root PE
+//  * @param PE_start First PE in the active set
+//  * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
+//  * @param PE_size Number of PEs in the active set
+//  * @param pSync Symmetric work array
+//  */
+// void shmem_broadcast32(void *target, const void *source, size_t nelems,
+//                        int PE_root, int PE_start, int logPE_stride, int
+//                        PE_size, long *pSync) {
+//   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__,
+//   target,
+//          source, nelems, PE_start, logPE_stride, PE_size, pSync);
+
+//   colls.broadcast.f32(target, source, nelems, PE_root, PE_start,
+//   logPE_stride,
+//                       PE_size, pSync);
+// }
+
+// /**
+//  * @brief Broadcast 64-bit data from one PE to a set of PEs
+//  *
+//  * @param target Address of symmetric data object to receive broadcast data
+//  * @param source Address of symmetric data object containing data to
+//  broadcast
+//  * @param nelems Number of elements in source array
+//  * @param PE_root PE number of root PE
+//  * @param PE_start First PE in the active set
+//  * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
+//  * @param PE_size Number of PEs in the active set
+//  * @param pSync Symmetric work array
+//  */
+// void shmem_broadcast64(void *target, const void *source, size_t nelems,
+//                        int PE_root, int PE_start, int logPE_stride, int
+//                        PE_size, long *pSync) {
+//   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__,
+//   target,
+//          source, nelems, PE_start, logPE_stride, PE_size, pSync);
+
+//   colls.broadcast.f64(target, source, nelems, PE_root, PE_start,
+//   logPE_stride,
+//                       PE_size, pSync);
+// }
 
 /** @} */
+///////////////////////////////////////////////////////////////////////
 
 /**
  * @defgroup reductions Reduction Operations
@@ -551,5 +651,17 @@ void shmem_broadcast64(void *target, const void *source, size_t nelems,
  *
  */
 SHIM_REDUCE_ALL(rec_dbl)
+
+/** @} */
+
+/** @} */
+
+/**
+ * @defgroup deprecated Deprecated Collective Operations
+ * @{
+ */
+// TODO: put deprecations here, nmaybe?
+
+/** @} */
 
 /** @} */

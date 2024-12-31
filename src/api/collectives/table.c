@@ -211,13 +211,14 @@ static unsized_op_t sync_tab[] = {
 /**
  * @brief Table of broadcast collective algorithms
  */
-static sized_op_t broadcast_tab[] = {SIZED_REG(broadcast, linear),
-                                     SIZED_REG(broadcast, complete_tree),
-                                     SIZED_REG(broadcast, binomial_tree),
-                                     SIZED_REG(broadcast, knomial_tree),
-                                     SIZED_REG(broadcast, knomial_tree_signal),
-                                     SIZED_REG(broadcast, scatter_collect),
-                                     SIZED_LAST};
+static typed_op_t broadcast_tab[] = {
+    TYPED_REG_FOR_ALL_TYPES(broadcast, linear),
+    TYPED_REG_FOR_ALL_TYPES(broadcast, complete_tree),
+    TYPED_REG_FOR_ALL_TYPES(broadcast, binomial_tree),
+    TYPED_REG_FOR_ALL_TYPES(broadcast, knomial_tree),
+    TYPED_REG_FOR_ALL_TYPES(broadcast, knomial_tree_signal),
+    TYPED_REG_FOR_ALL_TYPES(broadcast, scatter_collect),
+    TYPED_LAST};
 
 /******************************************************** */
 /**
@@ -292,7 +293,7 @@ static int register_typed(typed_op_t *tabp, const char *op,
  * @return 0 on success, -1 if operation not found
  */
 static int register_untyped(untyped_op_t *tabp, const char *op,
-                           untyped_coll_fn_t *fn) {
+                            untyped_coll_fn_t *fn) {
   untyped_op_t *p;
 
   for (p = tabp; p->f != NULL; ++p) {
@@ -351,13 +352,11 @@ REGISTER_TYPED(alltoall)
 REGISTER_TYPED(alltoalls)
 REGISTER_TYPED(collect)
 REGISTER_TYPED(fcollect)
-
-REGISTER_SIZED(broadcast)
+REGISTER_TYPED(broadcast)
 
 REGISTER_UNSIZED(barrier)
 REGISTER_UNSIZED(barrier_all)
 
-// REGISTER_UNTYPED(sync)
 REGISTER_UNSIZED(sync)
 REGISTER_UNSIZED(sync_all)
 
