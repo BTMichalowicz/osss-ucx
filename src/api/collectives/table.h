@@ -51,6 +51,7 @@ typedef int (*untyped_coll_fn_t)();
 
 /**
  * @brief Structure for untyped collective operations
+ FIXME: I don't think we need this
  */
 typedef struct untyped_op {
   const char op[COLL_NAME_MAX]; /**< Operation name */
@@ -62,15 +63,24 @@ typedef struct untyped_op {
  * @brief Structure containing all collective operation implementations
  */
 typedef struct coll_ops {
-  typed_op_t alltoall;      /**< All-to-all operation */
-  typed_op_t alltoalls;     /**< Strided all-to-all operation */
-  typed_op_t collect;       /**< Collect operation */
-  typed_op_t fcollect;      /**< Ordered collect operation */
-  typed_op_t broadcast;     /**< Broadcast operation */
-  unsized_op_t barrier;     /**< Team barrier operation */
-  unsized_op_t barrier_all; /**< Global barrier operation */
-  unsized_op_t sync;        /**< Team synchronization operation */
-  unsized_op_t sync_all;    /**< Global synchronization operation */
+  /* Current routines */
+  typed_op_t alltoall;      /**< Typed all-to-all operation */
+  typed_op_t alltoalls;     /**< Typed strided all-to-all operation */
+  typed_op_t collect;       /**< Typed collect operation */
+  typed_op_t fcollect;      /**< Typed ordered collect operation */
+  typed_op_t broadcast;     /**< Typed broadcast operation */
+  unsized_op_t barrier_all; /**< Typed global barrier operation */
+  unsized_op_t sync;        /**< Typed team synchronization operation */
+  unsized_op_t sync_all;    /**< Typed global synchronization operation */
+
+  /* Deprecated routines */
+  sized_op_t alltoall_size;  /**< Sized all-to-all operation */
+  sized_op_t alltoalls_size; /**< Sized strided all-to-all operation */
+  sized_op_t collect_size;   /**< Sized collect operation */
+  sized_op_t fcollect_size;  /**< Sized ordered collect operation */
+  sized_op_t broadcast_size; /**< Sized broadcast operation */
+  unsized_op_t barrier;      /**< Barrier operation */
+
 } coll_ops_t;
 
 /** Global collective operations table */

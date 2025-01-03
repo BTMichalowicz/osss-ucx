@@ -123,6 +123,21 @@ static typed_op_t alltoall_tab[] = {
     TYPED_LAST};
 
 /**
+ * @brief Table of sized alltoall (deprecated) 
+ */
+static sized_op_t alltoall_size_tab[] = {
+    SIZED_REG(alltoall, shift_exchange_barrier),
+    SIZED_REG(alltoall, shift_exchange_counter),
+    SIZED_REG(alltoall, shift_exchange_signal),
+    SIZED_REG(alltoall, xor_pairwise_exchange_barrier),
+    SIZED_REG(alltoall, xor_pairwise_exchange_counter),
+    SIZED_REG(alltoall, xor_pairwise_exchange_signal),
+    SIZED_REG(alltoall, color_pairwise_exchange_barrier),
+    SIZED_REG(alltoall, color_pairwise_exchange_counter),
+    SIZED_REG(alltoall, color_pairwise_exchange_signal),
+    SIZED_LAST};
+
+/**
  * @brief Table of alltoalls collective algorithms for all types
  */
 static typed_op_t alltoalls_tab[] = {
@@ -136,6 +151,21 @@ static typed_op_t alltoalls_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_counter),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_signal),
     TYPED_LAST};
+
+/**
+  * @brief Table of sized alltoalls (deprecated)
+ */
+  static sized_op_t alltoalls_size_tab[] = {
+    SIZED_REG(alltoalls, shift_exchange_barrier),
+    SIZED_REG(alltoalls, shift_exchange_counter),
+    SIZED_REG(alltoalls, shift_exchange_signal),
+    SIZED_REG(alltoalls, xor_pairwise_exchange_barrier),
+    SIZED_REG(alltoalls, xor_pairwise_exchange_counter),
+    SIZED_REG(alltoalls, xor_pairwise_exchange_signal),
+    SIZED_REG(alltoalls, color_pairwise_exchange_barrier),
+    SIZED_REG(alltoalls, color_pairwise_exchange_counter),
+    SIZED_REG(alltoalls, color_pairwise_exchange_signal),
+    SIZED_LAST};
 
 /**
  * @brief Table of collect collective algorithms
@@ -153,6 +183,20 @@ static typed_op_t collect_tab[] = {
     TYPED_LAST};
 
 /**
+ * @brief Table of sized collect (deprecated)
+ */
+static sized_op_t collect_size_tab[] = {
+    SIZED_REG(collect, linear),
+    SIZED_REG(collect, all_linear),
+    SIZED_REG(collect, all_linear1),
+    SIZED_REG(collect, rec_dbl),
+    SIZED_REG(collect, rec_dbl_signal),
+    SIZED_REG(collect, ring),
+    SIZED_REG(collect, bruck),
+    SIZED_REG(collect, bruck_no_rotate),
+    SIZED_LAST};
+
+/**
  * @brief Table of fcollect collective algorithms
  */
 static typed_op_t fcollect_tab[] = {
@@ -167,6 +211,22 @@ static typed_op_t fcollect_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_inplace),
     TYPED_REG_FOR_ALL_TYPES(fcollect, neighbor_exchange),
     TYPED_LAST};
+
+/**
+ * @brief Table of sized fcollect (deprecated)
+ */
+static sized_op_t fcollect_size_tab[] = {
+    SIZED_REG(fcollect, linear),
+    SIZED_REG(fcollect, all_linear),
+    SIZED_REG(fcollect, all_linear1),
+    SIZED_REG(fcollect, rec_dbl),
+    SIZED_REG(fcollect, ring),
+    SIZED_REG(fcollect, bruck),
+    SIZED_REG(fcollect, bruck_no_rotate),
+    SIZED_REG(fcollect, bruck_signal),
+    SIZED_REG(fcollect, bruck_inplace),
+    SIZED_REG(fcollect, neighbor_exchange),
+    SIZED_LAST};
 
 /**
  * @brief Table of barrier_all collective algorithms
@@ -198,11 +258,6 @@ static unsized_op_t barrier_tab[] = {
 /**
  * @brief Table of sync collective algorithms
  */
-// static untyped_op_t sync_tab[] = {
-//     UNTYPED_REG(sync, linear),        UNTYPED_REG(sync, complete_tree),
-//     UNTYPED_REG(sync, binomial_tree), UNTYPED_REG(sync, knomial_tree),
-//     UNTYPED_REG(sync, dissemination), UNTYPED_LAST};
-
 static unsized_op_t sync_tab[] = {
     UNSIZED_REG(sync, linear),        UNSIZED_REG(sync, complete_tree),
     UNSIZED_REG(sync, binomial_tree), UNSIZED_REG(sync, knomial_tree),
@@ -220,6 +275,18 @@ static typed_op_t broadcast_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(broadcast, scatter_collect),
     TYPED_LAST};
 
+/**
+ * @brief Table of sized broadcast (deprecated)
+ */
+static sized_op_t broadcast_size_tab[] = {
+    SIZED_REG(broadcast, linear),
+    SIZED_REG(broadcast, complete_tree),
+    SIZED_REG(broadcast, binomial_tree),
+    SIZED_REG(broadcast, knomial_tree),
+    SIZED_REG(broadcast, knomial_tree_signal),
+    SIZED_REG(broadcast, scatter_collect),
+    SIZED_LAST};
+
 /******************************************************** */
 /**
  * @brief Register a sized collective operation
@@ -232,13 +299,23 @@ static typed_op_t broadcast_tab[] = {
 static int register_sized(sized_op_t *tabp, const char *op, coll_fn_t *fn32,
                           coll_fn_t *fn64) {
   sized_op_t *p;
+  char base_op[COLL_NAME_MAX];
+  
+  /* Strip _size suffix if present */
+  size_t len = strlen(op);
+  if (len > 5 && strcmp(op + len - 5, "_size") == 0) {
+    strncpy(base_op, op, len - 5);
+    base_op[len - 5] = '\0';
+  } else {
+    strncpy(base_op, op, COLL_NAME_MAX - 1);
+    base_op[COLL_NAME_MAX - 1] = '\0';
+  }
 
   for (p = tabp; p->f32 != NULL; ++p) {
-    if (strncmp(op, p->op, COLL_NAME_MAX) == 0) {
+    if (strncmp(base_op, p->op, COLL_NAME_MAX) == 0) {  // Compare with stripped name
       *fn32 = p->f32;
       *fn64 = p->f64;
       return 0;
-      /* NOT REACHED */
     }
   }
   return -1;
@@ -291,6 +368,8 @@ static int register_typed(typed_op_t *tabp, const char *op,
  * @param op Operation name to register
  * @param fn Pointer to store function pointer
  * @return 0 on success, -1 if operation not found
+
+ FIXME: I don't think we need this
  */
 static int register_untyped(untyped_op_t *tabp, const char *op,
                             untyped_coll_fn_t *fn) {
@@ -342,23 +421,32 @@ coll_ops_t colls;
 /**
  * @brief Macro to generate registration function for untyped collectives
  * @param _coll Collective operation name
+
+ FIXME: I don't think we need this
  */
 #define REGISTER_UNTYPED(_coll)                                                \
   int register_##_coll(const char *op) {                                       \
     return register_untyped(_coll##_tab, op, &colls._coll.f);                  \
   }
 
+/* Current routines */
 REGISTER_TYPED(alltoall)
 REGISTER_TYPED(alltoalls)
 REGISTER_TYPED(collect)
 REGISTER_TYPED(fcollect)
 REGISTER_TYPED(broadcast)
 
-REGISTER_UNSIZED(barrier)
 REGISTER_UNSIZED(barrier_all)
-
 REGISTER_UNSIZED(sync)
 REGISTER_UNSIZED(sync_all)
+
+/* Deprecated routines */
+REGISTER_SIZED(alltoall_size)
+REGISTER_SIZED(alltoalls_size)
+REGISTER_SIZED(collect_size)
+REGISTER_SIZED(fcollect_size)
+REGISTER_SIZED(broadcast_size)
+REGISTER_UNSIZED(barrier)
 
 /*
  * TODO: reductions

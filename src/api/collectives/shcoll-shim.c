@@ -428,34 +428,6 @@ void shmem_barrier_all(void) {
 /** @} */
 
 ///////////////////////////////////////////////////////////////////////
-/**
- * @defgroup sync Synchronization Operations
- * @{
- */
-
-#ifdef ENABLE_PSHMEM
-#pragma weak shmem_sync = pshmem_sync
-#define shmem_sync pshmem_sync
-#endif /* ENABLE_PSHMEM */
-
-//
-// TODO: deprecate this
-//
-/* PE-based synchronization function */
-void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
-         logPE_stride, PE_size, pSync);
-  colls.sync.f(PE_start, logPE_stride, PE_size, pSync);
-}
-
-// /* Team-based synchronization function */
-// int shmem_sync(shmem_team_t team) {
-//   logger(LOG_COLLECTIVES, "%s(%p)", __func__, team);
-//   colls.sync.f(team);
-//   return 0; /* Assuming success */
-// }
-
-///////////////////////////////////////////////////////////////////////
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_sync_all = pshmem_sync_all
@@ -573,68 +545,11 @@ int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
   colls.broadcast.f(team, dest, source, nelems, PE_root);
 }
 
-// #ifdef ENABLE_PSHMEM
-// #pragma weak shmem_broadcast32 = pshmem_broadcast32
-// #define shmem_broadcast32 pshmem_broadcast32
-// #pragma weak shmem_broadcast64 = pshmem_broadcast64
-// #define shmem_broadcast64 pshmem_broadcast64
-// #endif /* ENABLE_PSHMEM */
-
-// /**
-//  * @brief Broadcast 32-bit data from one PE to a set of PEs
-//  *
-//  * @param target Address of symmetric data object to receive broadcast data
-//  * @param source Address of symmetric data object containing data to
-//  broadcast
-//  * @param nelems Number of elements in source array
-//  * @param PE_root PE number of root PE
-//  * @param PE_start First PE in the active set
-//  * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
-//  * @param PE_size Number of PEs in the active set
-//  * @param pSync Symmetric work array
-//  */
-// void shmem_broadcast32(void *target, const void *source, size_t nelems,
-//                        int PE_root, int PE_start, int logPE_stride, int
-//                        PE_size, long *pSync) {
-//   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__,
-//   target,
-//          source, nelems, PE_start, logPE_stride, PE_size, pSync);
-
-//   colls.broadcast.f32(target, source, nelems, PE_root, PE_start,
-//   logPE_stride,
-//                       PE_size, pSync);
-// }
-
-// /**
-//  * @brief Broadcast 64-bit data from one PE to a set of PEs
-//  *
-//  * @param target Address of symmetric data object to receive broadcast data
-//  * @param source Address of symmetric data object containing data to
-//  broadcast
-//  * @param nelems Number of elements in source array
-//  * @param PE_root PE number of root PE
-//  * @param PE_start First PE in the active set
-//  * @param logPE_stride Log (base 2) of stride between consecutive PE numbers
-//  * @param PE_size Number of PEs in the active set
-//  * @param pSync Symmetric work array
-//  */
-// void shmem_broadcast64(void *target, const void *source, size_t nelems,
-//                        int PE_root, int PE_start, int logPE_stride, int
-//                        PE_size, long *pSync) {
-//   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__,
-//   target,
-//          source, nelems, PE_start, logPE_stride, PE_size, pSync);
-
-//   colls.broadcast.f64(target, source, nelems, PE_root, PE_start,
-//   logPE_stride,
-//                       PE_size, pSync);
-// }
-
 /** @} */
 ///////////////////////////////////////////////////////////////////////
 
 /**
- * @defgroup reductions Reduction Operations
+ * @defgroup TODO: reductions Reduction Operations
  * @{
  */
 
@@ -652,16 +567,366 @@ int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
  */
 SHIM_REDUCE_ALL(rec_dbl)
 
+
 /** @} */
 
 /** @} */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @defgroup deprecated Deprecated Collective Operations
  * @{
  */
-// TODO: put deprecations here, nmaybe?
 
 /** @} */
+
+/**
+ * @defgroup sync Synchronization Operations
+ * @{
+ */
+
+/**
+ * @defgroup alltoall All-to-all Operations
+ * @{
+ */
+
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_alltoall32 = pshmem_alltoall32
+#define shmem_alltoall32 pshmem_alltoall32
+#pragma weak shmem_alltoall64 = pshmem_alltoall64
+#define shmem_alltoall64 pshmem_alltoall64
+#endif /* ENABLE_PSHMEM */
+
+/**
+ * @brief Performs an all-to-all exchange of 32-bit data
+ *
+ * @param target Symmetric destination array
+ * @param source Symmetric source array
+ * @param nelems Number of elements to exchange
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_alltoall32(void *target, const void *source, size_t nelems,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+
+  colls.alltoall_size.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
+                     pSync);
+}
+
+/**
+ * @brief Performs an all-to-all exchange of 64-bit data
+ *
+ * @param target Symmetric destination array
+ * @param source Symmetric source array
+ * @param nelems Number of elements to exchange
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_alltoall64(void *target, const void *source, size_t nelems,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+
+  colls.alltoall_size.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
+                     pSync);
+}
+
+/** @} */
+
+/**
+ * @defgroup alltoalls Strided All-to-all Operations
+ * @{
+ */
+
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_alltoalls32 = pshmem_alltoalls32
+#define shmem_alltoalls32 pshmem_alltoalls32
+#pragma weak shmem_alltoalls64 = pshmem_alltoalls64
+#define shmem_alltoalls64 pshmem_alltoalls64
+#endif /* ENABLE_PSHMEM */
+
+/**
+ * @brief Performs a strided all-to-all exchange of 32-bit data
+ *
+ * @param target Symmetric destination array
+ * @param source Symmetric source array
+ * @param dst Target array element stride
+ * @param sst Source array element stride
+ * @param nelems Number of elements to exchange
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_alltoalls32(void *target, const void *source, ptrdiff_t dst,
+                       ptrdiff_t sst, size_t nelems, int PE_start,
+                       int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %lu, %lu, %d, %d, %d, %p)", __func__,
+         target, source, dst, sst, nelems, PE_start, logPE_stride, PE_size,
+         pSync);
+
+  colls.alltoalls_size.f32(target, source, dst, sst, nelems, PE_start, logPE_stride,
+                      PE_size, pSync);
+}
+
+/**
+ * @brief Performs a strided all-to-all exchange of 64-bit data
+ *
+ * @param target Symmetric destination array
+ * @param source Symmetric source array
+ * @param dst Target array element stride
+ * @param sst Source array element stride
+ * @param nelems Number of elements to exchange
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_alltoalls64(void *target, const void *source, ptrdiff_t dst,
+                       ptrdiff_t sst, size_t nelems, int PE_start,
+                       int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %lu, %lu, %d, %d, %d, %p)", __func__,
+         target, source, dst, sst, nelems, PE_start, logPE_stride, PE_size,
+         pSync);
+
+  colls.alltoalls_size.f64(target, source, dst, sst, nelems, PE_start, logPE_stride,
+                      PE_size, pSync);
+}
+
+/** @} */
+
+/**
+ * @defgroup collect Collect Operations
+ * @{
+ */
+
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_collect32 = pshmem_collect32
+#define shmem_collect32 pshmem_collect32
+#pragma weak shmem_collect64 = pshmem_collect64
+#define shmem_collect64 pshmem_collect64
+#endif /* ENABLE_PSHMEM */
+
+/**
+ * @brief Concatenates 32-bit data from multiple PEs to an array in ascending PE order
+ *
+ * @param target Symmetric destination array
+ * @param source Symmetric source array
+ * @param nelems Number of elements to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_collect32(void *target, const void *source, size_t nelems,
+                     int PE_start, int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+
+  colls.collect_size.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
+                    pSync);
+}
+
+/**
+ * @brief Concatenates 64-bit data from multiple PEs to an array in ascending PE order
+ *
+ * @param target Symmetric destination array
+ * @param source Symmetric source array
+ * @param nelems Number of elements to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_collect64(void *target, const void *source, size_t nelems,
+                     int PE_start, int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+
+  colls.collect_size.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
+                    pSync);
+}
+
+/** @} */
+
+/**
+ * @defgroup fcollect Fixed-Length Collect Operations
+ * @{
+ */
+
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_fcollect32 = pshmem_fcollect32
+#define shmem_fcollect32 pshmem_fcollect32
+#pragma weak shmem_fcollect64 = pshmem_fcollect64
+#define shmem_fcollect64 pshmem_fcollect64
+#endif /* ENABLE_PSHMEM */
+
+/**
+ * @brief Concatenates fixed-length 32-bit data from multiple PEs to an array in ascending PE order
+ *
+ * @param target Symmetric destination array
+ * @param source Symmetric source array
+ * @param nelems Number of elements to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_fcollect32(void *target, const void *source, size_t nelems,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+
+  colls.fcollect_size.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
+                     pSync);
+}
+
+/**
+ * @brief Concatenates fixed-length 64-bit data from multiple PEs to an array in ascending PE order
+ *
+ * @param target Symmetric destination array
+ * @param source Symmetric source array
+ * @param nelems Number of elements to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_fcollect64(void *target, const void *source, size_t nelems,
+                      int PE_start, int logPE_stride, int PE_size,
+                      long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+
+  colls.fcollect_size.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
+                     pSync);
+}
+
+/** @} */
+
+/**
+ * @defgroup broadcast Broadcast Operations
+ * @{
+ */
+
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_broadcast32 = pshmem_broadcast32
+#define shmem_broadcast32 pshmem_broadcast32
+#pragma weak shmem_broadcast64 = pshmem_broadcast64
+#define shmem_broadcast64 pshmem_broadcast64
+#endif /* ENABLE_PSHMEM */
+
+/**
+ * @brief Broadcasts 32-bit data from a source PE to all other PEs in a group
+ *
+ * @param target Symmetric destination array
+ * @param source Symmetric source array
+ * @param nelems Number of elements to broadcast
+ * @param PE_root Source PE for the broadcast
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_broadcast32(void *target, const void *source, size_t nelems,
+                       int PE_root, int PE_start, int logPE_stride, int PE_size,
+                       long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+
+  colls.broadcast_size.f32(target, source, nelems, PE_root, PE_start, logPE_stride,
+                      PE_size, pSync);
+}
+
+/**
+ * @brief Broadcasts 64-bit data from a source PE to all other PEs in a group
+ *
+ * @param target Symmetric destination array
+ * @param source Symmetric source array
+ * @param nelems Number of elements to broadcast
+ * @param PE_root Source PE for the broadcast
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_broadcast64(void *target, const void *source, size_t nelems,
+                       int PE_root, int PE_start, int logPE_stride, int PE_size,
+                       long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+         source, nelems, PE_start, logPE_stride, PE_size, pSync);
+
+  colls.broadcast_size.f64(target, source, nelems, PE_root, PE_start, logPE_stride,
+                      PE_size, pSync);
+}
+
+/** @} */
+
+/**
+ * @defgroup sync Synchronization Operations
+ * @{
+ */
+
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_sync = pshmem_sync
+#define shmem_sync pshmem_sync
+#endif /* ENABLE_PSHMEM */
+
+/**
+ * @brief Synchronizes a subset of PEs
+ *
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
+         logPE_stride, PE_size, pSync);
+  colls.sync.f(PE_start, logPE_stride, PE_size, pSync);
+}
+
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_barrier = pshmem_barrier
+#define shmem_barrier pshmem_barrier
+#endif /* ENABLE_PSHMEM */
+
+/**
+ * @brief Performs a barrier synchronization across a subset of PEs
+ *
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync) {
+  logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
+         logPE_stride, PE_size, pSync);
+
+  colls.barrier.f(PE_start, logPE_stride, PE_size, pSync);
+}
+
 
 /** @} */
