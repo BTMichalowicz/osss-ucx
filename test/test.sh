@@ -74,11 +74,11 @@ $oshcc --version
 # $oshrun $flags -np 2 ./bin/shmem_team_sync
 # echo
 
-# # --- shmem_alltoall ---
-# echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
-# $oshcc shmem_alltoall.c -o ./bin/shmem_alltoall
-# $oshrun $flags -np 4 ./bin/shmem_alltoall
-# echo
+# --- shmem_alltoall ---
+echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
+$oshcc shmem_alltoall.c -o ./bin/shmem_alltoall
+$oshrun $flags -np 4 ./bin/shmem_alltoall
+echo
 
 # # --- shmem_alltoalls ---
 # echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
@@ -98,8 +98,8 @@ $oshcc --version
 # $oshrun $flags -np 4 ./bin/shmem_fcollect
 # echo
 
-# --- shmem_broadcast ---
-echo $hline ; echo "  Running shmem_broadcast test" ; echo $hline
-$oshcc shmem_broadcast.c -o ./bin/shmem_broadcast
-$oshrun $flags -np 4 ./bin/shmem_broadcast
-echo
+# # --- shmem_broadcast ---
+# echo $hline ; echo "  Running shmem_broadcast test" ; echo $hline
+# $oshcc shmem_broadcast.c -o ./bin/shmem_broadcast
+# $oshrun $flags -np 4 ./bin/shmem_broadcast
+# echo
