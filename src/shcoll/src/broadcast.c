@@ -1,3 +1,12 @@
+/**
+ * @file broadcast.c
+ * @brief Implementation of broadcast collective communication routines for OpenSHMEM
+ * @author Srdan Milakovic, Michael Beebe
+ * 
+ * This file contains implementations of various broadcast algorithms for OpenSHMEM,
+ * including linear, complete tree, binomial tree, k-nomial tree, and scatter-collect variants.
+ */
+
 #include "shcoll.h"
 #include "shcoll/compat.h"
 #include "shcoll/common.h"
@@ -6,18 +15,40 @@
 #include <stdio.h>
 #include <string.h>
 
+/** Default tree degree for broadcast operations */
 static int tree_degree_broadcast = 2;
+
+/** Default k-nomial tree radix for barrier operations */
 static int knomial_tree_radix_barrier = 2;
 
+/**
+ * @brief Sets the tree degree used in broadcast operations
+ * @param tree_degree The tree degree to use
+ */
 void shcoll_set_broadcast_tree_degree(int tree_degree) {
   tree_degree_broadcast = tree_degree;
 }
 
+/**
+ * @brief Sets the k-nomial tree radix used in barrier operations during broadcast
+ * @param tree_radix The tree radix to use
+ */
 void shcoll_set_broadcast_knomial_tree_radix_barrier(int tree_radix) {
   knomial_tree_radix_barrier = tree_radix;
 }
 
-/* Helper function definitions */
+/**
+ * @brief Linear broadcast helper that uses PE_root as source
+ *
+ * @param target Symmetric destination buffer on all PEs
+ * @param source Source buffer on root PE
+ * @param nbytes Number of bytes to broadcast
+ * @param PE_root Root PE that broadcasts data
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void broadcast_helper_linear(void *target, const void *source,
                                            size_t nbytes, int PE_root,
                                            int PE_start, int logPE_stride,
@@ -33,6 +64,18 @@ inline static void broadcast_helper_linear(void *target, const void *source,
   shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
 }
 
+/**
+ * @brief Complete tree broadcast helper
+ *
+ * @param target Symmetric destination buffer on all PEs
+ * @param source Source buffer on root PE
+ * @param nbytes Number of bytes to broadcast
+ * @param PE_root Root PE that broadcasts data
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void
 broadcast_helper_complete_tree(void *target, const void *source, size_t nbytes,
                                int PE_root, int PE_start, int logPE_stride,
@@ -83,6 +126,18 @@ broadcast_helper_complete_tree(void *target, const void *source, size_t nbytes,
   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 }
 
+/**
+ * @brief Binomial tree broadcast helper
+ *
+ * @param target Symmetric destination buffer on all PEs
+ * @param source Source buffer on root PE
+ * @param nbytes Number of bytes to broadcast
+ * @param PE_root Root PE that broadcasts data
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void
 broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
                                int PE_root, int PE_start, int logPE_stride,
@@ -126,6 +181,18 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 }
 
+/**
+ * @brief K-nomial tree broadcast helper
+ *
+ * @param target Symmetric destination buffer on all PEs
+ * @param source Source buffer on root PE
+ * @param nbytes Number of bytes to broadcast
+ * @param PE_root Root PE that broadcasts data
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void broadcast_helper_knomial_tree(void *target,
                                                  const void *source,
                                                  size_t nbytes, int PE_root,
@@ -183,6 +250,18 @@ inline static void broadcast_helper_knomial_tree(void *target,
   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 }
 
+/**
+ * @brief K-nomial tree broadcast helper using signal operations
+ *
+ * @param target Symmetric destination buffer on all PEs
+ * @param source Source buffer on root PE
+ * @param nbytes Number of bytes to broadcast
+ * @param PE_root Root PE that broadcasts data
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void broadcast_helper_knomial_tree_signal(
     void *target, const void *source, size_t nbytes, int PE_root, int PE_start,
     int logPE_stride, int PE_size, long *pSync) {
@@ -233,6 +312,18 @@ inline static void broadcast_helper_knomial_tree_signal(
   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 }
 
+/**
+ * @brief Scatter-collect broadcast helper
+ *
+ * @param target Symmetric destination buffer on all PEs
+ * @param source Source buffer on root PE
+ * @param nbytes Number of bytes to broadcast
+ * @param PE_root Root PE that broadcasts data
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void
 broadcast_helper_scatter_collect(void *target, const void *source,
                                  size_t nbytes, int PE_root, int PE_start,
@@ -281,11 +372,58 @@ broadcast_helper_scatter_collect(void *target, const void *source,
 }
 
 /**
- * @brief Macro for typed broadcast implementations using legacy helpers
- * FIXME: is SHCOLL_BCAST_SYNC_SIZE correct?
+ * @brief Macro for sized broadcast implementations using legacy helpers
  */
-#define SHCOLL_BROADCAST_TYPED_DEFINITION(_name, _type, _typename)             \
-  int shcoll_##_typename##_broadcast_##_name(shmem_team_t team, _type *dest,   \
+#define SHCOLL_BROADCAST_SIZE_DEFINITION(_algo, _size)                         \
+  void shcoll_broadcast##_size##_##_algo(                                      \
+      void *dest, const void *source, size_t nelems, int PE_root,              \
+      int PE_start, int logPE_stride, int PE_size, long *pSync) {              \
+    broadcast_helper_##_algo(dest, source, (_size / CHAR_BIT) * nelems,        \
+                             PE_root, PE_start, logPE_stride, PE_size, pSync); \
+  }
+
+/* Generate sized implementations for all algorithms */
+/* Linear */
+SHCOLL_BROADCAST_SIZE_DEFINITION(linear, 8)
+SHCOLL_BROADCAST_SIZE_DEFINITION(linear, 16)
+SHCOLL_BROADCAST_SIZE_DEFINITION(linear, 32)
+SHCOLL_BROADCAST_SIZE_DEFINITION(linear, 64)
+
+/* Complete tree */
+SHCOLL_BROADCAST_SIZE_DEFINITION(complete_tree, 8)
+SHCOLL_BROADCAST_SIZE_DEFINITION(complete_tree, 16)
+SHCOLL_BROADCAST_SIZE_DEFINITION(complete_tree, 32)
+SHCOLL_BROADCAST_SIZE_DEFINITION(complete_tree, 64)
+
+/* Binomial tree */
+SHCOLL_BROADCAST_SIZE_DEFINITION(binomial_tree, 8)
+SHCOLL_BROADCAST_SIZE_DEFINITION(binomial_tree, 16)
+SHCOLL_BROADCAST_SIZE_DEFINITION(binomial_tree, 32)
+SHCOLL_BROADCAST_SIZE_DEFINITION(binomial_tree, 64)
+
+/* K-nomial tree */
+SHCOLL_BROADCAST_SIZE_DEFINITION(knomial_tree, 8)
+SHCOLL_BROADCAST_SIZE_DEFINITION(knomial_tree, 16)
+SHCOLL_BROADCAST_SIZE_DEFINITION(knomial_tree, 32)
+SHCOLL_BROADCAST_SIZE_DEFINITION(knomial_tree, 64)
+
+/* K-nomial tree with signal */
+SHCOLL_BROADCAST_SIZE_DEFINITION(knomial_tree_signal, 8)
+SHCOLL_BROADCAST_SIZE_DEFINITION(knomial_tree_signal, 16)
+SHCOLL_BROADCAST_SIZE_DEFINITION(knomial_tree_signal, 32)
+SHCOLL_BROADCAST_SIZE_DEFINITION(knomial_tree_signal, 64)
+
+/* Scatter-collect */
+SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 8)
+SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 16)
+SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 32)
+SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
+
+/**
+ * @brief Macro for typed broadcast implementations using legacy helpers
+ */
+#define SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, _type, _typename)              \
+  int shcoll_##_typename##_broadcast_##_algo(shmem_team_t team, _type *dest,   \
                                              const _type *source,              \
                                              size_t nelems, int PE_root) {     \
     /* Convert team to legacy parameters */                                    \
@@ -293,53 +431,42 @@ broadcast_helper_scatter_collect(void *target, const void *source,
     int PE_size = shmem_team_n_pes(team);                                      \
     static long pSync[SHCOLL_BCAST_SYNC_SIZE];                                 \
                                                                                \
-    broadcast_helper_##_name(dest, source, sizeof(_type) * nelems, PE_root,    \
+    broadcast_helper_##_algo(dest, source, sizeof(_type) * nelems, PE_root,    \
                              PE_start, 0, PE_size, pSync);                     \
     return 0;                                                                  \
   }
 
 /**
- * @brief Macro for sized broadcast implementations using legacy helpers
- */
-#define SHCOLL_BROADCAST_SIZED_DEFINITION(_name, _size)                        \
-  void shcoll_broadcast##_size##_##_name(                                      \
-      void *dest, const void *source, size_t nelems, int PE_root,              \
-      int PE_start, int logPE_stride, int PE_size, long *pSync) {              \
-    broadcast_helper_##_name(dest, source, (_size / CHAR_BIT) * nelems,        \
-                             PE_root, PE_start, logPE_stride, PE_size, pSync); \
-  }
-
-/**
  * @brief Macro to define broadcast implementations for all types
  */
-#define DEFINE_SHCOLL_BROADCAST_TYPES(_name)                                   \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, float, float)                         \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, double, double)                       \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, long double, longdouble)              \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, char, char)                           \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, signed char, schar)                   \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, short, short)                         \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, int, int)                             \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, long, long)                           \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, long long, longlong)                  \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, unsigned char, uchar)                 \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, unsigned short, ushort)               \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, unsigned int, uint)                   \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, unsigned long, ulong)                 \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, unsigned long long, ulonglong)        \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, int8_t, int8)                         \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, int16_t, int16)                       \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, int32_t, int32)                       \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, int64_t, int64)                       \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, uint8_t, uint8)                       \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, uint16_t, uint16)                     \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, uint32_t, uint32)                     \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, uint64_t, uint64)                     \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, size_t, size)                         \
-  SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, ptrdiff_t, ptrdiff)
+#define DEFINE_SHCOLL_BROADCAST_TYPES(_algo)                                   \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, float, float)                          \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, double, double)                        \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, long double, longdouble)               \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, char, char)                            \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, signed char, schar)                    \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, short, short)                          \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, int, int)                              \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, long, long)                            \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, long long, longlong)                   \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, unsigned char, uchar)                  \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, unsigned short, ushort)                \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, unsigned int, uint)                    \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, unsigned long, ulong)                  \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, unsigned long long, ulonglong)         \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, int8_t, int8)                          \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, int16_t, int16)                        \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, int32_t, int32)                        \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, int64_t, int64)                        \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, uint8_t, uint8)                        \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, uint16_t, uint16)                      \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, uint32_t, uint32)                      \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, uint64_t, uint64)                      \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, size_t, size)                          \
+  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, ptrdiff_t, ptrdiff)
 
-#define SHCOLL_BROADCAST_TYPED_FOR_TYPE(_name, _type, _typename)               \
-  SHCOLL_BROADCAST_TYPED_DEFINITION(_name, _type, _typename)
+#define SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, _type, _typename)                \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, _type, _typename)
 
 /* Generate typed implementations for all algorithms */
 DEFINE_SHCOLL_BROADCAST_TYPES(linear)
@@ -348,40 +475,3 @@ DEFINE_SHCOLL_BROADCAST_TYPES(binomial_tree)
 DEFINE_SHCOLL_BROADCAST_TYPES(knomial_tree)
 DEFINE_SHCOLL_BROADCAST_TYPES(knomial_tree_signal)
 DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
-
-/* Generate sized implementations for all algorithms */
-/* Linear */
-SHCOLL_BROADCAST_SIZED_DEFINITION(linear, 8)
-SHCOLL_BROADCAST_SIZED_DEFINITION(linear, 16)
-SHCOLL_BROADCAST_SIZED_DEFINITION(linear, 32)
-SHCOLL_BROADCAST_SIZED_DEFINITION(linear, 64)
-
-/* Complete tree */
-SHCOLL_BROADCAST_SIZED_DEFINITION(complete_tree, 8)
-SHCOLL_BROADCAST_SIZED_DEFINITION(complete_tree, 16)
-SHCOLL_BROADCAST_SIZED_DEFINITION(complete_tree, 32)
-SHCOLL_BROADCAST_SIZED_DEFINITION(complete_tree, 64)
-
-/* Binomial tree */
-SHCOLL_BROADCAST_SIZED_DEFINITION(binomial_tree, 8)
-SHCOLL_BROADCAST_SIZED_DEFINITION(binomial_tree, 16)
-SHCOLL_BROADCAST_SIZED_DEFINITION(binomial_tree, 32)
-SHCOLL_BROADCAST_SIZED_DEFINITION(binomial_tree, 64)
-
-/* K-nomial tree */
-SHCOLL_BROADCAST_SIZED_DEFINITION(knomial_tree, 8)
-SHCOLL_BROADCAST_SIZED_DEFINITION(knomial_tree, 16)
-SHCOLL_BROADCAST_SIZED_DEFINITION(knomial_tree, 32)
-SHCOLL_BROADCAST_SIZED_DEFINITION(knomial_tree, 64)
-
-/* K-nomial tree with signal */
-SHCOLL_BROADCAST_SIZED_DEFINITION(knomial_tree_signal, 8)
-SHCOLL_BROADCAST_SIZED_DEFINITION(knomial_tree_signal, 16)
-SHCOLL_BROADCAST_SIZED_DEFINITION(knomial_tree_signal, 32)
-SHCOLL_BROADCAST_SIZED_DEFINITION(knomial_tree_signal, 64)
-
-/* Scatter-collect */
-SHCOLL_BROADCAST_SIZED_DEFINITION(scatter_collect, 8)
-SHCOLL_BROADCAST_SIZED_DEFINITION(scatter_collect, 16)
-SHCOLL_BROADCAST_SIZED_DEFINITION(scatter_collect, 32)
-SHCOLL_BROADCAST_SIZED_DEFINITION(scatter_collect, 64)

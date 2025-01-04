@@ -5,12 +5,12 @@
  * This file implements various algorithms for strided all-to-all collective
  * operations:
  * - Shift exchange
- * - XOR pairwise exchange  
+ * - XOR pairwise exchange
  * - Color pairwise exchange
  *
  * Each algorithm has variants using different synchronization methods:
  * - Barrier-based
- * - Signal-based 
+ * - Signal-based
  * - Counter-based
  *
  * @author Probably OpenSHMEM team
@@ -232,7 +232,7 @@ ALLTOALLS_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
  * @param _algo Algorithm name
  * @param _size Size in bits
  */
-#define SHCOLL_ALLTOALLS_SIZED_DEFINITION(_algo, _size)                        \
+#define SHCOLL_ALLTOALLS_SIZE_DEFINITION(_algo, _size)                         \
   void shcoll_alltoalls##_size##_##_algo(                                      \
       void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,            \
       size_t nelems, int PE_start, int logPE_stride, int PE_size,              \
@@ -244,32 +244,32 @@ ALLTOALLS_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
 
 // @formatter:off
 
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(shift_exchange_barrier, 32)
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(shift_exchange_barrier, 64)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(shift_exchange_barrier, 32)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(shift_exchange_barrier, 64)
 
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(shift_exchange_counter, 32)
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(shift_exchange_counter, 64)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(shift_exchange_counter, 32)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(shift_exchange_counter, 64)
 
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(shift_exchange_signal, 32)
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(shift_exchange_signal, 64)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(shift_exchange_signal, 32)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(shift_exchange_signal, 64)
 
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(xor_pairwise_exchange_barrier, 32)
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(xor_pairwise_exchange_barrier, 64)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(xor_pairwise_exchange_barrier, 32)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(xor_pairwise_exchange_barrier, 64)
 
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(xor_pairwise_exchange_counter, 32)
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(xor_pairwise_exchange_counter, 64)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(xor_pairwise_exchange_counter, 32)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(xor_pairwise_exchange_counter, 64)
 
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(xor_pairwise_exchange_signal, 32)
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(xor_pairwise_exchange_signal, 64)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(xor_pairwise_exchange_signal, 32)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(xor_pairwise_exchange_signal, 64)
 
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(color_pairwise_exchange_barrier, 32)
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(color_pairwise_exchange_barrier, 64)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(color_pairwise_exchange_barrier, 32)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(color_pairwise_exchange_barrier, 64)
 
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(color_pairwise_exchange_counter, 32)
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(color_pairwise_exchange_counter, 64)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(color_pairwise_exchange_counter, 32)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(color_pairwise_exchange_counter, 64)
 
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(color_pairwise_exchange_signal, 32)
-SHCOLL_ALLTOALLS_SIZED_DEFINITION(color_pairwise_exchange_signal, 64)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(color_pairwise_exchange_signal, 32)
+SHCOLL_ALLTOALLS_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
 
 // @formatter:on
 
@@ -280,7 +280,7 @@ SHCOLL_ALLTOALLS_SIZED_DEFINITION(color_pairwise_exchange_signal, 64)
  * @param _type Data type
  * @param _typename Type name string
  */
-#define SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, _type, _typename)             \
+#define SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, _type, _typename)              \
   int shcoll_##_typename##_alltoalls_##_algo(                                  \
       shmem_team_t team, _type *dest, const _type *source, ptrdiff_t dst,      \
       ptrdiff_t sst, size_t nelems) {                                          \
@@ -303,30 +303,30 @@ SHCOLL_ALLTOALLS_SIZED_DEFINITION(color_pairwise_exchange_signal, 64)
  * @param _algo Algorithm name to generate implementations for
  */
 #define DEFINE_SHCOLL_ALLTOALLS_TYPES(_algo)                                   \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, float, float)                       \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, double, double)                     \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, long double, longdouble)            \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, char, char)                         \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, signed char, schar)                 \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, short, short)                       \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, int, int)                           \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, long, long)                         \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, long long, longlong)                \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, unsigned char, uchar)               \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, unsigned short, ushort)             \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, unsigned int, uint)                 \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, unsigned long, ulong)               \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, unsigned long long, ulonglong)      \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, int8_t, int8)                       \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, int16_t, int16)                     \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, int32_t, int32)                     \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, int64_t, int64)                     \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, uint8_t, uint8)                     \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, uint16_t, uint16)                   \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, uint32_t, uint32)                   \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, uint64_t, uint64)                   \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, size_t, size)                       \
-  SHCOLL_ALLTOALLS_TYPED_DEFINITION(_algo, ptrdiff_t, ptrdiff)
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, float, float)                        \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, double, double)                      \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, long double, longdouble)             \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, char, char)                          \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, signed char, schar)                  \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, short, short)                        \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int, int)                            \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, long, long)                          \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, long long, longlong)                 \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned char, uchar)                \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned short, ushort)              \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned int, uint)                  \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned long, ulong)                \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned long long, ulonglong)       \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int8_t, int8)                        \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int16_t, int16)                      \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int32_t, int32)                      \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int64_t, int64)                      \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint8_t, uint8)                      \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint16_t, uint16)                    \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint32_t, uint32)                    \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint64_t, uint64)                    \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, size_t, size)                        \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
 
 // @formatter:off
 
