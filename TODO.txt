@@ -1,9 +1,16 @@
+- Debug the following for runtime errors:
+  - shmem_<typename>_collect
+  - shmem_<typename>_fcollect
+  - shmem_<typename>_broadcast
+
 - shmem_alltoallmem
 - shmem_alltoallsmem
 - shmem_broadcastmem
 - shmem_collectmem
 - shmem_fcollectmem
 - reductions
+
+- Reductions
 
 - All collectives
   - Check the logger string formats in shcoll-shim.c
@@ -20,5 +27,3 @@
   
 - shmem_info_get_version
   - Update to the current version
-
-

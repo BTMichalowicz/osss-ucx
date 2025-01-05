@@ -1,7 +1,10 @@
-//
-// Created by Srdan Milakovic on 5/17/18.
-// Edited by Michael Beebe on 1/4/25
-//
+/**
+ * @file fcollect.c
+ * @brief Implementation of various fcollect algorithms for OpenSHMEM collectives
+ * @author Srdan Milakovic
+ * @author Michael Beebe
+ * @date Created on 5/17/18, edited on 1/4/25
+ */
 
 #include "shcoll.h"
 #include "shcoll/compat.h"
@@ -13,7 +16,15 @@
 #include <assert.h>
 
 /**
- @param pSync pSync should have at least 2 elements
+ * Helper function implementing linear fcollect algorithm
+ * 
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= 2
  */
 inline static void fcollect_helper_linear(void *dest, const void *source,
                                           size_t nbytes, int PE_start,
@@ -37,6 +48,17 @@ inline static void fcollect_helper_linear(void *dest, const void *source,
                            PE_start, logPE_stride, PE_size, pSync + 1);
 }
 
+/**
+ * Helper function implementing all-to-all linear fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data  
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= 1
+ */
 inline static void fcollect_helper_all_linear(void *dest, const void *source,
                                               size_t nbytes, int PE_start,
                                               int logPE_stride, int PE_size,
@@ -66,6 +88,17 @@ inline static void fcollect_helper_all_linear(void *dest, const void *source,
   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 }
 
+/**
+ * Helper function implementing all-to-all linear fcollect algorithm variant 1
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE  
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= 1
+ */
 inline static void fcollect_helper_all_linear1(void *dest, const void *source,
                                                size_t nbytes, int PE_start,
                                                int logPE_stride, int PE_size,
@@ -88,7 +121,15 @@ inline static void fcollect_helper_all_linear1(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least ⌈log(max_rank)⌉ elements
+ * Helper function implementing recursive doubling fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set  
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
  */
 inline static void fcollect_helper_rec_dbl(void *dest, const void *source,
                                            size_t nbytes, int PE_start,
@@ -124,7 +165,15 @@ inline static void fcollect_helper_rec_dbl(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least 1 element
+ * Helper function implementing ring-based fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs  
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= 1
  */
 inline static void fcollect_helper_ring(void *dest, const void *source,
                                         size_t nbytes, int PE_start,
@@ -155,7 +204,15 @@ inline static void fcollect_helper_ring(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least ⌈log(max_rank)⌉ elements
+ * Helper function implementing Bruck's fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
  */
 inline static void fcollect_helper_bruck(void *dest, const void *source,
                                          size_t nbytes, int PE_start,
@@ -193,7 +250,15 @@ inline static void fcollect_helper_bruck(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least ⌈log(max_rank)⌉ elements
+ * Helper function implementing Bruck's fcollect algorithm without final rotation
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
  */
 inline static void fcollect_helper_bruck_no_rotate(void *dest,
                                                    const void *source,
@@ -241,7 +306,15 @@ inline static void fcollect_helper_bruck_no_rotate(void *dest,
 }
 
 /**
- * @param pSync pSync should have at least ⌈log(max_rank)⌉ elements
+ * Helper function implementing Bruck's fcollect algorithm with signal operations
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
  */
 inline static void fcollect_helper_bruck_signal(void *dest, const void *source,
                                                 size_t nbytes, int PE_start,
@@ -279,7 +352,15 @@ inline static void fcollect_helper_bruck_signal(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least ⌈log(max_rank)⌉ elements
+ * Helper function implementing in-place Bruck's fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
  */
 inline static void fcollect_helper_bruck_inplace(void *dest, const void *source,
                                                  size_t nbytes, int PE_start,
@@ -317,7 +398,15 @@ inline static void fcollect_helper_bruck_inplace(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least 2 elements
+ * Helper function implementing neighbor exchange fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= 2
  */
 inline static void
 fcollect_helper_neighbor_exchange(void *dest, const void *source, size_t nbytes,
@@ -389,6 +478,12 @@ fcollect_helper_neighbor_exchange(void *dest, const void *source, size_t nbytes,
   pSync[1] = SHCOLL_SYNC_VALUE;
 }
 
+/**
+ * Macro to define fcollect functions for different data sizes
+ *
+ * @param _name Algorithm name
+ * @param _size Data size in bits
+ */
 #define SHCOLL_FCOLLECT_SIZE_DEFINITION(_name, _size)                          \
   void shcoll_fcollect##_size##_##_name(                                       \
       void *dest, const void *source, size_t nelems, int PE_start,             \
@@ -431,7 +526,13 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
 
 /* @formatter:on */
 
-// FIXME:
+/**
+ * Macro to define fcollect functions for different data types
+ *
+ * @param _name Algorithm name
+ * @param type Data type
+ * @param _typename Type name string
+ */
 #define SHCOLL_FCOLLECT_TYPE_DEFINITION(_name, type, _typename)                \
   int shcoll_##_typename##_fcollect_##_name(                                   \
       shmem_team_t team, type *dest, const type *source, size_t nelems) {      \
@@ -449,6 +550,11 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
 
 /* @formatter:off */
 
+/**
+ * Macro to define fcollect functions for all supported data types
+ *
+ * @param _algo Algorithm name
+ */
 #define DEFINE_SHCOLL_FCOLLECT_TYPES(_algo)                                    \
   SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, float, float)                         \
   SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, double, double)                       \
