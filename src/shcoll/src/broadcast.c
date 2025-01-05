@@ -475,40 +475,25 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
   int shcoll_##_typename##_broadcast_##_algo(shmem_team_t team, _type *dest,   \
                                              const _type *source,              \
                                              size_t nelems, int PE_root) {     \
-    /* Convert team to legacy parameters */                                    \
     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
     int logPE_stride = 0;                                                      \
     int PE_size = shmem_team_n_pes(team);                                      \
-    /* Get persistent pSync from symmetric heap */                             \
-    static long *pSync = NULL;                                                 \
-    if (pSync == NULL) {                                                       \
-      pSync = (long *)shmem_malloc(SHCOLL_BCAST_SYNC_SIZE * sizeof(long));     \
-      if (!pSync)                                                              \
-        return -1;                                                             \
-      for (int i = 0; i < SHCOLL_BCAST_SYNC_SIZE; i++) {                       \
-        pSync[i] = SHCOLL_SYNC_VALUE;                                          \
-      }                                                                        \
-      shmem_team_sync(team);                                                   \
-    }                                                                          \
-    /* Convert PE_root from team to world ranks */                             \
-    int world_root = shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD); \
-    int my_pe = shmem_team_my_pe(team);                                        \
-    /* If I'm root, copy source to dest first */                               \
-    if (my_pe == world_root) {                                                 \
-      memcpy(dest, source, sizeof(_type) * nelems);                            \
-    }                                                                          \
-    shmem_team_sync(team);                                                     \
-    /* Perform broadcast using team-relative PE_root */                        \
-    broadcast_helper_##_algo(dest, dest, sizeof(_type) * nelems,               \
-                             PE_root, /* Use team-relative PE_root */          \
-                             PE_start, logPE_stride, PE_size, pSync);          \
-    /* Ensure broadcast is complete */                                         \
-    shmem_team_sync(team);                                                     \
-    /* Reset pSync values */                                                   \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_BCAST_SYNC_SIZE * sizeof(long));         \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+    /* Initialize pSync */                                                     \
     for (int i = 0; i < SHCOLL_BCAST_SYNC_SIZE; i++) {                         \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
+    /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
+    /* Perform broadcast */                                                    \
+    broadcast_helper_##_algo(dest, source, sizeof(_type) * nelems, PE_root,    \
+                             PE_start, logPE_stride, PE_size, pSync);          \
+    /* Cleanup */                                                              \
+    shmem_team_sync(team);                                                     \
+    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 

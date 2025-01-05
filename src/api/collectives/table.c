@@ -123,6 +123,21 @@ static typed_op_t alltoall_tab[] = {
     TYPED_LAST};
 
 /**
+ * @brief Table of generic alltoallmem collective algorithms
+ */
+static untyped_op_t alltoallmem_tab[] = {
+    UNTYPED_REG(alltoallmem, shift_exchange_barrier),
+    UNTYPED_REG(alltoallmem, shift_exchange_counter),
+    UNTYPED_REG(alltoallmem, shift_exchange_signal),
+    UNTYPED_REG(alltoallmem, xor_pairwise_exchange_barrier),
+    UNTYPED_REG(alltoallmem, xor_pairwise_exchange_counter),
+    UNTYPED_REG(alltoallmem, xor_pairwise_exchange_signal),
+    UNTYPED_REG(alltoallmem, color_pairwise_exchange_barrier),
+    UNTYPED_REG(alltoallmem, color_pairwise_exchange_counter),
+    UNTYPED_REG(alltoallmem, color_pairwise_exchange_signal),
+    UNTYPED_LAST};
+
+/**
  * @brief Table of sized alltoall (deprecated) 
  */
 static sized_op_t alltoall_size_tab[] = {
@@ -368,8 +383,6 @@ static int register_typed(typed_op_t *tabp, const char *op,
  * @param op Operation name to register
  * @param fn Pointer to store function pointer
  * @return 0 on success, -1 if operation not found
-
- FIXME: I don't think we need this
  */
 static int register_untyped(untyped_op_t *tabp, const char *op,
                             untyped_coll_fn_t *fn) {
@@ -431,6 +444,7 @@ coll_ops_t colls;
 
 /* Current routines */
 REGISTER_TYPED(alltoall)
+REGISTER_UNTYPED(alltoallmem)
 REGISTER_TYPED(alltoalls)
 REGISTER_TYPED(collect)
 REGISTER_TYPED(fcollect)

@@ -1,6 +1,4 @@
 - Debug the following for runtime errors:
-  - shmem_<typename>_collect
-  - shmem_<typename>_fcollect
   - shmem_<typename>_broadcast
 
 - shmem_alltoallmem

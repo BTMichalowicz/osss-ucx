@@ -73,6 +73,25 @@ DECLARE_ALLTOALL_TYPES(color_pairwise_exchange_counter)
 DECLARE_ALLTOALL_TYPES(color_pairwise_exchange_signal)
 
 /**
+ * @brief Macro to declare generic alltoallmem implementations
+ *
+ * @param _algo Algorithm name to generate declarations for
+ */
+#define SHCOLL_ALLTOALLMEM_DECLARATION(_algo)                                  \
+  int shcoll_alltoallmem_##_algo(shmem_team_t team, void *dest,                \
+                                 const void *source, size_t nelems);
+
+SHCOLL_ALLTOALLMEM_DECLARATION(shift_exchange_barrier)
+SHCOLL_ALLTOALLMEM_DECLARATION(shift_exchange_counter)
+SHCOLL_ALLTOALLMEM_DECLARATION(shift_exchange_signal)
+SHCOLL_ALLTOALLMEM_DECLARATION(xor_pairwise_exchange_barrier)
+SHCOLL_ALLTOALLMEM_DECLARATION(xor_pairwise_exchange_counter)
+SHCOLL_ALLTOALLMEM_DECLARATION(xor_pairwise_exchange_signal)
+SHCOLL_ALLTOALLMEM_DECLARATION(color_pairwise_exchange_barrier)
+SHCOLL_ALLTOALLMEM_DECLARATION(color_pairwise_exchange_counter)
+SHCOLL_ALLTOALLMEM_DECLARATION(color_pairwise_exchange_signal)
+
+/**
  * @brief Macro to declare sized alltoall implementations
  *
  * @param _algo Algorithm name

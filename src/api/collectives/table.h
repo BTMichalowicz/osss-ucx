@@ -51,7 +51,6 @@ typedef int (*untyped_coll_fn_t)();
 
 /**
  * @brief Structure for untyped collective operations
- FIXME: I don't think we need this
  */
 typedef struct untyped_op {
   const char op[COLL_NAME_MAX]; /**< Operation name */
@@ -65,6 +64,7 @@ typedef struct untyped_op {
 typedef struct coll_ops {
   /* Current routines */
   typed_op_t alltoall;      /**< Typed all-to-all operation */
+  untyped_op_t alltoallmem; /**< Generic all-to-all memory operation */
   typed_op_t alltoalls;     /**< Typed strided all-to-all operation */
   typed_op_t collect;       /**< Typed collect operation */
   typed_op_t fcollect;      /**< Typed ordered collect operation */
@@ -97,6 +97,7 @@ int register_barrier(const char *op);
 int register_sync(const char *op);
 int register_broadcast(const char *op);
 int register_alltoall(const char *op);
+int register_alltoallmem(const char *op);
 int register_alltoalls(const char *op);
 int register_collect(const char *op);
 int register_fcollect(const char *op);

@@ -137,6 +137,27 @@ SHMEM_TYPENAME_ALLTOALL(uint64_t, uint64)
 SHMEM_TYPENAME_ALLTOALL(size_t, size)
 SHMEM_TYPENAME_ALLTOALL(ptrdiff_t, ptrdiff)
 
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_alltoallmem = pshmem_alltoallmem
+#define shmem_alltoallmem pshmem_alltoallmem
+#endif /* ENABLE_PSHMEM */
+
+/**
+ * @brief Generic memory alltoall routine (deprecated)
+ *
+ * @param team    The team over which to alltoall
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array on root PE
+ * @param nelems  Number of elements to alltoall
+ * @return        Zero on success, non-zero on failure
+ */
+int shmem_alltoallmem(shmem_team_t team, void *dest, const void *source,
+                      size_t nelems) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
+         nelems);
+  colls.alltoallmem.f(team, dest, source, nelems);
+}
+
 /** @} */
 
 /**
@@ -216,6 +237,27 @@ SHMEM_TYPENAME_ALLTOALLS(uint64_t, uint64)
 SHMEM_TYPENAME_ALLTOALLS(size_t, size)
 SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
 
+// #ifdef ENABLE_PSHMEM
+// #pragma weak shmem_alltoallsmem = pshmem_alltoallsmem
+// #define shmem_alltoallsmem pshmem_alltoallsmem
+// #endif /* ENABLE_PSHMEM */
+
+// /**
+//  * @brief Generic memory alltoall routine (deprecated)
+//  *
+//  * @param team    The team over which to alltoall
+//  * @param dest    Symmetric destination array on all PEs
+//  * @param source  Source array on root PE
+//  * @param nelems  Number of elements to alltoall
+//  * @return        Zero on success, non-zero on failure
+//  */
+// int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
+//                        size_t nelems) {
+//   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
+//          nelems);
+//   colls.alltoallsmem.f(team, dest, source, nelems);
+// }
+
 /** @} */
 
 /**
@@ -274,6 +316,11 @@ SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
 #define shmem_ptrdiff_collect pshmem_ptrdiff_collect
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to generate typed collect operations
+ * @param _type The C data type
+ * @param _typename The type name string
+ */
 #define SHMEM_TYPENAME_COLLECT(_type, _typename)                               \
   int shmem_##_typename##_collect(shmem_team_t team, _type *dest,              \
                                   const _type *source, size_t nelems) {        \
@@ -306,6 +353,27 @@ SHMEM_TYPENAME_COLLECT(uint32_t, uint32)
 SHMEM_TYPENAME_COLLECT(uint64_t, uint64)
 SHMEM_TYPENAME_COLLECT(size_t, size)
 SHMEM_TYPENAME_COLLECT(ptrdiff_t, ptrdiff)
+
+// #ifdef ENABLE_PSHMEM
+// #pragma weak shmem_collectmem = pshmem_collectmem
+// #define shmem_collectmem pshmem_collectmem
+// #endif /* ENABLE_PSHMEM */
+
+// /**
+//  * @brief Generic memory collect routine (deprecated)
+//  *
+//  * @param team    The team over which to collect
+//  * @param dest    Symmetric destination array on all PEs
+//  * @param source  Source array on root PE
+//  * @param nelems  Number of elements to collect
+//  * @return        Zero on success, non-zero on failure
+//  */
+// int shmem_collectmem(shmem_team_t team, void *dest, const void *source,
+//                       size_t nelems) {
+//   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
+//          nelems);
+//   colls.collectmem.f(team, dest, source, nelems);
+// }
 
 /** @} */
 
@@ -365,6 +433,11 @@ SHMEM_TYPENAME_COLLECT(ptrdiff_t, ptrdiff)
 #define shmem_ptrdiff_fcollect pshmem_ptrdiff_fcollect
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to generate typed fixed-length collect operations
+ * @param _type The C data type
+ * @param _typename The type name string
+ */
 #define SHMEM_TYPENAME_FCOLLECT(_type, _typename)                              \
   int shmem_##_typename##_fcollect(shmem_team_t team, _type *dest,             \
                                    const _type *source, size_t nelems) {       \
@@ -397,6 +470,27 @@ SHMEM_TYPENAME_FCOLLECT(uint32_t, uint32)
 SHMEM_TYPENAME_FCOLLECT(uint64_t, uint64)
 SHMEM_TYPENAME_FCOLLECT(size_t, size)
 SHMEM_TYPENAME_FCOLLECT(ptrdiff_t, ptrdiff)
+
+// #ifdef ENABLE_PSHMEM
+// #pragma weak shmem_fcollectmem = pshmem_fcollectmem
+// #define shmem_fcollectmem pshmem_fcollectmem
+// #endif /* ENABLE_PSHMEM */
+
+// /**
+//  * @brief Generic memory collect routine (deprecated)
+//  *
+//  * @param team    The team over which to collect
+//  * @param dest    Symmetric destination array on all PEs
+//  * @param source  Source array on root PE
+//  * @param nelems  Number of elements to collect
+//  * @return        Zero on success, non-zero on failure
+//  */
+// int shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
+//                        size_t nelems) {
+//   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
+//          nelems);
+//   colls.fcollectmem.f(team, dest, source, nelems);
+// }
 
 /** @} */
 
@@ -500,11 +594,13 @@ void shmem_sync_all(void) {
 #define shmem_size_broadcast pshmem_size_broadcast
 #pragma weak shmem_ptrdiff_broadcast = pshmem_ptrdiff_broadcast
 #define shmem_ptrdiff_broadcast pshmem_ptrdiff_broadcast
-
-#pragma weak shmem_broadcastmem = pshmem_broadcastmem
-#define shmem_broadcastmem pshmem_broadcastmem
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to generate typed fixed-length broadcast operations
+ * @param _type The C data type
+ * @param _typename The type name string
+ */
 #define SHMEM_TYPENAME_BROADCAST(_type, _typename)                             \
   int shmem_##_typename##_broadcast(shmem_team_t team, _type *dest,            \
                                     const _type *source, size_t nelems) {      \
@@ -538,12 +634,27 @@ SHMEM_TYPENAME_BROADCAST(uint64_t, uint64)
 SHMEM_TYPENAME_BROADCAST(size_t, size)
 SHMEM_TYPENAME_BROADCAST(ptrdiff_t, ptrdiff)
 
-int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
-                       size_t nelems, int PE_root) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,
-         nelems, PE_root);
-  colls.broadcast.f(team, dest, source, nelems, PE_root);
-}
+
+// #pragma weak shmem_broadcastmem = pshmem_broadcastmem
+// #define shmem_broadcastmem pshmem_broadcastmem
+// #endif /* ENABLE_PSHMEM */
+
+// /**
+//  * @brief Generic memory broadcast routine (deprecated)
+//  *
+//  * @param team    The team over which to broadcast
+//  * @param dest    Symmetric destination array on all PEs
+//  * @param source  Source array on root PE
+//  * @param nelems  Number of elements to broadcast
+//  * @param PE_root The root PE
+//  * @return        Zero on success, non-zero on failure
+//  */
+// int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
+//                        size_t nelems, int PE_root) {
+//   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,
+//          nelems, PE_root);
+//   colls.broadcast.f(team, dest, source, nelems, PE_root);
+// }
 
 /** @} */
 ///////////////////////////////////////////////////////////////////////

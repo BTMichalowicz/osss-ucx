@@ -957,7 +957,8 @@ uint64_t shmem_signal_wait_until(uint64_t *sig_addr, int cmp,
   */
 
 // TODO: deprecate this, make a team-based sync for the C11 bindings
-void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync);
+void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
+    _DEPRECATED_BY(shmem_team_sync, 1.5);
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1010,7 +1011,8 @@ void shmem_sync_all(void);
  * None.
  *
  */
-void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
+void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)
+    _DEPRECATED_BY(shmem_ctx_quiet then shmem_team_sync, 1.5);
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2986,7 +2988,7 @@ void shmem_double_min_to_all(double *target, const double *source, int nreduce,
 /**
  * broadcasts
  *
- * These routines perform a broadcast operation across a team. The root PE 
+ * These routines perform a broadcast operation across a team. The root PE
  * broadcasts data to all other PEs in the team.
  *
  * @param team    The team over which to broadcast
@@ -3037,9 +3039,8 @@ API_BROADCAST_TYPE(ptrdiff_t, ptrdiff)
  * @return        Zero on success, non-zero on failure
  */
 int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
-                         size_t nelems, int PE_root);
+                       size_t nelems, int PE_root);
 
-// TODO: deprecate this
 /**
  * Legacy broadcast operations (deprecated)
  *
@@ -3053,31 +3054,41 @@ int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
  * @param pSync        Symmetric work array
  */
 #define API_BROADCAST_SIZE(_size)                                              \
-  /* see \ref shmem_broadcast64() */                                           \
   void shmem_broadcast##_size(void *target, const void *source, size_t nelems, \
                               int PE_root, int PE_start, int logPE_stride,     \
-                              int PE_size, long *pSync);
+                              int PE_size, long *pSync)                        \
+      _DEPRECATED_BY(shmem_broadcastmem or shmem_<typename> broadcast, 1.5);
 
 API_BROADCAST_SIZE(32)
 API_BROADCAST_SIZE(64)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * collects
+ * Collects
  */
 
-// TODO: deprecate this
-#define API_COLLECT_NAME_SIZE(_opname, _size)                                  \
-  /* see \ref shmem_##_opname##64() */                                         \
-  void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
-                              int PE_start, int logPE_stride, int PE_size,     \
-                              long *pSync);
+/**
+ * @brief Collective operation to concatenate data from multiple PEs into a
+ * single array
+ *
+ * The collect routines concatenate blocks of data from multiple PEs in the team
+ * into a single array on each PE in order of ascending PE number. The source
+ * array may contain a different amount of data from each PE.
+ *
+ * @note The total size of the received data must be known by all PEs in the
+ * team.
+ */
 
-API_COLLECT_NAME_SIZE(fcollect, 32)
-API_COLLECT_NAME_SIZE(fcollect, 64)
-API_COLLECT_NAME_SIZE(collect, 32)
-API_COLLECT_NAME_SIZE(collect, 64)
-
+/**
+ * @brief Type-specific collect routines
+ *
+ * @param team    Team on which to perform the collect
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Local array containing data to be concatenated
+ * @param nelems  Number of elements in source array
+ *
+ * @return Zero on success, non-zero otherwise
+ */
 #define API_COLLECT_TYPE(_type, _typename)                                     \
   int shmem_##_typename##_collect(shmem_team_t team, _type *dest,              \
                                   const _type *source, size_t nelems);
@@ -3107,6 +3118,50 @@ API_COLLECT_TYPE(uint64_t, uint64)
 API_COLLECT_TYPE(size_t, size)
 API_COLLECT_TYPE(ptrdiff_t, ptrdiff)
 
+/**
+ * @brief Generic memory collect routine
+ *
+ * @param team    Team on which to perform the collect
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Local array containing data to be concatenated
+ * @param nelems  Number of elements in source array
+ *
+ * @return Zero on success, non-zero otherwise
+ */
+int shmem_collectmem(shmem_team_t team, void *dest, const void *source,
+                     size_t nelems);
+
+/**
+ * @brief Legacy collect operations (deprecated)
+ *
+ * @param target       Symmetric destination array on all PEs
+ * @param source       Local array containing data to be concatenated
+ * @param nelems       Number of elements in source array
+ * @param PE_start     First PE number of active set
+ * @param logPE_stride Log2 of stride between consecutive PE numbers
+ * @param PE_size      Number of PEs in active set
+ * @param pSync        Symmetric work array
+ */
+#define API_COLLECT_SIZE(_opname, _size)                                       \
+  /* see \ref shmem_##_opname##64() */                                         \
+  void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
+                              int PE_start, int logPE_stride, int PE_size,     \
+                              long *pSync);
+
+API_COLLECT_SIZE(collect, 32)
+API_COLLECT_SIZE(collect, 64)
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Type-specific fcollect routines
+ *
+ * @param team    Team on which to perform the fcollect
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Local array containing data to be concatenated
+ * @param nelems  Number of elements in source array
+ *
+ * @return Zero on success, non-zero otherwise
+ */
 #define API_FCOLLECT_TYPE(_type, _typename)                                    \
   int shmem_##_typename##_fcollect(shmem_team_t team, _type *dest,             \
                                    const _type *source, size_t nelems);
@@ -3136,9 +3191,61 @@ API_FCOLLECT_TYPE(uint64_t, uint64)
 API_FCOLLECT_TYPE(size_t, size)
 API_FCOLLECT_TYPE(ptrdiff_t, ptrdiff)
 
+/**
+ * @brief Generic memory fcollect routine
+ *
+ * @param team    Team on which to perform the fcollect
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Local array containing data to be concatenated
+ * @param nelems  Number of elements in source array
+ *
+ * @return Zero on success, non-zero otherwise
+ */
+int shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
+                      size_t nelems);
+
+/**
+ * @brief Legacy fcollect operations (deprecated)
+ *
+ * @param target       Symmetric destination array on all PEs
+ * @param source       Local array containing data to be concatenated
+ * @param nelems       Number of elements in source array
+ * @param PE_start     First PE number of active set
+ * @param logPE_stride Log2 of stride between consecutive PE numbers
+ * @param PE_size      Number of PEs in active set
+ * @param pSync        Symmetric work array
+ */
+#define API_FCOLLECT_SIZE(_opname, _size)                                      \
+  /* see \ref shmem_##_opname##64() */                                         \
+  void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
+                              int PE_start, int logPE_stride, int PE_size,     \
+                              long *pSync)                                     \
+      _DEPRECATED_BY(shmem_fcollectmem or shmem_<typename> fcollect, 1.5);
+
+API_FCOLLECT_SIZE(fcollect, 32)
+API_FCOLLECT_SIZE(fcollect, 64)
+
 //////////////////////////////////////////////////////////////////////////////////
 /**
  * all-to-all collectives
+ */
+/**
+ * @brief All-to-all collective routines
+ *
+ * These routines perform an all-to-all collective operation across a team. Each
+ * PE contributes distinct data to every other PE in the team.
+ *
+ * The all-to-all routines require that:
+ * - The amount of data sent from each PE must be equal to the amount of data
+ * received by each PE
+ * - The data type and count must be identical across all PEs
+ * - The target and source arrays must be symmetric
+ *
+ * @param team    The team over which to perform the all-to-all operation
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array containing data to be sent to all PEs
+ * @param nelems  Number of elements contributed by and received from each PE
+ * @return        Zero on success, non-zero on failure
  */
 #define API_ALLTOALL_TYPE(_type, _typename)                                    \
   int shmem_##_typename##_alltoall(shmem_team_t team, _type *dest,             \
@@ -3169,17 +3276,50 @@ API_ALLTOALL_TYPE(uint64_t, uint64)
 API_ALLTOALL_TYPE(size_t, size)
 API_ALLTOALL_TYPE(ptrdiff_t, ptrdiff)
 
-// TODO: deprecate this
+/**
+ * Generic memory alltoall routine
+ *
+ * @param team    The team over which to alltoall
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array on root PE
+ * @param nelems  Number of elements to alltoall
+ * @return        Zero on success, non-zero on failure
+ */
+int shmem_alltoallmem(shmem_team_t team, void *dest, const void *source,
+                      size_t nelems);
+
+/**
+ * @brief Sized alltoall routine (deprecated)
+ *
+ * @param target       Symmetric destination array on all PEs
+ * @param source       Source array containing data to be sent to all PEs
+ * @param nelems       Number of elements contributed by and received from each
+ * PE
+ * @param PE_start     First PE number of the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PE numbers in
+ * active set
+ * @param PE_size      Number of PEs in the active set
+ * @param pSync        Symmetric work array of size SHMEM_ALLTOALL_SYNC_SIZE
+ */
 #define API_ALLTOALL_SIZE(_size)                                               \
-  /* see \ref shmem_alltoall64() */                                            \
   void shmem_alltoall##_size(void *target, const void *source, size_t nelems,  \
                              int PE_start, int logPE_stride, int PE_size,      \
-                             long *pSync);
+                             long *pSync)                                      \
+      _DEPRECATED_BY(shmem_alltoallmem or shmem_<typename> alltoall, 1.5);
 
 API_ALLTOALL_SIZE(32)
 API_ALLTOALL_SIZE(64)
 
 //////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Sized alltoall routines (deprecated)
+ *
+ * @param team    The team over which to alltoall
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array on root PE
+ * @param nelems  Number of elements to alltoall
+ * @return        Zero on success, non-zero on failure
+ */
 #define API_ALLTOALLS_TYPE(_type, _typename)                                   \
   int shmem_##_typename##_alltoalls(shmem_team_t team, _type *dest,            \
                                     const _type *source, ptrdiff_t dst,        \
@@ -3210,12 +3350,39 @@ API_ALLTOALLS_TYPE(uint64_t, uint64)
 API_ALLTOALLS_TYPE(size_t, size)
 API_ALLTOALLS_TYPE(ptrdiff_t, ptrdiff)
 
-// TODO: deprecate this
+/**
+ * @brief Generic memory alltoall routine (deprecated)
+ *
+ * @param team    The team over which to alltoall
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array on root PE
+ * @param dst     Destination array on root PE
+ * @param sst     Source array on root PE
+ * @param nelems  Number of elements to alltoall
+ * @return        Zero on success, non-zero on failure
+ */
+int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
+                       ptrdiff_t dst, ptrdiff_t sst, size_t nelems);
+
+/**
+ * @brief Sized alltoall routine (deprecated)
+ *
+ * @param target       Symmetric destination array on all PEs
+ * @param source       Source array containing data to be sent to all PEs
+ * @param nelems       Number of elements contributed by and received from each
+ * PE
+ * @param PE_start     First PE number of the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PE numbers in
+ * active set
+ * @param PE_size      Number of PEs in the active set
+ * @param pSync        Symmetric work array of size SHMEM_ALLTOALL_SYNC_SIZE
+ */
 #define API_ALLTOALLS_SIZE(_size)                                              \
   /* see \ref shmem_alltoalls64() */                                           \
   void shmem_alltoalls##_size(void *target, const void *source, ptrdiff_t dst, \
                               ptrdiff_t sst, size_t nelems, int PE_start,      \
-                              int logPE_stride, int PE_size, long *pSync);
+                              int logPE_stride, int PE_size, long *pSync)      \
+      _DEPRECATED_BY(shmem_alltoallsmem or shmem_<typename> alltoalls, 1.5);
 
 API_ALLTOALLS_SIZE(32)
 API_ALLTOALLS_SIZE(64)
