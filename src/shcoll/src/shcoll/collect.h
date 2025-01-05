@@ -74,6 +74,26 @@ DECLARE_COLLECT_TYPES(bruck_no_rotate)
 DECLARE_COLLECT_TYPES(simple)
 
 /**
+ * @brief Macro to declare type-specific collect memory implementation
+ *
+ * @param _algo Algorithm name
+ */
+#define SHCOLL_COLLECTMEM_DECLARATION(_algo)                                   \
+  int shcoll_collectmem_##_algo(shmem_team_t team, void *dest,                 \
+                                const void *source, size_t nelems);
+
+/* Declare all algorithm variants */
+SHCOLL_COLLECTMEM_DECLARATION(linear)
+SHCOLL_COLLECTMEM_DECLARATION(all_linear)
+SHCOLL_COLLECTMEM_DECLARATION(all_linear1)
+SHCOLL_COLLECTMEM_DECLARATION(rec_dbl)
+SHCOLL_COLLECTMEM_DECLARATION(rec_dbl_signal)
+SHCOLL_COLLECTMEM_DECLARATION(ring)
+SHCOLL_COLLECTMEM_DECLARATION(bruck)
+SHCOLL_COLLECTMEM_DECLARATION(bruck_no_rotate)
+SHCOLL_COLLECTMEM_DECLARATION(simple)
+
+/**
  * @brief Macro to declare sized collect implementations
  *
  * @param _algo Algorithm name

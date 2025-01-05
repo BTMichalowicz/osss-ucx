@@ -66,9 +66,13 @@ typedef struct coll_ops {
   typed_op_t alltoall;      /**< Typed all-to-all operation */
   untyped_op_t alltoallmem; /**< Generic all-to-all memory operation */
   typed_op_t alltoalls;     /**< Typed strided all-to-all operation */
+  untyped_op_t alltoallsmem; /**< Generic strided all-to-all memory operation */
   typed_op_t collect;       /**< Typed collect operation */
+  untyped_op_t collectmem;  /**< Generic collect memory operation */
   typed_op_t fcollect;      /**< Typed ordered collect operation */
+  untyped_op_t fcollectmem; /**< Generic ordered collect memory operation */
   typed_op_t broadcast;     /**< Typed broadcast operation */
+  untyped_op_t broadcastmem; /**< Generic broadcast memory operation */
   unsized_op_t barrier_all; /**< Typed global barrier operation */
   unsized_op_t sync;        /**< Typed team synchronization operation */
   unsized_op_t sync_all;    /**< Typed global synchronization operation */
@@ -96,10 +100,14 @@ int register_sync_all(const char *op);
 int register_barrier(const char *op);
 int register_sync(const char *op);
 int register_broadcast(const char *op);
+int register_broadcastmem(const char *op);
 int register_alltoall(const char *op);
 int register_alltoallmem(const char *op);
 int register_alltoalls(const char *op);
+int register_alltoallsmem(const char *op);
 int register_collect(const char *op);
+int register_collectmem(const char *op);
 int register_fcollect(const char *op);
+int register_fcollectmem(const char *op);
 
 #endif

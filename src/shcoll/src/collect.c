@@ -706,3 +706,24 @@ DEFINE_SHCOLL_COLLECT_TYPES(ring)
 DEFINE_SHCOLL_COLLECT_TYPES(bruck)
 DEFINE_SHCOLL_COLLECT_TYPES(bruck_no_rotate)
 DEFINE_SHCOLL_COLLECT_TYPES(simple)
+
+/**
+ * @brief Macro to declare collectmem implementations for different algorithms
+ *
+ * TODO: implement collectmem
+ */
+#define SHCOLL_COLLECTMEM_DEFINITION(_algo)                                   \
+  int shcoll_collectmem_##_algo(shmem_team_t team, void *dest,                 \
+                                const void *source, size_t nelems) {           \
+    return 0;                                                                  \
+  }
+
+SHCOLL_COLLECTMEM_DEFINITION(linear)
+SHCOLL_COLLECTMEM_DEFINITION(all_linear)
+SHCOLL_COLLECTMEM_DEFINITION(all_linear1)
+SHCOLL_COLLECTMEM_DEFINITION(rec_dbl)
+SHCOLL_COLLECTMEM_DEFINITION(rec_dbl_signal)
+SHCOLL_COLLECTMEM_DEFINITION(ring)
+SHCOLL_COLLECTMEM_DEFINITION(bruck)
+SHCOLL_COLLECTMEM_DEFINITION(bruck_no_rotate)
+SHCOLL_COLLECTMEM_DEFINITION(simple)

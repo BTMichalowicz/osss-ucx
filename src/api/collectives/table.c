@@ -168,6 +168,15 @@ static typed_op_t alltoalls_tab[] = {
     TYPED_LAST};
 
 /**
+ * @brief Table of generic alltoalls (deprecated)
+ */
+static untyped_op_t alltoallsmem_tab[] = {
+    UNTYPED_REG(alltoallsmem, shift_exchange_barrier),
+    UNTYPED_REG(alltoallsmem, shift_exchange_counter),
+    UNTYPED_REG(alltoallsmem, shift_exchange_signal),
+    UNTYPED_LAST};
+
+/**
   * @brief Table of sized alltoalls (deprecated)
  */
   static sized_op_t alltoalls_size_tab[] = {
@@ -198,6 +207,16 @@ static typed_op_t collect_tab[] = {
     TYPED_LAST};
 
 /**
+ * @brief Table of generic collectmem (deprecated)
+ */
+static untyped_op_t collectmem_tab[] = {
+    UNTYPED_REG(collectmem, linear),
+    UNTYPED_REG(collectmem, all_linear),
+    UNTYPED_REG(collectmem, all_linear1),
+    UNTYPED_REG(collectmem, rec_dbl),
+    UNTYPED_LAST};
+
+/**
  * @brief Table of sized collect (deprecated)
  */
 static sized_op_t collect_size_tab[] = {
@@ -226,6 +245,16 @@ static typed_op_t fcollect_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_inplace),
     TYPED_REG_FOR_ALL_TYPES(fcollect, neighbor_exchange),
     TYPED_LAST};
+
+/**
+ * @brief Table of generic fcollectmem (deprecated)
+ */
+static untyped_op_t fcollectmem_tab[] = {
+    UNTYPED_REG(fcollectmem, linear),
+    UNTYPED_REG(fcollectmem, all_linear),
+    UNTYPED_REG(fcollectmem, all_linear1),
+    UNTYPED_REG(fcollectmem, rec_dbl),
+    UNTYPED_LAST};
 
 /**
  * @brief Table of sized fcollect (deprecated)
@@ -289,6 +318,18 @@ static typed_op_t broadcast_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(broadcast, knomial_tree_signal),
     TYPED_REG_FOR_ALL_TYPES(broadcast, scatter_collect),
     TYPED_LAST};
+
+/**
+ * @brief Table of generic broadcastmem (deprecated)
+ */
+static untyped_op_t broadcastmem_tab[] = {
+    UNTYPED_REG(broadcastmem, linear),
+    UNTYPED_REG(broadcastmem, complete_tree),
+    UNTYPED_REG(broadcastmem, binomial_tree),
+    UNTYPED_REG(broadcastmem, knomial_tree),
+    UNTYPED_REG(broadcastmem, knomial_tree_signal),
+    UNTYPED_REG(broadcastmem, scatter_collect),
+    UNTYPED_LAST};
 
 /**
  * @brief Table of sized broadcast (deprecated)
@@ -446,9 +487,13 @@ coll_ops_t colls;
 REGISTER_TYPED(alltoall)
 REGISTER_UNTYPED(alltoallmem)
 REGISTER_TYPED(alltoalls)
+REGISTER_UNTYPED(alltoallsmem)
 REGISTER_TYPED(collect)
+REGISTER_UNTYPED(collectmem)
 REGISTER_TYPED(fcollect)
+REGISTER_UNTYPED(fcollectmem)
 REGISTER_TYPED(broadcast)
+REGISTER_UNTYPED(broadcastmem)
 
 REGISTER_UNSIZED(barrier_all)
 REGISTER_UNSIZED(sync)

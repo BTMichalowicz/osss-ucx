@@ -536,3 +536,21 @@ DEFINE_SHCOLL_BROADCAST_TYPES(binomial_tree)
 DEFINE_SHCOLL_BROADCAST_TYPES(knomial_tree)
 DEFINE_SHCOLL_BROADCAST_TYPES(knomial_tree_signal)
 DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
+
+/**
+ * @brief Macro to declare broadcastmem implementations for different algorithms
+ *
+ * TODO: implement broadcastmem
+ */
+#define SHCOLL_BROADCASTMEM_DEFINITION(_algo)                                 \
+  int shcoll_broadcastmem_##_algo(shmem_team_t team, void *dest,               \
+                                  const void *source, size_t nelems) {         \
+    return 0;                                                                  \
+  }
+
+SHCOLL_BROADCASTMEM_DEFINITION(linear)
+SHCOLL_BROADCASTMEM_DEFINITION(complete_tree)
+SHCOLL_BROADCASTMEM_DEFINITION(binomial_tree)
+SHCOLL_BROADCASTMEM_DEFINITION(knomial_tree)
+SHCOLL_BROADCASTMEM_DEFINITION(knomial_tree_signal)
+SHCOLL_BROADCASTMEM_DEFINITION(scatter_collect)

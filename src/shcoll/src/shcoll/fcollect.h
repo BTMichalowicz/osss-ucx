@@ -76,6 +76,28 @@ DECLARE_FCOLLECT_TYPES(bruck_inplace)
 DECLARE_FCOLLECT_TYPES(neighbor_exchange)
 
 /**
+ * @brief Macro to declare type-specific fcollect memory implementation
+ *
+ * @param _algo Algorithm name
+ */
+#define SHCOLL_FCOLLECTMEM_DECLARATION(_algo)                                  \
+  int shcoll_fcollectmem_##_algo(shmem_team_t team, void *dest,                \
+                                 const void *source, size_t nelems);
+
+/* Declare all algorithm variants */
+SHCOLL_FCOLLECTMEM_DECLARATION(linear)
+SHCOLL_FCOLLECTMEM_DECLARATION(all_linear)
+SHCOLL_FCOLLECTMEM_DECLARATION(all_linear1)
+SHCOLL_FCOLLECTMEM_DECLARATION(rec_dbl)
+SHCOLL_FCOLLECTMEM_DECLARATION(rec_dbl_signal)
+SHCOLL_FCOLLECTMEM_DECLARATION(ring)
+SHCOLL_FCOLLECTMEM_DECLARATION(bruck)
+SHCOLL_FCOLLECTMEM_DECLARATION(bruck_no_rotate)
+SHCOLL_FCOLLECTMEM_DECLARATION(bruck_signal)
+SHCOLL_FCOLLECTMEM_DECLARATION(bruck_inplace)
+SHCOLL_FCOLLECTMEM_DECLARATION(neighbor_exchange)
+
+/*
  * @brief Macro to declare sized fcollect implementations
  *
  * @param _algo Algorithm name

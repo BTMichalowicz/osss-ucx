@@ -614,3 +614,23 @@ DEFINE_SHCOLL_FCOLLECT_TYPES(bruck_no_rotate)
 DEFINE_SHCOLL_FCOLLECT_TYPES(bruck_signal)
 DEFINE_SHCOLL_FCOLLECT_TYPES(bruck_inplace)
 DEFINE_SHCOLL_FCOLLECT_TYPES(neighbor_exchange)
+
+/**
+ * @brief Macro to declare fcollectmem implementations for different algorithms
+ *
+ * TODO: implement fcollectmem
+ */
+#define SHCOLL_FCOLLECTMEM_DEFINITION(_algo)                                  \
+  int shcoll_fcollectmem_##_algo(shmem_team_t team, void *dest,                \
+                                 const void *source, size_t nelems) {          \
+    return 0;                                                                  \
+  }
+
+SHCOLL_FCOLLECTMEM_DEFINITION(linear)
+SHCOLL_FCOLLECTMEM_DEFINITION(all_linear)
+SHCOLL_FCOLLECTMEM_DEFINITION(all_linear1)
+SHCOLL_FCOLLECTMEM_DEFINITION(rec_dbl)
+SHCOLL_FCOLLECTMEM_DEFINITION(rec_dbl_signal)
+SHCOLL_FCOLLECTMEM_DEFINITION(ring)
+SHCOLL_FCOLLECTMEM_DEFINITION(bruck)
+SHCOLL_FCOLLECTMEM_DEFINITION(bruck_no_rotate)

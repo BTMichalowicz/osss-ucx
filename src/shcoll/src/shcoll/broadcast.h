@@ -10,9 +10,9 @@ void shcoll_set_broadcast_knomial_tree_radix_barrier(int tree_radix);
  * @brief Macro to declare type-specific broadcast implementation
  */
 #define SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, _type, _typename)            \
-  int shcoll_##_typename##_broadcast_##_algo(                                  \
-      shmem_team_t team, _type *dest, const _type *source,                    \
-      size_t nelems, int PE_root);
+  int shcoll_##_typename##_broadcast_##_algo(shmem_team_t team, _type *dest,   \
+                                             const _type *source,              \
+                                             size_t nelems, int PE_root);
 
 /**
  * @brief Macro to declare broadcast implementations for all supported types
@@ -52,11 +52,28 @@ DECLARE_BROADCAST_TYPES(knomial_tree_signal)
 DECLARE_BROADCAST_TYPES(scatter_collect)
 
 /**
+ * @brief Macro to declare type-specific broadcast memory implementation
+ *
+ * @param _algo Algorithm name
+ */
+#define SHCOLL_BROADCASTMEM_DECLARATION(_algo)                                 \
+  int shcoll_broadcastmem_##_algo(shmem_team_t team, void *dest,               \
+                                  const void *source, size_t nelems);
+
+/* Declare all algorithm variants */
+SHCOLL_BROADCASTMEM_DECLARATION(linear)
+SHCOLL_BROADCASTMEM_DECLARATION(complete_tree)
+SHCOLL_BROADCASTMEM_DECLARATION(binomial_tree)
+SHCOLL_BROADCASTMEM_DECLARATION(knomial_tree)
+SHCOLL_BROADCASTMEM_DECLARATION(knomial_tree_signal)
+SHCOLL_BROADCASTMEM_DECLARATION(scatter_collect)
+
+/**
  * @brief Macro to declare sized broadcast implementations
  */
 #define SHCOLL_SIZED_BROADCAST_DECLARATION(_algo, _size)                       \
   void shcoll_broadcast##_size##_##_algo(                                      \
-      void *dest, const void *source, size_t nelems, int PE_root,             \
+      void *dest, const void *source, size_t nelems, int PE_root,              \
       int PE_start, int logPE_stride, int PE_size, long *pSync);
 
 /* Declare sized variants for each algorithm */

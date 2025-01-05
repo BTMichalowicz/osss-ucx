@@ -354,3 +354,26 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
 DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_signal)
 
 // @formatter:on
+
+/**
+ * @brief Helper macro to define alltoalls implementations for all types
+ *
+ * @param _algo Algorithm name to generate implementations for
+ TODO: implement alltoallsmem
+ */
+#define SHCOLL_ALLTOALLSMEM_DEFINITION(_algo)                                 \
+  int shcoll_alltoallsmem_##_algo(shmem_team_t team, void *dest,               \
+                                  const void *source, ptrdiff_t dst,           \
+                                  ptrdiff_t sst, size_t nelems) {              \
+    return 0;                                                                  \
+  }
+
+SHCOLL_ALLTOALLSMEM_DEFINITION(shift_exchange_barrier)
+SHCOLL_ALLTOALLSMEM_DEFINITION(shift_exchange_counter)
+SHCOLL_ALLTOALLSMEM_DEFINITION(shift_exchange_signal)
+SHCOLL_ALLTOALLSMEM_DEFINITION(xor_pairwise_exchange_barrier)
+SHCOLL_ALLTOALLSMEM_DEFINITION(xor_pairwise_exchange_counter)
+SHCOLL_ALLTOALLSMEM_DEFINITION(xor_pairwise_exchange_signal)
+SHCOLL_ALLTOALLSMEM_DEFINITION(color_pairwise_exchange_barrier)
+SHCOLL_ALLTOALLSMEM_DEFINITION(color_pairwise_exchange_counter)
+SHCOLL_ALLTOALLSMEM_DEFINITION(color_pairwise_exchange_signal)
