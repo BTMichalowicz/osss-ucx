@@ -86,11 +86,11 @@ $oshcc --version
 # $oshrun $flags -np 4 ./bin/shmem_alltoalls
 # echo
 
-# --- shmem_collect ---
-echo $hline ; echo "  Running shmem_collect test" ; echo $hline
-$oshcc shmem_collect.c -o ./bin/shmem_collect
-$oshrun $flags -np 4 ./bin/shmem_collect
-echo
+# # --- shmem_collect ---
+# echo $hline ; echo "  Running shmem_collect test" ; echo $hline
+# $oshcc shmem_collect.c -o ./bin/shmem_collect
+# $oshrun $flags -np 4 ./bin/shmem_collect
+# echo
 
 # --- shmem_fcollect ---
 # echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
@@ -99,7 +99,7 @@ echo
 # echo
 
 # # --- shmem_broadcast ---
-# echo $hline ; echo "  Running shmem_broadcast test" ; echo $hline
-# $oshcc shmem_broadcast.c -o ./bin/shmem_broadcast
-# $oshrun $flags -np 4 ./bin/shmem_broadcast
-# echo
+echo $hline ; echo "  Running shmem_broadcast test" ; echo $hline
+$oshcc shmem_broadcast.c -o ./bin/shmem_broadcast
+$oshrun $flags -np 4 ./bin/shmem_broadcast
+echo

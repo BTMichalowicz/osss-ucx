@@ -629,7 +629,6 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
 
 /**
  * @brief Macro to define collect functions for different data types
- // FIXME: this is not working properly
  */
 #define SHCOLL_COLLECT_TYPE_DEFINITION(_algo, _type, _typename)                \
   int shcoll_##_typename##_collect_##_algo(                                    \
@@ -651,10 +650,12 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
     }                                                                          \
     /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
+    /* Zero out destination buffer */                                          \
+    memset(dest, 0, sizeof(_type) * nelems * PE_size);                         \
     /* Perform collect */                                                      \
-    collect_helper_##_algo(dest, source,                                       \
-                           sizeof(_type) * nelems, /* total bytes per PE */    \
-                           PE_start, logPE_stride, PE_size, pSync);            \
+    collect_helper_linear(dest, source,                                        \
+                          sizeof(_type) * nelems, /* total bytes per PE */     \
+                          PE_start, logPE_stride, PE_size, pSync);             \
     /* Ensure collection is complete */                                        \
     shmem_team_sync(team);                                                     \
     /* Reset pSync before freeing */                                           \

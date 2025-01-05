@@ -1,6 +1,7 @@
 /**
  * @file fcollect.c
- * @brief Implementation of various fcollect algorithms for OpenSHMEM collectives
+ * @brief Implementation of various fcollect algorithms for OpenSHMEM
+ * collectives
  * @author Srdan Milakovic
  * @author Michael Beebe
  * @date Created on 5/17/18, edited on 1/4/25
@@ -17,7 +18,7 @@
 
 /**
  * Helper function implementing linear fcollect algorithm
- * 
+ *
  * @param dest Destination buffer on all PEs
  * @param source Source buffer containing local data
  * @param nbytes Number of bytes to collect from each PE
@@ -52,7 +53,7 @@ inline static void fcollect_helper_linear(void *dest, const void *source,
  * Helper function implementing all-to-all linear fcollect algorithm
  *
  * @param dest Destination buffer on all PEs
- * @param source Source buffer containing local data  
+ * @param source Source buffer containing local data
  * @param nbytes Number of bytes to collect from each PE
  * @param PE_start First PE in the active set
  * @param logPE_stride Log (base 2) of stride between consecutive PEs
@@ -93,7 +94,7 @@ inline static void fcollect_helper_all_linear(void *dest, const void *source,
  *
  * @param dest Destination buffer on all PEs
  * @param source Source buffer containing local data
- * @param nbytes Number of bytes to collect from each PE  
+ * @param nbytes Number of bytes to collect from each PE
  * @param PE_start First PE in the active set
  * @param logPE_stride Log (base 2) of stride between consecutive PEs
  * @param PE_size Number of PEs in the active set
@@ -126,7 +127,7 @@ inline static void fcollect_helper_all_linear1(void *dest, const void *source,
  * @param dest Destination buffer on all PEs
  * @param source Source buffer containing local data
  * @param nbytes Number of bytes to collect from each PE
- * @param PE_start First PE in the active set  
+ * @param PE_start First PE in the active set
  * @param logPE_stride Log (base 2) of stride between consecutive PEs
  * @param PE_size Number of PEs in the active set
  * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
@@ -171,7 +172,7 @@ inline static void fcollect_helper_rec_dbl(void *dest, const void *source,
  * @param source Source buffer containing local data
  * @param nbytes Number of bytes to collect from each PE
  * @param PE_start First PE in the active set
- * @param logPE_stride Log (base 2) of stride between consecutive PEs  
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
  * @param PE_size Number of PEs in the active set
  * @param pSync Symmetric work array of size >= 1
  */
@@ -250,7 +251,8 @@ inline static void fcollect_helper_bruck(void *dest, const void *source,
 }
 
 /**
- * Helper function implementing Bruck's fcollect algorithm without final rotation
+ * Helper function implementing Bruck's fcollect algorithm without final
+ * rotation
  *
  * @param dest Destination buffer on all PEs
  * @param source Source buffer containing local data
@@ -306,7 +308,8 @@ inline static void fcollect_helper_bruck_no_rotate(void *dest,
 }
 
 /**
- * Helper function implementing Bruck's fcollect algorithm with signal operations
+ * Helper function implementing Bruck's fcollect algorithm with signal
+ * operations
  *
  * @param dest Destination buffer on all PEs
  * @param source Source buffer containing local data
@@ -539,12 +542,30 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
     int logPE_stride = 0;                                                      \
     int PE_size = shmem_team_n_pes(team);                                      \
-    long pSync[SHCOLL_COLLECT_SYNC_SIZE];                                     \
-    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                      \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+    /* Initialize pSync */                                                     \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
-    fcollect_helper_##_name(dest, source, sizeof(type) * nelems, PE_start,     \
-                            logPE_stride, PE_size, pSync);                     \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
+    /* Zero out destination buffer */                                          \
+    memset(dest, 0, sizeof(type) * nelems * PE_size);                          \
+    /* Perform fcollect */                                                     \
+    fcollect_helper_##_name(dest, source,                                      \
+                            sizeof(type) * nelems, /* total bytes per PE */    \
+                            PE_start, logPE_stride, PE_size, pSync);           \
+    /* Ensure collection is complete */                                        \
+    shmem_team_sync(team);                                                     \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 

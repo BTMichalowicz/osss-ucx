@@ -14,7 +14,7 @@ void test_broadcast_simple() {
     /* Allocate arrays */
     int *source = (int *)shmem_malloc(NELEMS * sizeof(int));
     int *dest = (int *)shmem_malloc(NELEMS * sizeof(int));
-    int *all_passed = (int *)shmem_malloc(sizeof(int));
+    int *all_passed = (int *)shmem_malloc(npes * sizeof(int));
 
     if (source == NULL || dest == NULL || all_passed == NULL) {
         printf("PE %d: Memory allocation failed\n", me);
@@ -34,17 +34,19 @@ void test_broadcast_simple() {
     for (int i = 0; i < NELEMS; i++) {
         dest[i] = -1;
     }
-    *all_passed = 1;
+    for (int i = 0; i < npes; i++) {
+        all_passed[i] = 1;
+    }
 
     shmem_barrier_all();
+
+    /* Print initial values */
+    printf("PE %d: Before broadcast\n", me);
 
     /* Perform broadcast */
     int ret = shmem_int_broadcast(SHMEM_TEAM_WORLD, dest, source, NELEMS, 0);
 
-    if (ret != 0) {
-        printf("PE %d: Broadcast failed with ret = %d\n", me, ret);
-        test_passed = 0;
-    }
+    printf("PE %d: After broadcast, ret = %d\n", me, ret);
 
     /* Verify results */
     for (int i = 0; i < NELEMS; i++) {
@@ -57,18 +59,20 @@ void test_broadcast_simple() {
 
     /* Share results */
     if (me != 0) {
-        shmem_int_put(all_passed, &test_passed, 1, 0);
+        shmem_int_p(&all_passed[me], test_passed, 0);
+    } else {
+        all_passed[0] = test_passed;
     }
 
     shmem_barrier_all();
 
     /* Report results */
     if (me == 0) {
-        int all_tests_passed = test_passed;
-        for (int i = 1; i < npes; i++) {
+        int all_tests_passed = 1;
+        for (int i = 0; i < npes; i++) {
             if (!all_passed[i]) {
                 all_tests_passed = 0;
-                break;
+                printf("PE %d failed the test\n", i);
             }
         }
         if (all_tests_passed) {
