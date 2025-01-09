@@ -51,11 +51,6 @@ void collectives_init(void) {
   /* TODO: reductions */
 }
 
-//
-// FIXME: do the collectives that return int need to return an int here,
-//        or do is returning an int in the internal helpers enough?
-//
-
 /**
  * @brief Cleanup and finalize collective operations
  */
@@ -237,26 +232,26 @@ SHMEM_TYPENAME_ALLTOALLS(uint64_t, uint64)
 SHMEM_TYPENAME_ALLTOALLS(size_t, size)
 SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
 
-// #ifdef ENABLE_PSHMEM
-// #pragma weak shmem_alltoallsmem = pshmem_alltoallsmem
-// #define shmem_alltoallsmem pshmem_alltoallsmem
-// #endif /* ENABLE_PSHMEM */
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_alltoallsmem = pshmem_alltoallsmem
+#define shmem_alltoallsmem pshmem_alltoallsmem
+#endif /* ENABLE_PSHMEM */
 
-// /**
-//  * @brief Generic memory alltoall routine (deprecated)
-//  *
-//  * @param team    The team over which to alltoall
-//  * @param dest    Symmetric destination array on all PEs
-//  * @param source  Source array on root PE
-//  * @param nelems  Number of elements to alltoall
-//  * @return        Zero on success, non-zero on failure
-//  */
-// int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
-//                        size_t nelems) {
-//   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
-//          nelems);
-//   colls.alltoallsmem.f(team, dest, source, nelems);
-// }
+/**
+ * @brief Generic memory alltoall routine (deprecated)
+ *
+ * @param team    The team over which to alltoall
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array on root PE
+ * @param nelems  Number of elements to alltoall
+ * @return        Zero on success, non-zero on failure
+ */
+int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
+                       size_t nelems) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
+         nelems);
+  colls.alltoallsmem.f(team, dest, source, nelems);
+}
 
 /** @} */
 
@@ -354,26 +349,26 @@ SHMEM_TYPENAME_COLLECT(uint64_t, uint64)
 SHMEM_TYPENAME_COLLECT(size_t, size)
 SHMEM_TYPENAME_COLLECT(ptrdiff_t, ptrdiff)
 
-// #ifdef ENABLE_PSHMEM
-// #pragma weak shmem_collectmem = pshmem_collectmem
-// #define shmem_collectmem pshmem_collectmem
-// #endif /* ENABLE_PSHMEM */
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_collectmem = pshmem_collectmem
+#define shmem_collectmem pshmem_collectmem
+#endif /* ENABLE_PSHMEM */
 
-// /**
-//  * @brief Generic memory collect routine (deprecated)
-//  *
-//  * @param team    The team over which to collect
-//  * @param dest    Symmetric destination array on all PEs
-//  * @param source  Source array on root PE
-//  * @param nelems  Number of elements to collect
-//  * @return        Zero on success, non-zero on failure
-//  */
-// int shmem_collectmem(shmem_team_t team, void *dest, const void *source,
-//                       size_t nelems) {
-//   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
-//          nelems);
-//   colls.collectmem.f(team, dest, source, nelems);
-// }
+/**
+ * @brief Generic memory collect routine (deprecated)
+ *
+ * @param team    The team over which to collect
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array on root PE
+ * @param nelems  Number of elements to collect
+ * @return        Zero on success, non-zero on failure
+ */
+int shmem_collectmem(shmem_team_t team, void *dest, const void *source,
+                     size_t nelems) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
+         nelems);
+  colls.collectmem.f(team, dest, source, nelems);
+}
 
 /** @} */
 
@@ -471,26 +466,26 @@ SHMEM_TYPENAME_FCOLLECT(uint64_t, uint64)
 SHMEM_TYPENAME_FCOLLECT(size_t, size)
 SHMEM_TYPENAME_FCOLLECT(ptrdiff_t, ptrdiff)
 
-// #ifdef ENABLE_PSHMEM
-// #pragma weak shmem_fcollectmem = pshmem_fcollectmem
-// #define shmem_fcollectmem pshmem_fcollectmem
-// #endif /* ENABLE_PSHMEM */
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_fcollectmem = pshmem_fcollectmem
+#define shmem_fcollectmem pshmem_fcollectmem
+#endif /* ENABLE_PSHMEM */
 
-// /**
-//  * @brief Generic memory collect routine (deprecated)
-//  *
-//  * @param team    The team over which to collect
-//  * @param dest    Symmetric destination array on all PEs
-//  * @param source  Source array on root PE
-//  * @param nelems  Number of elements to collect
-//  * @return        Zero on success, non-zero on failure
-//  */
-// int shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
-//                        size_t nelems) {
-//   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
-//          nelems);
-//   colls.fcollectmem.f(team, dest, source, nelems);
-// }
+/**
+ * @brief Generic memory collect routine (deprecated)
+ *
+ * @param team    The team over which to collect
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array on root PE
+ * @param nelems  Number of elements to collect
+ * @return        Zero on success, non-zero on failure
+ */
+int shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
+                      size_t nelems) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
+         nelems);
+  colls.fcollectmem.f(team, dest, source, nelems);
+}
 
 /** @} */
 
@@ -603,10 +598,11 @@ void shmem_sync_all(void) {
  */
 #define SHMEM_TYPENAME_BROADCAST(_type, _typename)                             \
   int shmem_##_typename##_broadcast(shmem_team_t team, _type *dest,            \
-                                    const _type *source, size_t nelems) {      \
-    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, dest, source,      \
-           nelems);                                                            \
-    colls.broadcast.f(team, dest, source, nelems);                             \
+                                    const _type *source, size_t nelems,        \
+                                    int PE_root) {                             \
+    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,  \
+           nelems, PE_root);                                                   \
+    colls.broadcast.f(team, dest, source, nelems, PE_root);                    \
   }
 
 SHMEM_TYPENAME_BROADCAST(float, float)
@@ -634,27 +630,27 @@ SHMEM_TYPENAME_BROADCAST(uint64_t, uint64)
 SHMEM_TYPENAME_BROADCAST(size_t, size)
 SHMEM_TYPENAME_BROADCAST(ptrdiff_t, ptrdiff)
 
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_broadcastmem = pshmem_broadcastmem
+#define shmem_broadcastmem pshmem_broadcastmem
+#endif /* ENABLE_PSHMEM */
 
-// #pragma weak shmem_broadcastmem = pshmem_broadcastmem
-// #define shmem_broadcastmem pshmem_broadcastmem
-// #endif /* ENABLE_PSHMEM */
-
-// /**
-//  * @brief Generic memory broadcast routine (deprecated)
-//  *
-//  * @param team    The team over which to broadcast
-//  * @param dest    Symmetric destination array on all PEs
-//  * @param source  Source array on root PE
-//  * @param nelems  Number of elements to broadcast
-//  * @param PE_root The root PE
-//  * @return        Zero on success, non-zero on failure
-//  */
-// int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
-//                        size_t nelems, int PE_root) {
-//   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,
-//          nelems, PE_root);
-//   colls.broadcast.f(team, dest, source, nelems, PE_root);
-// }
+/**
+ * @brief Generic memory broadcast routine (deprecated)
+ *
+ * @param team    The team over which to broadcast
+ * @param dest    Symmetric destination array on all PEs
+ * @param source  Source array on root PE
+ * @param nelems  Number of elements to broadcast
+ * @param PE_root The root PE
+ * @return        Zero on success, non-zero on failure
+ */
+int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
+                       size_t nelems, int PE_root) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,
+         nelems, PE_root);
+  colls.broadcast.f(team, dest, source, nelems, PE_root);
+}
 
 /** @} */
 ///////////////////////////////////////////////////////////////////////
@@ -678,24 +674,9 @@ SHMEM_TYPENAME_BROADCAST(ptrdiff_t, ptrdiff)
  */
 SHIM_REDUCE_ALL(rec_dbl)
 
-
 /** @} */
 
 /** @} */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * @defgroup deprecated Deprecated Collective Operations
@@ -738,8 +719,8 @@ void shmem_alltoall32(void *target, const void *source, size_t nelems,
   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-  colls.alltoall_size.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
-                     pSync);
+  colls.alltoall_size.f32(target, source, nelems, PE_start, logPE_stride,
+                          PE_size, pSync);
 }
 
 /**
@@ -759,8 +740,8 @@ void shmem_alltoall64(void *target, const void *source, size_t nelems,
   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-  colls.alltoall_size.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
-                     pSync);
+  colls.alltoall_size.f64(target, source, nelems, PE_start, logPE_stride,
+                          PE_size, pSync);
 }
 
 /** @} */
@@ -797,8 +778,8 @@ void shmem_alltoalls32(void *target, const void *source, ptrdiff_t dst,
          target, source, dst, sst, nelems, PE_start, logPE_stride, PE_size,
          pSync);
 
-  colls.alltoalls_size.f32(target, source, dst, sst, nelems, PE_start, logPE_stride,
-                      PE_size, pSync);
+  colls.alltoalls_size.f32(target, source, dst, sst, nelems, PE_start,
+                           logPE_stride, PE_size, pSync);
 }
 
 /**
@@ -821,8 +802,8 @@ void shmem_alltoalls64(void *target, const void *source, ptrdiff_t dst,
          target, source, dst, sst, nelems, PE_start, logPE_stride, PE_size,
          pSync);
 
-  colls.alltoalls_size.f64(target, source, dst, sst, nelems, PE_start, logPE_stride,
-                      PE_size, pSync);
+  colls.alltoalls_size.f64(target, source, dst, sst, nelems, PE_start,
+                           logPE_stride, PE_size, pSync);
 }
 
 /** @} */
@@ -840,7 +821,8 @@ void shmem_alltoalls64(void *target, const void *source, ptrdiff_t dst,
 #endif /* ENABLE_PSHMEM */
 
 /**
- * @brief Concatenates 32-bit data from multiple PEs to an array in ascending PE order
+ * @brief Concatenates 32-bit data from multiple PEs to an array in ascending PE
+ * order
  *
  * @param target Symmetric destination array
  * @param source Symmetric source array
@@ -855,12 +837,13 @@ void shmem_collect32(void *target, const void *source, size_t nelems,
   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-  colls.collect_size.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
-                    pSync);
+  colls.collect_size.f32(target, source, nelems, PE_start, logPE_stride,
+                         PE_size, pSync);
 }
 
 /**
- * @brief Concatenates 64-bit data from multiple PEs to an array in ascending PE order
+ * @brief Concatenates 64-bit data from multiple PEs to an array in ascending PE
+ * order
  *
  * @param target Symmetric destination array
  * @param source Symmetric source array
@@ -875,8 +858,8 @@ void shmem_collect64(void *target, const void *source, size_t nelems,
   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-  colls.collect_size.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
-                    pSync);
+  colls.collect_size.f64(target, source, nelems, PE_start, logPE_stride,
+                         PE_size, pSync);
 }
 
 /** @} */
@@ -894,7 +877,8 @@ void shmem_collect64(void *target, const void *source, size_t nelems,
 #endif /* ENABLE_PSHMEM */
 
 /**
- * @brief Concatenates fixed-length 32-bit data from multiple PEs to an array in ascending PE order
+ * @brief Concatenates fixed-length 32-bit data from multiple PEs to an array in
+ * ascending PE order
  *
  * @param target Symmetric destination array
  * @param source Symmetric source array
@@ -910,12 +894,13 @@ void shmem_fcollect32(void *target, const void *source, size_t nelems,
   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-  colls.fcollect_size.f32(target, source, nelems, PE_start, logPE_stride, PE_size,
-                     pSync);
+  colls.fcollect_size.f32(target, source, nelems, PE_start, logPE_stride,
+                          PE_size, pSync);
 }
 
 /**
- * @brief Concatenates fixed-length 64-bit data from multiple PEs to an array in ascending PE order
+ * @brief Concatenates fixed-length 64-bit data from multiple PEs to an array in
+ * ascending PE order
  *
  * @param target Symmetric destination array
  * @param source Symmetric source array
@@ -931,8 +916,8 @@ void shmem_fcollect64(void *target, const void *source, size_t nelems,
   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-  colls.fcollect_size.f64(target, source, nelems, PE_start, logPE_stride, PE_size,
-                     pSync);
+  colls.fcollect_size.f64(target, source, nelems, PE_start, logPE_stride,
+                          PE_size, pSync);
 }
 
 /** @} */
@@ -967,8 +952,8 @@ void shmem_broadcast32(void *target, const void *source, size_t nelems,
   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-  colls.broadcast_size.f32(target, source, nelems, PE_root, PE_start, logPE_stride,
-                      PE_size, pSync);
+  colls.broadcast_size.f32(target, source, nelems, PE_root, PE_start,
+                           logPE_stride, PE_size, pSync);
 }
 
 /**
@@ -989,8 +974,8 @@ void shmem_broadcast64(void *target, const void *source, size_t nelems,
   logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
-  colls.broadcast_size.f64(target, source, nelems, PE_root, PE_start, logPE_stride,
-                      PE_size, pSync);
+  colls.broadcast_size.f64(target, source, nelems, PE_root, PE_start,
+                           logPE_stride, PE_size, pSync);
 }
 
 /** @} */
@@ -1038,6 +1023,5 @@ void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync) {
 
   colls.barrier.f(PE_start, logPE_stride, PE_size, pSync);
 }
-
 
 /** @} */

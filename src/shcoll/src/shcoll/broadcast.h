@@ -58,7 +58,8 @@ DECLARE_BROADCAST_TYPES(scatter_collect)
  */
 #define SHCOLL_BROADCASTMEM_DECLARATION(_algo)                                 \
   int shcoll_broadcastmem_##_algo(shmem_team_t team, void *dest,               \
-                                  const void *source, size_t nelems);
+                                  const void *source, size_t nelems,           \
+                                  int PE_root);
 
 /* Declare all algorithm variants */
 SHCOLL_BROADCASTMEM_DECLARATION(linear)

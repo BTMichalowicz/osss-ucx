@@ -629,6 +629,9 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
 
 /**
  * @brief Macro to define collect functions for different data types
+
+ FIXME: should we be passing 0 into shmem_team_translate_pe, or should we be
+ using shmem_my_pe() or shmem_team_my_pe()?
  */
 #define SHCOLL_COLLECT_TYPE_DEFINITION(_algo, _type, _typename)                \
   int shcoll_##_typename##_collect_##_algo(                                    \
@@ -712,7 +715,7 @@ DEFINE_SHCOLL_COLLECT_TYPES(simple)
  *
  * TODO: implement collectmem
  */
-#define SHCOLL_COLLECTMEM_DEFINITION(_algo)                                   \
+#define SHCOLL_COLLECTMEM_DEFINITION(_algo)                                    \
   int shcoll_collectmem_##_algo(shmem_team_t team, void *dest,                 \
                                 const void *source, size_t nelems) {           \
     return 0;                                                                  \

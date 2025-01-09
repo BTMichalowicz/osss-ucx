@@ -484,14 +484,14 @@ fcollect_helper_neighbor_exchange(void *dest, const void *source, size_t nbytes,
 /**
  * Macro to define fcollect functions for different data sizes
  *
- * @param _name Algorithm name
+ * @param _algo Algorithm name
  * @param _size Data size in bits
  */
-#define SHCOLL_FCOLLECT_SIZE_DEFINITION(_name, _size)                          \
-  void shcoll_fcollect##_size##_##_name(                                       \
+#define SHCOLL_FCOLLECT_SIZE_DEFINITION(_algo, _size)                          \
+  void shcoll_fcollect##_size##_##_algo(                                       \
       void *dest, const void *source, size_t nelems, int PE_start,             \
       int logPE_stride, int PE_size, long *pSync) {                            \
-    fcollect_helper_##_name(dest, source, (_size) / CHAR_BIT * nelems,         \
+    fcollect_helper_##_algo(dest, source, (_size) / CHAR_BIT * nelems,         \
                             PE_start, logPE_stride, PE_size, pSync);           \
   }
 
@@ -532,12 +532,12 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
 /**
  * Macro to define fcollect functions for different data types
  *
- * @param _name Algorithm name
+ * @param _algo Algorithm name
  * @param type Data type
  * @param _typename Type name string
  */
-#define SHCOLL_FCOLLECT_TYPE_DEFINITION(_name, type, _typename)                \
-  int shcoll_##_typename##_fcollect_##_name(                                   \
+#define SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, type, _typename)                \
+  int shcoll_##_typename##_fcollect_##_algo(                                   \
       shmem_team_t team, type *dest, const type *source, size_t nelems) {      \
     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
     int logPE_stride = 0;                                                      \
@@ -555,7 +555,7 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
     /* Zero out destination buffer */                                          \
     memset(dest, 0, sizeof(type) * nelems * PE_size);                          \
     /* Perform fcollect */                                                     \
-    fcollect_helper_##_name(dest, source,                                      \
+    fcollect_helper_##_algo(dest, source,                                      \
                             sizeof(type) * nelems, /* total bytes per PE */    \
                             PE_start, logPE_stride, PE_size, pSync);           \
     /* Ensure collection is complete */                                        \

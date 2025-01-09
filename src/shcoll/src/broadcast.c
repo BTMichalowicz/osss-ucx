@@ -85,6 +85,7 @@ broadcast_helper_complete_tree(void *target, const void *source, size_t nbytes,
                                int PE_size, long *pSync) {
   const int me = shmem_my_pe();
   const int stride = 1 << logPE_stride;
+
   int child;
   int dst;
   node_info_complete_t node;
@@ -96,7 +97,7 @@ broadcast_helper_complete_tree(void *target, const void *source, size_t nbytes,
   get_node_info_complete_root(PE_size, PE_root, tree_degree_broadcast, me_as,
                               &node);
 
-  /* Wait for the data from the parent */
+  /* Wait for the data form the parent */
   if (PE_root != me) {
     shmem_long_wait_until(pSync, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
     source = target;
@@ -141,6 +142,63 @@ broadcast_helper_complete_tree(void *target, const void *source, size_t nbytes,
  * @param PE_size Number of PEs in the active set
  * @param pSync Symmetric work array
  */
+inline static void
+broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
+                               int PE_root, int PE_start, int logPE_stride,
+                               int PE_size, long *pSync) {
+  // Add debug prints at start
+  printf("broadcast_helper: target=%p source=%p nbytes=%zu root=%d start=%d "
+         "stride=%d size=%d pSync=%p\n",
+         target, source, nbytes, PE_root, PE_start, logPE_stride, PE_size,
+         pSync);
+
+  const int me = shmem_my_pe();
+  const int stride = 1 << logPE_stride;
+  const int me_as = (me - PE_start) / stride; // my position in active set
+  const int root_pe = PE_start + (PE_root * stride); // actual PE number of root
+
+  // Basic sanity checks
+  if (me_as < 0 || me_as >= PE_size) {
+    printf("PE %d: Invalid active set position %d\n", me, me_as);
+    return;
+  }
+
+  // Copy data locally on root if source and target differ
+  if (me == root_pe && source != target) {
+    memcpy(target, source, nbytes);
+  }
+
+  // Ensure root has copied data
+  shmem_barrier_all();
+
+  // Binary tree broadcast
+  int mask = 0x1;
+  while (mask < PE_size) {
+    if (me_as < mask) {
+      // I'm a sender in this round
+      int peer_as = me_as + mask; // position in active set
+      if (peer_as < PE_size) {
+        // Convert to actual PE number
+        int peer = PE_start + (peer_as * stride);
+        printf("PE %d: Sending to PE %d (mask=%d)\n", me, peer, mask);
+        shmem_putmem(target, target, nbytes, peer);
+      }
+    } else if ((me_as & mask) == 0) {
+      // I'm a receiver in this round
+      int peer_as = me_as - mask; // position in active set
+      int peer = PE_start + (peer_as * stride);
+      printf("PE %d: Receiving from PE %d (mask=%d)\n", me, peer, mask);
+      shmem_long_wait_until(&pSync[0], SHMEM_CMP_NE, SHMEM_SYNC_VALUE);
+    }
+    shmem_barrier_all();
+    mask <<= 1;
+  }
+
+  // Reset pSync
+  shmem_long_p(&pSync[0], SHMEM_SYNC_VALUE, me);
+  shmem_barrier_all();
+}
+
 // inline static void
 // broadcast_helper_binomial_tree(void *target, const void *source, size_t
 // nbytes,
@@ -158,14 +216,14 @@ broadcast_helper_complete_tree(void *target, const void *source, size_t nbytes,
 //   /* Get information about children */
 //   get_node_info_binomial_root(PE_size, PE_root, me_as, &node);
 
-//   /* Wait for the data from the parent */
+//   /* Wait for the data form the parent */
 //   if (me_as != PE_root) {
-//     shmem_long_wait_until(&pSync[0], SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
+//     shmem_long_wait_until(pSync, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
 //     source = target;
 
 //     /* Send ack */
 //     parent = node.parent;
-//     shmem_long_atomic_inc(&pSync[1], PE_start + parent * stride);
+//     shmem_long_atomic_inc(pSync, PE_start + parent * stride);
 //   }
 
 //   /* Send data to children */
@@ -174,60 +232,16 @@ broadcast_helper_complete_tree(void *target, const void *source, size_t nbytes,
 //       dst = PE_start + node.children[i] * stride;
 //       shmem_putmem_nbi(target, source, nbytes, dst);
 //       shmem_fence();
-//       shmem_long_atomic_inc(&pSync[0], dst);
+//       shmem_long_atomic_inc(pSync, dst);
 //     }
 
-//     shmem_long_wait_until(&pSync[1], SHMEM_CMP_EQ,
-//                           SHCOLL_SYNC_VALUE + node.children_num);
+//     shmem_long_wait_until(pSync, SHMEM_CMP_EQ,
+//                           SHCOLL_SYNC_VALUE + node.children_num +
+//                               (me_as == PE_root ? 0 : 1));
 //   }
 
-//   /* Reset both pSync elements */
-//   shmem_long_p(&pSync[0], SHCOLL_SYNC_VALUE, me);
-//   shmem_long_p(&pSync[1], SHCOLL_SYNC_VALUE, me);
+//   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 // }
-
-inline static void
-broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
-                               int PE_root, int PE_start, int logPE_stride,
-                               int PE_size, long *pSync) {
-  const int me = shmem_my_pe();
-  const int stride = 1 << logPE_stride;
-  int i;
-  int parent;
-  int dst;
-  node_info_binomial_t node;
-  /* Get my index in the active set */
-  int me_as = (me - PE_start) / stride;
-
-  /* Get information about children */
-  get_node_info_binomial_root(PE_size, PE_root, me_as, &node);
-
-  /* Wait for the data from the parent */
-  if (me_as != PE_root) {
-    shmem_long_wait_until(pSync, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
-    source = target;
-
-    /* Send ack */
-    parent = node.parent;
-    shmem_long_atomic_inc(pSync, PE_start + parent * stride);
-  }
-
-  /* Send data to children */
-  if (node.children_num != 0) {
-    for (i = 0; i < node.children_num; i++) {
-      dst = PE_start + node.children[i] * stride;
-      shmem_putmem_nbi(target, source, nbytes, dst);
-      shmem_fence();
-      shmem_long_atomic_inc(pSync, dst);
-    }
-
-    shmem_long_wait_until(pSync, SHMEM_CMP_EQ,
-                          SHCOLL_SYNC_VALUE + node.children_num +
-                              (me_as == PE_root ? 0 : 1));
-  }
-
-  shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
-}
 
 /**
  * @brief K-nomial tree broadcast helper
@@ -260,7 +274,7 @@ inline static void broadcast_helper_knomial_tree(void *target,
   get_node_info_knomial_root(PE_size, PE_root, knomial_tree_radix_barrier,
                              me_as, &node);
 
-  /* Wait for the data from the parent */
+  /* Wait for the data form the parent */
   if (me_as != PE_root) {
     shmem_long_wait_until(pSync, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
     source = target;
@@ -327,7 +341,7 @@ inline static void broadcast_helper_knomial_tree_signal(
   get_node_info_knomial_root(PE_size, PE_root, knomial_tree_radix_barrier,
                              me_as, &node);
 
-  /* Wait for the data from the parent */
+  /* Wait for the data form the parent */
   if (me_as != PE_root) {
     shmem_long_wait_until(pSync, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
     source = target;
@@ -376,47 +390,114 @@ inline static void
 broadcast_helper_scatter_collect(void *target, const void *source,
                                  size_t nbytes, int PE_root, int PE_start,
                                  int logPE_stride, int PE_size, long *pSync) {
+  /* TODO: Optimize cases where data_start == data_end (block has size 0) */
+
   const int me = shmem_my_pe();
   const int stride = 1 << logPE_stride;
-  const int root = PE_start + PE_root * stride;
-  const size_t block_size = nbytes / PE_size;
-  const size_t last_block_size = nbytes - (PE_size - 1) * block_size;
-  int i;
+  int root_as = (PE_root - PE_start) / stride;
+  /* Get my index in the active set */
+  int me_as = (me - PE_start) / stride;
 
-  /* Scatter */
-  if (me == root) {
-    for (i = 0; i < PE_size; i++) {
-      const int dst = PE_start + i * stride;
-      const size_t curr_block_size =
-          (i == PE_size - 1) ? last_block_size : block_size;
-      if (dst != me) {
-        shmem_putmem_nbi((char *)target + i * block_size,
-                         (const char *)source + i * block_size, curr_block_size,
-                         dst);
-      } else {
-        memcpy((char *)target + i * block_size,
-               (const char *)source + i * block_size, curr_block_size);
-      }
+  /* Shift me_as so that me_as for PE_root is 0 */
+  me_as = (me_as - root_as + PE_size) % PE_size;
+
+  /* The number of received blocks (scatter + collect) */
+  int total_received = me_as == 0 ? PE_size : 0;
+
+  int target_pe;
+  int next_as = (me_as + 1) % PE_size;
+  int next_pe = PE_start + (root_as + next_as) % PE_size * stride;
+
+  /* The index of the block that should be send to next_pe */
+  int next_block = me_as;
+
+  /* The number of blocks that next received */
+  int next_pe_nblocks = next_as == 0 ? PE_size : 0;
+
+  int left = 0;
+  int right = PE_size;
+  int mid;
+  int dist;
+
+  size_t data_start;
+  size_t data_end;
+
+  /* Used in the collect part to wait for new blocks */
+  long ring_received = SHCOLL_SYNC_VALUE;
+
+  if (me_as != 0) {
+    source = target;
+  }
+
+  /* Scatter data to other PEs using binomial tree */
+  while (right - left > 1) {
+    /* dist = ceil((right - let) / 2) */
+    dist = ((right - left) >> 1) + ((right - left) & 0x1);
+    mid = left + dist;
+
+    /* Send (right - mid) elements starting with mid to pe + dist */
+    if (me_as == left && me_as + dist < right) {
+      /* TODO: possible overflow */
+      data_start = (mid * nbytes + PE_size - 1) / PE_size;
+      data_end = (right * nbytes + PE_size - 1) / PE_size;
+      target_pe = PE_start + (root_as + me_as + dist) % PE_size * stride;
+
+      shmem_putmem_nbi((char *)target + data_start, (char *)source + data_start,
+                       data_end - data_start, target_pe);
+      shmem_fence();
+      shmem_long_atomic_inc(pSync, target_pe);
     }
+
+    /* Send (right - mid) elements starting with mid from (me_as - dist) */
+    if (me_as - dist == left) {
+      shmem_long_wait_until(pSync, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
+      total_received = right - mid;
+    }
+
+    if (next_as - dist == left) {
+      next_pe_nblocks = right - mid;
+    }
+
+    if (me_as < mid) {
+      right = mid;
+    } else {
+      left = mid;
+    }
+  }
+
+  /* Do collect using (modified) ring algorithm */
+  while (next_pe_nblocks != PE_size) {
+    data_start = (next_block * nbytes + PE_size - 1) / PE_size;
+    data_end = ((next_block + 1) * nbytes + PE_size - 1) / PE_size;
+
+    shmem_putmem_nbi((char *)target + data_start, (char *)source + data_start,
+                     data_end - data_start, next_pe);
     shmem_fence();
-    shmem_long_atomic_inc(pSync, root);
-  }
+    shmem_long_atomic_inc(pSync + 1, next_pe);
 
-  /* Wait for scatter to complete */
-  shmem_long_wait_until(pSync, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
-  shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
+    next_pe_nblocks++;
+    next_block = (next_block - 1 + PE_size) % PE_size;
 
-  /* Collect */
-  for (i = 0; i < PE_size; i++) {
-    const int src = PE_start + i * stride;
-    const size_t curr_block_size =
-        (i == PE_size - 1) ? last_block_size : block_size;
-    if (src != me) {
-      shmem_getmem_nbi((char *)target + i * block_size,
-                       (const char *)target + i * block_size, curr_block_size,
-                       src);
+    /*
+     * If we did not receive all blocks, we must wait for the next
+     * block we want to send
+     */
+    if (total_received != PE_size) {
+      shmem_long_wait_until(pSync + 1, SHMEM_CMP_GT, ring_received);
+      ring_received++;
+      total_received++;
     }
   }
+
+  while (total_received != PE_size) {
+    shmem_long_wait_until(pSync + 1, SHMEM_CMP_GT, ring_received);
+    ring_received++;
+    total_received++;
+  }
+
+  /* TODO: maybe only one pSync is enough */
+  shmem_long_p(pSync + 0, SHCOLL_SYNC_VALUE, me);
+  shmem_long_p(pSync + 1, SHCOLL_SYNC_VALUE, me);
 }
 
 /**
@@ -426,7 +507,7 @@ broadcast_helper_scatter_collect(void *target, const void *source,
   void shcoll_broadcast##_size##_##_algo(                                      \
       void *dest, const void *source, size_t nelems, int PE_root,              \
       int PE_start, int logPE_stride, int PE_size, long *pSync) {              \
-    broadcast_helper_##_algo(dest, source, (_size / CHAR_BIT) * nelems,        \
+    broadcast_helper_##_algo(dest, source, ((_size) / CHAR_BIT) * nelems,      \
                              PE_root, PE_start, logPE_stride, PE_size, pSync); \
   }
 
@@ -475,24 +556,39 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
   int shcoll_##_typename##_broadcast_##_algo(shmem_team_t team, _type *dest,   \
                                              const _type *source,              \
                                              size_t nelems, int PE_root) {     \
-    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
-    int logPE_stride = 0;                                                      \
     int PE_size = shmem_team_n_pes(team);                                      \
+    int PE_start = shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD);   \
+    int logPE_stride = 0;                                                      \
+                                                                               \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_BCAST_SYNC_SIZE * sizeof(long));         \
     if (!pSync)                                                                \
       return -1;                                                               \
+                                                                               \
     /* Initialize pSync */                                                     \
     for (int i = 0; i < SHCOLL_BCAST_SYNC_SIZE; i++) {                         \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
+                                                                               \
     /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Zero out destination buffer */                                          \
+    memset(dest, 0, sizeof(_type) * nelems * PE_size);                         \
+                                                                               \
     /* Perform broadcast */                                                    \
     broadcast_helper_##_algo(dest, source, sizeof(_type) * nelems, PE_root,    \
                              PE_start, logPE_stride, PE_size, pSync);          \
-    /* Cleanup */                                                              \
+                                                                               \
+    /* Ensure broadcast completion */                                          \
     shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_BCAST_SYNC_SIZE; i++) {                         \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+                                                                               \
     shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
@@ -501,33 +597,30 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
  * @brief Macro to define broadcast implementations for all types
  */
 #define DEFINE_SHCOLL_BROADCAST_TYPES(_algo)                                   \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, float, float)                          \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, double, double)                        \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, long double, longdouble)               \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, char, char)                            \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, signed char, schar)                    \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, short, short)                          \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, int, int)                              \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, long, long)                            \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, long long, longlong)                   \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, unsigned char, uchar)                  \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, unsigned short, ushort)                \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, unsigned int, uint)                    \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, unsigned long, ulong)                  \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, unsigned long long, ulonglong)         \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, int8_t, int8)                          \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, int16_t, int16)                        \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, int32_t, int32)                        \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, int64_t, int64)                        \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, uint8_t, uint8)                        \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, uint16_t, uint16)                      \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, uint32_t, uint32)                      \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, uint64_t, uint64)                      \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, size_t, size)                          \
-  SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, ptrdiff_t, ptrdiff)
-
-#define SHCOLL_BROADCAST_TYPE_FOR_TYPE(_algo, _type, _typename)                \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, _type, _typename)
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, float, float)                        \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, double, double)                      \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, long double, longdouble)             \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, char, char)                          \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, signed char, schar)                  \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, short, short)                        \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, int, int)                            \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, long, long)                          \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, long long, longlong)                 \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, unsigned char, uchar)                \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, unsigned short, ushort)              \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, unsigned int, uint)                  \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, unsigned long, ulong)                \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, unsigned long long, ulonglong)       \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, int8_t, int8)                        \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, int16_t, int16)                      \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, int32_t, int32)                      \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, int64_t, int64)                      \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, uint8_t, uint8)                      \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, uint16_t, uint16)                    \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, uint32_t, uint32)                    \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, uint64_t, uint64)                    \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, size_t, size)                        \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
 
 /* Generate typed implementations for all algorithms */
 DEFINE_SHCOLL_BROADCAST_TYPES(linear)
@@ -542,9 +635,10 @@ DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
  *
  * TODO: implement broadcastmem
  */
-#define SHCOLL_BROADCASTMEM_DEFINITION(_algo)                                 \
+#define SHCOLL_BROADCASTMEM_DEFINITION(_algo)                                  \
   int shcoll_broadcastmem_##_algo(shmem_team_t team, void *dest,               \
-                                  const void *source, size_t nelems) {         \
+                                  const void *source, size_t nelems,           \
+                                  int PE_root) {                               \
     return 0;                                                                  \
   }
 

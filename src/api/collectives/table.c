@@ -475,8 +475,6 @@ coll_ops_t colls;
 /**
  * @brief Macro to generate registration function for untyped collectives
  * @param _coll Collective operation name
-
- FIXME: I don't think we need this
  */
 #define REGISTER_UNTYPED(_coll)                                                \
   int register_##_coll(const char *op) {                                       \

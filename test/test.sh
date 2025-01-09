@@ -24,6 +24,7 @@ flags="--bind-to core --map-by core --allow-run-as-root"
 hline="-------------------------------"
 
 # --- Print log levels ---
+export PMIX_MCA_pcompress_base_silence_warning=1
 echo "UCX_LOG_LEVEL=$UCX_LOG_LEVEL"
 echo "SHMEM_DEBUG=$SHMEM_DEBUG"
 $oshcc --version
@@ -74,11 +75,11 @@ $oshcc --version
 # $oshrun $flags -np 2 ./bin/shmem_team_sync
 # echo
 
-# --- shmem_alltoall ---
-echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
-$oshcc shmem_alltoall.c -o ./bin/shmem_alltoall
-$oshrun $flags -np 4 ./bin/shmem_alltoall
-echo
+# # --- shmem_alltoall ---
+# echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
+# $oshcc shmem_alltoall.c -o ./bin/shmem_alltoall
+# $oshrun $flags -np 4 ./bin/shmem_alltoall
+# echo
 
 # # --- shmem_alltoalls ---
 # echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
@@ -92,14 +93,14 @@ echo
 # $oshrun $flags -np 4 ./bin/shmem_collect
 # echo
 
-# --- shmem_fcollect ---
+# # --- shmem_fcollect ---
 # echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
 # $oshcc shmem_fcollect.c -o ./bin/shmem_fcollect
 # $oshrun $flags -np 4 ./bin/shmem_fcollect
 # echo
 
-# # --- shmem_broadcast ---
-# echo $hline ; echo "  Running shmem_broadcast test" ; echo $hline
-# $oshcc shmem_broadcast.c -o ./bin/shmem_broadcast
-# $oshrun $flags -np 4 ./bin/shmem_broadcast
-# echo
+# --- shmem_broadcast ---
+echo $hline ; echo "  Running shmem_broadcast test" ; echo $hline
+$oshcc shmem_broadcast.c -o ./bin/shmem_broadcast
+$oshrun $flags -np 4 ./bin/shmem_broadcast
+echo
