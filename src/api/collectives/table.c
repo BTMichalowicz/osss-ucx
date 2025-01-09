@@ -33,6 +33,7 @@
  * @brief Macro to register a sized collective operation with 32/64-bit variants
  * @param _op The collective operation name
  * @param _algo The algorithm implementation name
+ FIXME: make
  */
 #define SIZED_REG(_op, _algo)                                                  \
   { #_algo, shcoll_##_op##32##_##_algo, shcoll_##_op##64##_##_algo }
@@ -138,7 +139,7 @@ static untyped_op_t alltoallmem_tab[] = {
     UNTYPED_LAST};
 
 /**
- * @brief Table of sized alltoall (deprecated) 
+ * @brief Table of sized alltoall (deprecated)
  */
 static sized_op_t alltoall_size_tab[] = {
     SIZED_REG(alltoall, shift_exchange_barrier),
@@ -173,13 +174,12 @@ static typed_op_t alltoalls_tab[] = {
 static untyped_op_t alltoallsmem_tab[] = {
     UNTYPED_REG(alltoallsmem, shift_exchange_barrier),
     UNTYPED_REG(alltoallsmem, shift_exchange_counter),
-    UNTYPED_REG(alltoallsmem, shift_exchange_signal),
-    UNTYPED_LAST};
+    UNTYPED_REG(alltoallsmem, shift_exchange_signal), UNTYPED_LAST};
 
 /**
-  * @brief Table of sized alltoalls (deprecated)
+ * @brief Table of sized alltoalls (deprecated)
  */
-  static sized_op_t alltoalls_size_tab[] = {
+static sized_op_t alltoalls_size_tab[] = {
     SIZED_REG(alltoalls, shift_exchange_barrier),
     SIZED_REG(alltoalls, shift_exchange_counter),
     SIZED_REG(alltoalls, shift_exchange_signal),
@@ -203,7 +203,6 @@ static typed_op_t collect_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(collect, ring),
     TYPED_REG_FOR_ALL_TYPES(collect, bruck),
     TYPED_REG_FOR_ALL_TYPES(collect, bruck_no_rotate),
-    TYPED_REG_FOR_ALL_TYPES(collect, simple),
     TYPED_LAST};
 
 /**
@@ -214,21 +213,24 @@ static untyped_op_t collectmem_tab[] = {
     UNTYPED_REG(collectmem, all_linear),
     UNTYPED_REG(collectmem, all_linear1),
     UNTYPED_REG(collectmem, rec_dbl),
+    UNTYPED_REG(collectmem, rec_dbl_signal),
+    UNTYPED_REG(collectmem, ring),
+    UNTYPED_REG(collectmem, bruck),
+    UNTYPED_REG(collectmem, bruck_no_rotate),
     UNTYPED_LAST};
 
 /**
  * @brief Table of sized collect (deprecated)
  */
-static sized_op_t collect_size_tab[] = {
-    SIZED_REG(collect, linear),
-    SIZED_REG(collect, all_linear),
-    SIZED_REG(collect, all_linear1),
-    SIZED_REG(collect, rec_dbl),
-    SIZED_REG(collect, rec_dbl_signal),
-    SIZED_REG(collect, ring),
-    SIZED_REG(collect, bruck),
-    SIZED_REG(collect, bruck_no_rotate),
-    SIZED_LAST};
+static sized_op_t collect_size_tab[] = {SIZED_REG(collect, linear),
+                                        SIZED_REG(collect, all_linear),
+                                        SIZED_REG(collect, all_linear1),
+                                        SIZED_REG(collect, rec_dbl),
+                                        SIZED_REG(collect, rec_dbl_signal),
+                                        SIZED_REG(collect, ring),
+                                        SIZED_REG(collect, bruck),
+                                        SIZED_REG(collect, bruck_no_rotate),
+                                        SIZED_LAST};
 
 /**
  * @brief Table of fcollect collective algorithms
@@ -254,23 +256,29 @@ static untyped_op_t fcollectmem_tab[] = {
     UNTYPED_REG(fcollectmem, all_linear),
     UNTYPED_REG(fcollectmem, all_linear1),
     UNTYPED_REG(fcollectmem, rec_dbl),
+    UNTYPED_REG(fcollectmem, rec_dbl_signal),
+    UNTYPED_REG(fcollectmem, ring),
+    UNTYPED_REG(fcollectmem, bruck),
+    UNTYPED_REG(fcollectmem, bruck_no_rotate),
+    UNTYPED_REG(fcollectmem, bruck_signal),
+    UNTYPED_REG(fcollectmem, bruck_inplace),
+    UNTYPED_REG(fcollectmem, neighbor_exchange),
     UNTYPED_LAST};
 
 /**
  * @brief Table of sized fcollect (deprecated)
  */
-static sized_op_t fcollect_size_tab[] = {
-    SIZED_REG(fcollect, linear),
-    SIZED_REG(fcollect, all_linear),
-    SIZED_REG(fcollect, all_linear1),
-    SIZED_REG(fcollect, rec_dbl),
-    SIZED_REG(fcollect, ring),
-    SIZED_REG(fcollect, bruck),
-    SIZED_REG(fcollect, bruck_no_rotate),
-    SIZED_REG(fcollect, bruck_signal),
-    SIZED_REG(fcollect, bruck_inplace),
-    SIZED_REG(fcollect, neighbor_exchange),
-    SIZED_LAST};
+static sized_op_t fcollect_size_tab[] = {SIZED_REG(fcollect, linear),
+                                         SIZED_REG(fcollect, all_linear),
+                                         SIZED_REG(fcollect, all_linear1),
+                                         SIZED_REG(fcollect, rec_dbl),
+                                         SIZED_REG(fcollect, ring),
+                                         SIZED_REG(fcollect, bruck),
+                                         SIZED_REG(fcollect, bruck_no_rotate),
+                                         SIZED_REG(fcollect, bruck_signal),
+                                         SIZED_REG(fcollect, bruck_inplace),
+                                         SIZED_REG(fcollect, neighbor_exchange),
+                                         SIZED_LAST};
 
 /**
  * @brief Table of barrier_all collective algorithms
@@ -356,7 +364,7 @@ static int register_sized(sized_op_t *tabp, const char *op, coll_fn_t *fn32,
                           coll_fn_t *fn64) {
   sized_op_t *p;
   char base_op[COLL_NAME_MAX];
-  
+
   /* Strip _size suffix if present */
   size_t len = strlen(op);
   if (len > 5 && strcmp(op + len - 5, "_size") == 0) {
@@ -368,7 +376,8 @@ static int register_sized(sized_op_t *tabp, const char *op, coll_fn_t *fn32,
   }
 
   for (p = tabp; p->f32 != NULL; ++p) {
-    if (strncmp(base_op, p->op, COLL_NAME_MAX) == 0) {  // Compare with stripped name
+    if (strncmp(base_op, p->op, COLL_NAME_MAX) ==
+        0) { // Compare with stripped name
       *fn32 = p->f32;
       *fn64 = p->f64;
       return 0;
@@ -484,12 +493,16 @@ coll_ops_t colls;
 /* Current routines */
 REGISTER_TYPED(alltoall)
 REGISTER_UNTYPED(alltoallmem)
+
 REGISTER_TYPED(alltoalls)
 REGISTER_UNTYPED(alltoallsmem)
+
 REGISTER_TYPED(collect)
 REGISTER_UNTYPED(collectmem)
+
 REGISTER_TYPED(fcollect)
 REGISTER_UNTYPED(fcollectmem)
+
 REGISTER_TYPED(broadcast)
 REGISTER_UNTYPED(broadcastmem)
 

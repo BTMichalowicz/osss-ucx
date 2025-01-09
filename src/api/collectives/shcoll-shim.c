@@ -38,17 +38,35 @@
  * alltoall, alltoalls, collect, fcollect, barrier, sync, and broadcast
  */
 void collectives_init(void) {
+  /* Current routines */
   TRY(alltoall);
+  TRY(alltoallmem);
+
   TRY(alltoalls);
+  TRY(alltoallsmem);
+
   TRY(collect);
+  TRY(collectmem);
+
   TRY(fcollect);
+  TRY(fcollectmem);
+
   TRY(barrier);
   TRY(barrier_all);
   TRY(sync);
   TRY(sync_all);
+
   TRY(broadcast);
+  TRY(broadcastmem);
 
   /* TODO: reductions */
+
+  /* Deprecated */
+  TRY(alltoall_size);
+  TRY(alltoalls_size);
+  TRY(collect_size);
+  TRY(fcollect_size);
+  TRY(broadcast_size);
 }
 
 /**

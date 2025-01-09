@@ -143,105 +143,48 @@ broadcast_helper_complete_tree(void *target, const void *source, size_t nbytes,
  * @param pSync Symmetric work array
  */
 inline static void
-broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
+broadcast_helper_binomial_tree(void *target, const void *source, size_t
+nbytes,
                                int PE_root, int PE_start, int logPE_stride,
                                int PE_size, long *pSync) {
-  // Add debug prints at start
-  printf("broadcast_helper: target=%p source=%p nbytes=%zu root=%d start=%d "
-         "stride=%d size=%d pSync=%p\n",
-         target, source, nbytes, PE_root, PE_start, logPE_stride, PE_size,
-         pSync);
-
   const int me = shmem_my_pe();
   const int stride = 1 << logPE_stride;
-  const int me_as = (me - PE_start) / stride; // my position in active set
-  const int root_pe = PE_start + (PE_root * stride); // actual PE number of root
+  int i;
+  int parent;
+  int dst;
+  node_info_binomial_t node;
+  /* Get my index in the active set */
+  int me_as = (me - PE_start) / stride;
 
-  // Basic sanity checks
-  if (me_as < 0 || me_as >= PE_size) {
-    printf("PE %d: Invalid active set position %d\n", me, me_as);
-    return;
+  /* Get information about children */
+  get_node_info_binomial_root(PE_size, PE_root, me_as, &node);
+
+  /* Wait for the data form the parent */
+  if (me_as != PE_root) {
+    shmem_long_wait_until(pSync, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
+    source = target;
+
+    /* Send ack */
+    parent = node.parent;
+    shmem_long_atomic_inc(pSync, PE_start + parent * stride);
   }
 
-  // Copy data locally on root if source and target differ
-  if (me == root_pe && source != target) {
-    memcpy(target, source, nbytes);
-  }
-
-  // Ensure root has copied data
-  shmem_barrier_all();
-
-  // Binary tree broadcast
-  int mask = 0x1;
-  while (mask < PE_size) {
-    if (me_as < mask) {
-      // I'm a sender in this round
-      int peer_as = me_as + mask; // position in active set
-      if (peer_as < PE_size) {
-        // Convert to actual PE number
-        int peer = PE_start + (peer_as * stride);
-        printf("PE %d: Sending to PE %d (mask=%d)\n", me, peer, mask);
-        shmem_putmem(target, target, nbytes, peer);
-      }
-    } else if ((me_as & mask) == 0) {
-      // I'm a receiver in this round
-      int peer_as = me_as - mask; // position in active set
-      int peer = PE_start + (peer_as * stride);
-      printf("PE %d: Receiving from PE %d (mask=%d)\n", me, peer, mask);
-      shmem_long_wait_until(&pSync[0], SHMEM_CMP_NE, SHMEM_SYNC_VALUE);
+  /* Send data to children */
+  if (node.children_num != 0) {
+    for (i = 0; i < node.children_num; i++) {
+      dst = PE_start + node.children[i] * stride;
+      shmem_putmem_nbi(target, source, nbytes, dst);
+      shmem_fence();
+      shmem_long_atomic_inc(pSync, dst);
     }
-    shmem_barrier_all();
-    mask <<= 1;
+
+    shmem_long_wait_until(pSync, SHMEM_CMP_EQ,
+                          SHCOLL_SYNC_VALUE + node.children_num +
+                              (me_as == PE_root ? 0 : 1));
   }
 
-  // Reset pSync
-  shmem_long_p(&pSync[0], SHMEM_SYNC_VALUE, me);
-  shmem_barrier_all();
+  shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 }
-
-// inline static void
-// broadcast_helper_binomial_tree(void *target, const void *source, size_t
-// nbytes,
-//                                int PE_root, int PE_start, int logPE_stride,
-//                                int PE_size, long *pSync) {
-//   const int me = shmem_my_pe();
-//   const int stride = 1 << logPE_stride;
-//   int i;
-//   int parent;
-//   int dst;
-//   node_info_binomial_t node;
-//   /* Get my index in the active set */
-//   int me_as = (me - PE_start) / stride;
-
-//   /* Get information about children */
-//   get_node_info_binomial_root(PE_size, PE_root, me_as, &node);
-
-//   /* Wait for the data form the parent */
-//   if (me_as != PE_root) {
-//     shmem_long_wait_until(pSync, SHMEM_CMP_NE, SHCOLL_SYNC_VALUE);
-//     source = target;
-
-//     /* Send ack */
-//     parent = node.parent;
-//     shmem_long_atomic_inc(pSync, PE_start + parent * stride);
-//   }
-
-//   /* Send data to children */
-//   if (node.children_num != 0) {
-//     for (i = 0; i < node.children_num; i++) {
-//       dst = PE_start + node.children[i] * stride;
-//       shmem_putmem_nbi(target, source, nbytes, dst);
-//       shmem_fence();
-//       shmem_long_atomic_inc(pSync, dst);
-//     }
-
-//     shmem_long_wait_until(pSync, SHMEM_CMP_EQ,
-//                           SHCOLL_SYNC_VALUE + node.children_num +
-//                               (me_as == PE_root ? 0 : 1));
-//   }
-
-//   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
-// }
 
 /**
  * @brief K-nomial tree broadcast helper

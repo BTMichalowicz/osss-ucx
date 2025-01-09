@@ -74,8 +74,8 @@ typedef struct coll_ops {
   typed_op_t broadcast;     /**< Typed broadcast operation */
   untyped_op_t broadcastmem; /**< Generic broadcast memory operation */
   unsized_op_t barrier_all; /**< Typed global barrier operation */
-  unsized_op_t sync;        /**< Typed team synchronization operation */
-  unsized_op_t sync_all;    /**< Typed global synchronization operation */
+  unsized_op_t sync;        /**< Synchronization operation */
+  unsized_op_t sync_all;    /**< Global synchronization operation */
 
   /* Deprecated routines */
   sized_op_t alltoall_size;  /**< Sized all-to-all operation */
@@ -99,15 +99,25 @@ int register_barrier_all(const char *op);
 int register_sync_all(const char *op);
 int register_barrier(const char *op);
 int register_sync(const char *op);
-int register_broadcast(const char *op);
-int register_broadcastmem(const char *op);
+
 int register_alltoall(const char *op);
 int register_alltoallmem(const char *op);
+int register_alltoall_size(const char *op);
+
 int register_alltoalls(const char *op);
 int register_alltoallsmem(const char *op);
+int register_alltoalls_size(const char *op);
+
 int register_collect(const char *op);
 int register_collectmem(const char *op);
+int register_collect_size(const char *op);
+
 int register_fcollect(const char *op);
 int register_fcollectmem(const char *op);
+int register_fcollect_size(const char *op);
+
+int register_broadcast(const char *op);
+int register_broadcastmem(const char *op);
+int register_broadcast_size(const char *op);
 
 #endif

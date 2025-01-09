@@ -24,16 +24,35 @@
  */
 
 typedef struct collectives {
-  char *barrier;
   char *barrier_all;
   char *sync;
   char *sync_all;
+
   char *broadcast;
+  char *broadcastmem;
+
   char *collect;
+  char *collectmem;
+
   char *fcollect;
+  char *fcollectmem;
+
   char *alltoall;
+  char *alltoallmem;
+
   char *alltoalls;
+  char *alltoallsmem;
+
   char *reductions;
+
+  /* Deprecated */
+  char *alltoall_size;
+  char *alltoalls_size;
+  char *collect_size;
+  char *fcollect_size;
+  char *broadcast_size;
+
+  char *barrier;
 } shmemc_coll_t;
 
 /*

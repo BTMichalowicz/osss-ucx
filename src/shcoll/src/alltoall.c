@@ -22,6 +22,8 @@
 #include <limits.h>
 #include <assert.h>
 
+#include <stdio.h>
+
 /**
  * @brief Calculate edge color for color pairwise exchange algorithm
  *
@@ -234,11 +236,14 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
  *
  * @param _algo Algorithm name
  * @param _size Size in bits
+
+ TODO: take out print statement
  */
 #define SHCOLL_ALLTOALL_SIZE_DEFINITION(_algo, _size)                          \
   void shcoll_alltoall##_size##_##_algo(                                       \
       void *dest, const void *source, size_t nelems, int PE_start,             \
       int logPE_stride, int PE_size, long *pSync) {                            \
+    printf("Running shcoll_alltoall%d_%s\n", _size, #_algo);                   \
     alltoall_helper_##_algo(dest, source, (_size) / (CHAR_BIT) * nelems,       \
                             PE_start, logPE_stride, PE_size, pSync);           \
   }
@@ -355,16 +360,18 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
  * @brief Helper macro to define alltoallmem implementations
  *
  * @param _algo Algorithm name
+ TODO: take out print statement
+
  FIXME: this doesn't work
  */
 #define SHCOLL_ALLTOALLMEM_DEFINITION(_algo)                                   \
   int shcoll_alltoallmem_##_algo(shmem_team_t team, void *dest,                \
                                  const void *source, size_t nelems) {          \
-    int stride = 1;                                                            \
-    int npes = shmem_team_n_pes(team);                                         \
+    printf("Running shcoll_alltoallmem_%s\n", #_algo);                         \
     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
-                                                                               \
-    /* Allocate and initialize pSync array */                                  \
+    int logPE_stride = 0;                                                      \
+    int PE_size = shmem_team_n_pes(team);                                      \
+    /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
     if (!pSync)                                                                \
       return -1;                                                               \
@@ -372,17 +379,14 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
     for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
-                                                                               \
     /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
-                                                                               \
     /* Perform alltoall */                                                     \
-    alltoall_helper_##_algo(dest, source, nelems, PE_start, stride, npes,      \
-                            pSync);                                            \
-                                                                               \
-    /* Final sync */                                                           \
+    alltoall_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,      \
+                            PE_size, pSync);                                   \
+    /* Cleanup */                                                              \
     shmem_team_sync(team);                                                     \
-                                                                               \
+    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 
