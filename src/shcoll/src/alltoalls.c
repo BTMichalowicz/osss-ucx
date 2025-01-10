@@ -279,7 +279,6 @@ SHCOLL_ALLTOALLS_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
  * @param _algo Algorithm name
  * @param _type Data type
  * @param _typename Type name string
- FIXME: how should we set logPE_stride?
  */
 #define SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, _type, _typename)              \
   int shcoll_##_typename##_alltoalls_##_algo(                                  \
@@ -359,12 +358,30 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_signal)
  * @brief Helper macro to define alltoalls implementations for all types
  *
  * @param _algo Algorithm name to generate implementations for
- TODO: implement alltoallsmem
  */
-#define SHCOLL_ALLTOALLSMEM_DEFINITION(_algo)                                 \
+#define SHCOLL_ALLTOALLSMEM_DEFINITION(_algo)                                  \
   int shcoll_alltoallsmem_##_algo(shmem_team_t team, void *dest,               \
                                   const void *source, ptrdiff_t dst,           \
                                   ptrdiff_t sst, size_t nelems) {              \
+    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
+    int logPE_stride = 0;                                                      \
+    int PE_size = shmem_team_n_pes(team);                                      \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_ALLTOALLS_SYNC_SIZE * sizeof(long));     \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+    /* Initialize pSync */                                                     \
+    for (int i = 0; i < SHCOLL_ALLTOALLS_SYNC_SIZE; i++) {                     \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
+    /* Perform alltoalls */                                                    \
+    alltoalls_helper_##_algo(dest, source, dst, sst, nelems, PE_start,         \
+                             logPE_stride, PE_size, pSync);                    \
+    /* Cleanup */                                                              \
+    shmem_team_sync(team);                                                     \
+    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 

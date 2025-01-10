@@ -256,7 +256,6 @@ static untyped_op_t fcollectmem_tab[] = {
     UNTYPED_REG(fcollectmem, all_linear),
     UNTYPED_REG(fcollectmem, all_linear1),
     UNTYPED_REG(fcollectmem, rec_dbl),
-    UNTYPED_REG(fcollectmem, rec_dbl_signal),
     UNTYPED_REG(fcollectmem, ring),
     UNTYPED_REG(fcollectmem, bruck),
     UNTYPED_REG(fcollectmem, bruck_no_rotate),

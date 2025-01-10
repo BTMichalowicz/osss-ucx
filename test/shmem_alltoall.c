@@ -282,6 +282,7 @@ int main(int argc, char *argv[]) {
     printf("    Running alltoall64 test\n");
     printf("----------------------------------------\n");
   }
+  shmem_barrier_all();
   test_alltoall64();
   shmem_barrier_all();
 
@@ -290,6 +291,7 @@ int main(int argc, char *argv[]) {
     printf("    Running alltoallmem test\n");
     printf("----------------------------------------\n");
   }
+  shmem_barrier_all();
   test_alltoallmem();
   shmem_barrier_all();
 
@@ -298,6 +300,7 @@ int main(int argc, char *argv[]) {
     printf("    Running alltoalltype test\n");
     printf("----------------------------------------\n");
   }
+  shmem_barrier_all();
   test_alltoalltype();
   shmem_barrier_all();
 

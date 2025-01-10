@@ -493,7 +493,6 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
 
 /**
  * @brief Macro for typed broadcast implementations using legacy helpers
- FIXME: this isn't working
  */
 #define SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, _type, _typename)              \
   int shcoll_##_typename##_broadcast_##_algo(shmem_team_t team, _type *dest,   \

@@ -360,14 +360,10 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
  * @brief Helper macro to define alltoallmem implementations
  *
  * @param _algo Algorithm name
- TODO: take out print statement
-
- FIXME: this doesn't work
  */
 #define SHCOLL_ALLTOALLMEM_DEFINITION(_algo)                                   \
   int shcoll_alltoallmem_##_algo(shmem_team_t team, void *dest,                \
                                  const void *source, size_t nelems) {          \
-    printf("Running shcoll_alltoallmem_%s\n", #_algo);                         \
     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
     int logPE_stride = 0;                                                      \
     int PE_size = shmem_team_n_pes(team);                                      \

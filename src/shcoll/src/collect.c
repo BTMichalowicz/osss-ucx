@@ -629,9 +629,6 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
 
 /**
  * @brief Macro to define collect functions for different data types
-
- FIXME: should we be passing 0 into shmem_team_translate_pe, or should we be
- using shmem_my_pe() or shmem_team_my_pe()?
  */
 #define SHCOLL_COLLECT_TYPE_DEFINITION(_algo, _type, _typename)                \
   int shcoll_##_typename##_collect_##_algo(                                    \
@@ -712,12 +709,40 @@ DEFINE_SHCOLL_COLLECT_TYPES(simple)
 
 /**
  * @brief Macro to declare collectmem implementations for different algorithms
- *
- * TODO: implement collectmem
  */
 #define SHCOLL_COLLECTMEM_DEFINITION(_algo)                                    \
   int shcoll_collectmem_##_algo(shmem_team_t team, void *dest,                 \
                                 const void *source, size_t nelems) {           \
+    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
+    int logPE_stride = 0;                                                      \
+    int PE_size = shmem_team_n_pes(team);                                      \
+    /* Verify COLLECT_SYNC_SIZE is sufficient */                               \
+    if (SHCOLL_COLLECT_SYNC_SIZE < (2 + PREFIX_SUM_SYNC_SIZE + 32)) {          \
+      return -1; /* Not enough sync space */                                   \
+    }                                                                          \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+    /* Initialize all of pSync */                                              \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
+    /* Zero out destination buffer */                                          \
+    memset(dest, 0, nelems *PE_size);                                          \
+    /* Perform collect */                                                      \
+    collect_helper_##_algo(dest, source, nelems, /* bytes per PE */            \
+                           PE_start, logPE_stride, PE_size, pSync);            \
+    /* Ensure collection is complete */                                        \
+    shmem_team_sync(team);                                                     \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 
