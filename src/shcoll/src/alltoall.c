@@ -59,7 +59,7 @@ static int alltoall_rounds_sync = INT32_MAX;
  * @brief Set number of rounds between synchronizations for alltoall operations
  * @param rounds_sync Number of rounds between synchronizations
  */
-void shcoll_set_alltoalls_round_sync(int rounds_sync) {
+void shcoll_set_alltoall_round_sync(int rounds_sync) {
   alltoall_rounds_sync = rounds_sync;
 }
 

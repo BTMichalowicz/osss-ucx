@@ -66,13 +66,13 @@
 /* Declare all algorithm variants */
 DECLARE_ALLTOALLS_TYPES(shift_exchange_barrier)
 DECLARE_ALLTOALLS_TYPES(shift_exchange_counter)
-DECLARE_ALLTOALLS_TYPES(shift_exchange_signal)
+// DECLARE_ALLTOALLS_TYPES(shift_exchange_signal)
 DECLARE_ALLTOALLS_TYPES(xor_pairwise_exchange_barrier)
 DECLARE_ALLTOALLS_TYPES(xor_pairwise_exchange_counter)
-DECLARE_ALLTOALLS_TYPES(xor_pairwise_exchange_signal)
+// DECLARE_ALLTOALLS_TYPES(xor_pairwise_exchange_signal)
 DECLARE_ALLTOALLS_TYPES(color_pairwise_exchange_barrier)
 DECLARE_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
-DECLARE_ALLTOALLS_TYPES(color_pairwise_exchange_signal)
+// DECLARE_ALLTOALLS_TYPES(color_pairwise_exchange_signal)
 
 /**
  * @brief Macro to declare type-specific strided alltoall memory implementation
@@ -87,13 +87,13 @@ DECLARE_ALLTOALLS_TYPES(color_pairwise_exchange_signal)
 /* Declare all algorithm variants */
 SHCOLL_ALLTOALLSMEM_DECLARATION(shift_exchange_barrier)
 SHCOLL_ALLTOALLSMEM_DECLARATION(shift_exchange_counter)
-SHCOLL_ALLTOALLSMEM_DECLARATION(shift_exchange_signal)
+// SHCOLL_ALLTOALLSMEM_DECLARATION(shift_exchange_signal)
 SHCOLL_ALLTOALLSMEM_DECLARATION(xor_pairwise_exchange_barrier)
 SHCOLL_ALLTOALLSMEM_DECLARATION(xor_pairwise_exchange_counter)
-SHCOLL_ALLTOALLSMEM_DECLARATION(xor_pairwise_exchange_signal)
+// SHCOLL_ALLTOALLSMEM_DECLARATION(xor_pairwise_exchange_signal)
 SHCOLL_ALLTOALLSMEM_DECLARATION(color_pairwise_exchange_barrier)
 SHCOLL_ALLTOALLSMEM_DECLARATION(color_pairwise_exchange_counter)
-SHCOLL_ALLTOALLSMEM_DECLARATION(color_pairwise_exchange_signal)
+// SHCOLL_ALLTOALLSMEM_DECLARATION(color_pairwise_exchange_signal)
 
 /**
  * @brief Macro to declare sized strided alltoall implementations
@@ -114,8 +114,8 @@ SHCOLL_SIZED_ALLTOALLS_DECLARATION(shift_exchange_barrier, 64)
 SHCOLL_SIZED_ALLTOALLS_DECLARATION(shift_exchange_counter, 32)
 SHCOLL_SIZED_ALLTOALLS_DECLARATION(shift_exchange_counter, 64)
 
-SHCOLL_SIZED_ALLTOALLS_DECLARATION(shift_exchange_signal, 32)
-SHCOLL_SIZED_ALLTOALLS_DECLARATION(shift_exchange_signal, 64)
+// SHCOLL_SIZED_ALLTOALLS_DECLARATION(shift_exchange_signal, 32)
+// SHCOLL_SIZED_ALLTOALLS_DECLARATION(shift_exchange_signal, 64)
 
 SHCOLL_SIZED_ALLTOALLS_DECLARATION(xor_pairwise_exchange_barrier, 32)
 SHCOLL_SIZED_ALLTOALLS_DECLARATION(xor_pairwise_exchange_barrier, 64)
@@ -123,8 +123,8 @@ SHCOLL_SIZED_ALLTOALLS_DECLARATION(xor_pairwise_exchange_barrier, 64)
 SHCOLL_SIZED_ALLTOALLS_DECLARATION(xor_pairwise_exchange_counter, 32)
 SHCOLL_SIZED_ALLTOALLS_DECLARATION(xor_pairwise_exchange_counter, 64)
 
-SHCOLL_SIZED_ALLTOALLS_DECLARATION(xor_pairwise_exchange_signal, 32)
-SHCOLL_SIZED_ALLTOALLS_DECLARATION(xor_pairwise_exchange_signal, 64)
+// SHCOLL_SIZED_ALLTOALLS_DECLARATION(xor_pairwise_exchange_signal, 32)
+// SHCOLL_SIZED_ALLTOALLS_DECLARATION(xor_pairwise_exchange_signal, 64)
 
 SHCOLL_SIZED_ALLTOALLS_DECLARATION(color_pairwise_exchange_barrier, 32)
 SHCOLL_SIZED_ALLTOALLS_DECLARATION(color_pairwise_exchange_barrier, 64)
@@ -132,7 +132,7 @@ SHCOLL_SIZED_ALLTOALLS_DECLARATION(color_pairwise_exchange_barrier, 64)
 SHCOLL_SIZED_ALLTOALLS_DECLARATION(color_pairwise_exchange_counter, 32)
 SHCOLL_SIZED_ALLTOALLS_DECLARATION(color_pairwise_exchange_counter, 64)
 
-SHCOLL_SIZED_ALLTOALLS_DECLARATION(color_pairwise_exchange_signal, 32)
-SHCOLL_SIZED_ALLTOALLS_DECLARATION(color_pairwise_exchange_signal, 64)
+// SHCOLL_SIZED_ALLTOALLS_DECLARATION(color_pairwise_exchange_signal, 32)
+// SHCOLL_SIZED_ALLTOALLS_DECLARATION(color_pairwise_exchange_signal, 64)
 
 #endif /* ! _SHCOLL_ALLTOALLS_H */

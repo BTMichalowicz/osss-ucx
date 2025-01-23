@@ -62,59 +62,6 @@
 
 // FIXME: test to make sure this works
 /**
- * @brief Helper macro to define signal-based alltoalls implementations
- *
- * @param _algo Algorithm name
- * @param _peer Function to determine peer PE
- * @param _cond Additional condition for participation
- */
-#define ALLTOALLS_HELPER_SIGNAL_DEFINITION(_algo, _peer, _cond)                \
-  inline static int alltoalls_helper_##_algo##_signal(                         \
-      void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,            \
-      size_t nelems, int PE_start, int logPE_stride, int PE_size) {            \
-    const int stride = 1 << logPE_stride;                                      \
-    const int me = shmem_my_pe();                                              \
-    uint8_t *dest_ptr = (uint8_t *)dest;                                       \
-    const uint8_t *source_ptr = (uint8_t *)source;                             \
-    uint64_t *signal_ptr;                                                      \
-                                                                               \
-    /* Get my index in the active set */                                       \
-    int me_as = (me - PE_start) / stride;                                      \
-    if (me_as < 0 || me_as >= PE_size || _cond == 0) {                         \
-      return -1;                                                               \
-    }                                                                          \
-                                                                               \
-    /* Copy local data with stride */                                          \
-    for (size_t i = 0; i < nelems; i++) {                                      \
-      memcpy(dest_ptr + (me_as * dst + i) * nelems,                            \
-             source_ptr + (me_as * sst + i) * nelems, nelems);                 \
-    }                                                                          \
-                                                                               \
-    /* Exchange data with other PEs using signal */                            \
-    for (int i = 0; i < PE_size; ++i) {                                        \
-      if (i == me_as)                                                          \
-        continue;                                                              \
-                                                                               \
-      const int peer_as = _peer(i, me_as, PE_size);                            \
-      const int peer = PE_start + peer_as * stride;                            \
-                                                                               \
-      /* Ensure signal address is properly aligned */                          \
-      signal_ptr = (uint64_t *)(dest_ptr + (me_as * dst + 1) * nelems);        \
-                                                                               \
-      /* Put data to peer with stride and signal */                            \
-      shmem_putmem_signal_nbi(dest_ptr + me_as * dst * nelems,                 \
-                              source_ptr + peer_as * sst * nelems, nelems,     \
-                              signal_ptr, SHCOLL_SYNC_VALUE + 1,               \
-                              SHMEM_SIGNAL_SET, peer);                         \
-    }                                                                          \
-                                                                               \
-    /* Wait for all signals */                                                 \
-    shmem_team_sync(SHMEM_TEAM_WORLD);                                         \
-    return 0;                                                                  \
-  }
-
-// FIXME: test to make sure this works
-/**
  * @brief Helper macro to define counter-based alltoalls implementations
  *
  * @param _algo Algorithm name
@@ -174,15 +121,12 @@
 
 // clang-format off
 ALLTOALLS_HELPER_BARRIER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
-ALLTOALLS_HELPER_SIGNAL_DEFINITION(shift_exchange, SHIFT_PEER, 1)
 ALLTOALLS_HELPER_COUNTER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
 
 ALLTOALLS_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, XOR_PEER, XOR_COND)
-ALLTOALLS_HELPER_SIGNAL_DEFINITION(xor_pairwise_exchange, XOR_PEER, XOR_COND)
 ALLTOALLS_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, XOR_PEER, XOR_COND)
 
 ALLTOALLS_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, COLOR_PEER, COLOR_COND)
-ALLTOALLS_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER, COLOR_COND)
 ALLTOALLS_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER, COLOR_COND)
 // clang-format on
 
@@ -244,10 +188,7 @@ ALLTOALLS_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER, COLOR_C
 
 DEFINE_SHCOLL_ALLTOALLS_TYPES(shift_exchange_barrier)
 DEFINE_SHCOLL_ALLTOALLS_TYPES(shift_exchange_counter)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(shift_exchange_signal)
 DEFINE_SHCOLL_ALLTOALLS_TYPES(xor_pairwise_exchange_barrier)
 DEFINE_SHCOLL_ALLTOALLS_TYPES(xor_pairwise_exchange_counter)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(xor_pairwise_exchange_signal)
 DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_barrier)
 DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_signal)

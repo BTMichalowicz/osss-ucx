@@ -20,93 +20,93 @@ static int verify_broadcast(const void *dest, const void *source, size_t nelems,
   return errors;
 }
 
-// // Test type-specific broadcast (e.g. shmem_int_broadcast)
-// static void test_typed_broadcast() {
-//   int *source = shmem_malloc(ARRAY_SIZE * sizeof(int));
-//   int *dest = shmem_malloc(ARRAY_SIZE * sizeof(int));
+// Test type-specific broadcast (e.g. shmem_int_broadcast)
+static void test_typed_broadcast() {
+  int *source = shmem_malloc(ARRAY_SIZE * sizeof(int));
+  int *dest = shmem_malloc(ARRAY_SIZE * sizeof(int));
 
-//   if (!source || !dest) {
-//     printf("Failed to allocate symmetric memory\n");
-//     return;
-//   }
+  if (!source || !dest) {
+    printf("Failed to allocate symmetric memory\n");
+    return;
+  }
 
-//   int me = shmem_my_pe();
-//   int root = 0;
+  int me = shmem_my_pe();
+  int root = 0;
 
-//   // Initialize arrays to known values
-//   for (int i = 0; i < ARRAY_SIZE; i++) {
-//     source[i] = (me == root) ? i + 1 : -1;
-//     dest[i] = -1;
-//   }
+  // Initialize arrays to known values
+  for (int i = 0; i < ARRAY_SIZE; i++) {
+    source[i] = (me == root) ? i + 1 : -1;
+    dest[i] = -1;
+  }
 
-//   if (me == 0)
-//     printf("Starting typed broadcast test\n");
-//   shmem_barrier_all();
+  if (me == 0)
+    printf("Starting typed broadcast test\n");
+  shmem_barrier_all();
 
-//   // Test int broadcast with team
-//   shmem_int_broadcast(SHMEM_TEAM_WORLD, dest, source, ARRAY_SIZE, root);
+  // Test int broadcast with team
+  shmem_int_broadcast(SHMEM_TEAM_WORLD, dest, source, ARRAY_SIZE, root);
 
-//   shmem_barrier_all();
-//   if (me == 0)
-//     printf("Completed typed broadcast\n");
+  shmem_barrier_all();
+  if (me == 0)
+    printf("Completed typed broadcast\n");
 
-//   if (me == root) {
-//     for (int i = 0; i < ARRAY_SIZE; i++) {
-//       if (dest[i] != i + 1) {
-//         printf("Error on PE %d: dest[%d]=%d, expected %d\n", me, i, dest[i],
-//                i + 1);
-//       }
-//     }
-//     printf("Typed broadcast test completed\n");
-//   }
+  if (me == root) {
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+      if (dest[i] != i + 1) {
+        printf("Error on PE %d: dest[%d]=%d, expected %d\n", me, i, dest[i],
+               i + 1);
+      }
+    }
+    printf("Typed broadcast test completed\n");
+  }
 
-//   shmem_free(source);
-//   shmem_free(dest);
-// }
+  shmem_free(source);
+  shmem_free(dest);
+}
 
-// // Test memory broadcast (shmem_broadcastmem)
-// static void test_broadcast_mem() {
-//   char *source = shmem_malloc(ARRAY_SIZE * sizeof(char));
-//   char *dest = shmem_malloc(ARRAY_SIZE * sizeof(char));
+// Test memory broadcast (shmem_broadcastmem)
+static void test_broadcast_mem() {
+  char *source = shmem_malloc(ARRAY_SIZE * sizeof(char));
+  char *dest = shmem_malloc(ARRAY_SIZE * sizeof(char));
 
-//   if (!source || !dest) {
-//     printf("Failed to allocate symmetric memory\n");
-//     return;
-//   }
+  if (!source || !dest) {
+    printf("Failed to allocate symmetric memory\n");
+    return;
+  }
 
-//   int me = shmem_my_pe();
-//   int root = 0;
+  int me = shmem_my_pe();
+  int root = 0;
 
-//   // Initialize arrays to known values
-//   for (int i = 0; i < ARRAY_SIZE; i++) {
-//     source[i] = (me == root) ? ('a' + i) : 'x';
-//     dest[i] = 'x';
-//   }
+  // Initialize arrays to known values
+  for (int i = 0; i < ARRAY_SIZE; i++) {
+    source[i] = (me == root) ? ('a' + i) : 'x';
+    dest[i] = 'x';
+  }
 
-//   if (me == 0)
-//     printf("Starting memory broadcast test\n");
-//   shmem_barrier_all();
+  if (me == 0)
+    printf("Starting memory broadcast test\n");
+  shmem_barrier_all();
 
-//   // Test memory broadcast with team
-//   shmem_broadcastmem(SHMEM_TEAM_WORLD, dest, source, ARRAY_SIZE, root);
+  // Test memory broadcast with team
+  shmem_broadcastmem(SHMEM_TEAM_WORLD, dest, source, ARRAY_SIZE, root);
 
-//   shmem_barrier_all();
-//   if (me == 0)
-//     printf("Completed memory broadcast\n");
+  shmem_barrier_all();
+  if (me == 0)
+    printf("Completed memory broadcast\n");
 
-//   if (me == root) {
-//     for (int i = 0; i < ARRAY_SIZE; i++) {
-//       if (dest[i] != 'a' + i) {
-//         printf("Error on PE %d: dest[%d]=%c, expected %c\n", me, i, dest[i],
-//                'a' + i);
-//       }
-//     }
-//     printf("Memory broadcast test completed\n");
-//   }
+  if (me == root) {
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+      if (dest[i] != 'a' + i) {
+        printf("Error on PE %d: dest[%d]=%c, expected %c\n", me, i, dest[i],
+               'a' + i);
+      }
+    }
+    printf("Memory broadcast test completed\n");
+  }
 
-//   shmem_free(source);
-//   shmem_free(dest);
-// }
+  shmem_free(source);
+  shmem_free(dest);
+}
 
 // Test legacy sized broadcast (deprecated)
 static void test_sized_broadcast() {
@@ -203,11 +203,11 @@ int main(void) {
   test_sized_broadcast();
   shmem_barrier_all();
 
-//   test_typed_broadcast();
-//   shmem_barrier_all();
+  test_typed_broadcast();
+  shmem_barrier_all();
 
-//   test_broadcast_mem();
-//   shmem_barrier_all();
+  test_broadcast_mem();
+  shmem_barrier_all();
 
   if (me == 0)
     printf("All broadcast tests completed\n");

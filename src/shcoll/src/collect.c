@@ -716,32 +716,41 @@ DEFINE_SHCOLL_COLLECT_TYPES(simple)
     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
     int logPE_stride = 0;                                                      \
     int PE_size = shmem_team_n_pes(team);                                      \
+                                                                               \
     /* Verify COLLECT_SYNC_SIZE is sufficient */                               \
     if (SHCOLL_COLLECT_SYNC_SIZE < (2 + PREFIX_SUM_SYNC_SIZE + 32)) {          \
       return -1; /* Not enough sync space */                                   \
     }                                                                          \
+                                                                               \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
     if (!pSync)                                                                \
       return -1;                                                               \
+                                                                               \
     /* Initialize all of pSync */                                              \
     for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
+                                                                               \
     /* Ensure all PEs have initialized pSync */                                \
-    shmem_team_sync(team);                                                     \
+    shmem_barrier_all();                                                       \
+                                                                               \
     /* Zero out destination buffer */                                          \
     memset(dest, 0, nelems *PE_size);                                          \
+                                                                               \
     /* Perform collect */                                                      \
-    collect_helper_##_algo(dest, source, nelems, /* bytes per PE */            \
-                           PE_start, logPE_stride, PE_size, pSync);            \
+    collect_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,       \
+                           PE_size, pSync);                                    \
+                                                                               \
     /* Ensure collection is complete */                                        \
-    shmem_team_sync(team);                                                     \
+    shmem_barrier_all();                                                       \
+                                                                               \
     /* Reset pSync before freeing */                                           \
     for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
-    shmem_team_sync(team);                                                     \
+                                                                               \
+    shmem_barrier_all();                                                       \
     shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }

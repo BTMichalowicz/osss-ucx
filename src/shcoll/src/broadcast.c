@@ -143,8 +143,7 @@ broadcast_helper_complete_tree(void *target, const void *source, size_t nbytes,
  * @param pSync Symmetric work array
  */
 inline static void
-broadcast_helper_binomial_tree(void *target, const void *source, size_t
-nbytes,
+broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
                                int PE_root, int PE_start, int logPE_stride,
                                int PE_size, long *pSync) {
   const int me = shmem_my_pe();
@@ -573,17 +572,52 @@ DEFINE_SHCOLL_BROADCAST_TYPES(knomial_tree_signal)
 DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
 
 /**
- * @brief Macro to declare broadcastmem implementations for different algorithms
- *
- * TODO: implement broadcastmem
+ * @brief Macro to define broadcast routines for untyped memory
  */
 #define SHCOLL_BROADCASTMEM_DEFINITION(_algo)                                  \
   int shcoll_broadcastmem_##_algo(shmem_team_t team, void *dest,               \
                                   const void *source, size_t nelems,           \
                                   int PE_root) {                               \
+    /* Get team parameters */                                                  \
+    const int PE_start =                                                       \
+        shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD);              \
+    const int logPE_stride = 0;                                                \
+    const int PE_size = shmem_team_n_pes(team);                                \
+                                                                               \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_BCAST_SYNC_SIZE * sizeof(long));         \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+                                                                               \
+    /* Initialize pSync */                                                     \
+    for (int i = 0; i < SHCOLL_BCAST_SYNC_SIZE; i++) {                         \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+                                                                               \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Zero out destination buffer */                                          \
+    memset(dest, 0, nelems);                                                   \
+                                                                               \
+    /* Perform broadcast */                                                    \
+    broadcast_helper_##_algo(dest, source, nelems, PE_root, PE_start,          \
+                             logPE_stride, PE_size, pSync);                    \
+                                                                               \
+    /* Ensure broadcast completion */                                          \
+    shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_BCAST_SYNC_SIZE; i++) {                         \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+                                                                               \
+    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 
+/* Define broadcast routines using different algorithms */
 SHCOLL_BROADCASTMEM_DEFINITION(linear)
 SHCOLL_BROADCASTMEM_DEFINITION(complete_tree)
 SHCOLL_BROADCASTMEM_DEFINITION(binomial_tree)

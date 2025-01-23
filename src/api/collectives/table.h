@@ -65,25 +65,28 @@ typedef struct coll_ops {
   /* Current routines */
   typed_op_t alltoall;      /**< Typed all-to-all operation */
   untyped_op_t alltoallmem; /**< Generic all-to-all memory operation */
-  typed_op_t alltoalls;     /**< Typed strided all-to-all operation */
+  sized_op_t alltoall_size; /**< Sized all-to-all operation */
+
+  typed_op_t alltoalls;      /**< Typed strided all-to-all operation */
   untyped_op_t alltoallsmem; /**< Generic strided all-to-all memory operation */
-  typed_op_t collect;       /**< Typed collect operation */
-  untyped_op_t collectmem;  /**< Generic collect memory operation */
+  sized_op_t alltoalls_size; /**< Sized strided all-to-all operation */
+
+  typed_op_t collect;      /**< Typed collect operation */
+  untyped_op_t collectmem; /**< Generic collect memory operation */
+  sized_op_t collect_size; /**< Sized collect operation */
+
   typed_op_t fcollect;      /**< Typed ordered collect operation */
   untyped_op_t fcollectmem; /**< Generic ordered collect memory operation */
-  typed_op_t broadcast;     /**< Typed broadcast operation */
+  sized_op_t fcollect_size; /**< Sized ordered collect operation */
+
+  typed_op_t broadcast;      /**< Typed broadcast operation */
   untyped_op_t broadcastmem; /**< Generic broadcast memory operation */
+  sized_op_t broadcast_size; /**< Sized broadcast operation */
+
   unsized_op_t barrier_all; /**< Typed global barrier operation */
   unsized_op_t sync;        /**< Synchronization operation */
   unsized_op_t sync_all;    /**< Global synchronization operation */
-
-  /* Deprecated routines */
-  sized_op_t alltoall_size;  /**< Sized all-to-all operation */
-  sized_op_t alltoalls_size; /**< Sized strided all-to-all operation */
-  sized_op_t collect_size;   /**< Sized collect operation */
-  sized_op_t fcollect_size;  /**< Sized ordered collect operation */
-  sized_op_t broadcast_size; /**< Sized broadcast operation */
-  unsized_op_t barrier;      /**< Barrier operation */
+  unsized_op_t barrier;     /**< Barrier operation */
 
 } coll_ops_t;
 

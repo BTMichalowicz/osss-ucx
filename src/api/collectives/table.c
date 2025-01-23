@@ -8,7 +8,7 @@
  * and look them up at runtime.
  *
  * The tables support three types of collective operations:
- * - Sized operations (32/64 bit variants)
+ * - Sized operations
  * - Unsized operations (size independent)
  * - Typed operations (type specific implementations)
  *
@@ -159,13 +159,13 @@ static sized_op_t alltoall_size_tab[] = {
 static typed_op_t alltoalls_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_barrier),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_signal),
+    // TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_signal),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_barrier),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_signal),
+    // TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_signal),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_barrier),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_signal),
+    // TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_signal),
     TYPED_LAST};
 
 /**
@@ -174,7 +174,14 @@ static typed_op_t alltoalls_tab[] = {
 static untyped_op_t alltoallsmem_tab[] = {
     UNTYPED_REG(alltoallsmem, shift_exchange_barrier),
     UNTYPED_REG(alltoallsmem, shift_exchange_counter),
-    UNTYPED_REG(alltoallsmem, shift_exchange_signal), UNTYPED_LAST};
+    // UNTYPED_REG(alltoallsmem, shift_exchange_signal),
+    UNTYPED_REG(alltoallsmem, xor_pairwise_exchange_barrier),
+    UNTYPED_REG(alltoallsmem, xor_pairwise_exchange_counter),
+    // UNTYPED_REG(alltoallsmem, xor_pairwise_exchange_signal),
+    UNTYPED_REG(alltoallsmem, color_pairwise_exchange_barrier),
+    UNTYPED_REG(alltoallsmem, color_pairwise_exchange_counter),
+    // UNTYPED_REG(alltoallsmem, color_pairwise_exchange_signal),
+    UNTYPED_LAST};
 
 /**
  * @brief Table of sized alltoalls (deprecated)
@@ -182,13 +189,13 @@ static untyped_op_t alltoallsmem_tab[] = {
 static sized_op_t alltoalls_size_tab[] = {
     SIZED_REG(alltoalls, shift_exchange_barrier),
     SIZED_REG(alltoalls, shift_exchange_counter),
-    SIZED_REG(alltoalls, shift_exchange_signal),
+    // SIZED_REG(alltoalls, shift_exchange_signal),
     SIZED_REG(alltoalls, xor_pairwise_exchange_barrier),
     SIZED_REG(alltoalls, xor_pairwise_exchange_counter),
-    SIZED_REG(alltoalls, xor_pairwise_exchange_signal),
+    // SIZED_REG(alltoalls, xor_pairwise_exchange_signal),
     SIZED_REG(alltoalls, color_pairwise_exchange_barrier),
     SIZED_REG(alltoalls, color_pairwise_exchange_counter),
-    SIZED_REG(alltoalls, color_pairwise_exchange_signal),
+    // SIZED_REG(alltoalls, color_pairwise_exchange_signal),
     SIZED_LAST};
 
 /**
@@ -489,32 +496,30 @@ coll_ops_t colls;
     return register_untyped(_coll##_tab, op, &colls._coll.f);                  \
   }
 
-/* Current routines */
+/* Register all collectives */
 REGISTER_TYPED(alltoall)
 REGISTER_UNTYPED(alltoallmem)
+REGISTER_SIZED(alltoall_size)
 
 REGISTER_TYPED(alltoalls)
 REGISTER_UNTYPED(alltoallsmem)
+REGISTER_SIZED(alltoalls_size)
 
 REGISTER_TYPED(collect)
 REGISTER_UNTYPED(collectmem)
+REGISTER_SIZED(collect_size)
 
 REGISTER_TYPED(fcollect)
 REGISTER_UNTYPED(fcollectmem)
+REGISTER_SIZED(fcollect_size)
 
 REGISTER_TYPED(broadcast)
 REGISTER_UNTYPED(broadcastmem)
+REGISTER_SIZED(broadcast_size)
 
 REGISTER_UNSIZED(barrier_all)
 REGISTER_UNSIZED(sync)
 REGISTER_UNSIZED(sync_all)
-
-/* Deprecated routines */
-REGISTER_SIZED(alltoall_size)
-REGISTER_SIZED(alltoalls_size)
-REGISTER_SIZED(collect_size)
-REGISTER_SIZED(fcollect_size)
-REGISTER_SIZED(broadcast_size)
 REGISTER_UNSIZED(barrier)
 
 /*
