@@ -415,7 +415,7 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
     uint8_t *dest_ptr = (uint8_t *)dest;                                       \
-    const uint8_t *source_ptr = (const uint8_t *)source;                       \
+    const uint8_t *source_ptr = (uint8_t *)source;                             \
                                                                                \
     /* Get my index in the active set */                                       \
     int me_as = (me - PE_start) / stride;                                      \
@@ -427,7 +427,7 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
     for (int i = 0; i < PE_size; i++) {                                        \
       int peer = PE_start + i * stride;                                        \
       const uint8_t *src = source_ptr + i * sst_stride;                        \
-      uint8_t *dst = dest_ptr + me_as * dst_stride;                            \
+      uint8_t *dst = dest_ptr + i * dst_stride;                                \
       shmem_putmem(dst, src, nelems, peer);                                    \
     }                                                                          \
                                                                                \
@@ -533,18 +533,15 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
   int shcoll_alltoallsmem_##_algo(shmem_team_t team, void *dest,               \
                                   const void *source, ptrdiff_t dst,           \
                                   ptrdiff_t sst, size_t nelems) {              \
+    printf("PE %d: shcoll_alltoallsmem_%s\n", shmem_my_pe(), #_algo);          \
     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
     int logPE_stride = 0;                                                      \
     int PE_size = shmem_team_n_pes(team);                                      \
-    static long pSync[SHCOLL_ALLTOALLS_SYNC_SIZE]; /* Add pSync array */       \
-                                                                               \
-    for (int i = 0; i < SHCOLL_ALLTOALLS_SYNC_SIZE; i++) {                       \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
-                                                                               \
-    int ret = alltoalls_mem_helper_##_algo(dest, source, dst, sst, nelems,     \
-                                           PE_start, logPE_stride, PE_size);   \
-                                                                               \
+    int ret = alltoalls_mem_helper_##_algo(dest, source,                       \
+                                          dst * nelems,  /* dst_stride */      \
+                                          sst * nelems,  /* sst_stride */      \
+                                          nelems,                              \
+                                          PE_start, logPE_stride, PE_size);    \
     if (ret != 0) {                                                            \
       return -1;                                                               \
     }                                                                          \
@@ -594,7 +591,9 @@ ALLTOALLS_MEM_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
 /* Define the actual functions */
 SHCOLL_ALLTOALLSMEM_DEFINITION(shift_exchange_barrier)
 SHCOLL_ALLTOALLSMEM_DEFINITION(shift_exchange_counter)
+
 SHCOLL_ALLTOALLSMEM_DEFINITION(xor_pairwise_exchange_barrier)
 SHCOLL_ALLTOALLSMEM_DEFINITION(xor_pairwise_exchange_counter)
+
 SHCOLL_ALLTOALLSMEM_DEFINITION(color_pairwise_exchange_barrier)
 SHCOLL_ALLTOALLSMEM_DEFINITION(color_pairwise_exchange_counter)
