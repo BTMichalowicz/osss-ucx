@@ -2796,193 +2796,538 @@ void shmem_clear_lock(long *lock);
 int shmem_test_lock(long *lock) _WUR;
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Performs a bitwise AND reduction across a team
+ *
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ @code
+ int shmem_<typename>_and_reduce(shmem_team_t team, _type *dest, const _type
+ *source, size_t nreduce);
+ @endcode
+ *
+ * @param[in] team    Team on which to perform the reduction
+ * @param[out] dest   Output array on all PEs in the team
+ * @param[in] source  Input array on all PEs in the team
+ * @param[in] nreduce Number of elements in the input/output arrays
+ *
+ * @return Zero on success, non-zero otherwise
+ */
+#define API_AND_REDUCE_TYPE(_type, _typename)                                  \
+  int shmem_##_typename##_and_reduce(shmem_team_t team, _type *dest,           \
+                                     const _type *source, size_t nreduce);
+
+API_AND_REDUCE_TYPE(unsigned char, uchar)
+API_AND_REDUCE_TYPE(unsigned short, ushort)
+API_AND_REDUCE_TYPE(unsigned int, uint)
+API_AND_REDUCE_TYPE(unsigned long, ulong)
+API_AND_REDUCE_TYPE(unsigned long long, ulonglong)
+API_AND_REDUCE_TYPE(int8_t, int8)
+API_AND_REDUCE_TYPE(int16_t, int16)
+API_AND_REDUCE_TYPE(int32_t, int32)
+API_AND_REDUCE_TYPE(int64_t, int64)
+API_AND_REDUCE_TYPE(uint8_t, uint8)
+API_AND_REDUCE_TYPE(uint16_t, uint16)
+API_AND_REDUCE_TYPE(uint32_t, uint32)
+API_AND_REDUCE_TYPE(uint64_t, uint64)
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Performs a bitwise OR reduction across a team
+ *
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ @code
+ int shmem_<typename>_or_reduce(shmem_team_t team, _type *dest, const _type
+ *source, size_t nreduce);
+ @endcode
+ *
+ * @param[in] team    Team on which to perform the reduction
+ * @param[out] dest   Output array on all PEs in the team
+ * @param[in] source  Input array on all PEs in the team
+ * @param[in] nreduce Number of elements in the input/output arrays
+ *
+ * @return Zero on success, non-zero otherwise
+ */
+#define API_OR_REDUCE_TYPE(_type, _typename)                                   \
+  int shmem_##_typename##_or_reduce(shmem_team_t team, _type *dest,            \
+                                    const _type *source, size_t nreduce);
+
+API_OR_REDUCE_TYPE(unsigned char, uchar)
+API_OR_REDUCE_TYPE(unsigned short, ushort)
+API_OR_REDUCE_TYPE(unsigned int, uint)
+API_OR_REDUCE_TYPE(unsigned long, ulong)
+API_OR_REDUCE_TYPE(unsigned long long, ulonglong)
+API_OR_REDUCE_TYPE(int8_t, int8)
+API_OR_REDUCE_TYPE(int16_t, int16)
+API_OR_REDUCE_TYPE(int32_t, int32)
+API_OR_REDUCE_TYPE(int64_t, int64)
+API_OR_REDUCE_TYPE(uint8_t, uint8)
+API_OR_REDUCE_TYPE(uint16_t, uint16)
+API_OR_REDUCE_TYPE(uint32_t, uint32)
+API_OR_REDUCE_TYPE(uint64_t, uint64)
+API_OR_REDUCE_TYPE(size_t, size)
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Performs a bitwise XOR reduction across a team
+ *
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ @code
+ int shmem_<typename>_xor_reduce(shmem_team_t team, _type *dest, const _type
+ *source, size_t nreduce);
+ @endcode
+ *
+ * @param[in] team    Team on which to perform the reduction
+ * @param[out] dest   Output array on all PEs in the team
+ * @param[in] source  Input array on all PEs in the team
+ * @param[in] nreduce Number of elements in the input/output arrays
+ *
+ * @return Zero on success, non-zero otherwise
+ */
+#define API_XOR_REDUCE_TYPE(_type, _typename)                                  \
+  int shmem_##_typename##_xor_reduce(shmem_team_t team, _type *dest,           \
+                                     const _type *source, size_t nreduce);
+
+API_XOR_REDUCE_TYPE(unsigned char, uchar)
+API_XOR_REDUCE_TYPE(unsigned short, ushort)
+API_XOR_REDUCE_TYPE(unsigned int, uint)
+API_XOR_REDUCE_TYPE(unsigned long, ulong)
+API_XOR_REDUCE_TYPE(unsigned long long, ulonglong)
+API_XOR_REDUCE_TYPE(int8_t, int8)
+API_XOR_REDUCE_TYPE(int16_t, int16)
+API_XOR_REDUCE_TYPE(int32_t, int32)
+API_XOR_REDUCE_TYPE(int64_t, int64)
+API_XOR_REDUCE_TYPE(uint8_t, uint8)
+API_XOR_REDUCE_TYPE(uint16_t, uint16)
+API_XOR_REDUCE_TYPE(uint32_t, uint32)
+API_XOR_REDUCE_TYPE(uint64_t, uint64)
+API_XOR_REDUCE_TYPE(size_t, size)
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Performs a maximum value reduction across a team
+ *
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ @code
+ int shmem_<typename>_max_reduce(shmem_team_t team, _type *dest, const _type
+ *source, size_t nreduce);
+ @endcode
+ *
+ * @param[in] team    Team on which to perform the reduction
+ * @param[out] dest   Output array on all PEs in the team
+ * @param[in] source  Input array on all PEs in the team
+ * @param[in] nreduce Number of elements in the input/output arrays
+ *
+ * @return Zero on success, non-zero otherwise
+ */
+#define API_MAX_REDUCE_TYPE(_type, _typename)                                  \
+  int shmem_##_typename##_max_reduce(shmem_team_t team, _type *dest,           \
+                                     const _type *source, size_t nreduce);
+
+API_MAX_REDUCE_TYPE(char, char)
+API_MAX_REDUCE_TYPE(signed char, schar)
+API_MAX_REDUCE_TYPE(short, short)
+API_MAX_REDUCE_TYPE(int, int)
+API_MAX_REDUCE_TYPE(long, long)
+API_MAX_REDUCE_TYPE(long long, longlong)
+API_MAX_REDUCE_TYPE(ptrdiff_t, ptrdiff)
+API_MAX_REDUCE_TYPE(unsigned char, uchar)
+API_MAX_REDUCE_TYPE(unsigned short, ushort)
+API_MAX_REDUCE_TYPE(unsigned int, uint)
+API_MAX_REDUCE_TYPE(unsigned long, ulong)
+API_MAX_REDUCE_TYPE(unsigned long long, ulonglong)
+API_MAX_REDUCE_TYPE(int8_t, int8)
+API_MAX_REDUCE_TYPE(int16_t, int16)
+API_MAX_REDUCE_TYPE(int32_t, int32)
+API_MAX_REDUCE_TYPE(int64_t, int64)
+API_MAX_REDUCE_TYPE(uint8_t, uint8)
+API_MAX_REDUCE_TYPE(uint16_t, uint16)
+API_MAX_REDUCE_TYPE(uint32_t, uint32)
+API_MAX_REDUCE_TYPE(uint64_t, uint64)
+API_MAX_REDUCE_TYPE(size_t, size)
+API_MAX_REDUCE_TYPE(float, float)
+API_MAX_REDUCE_TYPE(double, double)
+API_MAX_REDUCE_TYPE(long double, longdouble)
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Performs a minimum value reduction across a team
+ *
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ @code
+ int shmem_<typename>_min_reduce(shmem_team_t team, _type *dest, const _type
+ *source, size_t nreduce);
+ @endcode
+ *
+ * @param[in] team    Team on which to perform the reduction
+ * @param[out] dest   Output array on all PEs in the team
+ * @param[in] source  Input array on all PEs in the team
+ * @param[in] nreduce Number of elements in the input/output arrays
+ *
+ * @return Zero on success, non-zero otherwise
+ */
+#define API_MIN_REDUCE_TYPE(_type, _typename)                                  \
+  int shmem_##_typename##_min_reduce(shmem_team_t team, _type *dest,           \
+                                     const _type *source, size_t nreduce);
+
+API_MIN_REDUCE_TYPE(char, char)
+API_MIN_REDUCE_TYPE(signed char, schar)
+API_MIN_REDUCE_TYPE(short, short)
+API_MIN_REDUCE_TYPE(int, int)
+API_MIN_REDUCE_TYPE(long, long)
+API_MIN_REDUCE_TYPE(long long, longlong)
+API_MIN_REDUCE_TYPE(ptrdiff_t, ptrdiff)
+API_MIN_REDUCE_TYPE(unsigned char, uchar)
+API_MIN_REDUCE_TYPE(unsigned short, ushort)
+API_MIN_REDUCE_TYPE(unsigned int, uint)
+API_MIN_REDUCE_TYPE(unsigned long, ulong)
+API_MIN_REDUCE_TYPE(unsigned long long, ulonglong)
+API_MIN_REDUCE_TYPE(int8_t, int8)
+API_MIN_REDUCE_TYPE(int16_t, int16)
+API_MIN_REDUCE_TYPE(int32_t, int32)
+API_MIN_REDUCE_TYPE(int64_t, int64)
+API_MIN_REDUCE_TYPE(uint8_t, uint8)
+API_MIN_REDUCE_TYPE(uint16_t, uint16)
+API_MIN_REDUCE_TYPE(uint32_t, uint32)
+API_MIN_REDUCE_TYPE(uint64_t, uint64)
+API_MIN_REDUCE_TYPE(size_t, size)
+API_MIN_REDUCE_TYPE(float, float)
+API_MIN_REDUCE_TYPE(double, double)
+API_MIN_REDUCE_TYPE(long double, longdouble)
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Performs a sum reduction across a team
+ *
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ @code
+ int shmem_<typename>_sum_reduce(shmem_team_t team, _type *dest, const _type
+ *source, size_t nreduce);
+ @endcode
+ *
+ * @param[in] team    Team on which to perform the reduction
+ * @param[out] dest   Output array on all PEs in the team
+ * @param[in] source  Input array on all PEs in the team
+ * @param[in] nreduce Number of elements in the input/output arrays
+ *
+ * @return Zero on success, non-zero otherwise
+ */
+#define API_SUM_REDUCE_TYPE(_type, _typename)                                  \
+  int shmem_##_typename##_sum_reduce(shmem_team_t team, _type *dest,           \
+                                     const _type *source, size_t nreduce);
+
+API_SUM_REDUCE_TYPE(char, char)
+API_SUM_REDUCE_TYPE(signed char, schar)
+API_SUM_REDUCE_TYPE(short, short)
+API_SUM_REDUCE_TYPE(int, int)
+API_SUM_REDUCE_TYPE(long, long)
+API_SUM_REDUCE_TYPE(long long, longlong)
+API_SUM_REDUCE_TYPE(ptrdiff_t, ptrdiff)
+API_SUM_REDUCE_TYPE(unsigned char, uchar)
+API_SUM_REDUCE_TYPE(unsigned short, ushort)
+API_SUM_REDUCE_TYPE(unsigned int, uint)
+API_SUM_REDUCE_TYPE(unsigned long, ulong)
+API_SUM_REDUCE_TYPE(unsigned long long, ulonglong)
+API_SUM_REDUCE_TYPE(int8_t, int8)
+API_SUM_REDUCE_TYPE(int16_t, int16)
+API_SUM_REDUCE_TYPE(int32_t, int32)
+API_SUM_REDUCE_TYPE(int64_t, int64)
+API_SUM_REDUCE_TYPE(uint8_t, uint8)
+API_SUM_REDUCE_TYPE(uint16_t, uint16)
+API_SUM_REDUCE_TYPE(uint32_t, uint32)
+API_SUM_REDUCE_TYPE(uint64_t, uint64)
+API_SUM_REDUCE_TYPE(size_t, size)
+API_SUM_REDUCE_TYPE(float, float)
+API_SUM_REDUCE_TYPE(double, double)
+API_SUM_REDUCE_TYPE(long double, longdouble)
+API_SUM_REDUCE_TYPE(COMPLEXIFY(double), complexd)
+API_SUM_REDUCE_TYPE(COMPLEXIFY(float), complexf)
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Performs a product reduction across a team
+ *
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ @code
+ int shmem_<typename>_prod_reduce(shmem_team_t team, _type *dest, const _type
+ *source, size_t nreduce);
+ @endcode
+ *
+ * @param[in] team    Team on which to perform the reduction
+ * @param[out] dest   Output array on all PEs in the team
+ * @param[in] source  Input array on all PEs in the team
+ * @param[in] nreduce Number of elements in the input/output arrays
+ *
+ * @return Zero on success, non-zero otherwise
+ */
+#define API_PROD_REDUCE_TYPE(_type, _typename)                                 \
+  int shmem_##_typename##_prod_reduce(shmem_team_t team, _type *dest,          \
+                                      const _type *source, size_t nreduce);
+
+API_PROD_REDUCE_TYPE(char, char)
+API_PROD_REDUCE_TYPE(signed char, schar)
+API_PROD_REDUCE_TYPE(short, short)
+API_PROD_REDUCE_TYPE(int, int)
+API_PROD_REDUCE_TYPE(long, long)
+API_PROD_REDUCE_TYPE(long long, longlong)
+API_PROD_REDUCE_TYPE(ptrdiff_t, ptrdiff)
+API_PROD_REDUCE_TYPE(unsigned char, uchar)
+API_PROD_REDUCE_TYPE(unsigned short, ushort)
+API_PROD_REDUCE_TYPE(unsigned int, uint)
+API_PROD_REDUCE_TYPE(unsigned long, ulong)
+API_PROD_REDUCE_TYPE(unsigned long long, ulonglong)
+API_PROD_REDUCE_TYPE(int8_t, int8)
+API_PROD_REDUCE_TYPE(int16_t, int16)
+API_PROD_REDUCE_TYPE(int32_t, int32)
+API_PROD_REDUCE_TYPE(int64_t, int64)
+API_PROD_REDUCE_TYPE(uint8_t, uint8)
+API_PROD_REDUCE_TYPE(uint16_t, uint16)
+API_PROD_REDUCE_TYPE(uint32_t, uint32)
+API_PROD_REDUCE_TYPE(uint64_t, uint64)
+API_PROD_REDUCE_TYPE(size_t, size)
+API_PROD_REDUCE_TYPE(float, float)
+API_PROD_REDUCE_TYPE(double, double)
+API_PROD_REDUCE_TYPE(long double, longdouble)
+API_PROD_REDUCE_TYPE(COMPLEXIFY(double), complexd)
+API_PROD_REDUCE_TYPE(COMPLEXIFY(float), complexf)
+
+////////////////////////////////////////////////////////////////////////////////
 void shmem_long_sum_to_all(long *target, const long *source, int nreduce,
                            int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync);
+                           long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_long_sum_reduce, 1.5);
 
-/* see \ref shmem_long_sum_to_all() */
 void shmem_complexd_sum_to_all(COMPLEXIFY(double) * target,
                                const COMPLEXIFY(double) * source, int nreduce,
                                int PE_start, int logPE_stride, int PE_size,
-                               COMPLEXIFY(double) * pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                               COMPLEXIFY(double) * pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_complexd_sum_reduce, 1.5);
+
 void shmem_complexf_sum_to_all(COMPLEXIFY(float) * target,
                                const COMPLEXIFY(float) * source, int nreduce,
                                int PE_start, int logPE_stride, int PE_size,
-                               COMPLEXIFY(float) * pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                               COMPLEXIFY(float) * pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_complexf_sum_reduce, 1.5);
+
 void shmem_double_sum_to_all(double *target, const double *source, int nreduce,
                              int PE_start, int logPE_stride, int PE_size,
-                             double *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                             double *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_double_sum_reduce, 1.5);
+
 void shmem_float_sum_to_all(float *target, const float *source, int nreduce,
                             int PE_start, int logPE_stride, int PE_size,
-                            float *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                            float *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_float_sum_reduce, 1.5);
+
 void shmem_int_sum_to_all(int *target, const int *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                          int *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_int_sum_reduce, 1.5);
+
 void shmem_longdouble_sum_to_all(long double *target, const long double *source,
                                  int nreduce, int PE_start, int logPE_stride,
-                                 int PE_size, long double *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                                 int PE_size, long double *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longdouble_sum_reduce, 1.5);
+
 void shmem_longlong_sum_to_all(long long *target, const long long *source,
                                int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                               int PE_size, long long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longlong_sum_reduce, 1.5);
+
 void shmem_short_sum_to_all(short *target, const short *source, int nreduce,
                             int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync);
+                            short *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_short_sum_reduce, 1.5);
 
-/* see \ref shmem_long_sum_to_all() */
 void shmem_complexd_prod_to_all(COMPLEXIFY(double) * target,
                                 const COMPLEXIFY(double) * source, int nreduce,
                                 int PE_start, int logPE_stride, int PE_size,
-                                COMPLEXIFY(double) * pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                                COMPLEXIFY(double) * pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_complexd_prod_reduce, 1.5);
+
 void shmem_complexf_prod_to_all(COMPLEXIFY(float) * target,
                                 const COMPLEXIFY(float) * source, int nreduce,
                                 int PE_start, int logPE_stride, int PE_size,
-                                COMPLEXIFY(float) * pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                                COMPLEXIFY(float) * pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_complexf_prod_reduce, 1.5);
+
 void shmem_double_prod_to_all(double *target, const double *source, int nreduce,
                               int PE_start, int logPE_stride, int PE_size,
-                              double *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                              double *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_double_prod_reduce, 1.5);
+
 void shmem_float_prod_to_all(float *target, const float *source, int nreduce,
                              int PE_start, int logPE_stride, int PE_size,
-                             float *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                             float *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_float_prod_reduce, 1.5);
+
 void shmem_int_prod_to_all(int *target, const int *source, int nreduce,
                            int PE_start, int logPE_stride, int PE_size,
-                           int *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                           int *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_int_prod_reduce, 1.5);
+
 void shmem_long_prod_to_all(long *target, const long *source, int nreduce,
                             int PE_start, int logPE_stride, int PE_size,
-                            long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                            long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_long_prod_reduce, 1.5);
+
 void shmem_longdouble_prod_to_all(long double *target,
                                   const long double *source, int nreduce,
                                   int PE_start, int logPE_stride, int PE_size,
-                                  long double *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                                  long double *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longdouble_prod_reduce, 1.5);
+
 void shmem_longlong_prod_to_all(long long *target, const long long *source,
                                 int nreduce, int PE_start, int logPE_stride,
-                                int PE_size, long long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                                int PE_size, long long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longlong_prod_reduce, 1.5);
+
 void shmem_short_prod_to_all(short *target, const short *source,
                              const int nreduce, int PE_start, int logPE_stride,
-                             int PE_size, short *pWrk, long *pSync);
+                             int PE_size, short *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_short_prod_reduce, 1.5);
 
-/* see \ref shmem_long_sum_to_all() */
 void shmem_int_and_to_all(int *target, const int *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                          int *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_int_and_reduce, 1.5);
+
 void shmem_long_and_to_all(long *target, const long *source, int nreduce,
                            int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                           long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_long_and_reduce, 1.5);
+
 void shmem_longlong_and_to_all(long long *target, const long long *source,
                                int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                               int PE_size, long long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longlong_and_reduce, 1.5);
+
 void shmem_short_and_to_all(short *target, const short *source, int nreduce,
                             int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync);
+                            short *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_short_and_reduce, 1.5);
 
-/* see \ref shmem_long_sum_to_all() */
 void shmem_int_or_to_all(int *target, const int *source, int nreduce,
                          int PE_start, int logPE_stride, int PE_size, int *pWrk,
-                         long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                         long *pSync) _DEPRECATED_BY(shmem_int_or_reduce, 1.5);
+
 void shmem_long_or_to_all(long *target, const long *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size,
-                          long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                          long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_long_or_reduce, 1.5);
+
 void shmem_longlong_or_to_all(long long *target, const long long *source,
                               int nreduce, int PE_start, int logPE_stride,
-                              int PE_size, long long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                              int PE_size, long long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longlong_or_reduce, 1.5);
+
 void shmem_short_or_to_all(short *target, const short *source, int nreduce,
                            int PE_start, int logPE_stride, int PE_size,
-                           short *pWrk, long *pSync);
+                           short *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_short_or_reduce, 1.5);
 
-/* see \ref shmem_long_sum_to_all() */
 void shmem_int_xor_to_all(int *target, const int *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                          int *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_int_xor_reduce, 1.5);
+
 void shmem_long_xor_to_all(long *target, const long *source, int nreduce,
                            int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                           long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_long_xor_reduce, 1.5);
+
 void shmem_longlong_xor_to_all(long long *target, const long long *source,
                                int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                               int PE_size, long long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longlong_xor_reduce, 1.5);
+
 void shmem_short_xor_to_all(short *target, const short *source, int nreduce,
                             int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync);
+                            short *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_short_xor_reduce, 1.5);
 
-/* see \ref shmem_long_sum_to_all() */
 void shmem_int_max_to_all(int *target, const int *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                          int *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_int_max_reduce, 1.5);
+
 void shmem_long_max_to_all(long *target, const long *source, int nreduce,
                            int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                           long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_long_max_reduce, 1.5);
+
 void shmem_longlong_max_to_all(long long *target, const long long *source,
                                int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                               int PE_size, long long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longlong_max_reduce, 1.5);
+
 void shmem_short_max_to_all(short *target, const short *source, int nreduce,
                             int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                            short *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_short_max_reduce, 1.5);
+
 void shmem_longdouble_max_to_all(long double *target, const long double *source,
                                  int nreduce, int PE_start, int logPE_stride,
-                                 int PE_size, long double *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                                 int PE_size, long double *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longdouble_max_reduce, 1.5);
+
 void shmem_float_max_to_all(float *target, const float *source, int nreduce,
                             int PE_start, int logPE_stride, int PE_size,
-                            float *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                            float *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_float_max_reduce, 1.5);
+
 void shmem_double_max_to_all(double *target, const double *source, int nreduce,
                              int PE_start, int logPE_stride, int PE_size,
-                             double *pWrk, long *pSync);
+                             double *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_double_max_reduce, 1.5);
 
-/* see \ref shmem_long_sum_to_all() */
 void shmem_int_min_to_all(int *target, const int *source, int nreduce,
                           int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                          int *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_int_min_reduce, 1.5);
+
 void shmem_long_min_to_all(long *target, const long *source, int nreduce,
                            int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                           long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_long_min_reduce, 1.5);
+
 void shmem_longlong_min_to_all(long long *target, const long long *source,
                                int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                               int PE_size, long long *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longlong_min_reduce, 1.5);
+
 void shmem_short_min_to_all(short *target, const short *source, int nreduce,
                             int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                            short *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_short_min_reduce, 1.5);
+
 void shmem_longdouble_min_to_all(long double *target, const long double *source,
                                  int nreduce, int PE_start, int logPE_stride,
-                                 int PE_size, long double *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                                 int PE_size, long double *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_longdouble_min_reduce, 1.5);
+
 void shmem_float_min_to_all(float *target, const float *source, int nreduce,
                             int PE_start, int logPE_stride, int PE_size,
-                            float *pWrk, long *pSync);
-/* see \ref shmem_long_sum_to_all() */
+                            float *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_float_min_reduce, 1.5);
+
 void shmem_double_min_to_all(double *target, const double *source, int nreduce,
                              int PE_start, int logPE_stride, int PE_size,
-                             double *pWrk, long *pSync);
+                             double *pWrk, long *pSync)
+    _DEPRECATED_BY(shmem_double_min_reduce, 1.5);
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -3057,7 +3402,7 @@ int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
   void shmem_broadcast##_size(void *target, const void *source, size_t nelems, \
                               int PE_root, int PE_start, int logPE_stride,     \
                               int PE_size, long *pSync)                        \
-      _DEPRECATED_BY(shmem_broadcastmem or shmem_<typename>_broadcast, 1.5);
+      _DEPRECATED_BY(shmem_broadcastmem or shmem_<typename> _broadcast, 1.5);
 
 API_BROADCAST_SIZE(32)
 API_BROADCAST_SIZE(64)
@@ -3220,7 +3565,7 @@ int shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
   void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
                               int PE_start, int logPE_stride, int PE_size,     \
                               long *pSync)                                     \
-      _DEPRECATED_BY(shmem_fcollectmem or shmem_<typename>_fcollect, 1.5);
+      _DEPRECATED_BY(shmem_fcollectmem or shmem_<typename> _fcollect, 1.5);
 
 API_FCOLLECT_SIZE(fcollect, 32)
 API_FCOLLECT_SIZE(fcollect, 64)
@@ -3305,7 +3650,7 @@ int shmem_alltoallmem(shmem_team_t team, void *dest, const void *source,
   void shmem_alltoall##_size(void *target, const void *source, size_t nelems,  \
                              int PE_start, int logPE_stride, int PE_size,      \
                              long *pSync)                                      \
-      _DEPRECATED_BY(shmem_alltoallmem or shmem_<typename>_alltoall, 1.5);
+      _DEPRECATED_BY(shmem_alltoallmem or shmem_<typename> _alltoall, 1.5);
 
 API_ALLTOALL_SIZE(32)
 API_ALLTOALL_SIZE(64)
@@ -3382,7 +3727,7 @@ int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
   void shmem_alltoalls##_size(void *target, const void *source, ptrdiff_t dst, \
                               ptrdiff_t sst, size_t nelems, int PE_start,      \
                               int logPE_stride, int PE_size, long *pSync)      \
-      _DEPRECATED_BY(shmem_alltoallsmem or shmem_<typename>_alltoalls, 1.5);
+      _DEPRECATED_BY(shmem_alltoallsmem or shmem_<typename> _alltoalls, 1.5);
 
 API_ALLTOALLS_SIZE(32)
 API_ALLTOALLS_SIZE(64)

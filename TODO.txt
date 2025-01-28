@@ -23,6 +23,5 @@
   - Update to the current version (if not done already)
 
 - handle pshmem insterface for all the new stuff (if necessary)
-
 - Do we need to deal with extensions for additional types for the collectives?
 

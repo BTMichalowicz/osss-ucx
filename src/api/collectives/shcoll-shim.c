@@ -261,14 +261,16 @@ SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
  * @param team    The team over which to alltoall
  * @param dest    Symmetric destination array on all PEs
  * @param source  Source array on root PE
+ * @param dst     Destination array on root PE
+ * @param sst     Source array on root PE
  * @param nelems  Number of elements to alltoall
  * @return        Zero on success, non-zero on failure
  */
 int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
-                       size_t nelems) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
-         nelems);
-  colls.alltoallsmem.f(team, dest, source, nelems);
+                       ptrdiff_t dst, ptrdiff_t sst, size_t nelems) {
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %td, %td, %d)", __func__, team, dest,
+         source, dst, sst, nelems);
+  colls.alltoallsmem.f(team, dest, source, dst, sst, nelems);
 }
 
 /** @} */
@@ -690,6 +692,7 @@ int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
  * rabenseifner2
  *
  */
+SHIM_TO_ALL_ALL(rec_dbl)
 SHIM_REDUCE_ALL(rec_dbl)
 
 /** @} */
