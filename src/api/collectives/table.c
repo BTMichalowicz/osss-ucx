@@ -33,7 +33,6 @@
  * @brief Macro to register a sized collective operation with 32/64-bit variants
  * @param _op The collective operation name
  * @param _algo The algorithm implementation name
- FIXME: make
  */
 #define SIZED_REG(_op, _algo)                                                  \
   { #_algo, shcoll_##_op##32##_##_algo, shcoll_##_op##64##_##_algo }
@@ -107,6 +106,11 @@
 #define UNTYPED_LAST                                                           \
   { "", NULL }
 
+
+/**
+  TODO: Add separate macros for reduction registration
+ */
+
 /******************************************************** */
 /**
  * @brief Table of alltoall collective algorithms for all types
@@ -159,13 +163,10 @@ static sized_op_t alltoall_size_tab[] = {
 static typed_op_t alltoalls_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_barrier),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_counter),
-    // TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_signal),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_barrier),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_counter),
-    // TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_signal),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_barrier),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_counter),
-    // TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_signal),
     TYPED_LAST};
 
 /**
@@ -174,13 +175,10 @@ static typed_op_t alltoalls_tab[] = {
 static untyped_op_t alltoallsmem_tab[] = {
     UNTYPED_REG(alltoallsmem, shift_exchange_barrier),
     UNTYPED_REG(alltoallsmem, shift_exchange_counter),
-    // UNTYPED_REG(alltoallsmem, shift_exchange_signal),
     UNTYPED_REG(alltoallsmem, xor_pairwise_exchange_barrier),
     UNTYPED_REG(alltoallsmem, xor_pairwise_exchange_counter),
-    // UNTYPED_REG(alltoallsmem, xor_pairwise_exchange_signal),
     UNTYPED_REG(alltoallsmem, color_pairwise_exchange_barrier),
     UNTYPED_REG(alltoallsmem, color_pairwise_exchange_counter),
-    // UNTYPED_REG(alltoallsmem, color_pairwise_exchange_signal),
     UNTYPED_LAST};
 
 /**
@@ -189,13 +187,10 @@ static untyped_op_t alltoallsmem_tab[] = {
 static sized_op_t alltoalls_size_tab[] = {
     SIZED_REG(alltoalls, shift_exchange_barrier),
     SIZED_REG(alltoalls, shift_exchange_counter),
-    // SIZED_REG(alltoalls, shift_exchange_signal),
     SIZED_REG(alltoalls, xor_pairwise_exchange_barrier),
     SIZED_REG(alltoalls, xor_pairwise_exchange_counter),
-    // SIZED_REG(alltoalls, xor_pairwise_exchange_signal),
     SIZED_REG(alltoalls, color_pairwise_exchange_barrier),
     SIZED_REG(alltoalls, color_pairwise_exchange_counter),
-    // SIZED_REG(alltoalls, color_pairwise_exchange_signal),
     SIZED_LAST};
 
 /**

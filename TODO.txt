@@ -4,8 +4,6 @@
   - shmem_broadcastmem
   - shmem_alltoallsmem
 
-- Implement the following:
-  - reductions
 
 
 - All collectives

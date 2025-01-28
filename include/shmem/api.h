@@ -2832,7 +2832,6 @@ API_AND_REDUCE_TYPE(uint16_t, uint16)
 API_AND_REDUCE_TYPE(uint32_t, uint32)
 API_AND_REDUCE_TYPE(uint64_t, uint64)
 
-////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Performs a bitwise OR reduction across a team
  *
@@ -2870,7 +2869,6 @@ API_OR_REDUCE_TYPE(uint32_t, uint32)
 API_OR_REDUCE_TYPE(uint64_t, uint64)
 API_OR_REDUCE_TYPE(size_t, size)
 
-////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Performs a bitwise XOR reduction across a team
  *
@@ -2908,7 +2906,6 @@ API_XOR_REDUCE_TYPE(uint32_t, uint32)
 API_XOR_REDUCE_TYPE(uint64_t, uint64)
 API_XOR_REDUCE_TYPE(size_t, size)
 
-////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Performs a maximum value reduction across a team
  *
@@ -2956,7 +2953,6 @@ API_MAX_REDUCE_TYPE(float, float)
 API_MAX_REDUCE_TYPE(double, double)
 API_MAX_REDUCE_TYPE(long double, longdouble)
 
-////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Performs a minimum value reduction across a team
  *
@@ -3004,7 +3000,6 @@ API_MIN_REDUCE_TYPE(float, float)
 API_MIN_REDUCE_TYPE(double, double)
 API_MIN_REDUCE_TYPE(long double, longdouble)
 
-////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Performs a sum reduction across a team
  *
@@ -3054,7 +3049,6 @@ API_SUM_REDUCE_TYPE(long double, longdouble)
 API_SUM_REDUCE_TYPE(COMPLEXIFY(double), complexd)
 API_SUM_REDUCE_TYPE(COMPLEXIFY(float), complexf)
 
-////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Performs a product reduction across a team
  *
@@ -3105,229 +3099,72 @@ API_PROD_REDUCE_TYPE(COMPLEXIFY(double), complexd)
 API_PROD_REDUCE_TYPE(COMPLEXIFY(float), complexf)
 
 ////////////////////////////////////////////////////////////////////////////////
-void shmem_long_sum_to_all(long *target, const long *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_long_sum_reduce, 1.5);
+/**
+ * @brief Macro to declare legacy reduction operations (deprecated)
+ */
+#define SHMEM_REDUCE_TO_ALL_DECL(_type, _typename, _op)                        \
+  void shmem_##_typename##_##_op##_to_all(                                     \
+      _type *target, const _type *source, int nreduce, int PE_start,           \
+      int logPE_stride, int PE_size, _type *pWrk, long *pSync)                 \
+      _DEPRECATED_BY(shmem_##_typename##_##_op##_reduce, 1.5)
 
-void shmem_complexd_sum_to_all(COMPLEXIFY(double) * target,
-                               const COMPLEXIFY(double) * source, int nreduce,
-                               int PE_start, int logPE_stride, int PE_size,
-                               COMPLEXIFY(double) * pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_complexd_sum_reduce, 1.5);
+/* Declare SUM reductions */
+SHMEM_REDUCE_TO_ALL_DECL(long, long, sum);
+SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(double), complexd, sum);
+SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(float), complexf, sum);
+SHMEM_REDUCE_TO_ALL_DECL(double, double, sum);
+SHMEM_REDUCE_TO_ALL_DECL(float, float, sum);
+SHMEM_REDUCE_TO_ALL_DECL(int, int, sum);
+SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, sum);
+SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, sum);
+SHMEM_REDUCE_TO_ALL_DECL(short, short, sum);
 
-void shmem_complexf_sum_to_all(COMPLEXIFY(float) * target,
-                               const COMPLEXIFY(float) * source, int nreduce,
-                               int PE_start, int logPE_stride, int PE_size,
-                               COMPLEXIFY(float) * pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_complexf_sum_reduce, 1.5);
+/* Declare PROD reductions */
+SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(double), complexd, prod);
+SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(float), complexf, prod);
+SHMEM_REDUCE_TO_ALL_DECL(double, double, prod);
+SHMEM_REDUCE_TO_ALL_DECL(float, float, prod);
+SHMEM_REDUCE_TO_ALL_DECL(int, int, prod);
+SHMEM_REDUCE_TO_ALL_DECL(long, long, prod);
+SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, prod);
+SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, prod);
+SHMEM_REDUCE_TO_ALL_DECL(short, short, prod);
 
-void shmem_double_sum_to_all(double *target, const double *source, int nreduce,
-                             int PE_start, int logPE_stride, int PE_size,
-                             double *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_double_sum_reduce, 1.5);
+/* Declare AND reductions */
+SHMEM_REDUCE_TO_ALL_DECL(int, int, and);
+SHMEM_REDUCE_TO_ALL_DECL(long, long, and);
+SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, and);
+SHMEM_REDUCE_TO_ALL_DECL(short, short, and);
 
-void shmem_float_sum_to_all(float *target, const float *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            float *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_float_sum_reduce, 1.5);
+/* Declare OR reductions */
+SHMEM_REDUCE_TO_ALL_DECL(int, int, or);
+SHMEM_REDUCE_TO_ALL_DECL(long, long, or);
+SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, or);
+SHMEM_REDUCE_TO_ALL_DECL(short, short, or);
 
-void shmem_int_sum_to_all(int *target, const int *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_int_sum_reduce, 1.5);
+/* Declare XOR reductions */
+SHMEM_REDUCE_TO_ALL_DECL(int, int, xor);
+SHMEM_REDUCE_TO_ALL_DECL(long, long, xor);
+SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, xor);
+SHMEM_REDUCE_TO_ALL_DECL(short, short, xor);
 
-void shmem_longdouble_sum_to_all(long double *target, const long double *source,
-                                 int nreduce, int PE_start, int logPE_stride,
-                                 int PE_size, long double *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longdouble_sum_reduce, 1.5);
+/* Declare MAX reductions */
+SHMEM_REDUCE_TO_ALL_DECL(int, int, max);
+SHMEM_REDUCE_TO_ALL_DECL(long, long, max);
+SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, max);
+SHMEM_REDUCE_TO_ALL_DECL(short, short, max);
+SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, max);
+SHMEM_REDUCE_TO_ALL_DECL(float, float, max);
+SHMEM_REDUCE_TO_ALL_DECL(double, double, max);
 
-void shmem_longlong_sum_to_all(long long *target, const long long *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longlong_sum_reduce, 1.5);
-
-void shmem_short_sum_to_all(short *target, const short *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_short_sum_reduce, 1.5);
-
-void shmem_complexd_prod_to_all(COMPLEXIFY(double) * target,
-                                const COMPLEXIFY(double) * source, int nreduce,
-                                int PE_start, int logPE_stride, int PE_size,
-                                COMPLEXIFY(double) * pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_complexd_prod_reduce, 1.5);
-
-void shmem_complexf_prod_to_all(COMPLEXIFY(float) * target,
-                                const COMPLEXIFY(float) * source, int nreduce,
-                                int PE_start, int logPE_stride, int PE_size,
-                                COMPLEXIFY(float) * pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_complexf_prod_reduce, 1.5);
-
-void shmem_double_prod_to_all(double *target, const double *source, int nreduce,
-                              int PE_start, int logPE_stride, int PE_size,
-                              double *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_double_prod_reduce, 1.5);
-
-void shmem_float_prod_to_all(float *target, const float *source, int nreduce,
-                             int PE_start, int logPE_stride, int PE_size,
-                             float *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_float_prod_reduce, 1.5);
-
-void shmem_int_prod_to_all(int *target, const int *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           int *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_int_prod_reduce, 1.5);
-
-void shmem_long_prod_to_all(long *target, const long *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_long_prod_reduce, 1.5);
-
-void shmem_longdouble_prod_to_all(long double *target,
-                                  const long double *source, int nreduce,
-                                  int PE_start, int logPE_stride, int PE_size,
-                                  long double *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longdouble_prod_reduce, 1.5);
-
-void shmem_longlong_prod_to_all(long long *target, const long long *source,
-                                int nreduce, int PE_start, int logPE_stride,
-                                int PE_size, long long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longlong_prod_reduce, 1.5);
-
-void shmem_short_prod_to_all(short *target, const short *source,
-                             const int nreduce, int PE_start, int logPE_stride,
-                             int PE_size, short *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_short_prod_reduce, 1.5);
-
-void shmem_int_and_to_all(int *target, const int *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_int_and_reduce, 1.5);
-
-void shmem_long_and_to_all(long *target, const long *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_long_and_reduce, 1.5);
-
-void shmem_longlong_and_to_all(long long *target, const long long *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longlong_and_reduce, 1.5);
-
-void shmem_short_and_to_all(short *target, const short *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_short_and_reduce, 1.5);
-
-void shmem_int_or_to_all(int *target, const int *source, int nreduce,
-                         int PE_start, int logPE_stride, int PE_size, int *pWrk,
-                         long *pSync) _DEPRECATED_BY(shmem_int_or_reduce, 1.5);
-
-void shmem_long_or_to_all(long *target, const long *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_long_or_reduce, 1.5);
-
-void shmem_longlong_or_to_all(long long *target, const long long *source,
-                              int nreduce, int PE_start, int logPE_stride,
-                              int PE_size, long long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longlong_or_reduce, 1.5);
-
-void shmem_short_or_to_all(short *target, const short *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           short *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_short_or_reduce, 1.5);
-
-void shmem_int_xor_to_all(int *target, const int *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_int_xor_reduce, 1.5);
-
-void shmem_long_xor_to_all(long *target, const long *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_long_xor_reduce, 1.5);
-
-void shmem_longlong_xor_to_all(long long *target, const long long *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longlong_xor_reduce, 1.5);
-
-void shmem_short_xor_to_all(short *target, const short *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_short_xor_reduce, 1.5);
-
-void shmem_int_max_to_all(int *target, const int *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_int_max_reduce, 1.5);
-
-void shmem_long_max_to_all(long *target, const long *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_long_max_reduce, 1.5);
-
-void shmem_longlong_max_to_all(long long *target, const long long *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longlong_max_reduce, 1.5);
-
-void shmem_short_max_to_all(short *target, const short *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_short_max_reduce, 1.5);
-
-void shmem_longdouble_max_to_all(long double *target, const long double *source,
-                                 int nreduce, int PE_start, int logPE_stride,
-                                 int PE_size, long double *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longdouble_max_reduce, 1.5);
-
-void shmem_float_max_to_all(float *target, const float *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            float *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_float_max_reduce, 1.5);
-
-void shmem_double_max_to_all(double *target, const double *source, int nreduce,
-                             int PE_start, int logPE_stride, int PE_size,
-                             double *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_double_max_reduce, 1.5);
-
-void shmem_int_min_to_all(int *target, const int *source, int nreduce,
-                          int PE_start, int logPE_stride, int PE_size,
-                          int *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_int_min_reduce, 1.5);
-
-void shmem_long_min_to_all(long *target, const long *source, int nreduce,
-                           int PE_start, int logPE_stride, int PE_size,
-                           long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_long_min_reduce, 1.5);
-
-void shmem_longlong_min_to_all(long long *target, const long long *source,
-                               int nreduce, int PE_start, int logPE_stride,
-                               int PE_size, long long *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longlong_min_reduce, 1.5);
-
-void shmem_short_min_to_all(short *target, const short *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            short *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_short_min_reduce, 1.5);
-
-void shmem_longdouble_min_to_all(long double *target, const long double *source,
-                                 int nreduce, int PE_start, int logPE_stride,
-                                 int PE_size, long double *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_longdouble_min_reduce, 1.5);
-
-void shmem_float_min_to_all(float *target, const float *source, int nreduce,
-                            int PE_start, int logPE_stride, int PE_size,
-                            float *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_float_min_reduce, 1.5);
-
-void shmem_double_min_to_all(double *target, const double *source, int nreduce,
-                             int PE_start, int logPE_stride, int PE_size,
-                             double *pWrk, long *pSync)
-    _DEPRECATED_BY(shmem_double_min_reduce, 1.5);
+/* Declare MIN reductions */
+SHMEM_REDUCE_TO_ALL_DECL(int, int, min);
+SHMEM_REDUCE_TO_ALL_DECL(long, long, min);
+SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, min);
+SHMEM_REDUCE_TO_ALL_DECL(short, short, min);
+SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, min);
+SHMEM_REDUCE_TO_ALL_DECL(float, float, min);
+SHMEM_REDUCE_TO_ALL_DECL(double, double, min);
 
 ////////////////////////////////////////////////////////////////////////////////
 /**

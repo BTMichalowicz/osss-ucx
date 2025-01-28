@@ -14,6 +14,6 @@
 #include <shcoll/broadcast.h>
 #include <shcoll/collect.h>
 #include <shcoll/fcollect.h>
-#include <shcoll/reduction.h>
+#include <shcoll/reduce.h>
 
 #endif /* ! _SHCOLL_H */
