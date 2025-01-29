@@ -569,9 +569,13 @@
  */
 #define SHIM_REDUCE_BITWISE_TYPES(_op, _algo)                                  \
   SHIM_REDUCE_DECLARE(short, short, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(ushort, unsigned short, _op, _algo)                      \
   SHIM_REDUCE_DECLARE(int, int, _op, _algo)                                    \
+  SHIM_REDUCE_DECLARE(uint, unsigned int, _op, _algo)                          \
   SHIM_REDUCE_DECLARE(long, long, _op, _algo)                                  \
+  SHIM_REDUCE_DECLARE(ulong, unsigned long, _op, _algo)                        \
   SHIM_REDUCE_DECLARE(longlong, long long, _op, _algo)                         \
+  SHIM_REDUCE_DECLARE(ulonglong, unsigned long long, _op, _algo)               \
   SHIM_REDUCE_DECLARE(uint8, uint8_t, _op, _algo)                              \
   SHIM_REDUCE_DECLARE(uint16, uint16_t, _op, _algo)                            \
   SHIM_REDUCE_DECLARE(uint32, uint32_t, _op, _algo)                            \

@@ -81,11 +81,11 @@ $oshcc --version
 # $oshrun $flags -np 4 ./bin/test_alltoall
 # echo
 
-# # --- shmem_alltoalls ---
-# echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
-# $oshcc test_alltoalls.c -o ./bin/test_alltoalls
-# $oshrun $flags -np 4 ./bin/test_alltoalls
-# echo
+# --- shmem_alltoalls ---
+echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
+$oshcc test_alltoalls.c -o ./bin/test_alltoalls
+$oshrun $flags -np 4 ./bin/test_alltoalls
+echo
 
 # # --- shmem_collect ---
 # echo $hline ; echo "  Running shmem_collect test" ; echo $hline
@@ -105,8 +105,8 @@ $oshcc --version
 # $oshrun $flags -np 4 ./bin/test_broadcast
 # echo
 
-# --- shmem_reduce ---
-echo $hline ; echo "  Running shmem_reduce test" ; echo $hline
-$oshcc test_reduce.c -o ./bin/test_reduce
-$oshrun $flags -np 4 ./bin/test_reduce
-echo
+# # --- shmem_reduce ---
+# echo $hline ; echo "  Running shmem_reduce test" ; echo $hline
+# $oshcc test_reduce.c -o ./bin/test_reduce
+# $oshrun $flags -np 4 ./bin/test_reduce
+# echo

@@ -736,260 +736,184 @@
 
  */
 
-// clang-format off
 
-#define SHCOLL_REDUCE_DEFINE(_name)                                           \
-  /* AND operation */                                                         \
-  _name(char_and, char, AND_OP)                                               \
-  _name(schar_and, signed char, AND_OP)                                       \
-  _name(short_and, short, AND_OP)                                             \
-  _name(int_and, int, AND_OP)                                                 \
-  _name(long_and, long, AND_OP)                                               \
-  _name(longlong_and, long long, AND_OP)                                      \
-  _name(ptrdiff_and, ptrdiff_t, AND_OP)                                      \
-  _name(uchar_and, unsigned char, AND_OP)                                     \
-  _name(ushort_and, unsigned short, AND_OP)                                   \
-  _name(uint_and, unsigned int, AND_OP)                                       \
-  _name(ulong_and, unsigned long, AND_OP)                                     \
-  _name(ulonglong_and, unsigned long long, AND_OP)                            \
-  _name(int8_and, int8_t, AND_OP)                                            \
-  _name(int16_and, int16_t, AND_OP)                                          \
-  _name(int32_and, int32_t, AND_OP)                                          \
-  _name(int64_and, int64_t, AND_OP)                                          \
-  _name(uint8_and, uint8_t, AND_OP)                                          \
-  _name(uint16_and, uint16_t, AND_OP)                                        \
-  _name(uint32_and, uint32_t, AND_OP)                                        \
-  _name(uint64_and, uint64_t, AND_OP)                                        \
-  _name(size_and, size_t, AND_OP)                                            \
-                                                                              \
-  /* OR operation */                                                          \
-  _name(char_or, char, OR_OP)                                                 \
-  _name(schar_or, signed char, OR_OP)                                         \
-  _name(short_or, short, OR_OP)                                               \
-  _name(int_or, int, OR_OP)                                                   \
-  _name(long_or, long, OR_OP)                                                 \
-  _name(longlong_or, long long, OR_OP)                                        \
-  _name(ptrdiff_or, ptrdiff_t, OR_OP)                                        \
-  _name(uchar_or, unsigned char, OR_OP)                                       \
-  _name(ushort_or, unsigned short, OR_OP)                                     \
-  _name(uint_or, unsigned int, OR_OP)                                         \
-  _name(ulong_or, unsigned long, OR_OP)                                       \
-  _name(ulonglong_or, unsigned long long, OR_OP)                              \
-  _name(int8_or, int8_t, OR_OP)                                              \
-  _name(int16_or, int16_t, OR_OP)                                            \
-  _name(int32_or, int32_t, OR_OP)                                            \
-  _name(int64_or, int64_t, OR_OP)                                            \
-  _name(uint8_or, uint8_t, OR_OP)                                            \
-  _name(uint16_or, uint16_t, OR_OP)                                          \
-  _name(uint32_or, uint32_t, OR_OP)                                          \
-  _name(uint64_or, uint64_t, OR_OP)                                          \
-  _name(size_or, size_t, OR_OP)                                              \
-                                                                              \
-  /* XOR operation */                                                         \
-  _name(char_xor, char, XOR_OP)                                               \
-  _name(schar_xor, signed char, XOR_OP)                                       \
-  _name(short_xor, short, XOR_OP)                                             \
-  _name(int_xor, int, XOR_OP)                                                 \
-  _name(long_xor, long, XOR_OP)                                               \
-  _name(longlong_xor, long long, XOR_OP)                                      \
-  _name(ptrdiff_xor, ptrdiff_t, XOR_OP)                                      \
-  _name(uchar_xor, unsigned char, XOR_OP)                                     \
-  _name(ushort_xor, unsigned short, XOR_OP)                                   \
-  _name(uint_xor, unsigned int, XOR_OP)                                       \
-  _name(ulong_xor, unsigned long, XOR_OP)                                     \
-  _name(ulonglong_xor, unsigned long long, XOR_OP)                            \
-  _name(int8_xor, int8_t, XOR_OP)                                            \
-  _name(int16_xor, int16_t, XOR_OP)                                          \
-  _name(int32_xor, int32_t, XOR_OP)                                          \
-  _name(int64_xor, int64_t, XOR_OP)                                          \
-  _name(uint8_xor, uint8_t, XOR_OP)                                          \
-  _name(uint16_xor, uint16_t, XOR_OP)                                        \
-  _name(uint32_xor, uint32_t, XOR_OP)                                        \
-  _name(uint64_xor, uint64_t, XOR_OP)                                        \
-  _name(size_xor, size_t, XOR_OP)                                            \
-                                                                              \
-  /* MAX operation */                                                         \
-  _name(char_max, char, MAX_OP)                                               \
-  _name(schar_max, signed char, MAX_OP)                                       \
-  _name(short_max, short, MAX_OP)                                             \
-  _name(int_max, int, MAX_OP)                                                 \
-  _name(long_max, long, MAX_OP)                                               \
-  _name(longlong_max, long long, MAX_OP)                                      \
-  _name(ptrdiff_max, ptrdiff_t, MAX_OP)                                      \
-  _name(uchar_max, unsigned char, MAX_OP)                                     \
-  _name(ushort_max, unsigned short, MAX_OP)                                   \
-  _name(uint_max, unsigned int, MAX_OP)                                       \
-  _name(ulong_max, unsigned long, MAX_OP)                                     \
-  _name(ulonglong_max, unsigned long long, MAX_OP)                            \
-  _name(int8_max, int8_t, MAX_OP)                                            \
-  _name(int16_max, int16_t, MAX_OP)                                          \
-  _name(int32_max, int32_t, MAX_OP)                                          \
-  _name(int64_max, int64_t, MAX_OP)                                          \
-  _name(uint8_max, uint8_t, MAX_OP)                                          \
-  _name(uint16_max, uint16_t, MAX_OP)                                        \
-  _name(uint32_max, uint32_t, MAX_OP)                                        \
-  _name(uint64_max, uint64_t, MAX_OP)                                        \
-  _name(size_max, size_t, MAX_OP)                                            \
-  _name(float_max, float, MAX_OP)                                             \
-  _name(double_max, double, MAX_OP)                                           \
-  _name(longdouble_max, long double, MAX_OP)                                  \
-                                                                              \
-  /* MIN operation */                                                         \
-  _name(char_min, char, MIN_OP)                                               \
-  _name(schar_min, signed char, MIN_OP)                                       \
-  _name(short_min, short, MIN_OP)                                             \
-  _name(int_min, int, MIN_OP)                                                 \
-  _name(long_min, long, MIN_OP)                                               \
-  _name(longlong_min, long long, MIN_OP)                                      \
-  _name(ptrdiff_min, ptrdiff_t, MIN_OP)                                      \
-  _name(uchar_min, unsigned char, MIN_OP)                                     \
-  _name(ushort_min, unsigned short, MIN_OP)                                   \
-  _name(uint_min, unsigned int, MIN_OP)                                       \
-  _name(ulong_min, unsigned long, MIN_OP)                                     \
-  _name(ulonglong_min, unsigned long long, MIN_OP)                            \
-  _name(int8_min, int8_t, MIN_OP)                                            \
-  _name(int16_min, int16_t, MIN_OP)                                          \
-  _name(int32_min, int32_t, MIN_OP)                                          \
-  _name(int64_min, int64_t, MIN_OP)                                          \
-  _name(uint8_min, uint8_t, MIN_OP)                                          \
-  _name(uint16_min, uint16_t, MIN_OP)                                        \
-  _name(uint32_min, uint32_t, MIN_OP)                                        \
-  _name(uint64_min, uint64_t, MIN_OP)                                        \
-  _name(size_min, size_t, MIN_OP)                                            \
-  _name(float_min, float, MIN_OP)                                             \
-  _name(double_min, double, MIN_OP)                                           \
-  _name(longdouble_min, long double, MIN_OP)                                  \
-                                                                              \
-  /* SUM operation */                                                         \
-  _name(char_sum, char, SUM_OP)                                               \
-  _name(schar_sum, signed char, SUM_OP)                                       \
-  _name(short_sum, short, SUM_OP)                                             \
-  _name(int_sum, int, SUM_OP)                                                 \
-  _name(long_sum, long, SUM_OP)                                               \
-  _name(longlong_sum, long long, SUM_OP)                                      \
-  _name(ptrdiff_sum, ptrdiff_t, SUM_OP)                                      \
-  _name(uchar_sum, unsigned char, SUM_OP)                                     \
-  _name(ushort_sum, unsigned short, SUM_OP)                                   \
-  _name(uint_sum, unsigned int, SUM_OP)                                       \
-  _name(ulong_sum, unsigned long, SUM_OP)                                     \
-  _name(ulonglong_sum, unsigned long long, SUM_OP)                            \
-  _name(int8_sum, int8_t, SUM_OP)                                            \
-  _name(int16_sum, int16_t, SUM_OP)                                          \
-  _name(int32_sum, int32_t, SUM_OP)                                          \
-  _name(int64_sum, int64_t, SUM_OP)                                          \
-  _name(uint8_sum, uint8_t, SUM_OP)                                          \
-  _name(uint16_sum, uint16_t, SUM_OP)                                        \
-  _name(uint32_sum, uint32_t, SUM_OP)                                        \
-  _name(uint64_sum, uint64_t, SUM_OP)                                        \
-  _name(size_sum, size_t, SUM_OP)                                            \
-  _name(float_sum, float, SUM_OP)                                             \
-  _name(double_sum, double, SUM_OP)                                           \
-  _name(longdouble_sum, long double, SUM_OP)                                  \
-  _name(complexf_sum, float _Complex, SUM_OP)                                 \
-  _name(complexd_sum, double _Complex, SUM_OP)                                \
-                                                                              \
-  /* PROD operation */                                                        \
-  _name(char_prod, char, PROD_OP)                                             \
-  _name(schar_prod, signed char, PROD_OP)                                     \
-  _name(short_prod, short, PROD_OP)                                           \
-  _name(int_prod, int, PROD_OP)                                               \
-  _name(long_prod, long, PROD_OP)                                             \
-  _name(longlong_prod, long long, PROD_OP)                                    \
-  _name(ptrdiff_prod, ptrdiff_t, PROD_OP)                                    \
-  _name(uchar_prod, unsigned char, PROD_OP)                                   \
-  _name(ushort_prod, unsigned short, PROD_OP)                                 \
-  _name(uint_prod, unsigned int, PROD_OP)                                     \
-  _name(ulong_prod, unsigned long, PROD_OP)                                   \
-  _name(ulonglong_prod, unsigned long long, PROD_OP)                          \
-  _name(int8_prod, int8_t, PROD_OP)                                          \
-  _name(int16_prod, int16_t, PROD_OP)                                        \
-  _name(int32_prod, int32_t, PROD_OP)                                        \
-  _name(int64_prod, int64_t, PROD_OP)                                        \
-  _name(uint8_prod, uint8_t, PROD_OP)                                        \
-  _name(uint16_prod, uint16_t, PROD_OP)                                      \
-  _name(uint32_prod, uint32_t, PROD_OP)                                      \
-  _name(uint64_prod, uint64_t, PROD_OP)                                      \
-  _name(size_prod, size_t, PROD_OP)                                          \
-  _name(float_prod, float, PROD_OP)                                           \
-  _name(double_prod, double, PROD_OP)                                         \
-  _name(longdouble_prod, long double, PROD_OP)                                \
-  _name(complexf_prod, float _Complex, PROD_OP)                               \
+#define SHCOLL_REDUCE_DEFINE(_name)                                   \
+  /* AND operation */                                                 \
+  _name(char_and, char, AND_OP)                                       \
+  _name(schar_and, signed char, AND_OP)                               \
+  _name(short_and, short, AND_OP)                                     \
+  _name(int_and, int, AND_OP)                                         \
+  _name(long_and, long, AND_OP)                                       \
+  _name(longlong_and, long long, AND_OP)                              \
+  _name(ptrdiff_and, ptrdiff_t, AND_OP)                               \
+  _name(uchar_and, unsigned char, AND_OP)                             \
+  _name(ushort_and, unsigned short, AND_OP)                           \
+  _name(uint_and, unsigned int, AND_OP)                               \
+  _name(ulong_and, unsigned long, AND_OP)                             \
+  _name(ulonglong_and, unsigned long long, AND_OP)                    \
+  _name(int8_and, int8_t, AND_OP)                                     \
+  _name(int16_and, int16_t, AND_OP)                                   \
+  _name(int32_and, int32_t, AND_OP)                                   \
+  _name(int64_and, int64_t, AND_OP)                                   \
+  _name(uint8_and, uint8_t, AND_OP)                                   \
+  _name(uint16_and, uint16_t, AND_OP)                                 \
+  _name(uint32_and, uint32_t, AND_OP)                                 \
+  _name(uint64_and, uint64_t, AND_OP)                                 \
+  _name(size_and, size_t, AND_OP)                                     \
+                                                                      \
+  /* OR operation */                                                  \
+  _name(char_or, char, OR_OP)                                         \
+  _name(schar_or, signed char, OR_OP)                                 \
+  _name(short_or, short, OR_OP)                                       \
+  _name(int_or, int, OR_OP)                                           \
+  _name(long_or, long, OR_OP)                                         \
+  _name(longlong_or, long long, OR_OP)                                \
+  _name(ptrdiff_or, ptrdiff_t, OR_OP)                                 \
+  _name(uchar_or, unsigned char, OR_OP)                               \
+  _name(ushort_or, unsigned short, OR_OP)                             \
+  _name(uint_or, unsigned int, OR_OP)                                 \
+  _name(ulong_or, unsigned long, OR_OP)                               \
+  _name(ulonglong_or, unsigned long long, OR_OP)                      \
+  _name(int8_or, int8_t, OR_OP)                                       \
+  _name(int16_or, int16_t, OR_OP)                                     \
+  _name(int32_or, int32_t, OR_OP)                                     \
+  _name(int64_or, int64_t, OR_OP)                                     \
+  _name(uint8_or, uint8_t, OR_OP)                                     \
+  _name(uint16_or, uint16_t, OR_OP)                                   \
+  _name(uint32_or, uint32_t, OR_OP)                                   \
+  _name(uint64_or, uint64_t, OR_OP)                                   \
+  _name(size_or, size_t, OR_OP)                                       \
+                                                                      \
+  /* XOR operation */                                                 \
+  _name(char_xor, char, XOR_OP)                                       \
+  _name(schar_xor, signed char, XOR_OP)                               \
+  _name(short_xor, short, XOR_OP)                                     \
+  _name(int_xor, int, XOR_OP)                                         \
+  _name(long_xor, long, XOR_OP)                                       \
+  _name(longlong_xor, long long, XOR_OP)                              \
+  _name(ptrdiff_xor, ptrdiff_t, XOR_OP)                               \
+  _name(uchar_xor, unsigned char, XOR_OP)                             \
+  _name(ushort_xor, unsigned short, XOR_OP)                           \
+  _name(uint_xor, unsigned int, XOR_OP)                               \
+  _name(ulong_xor, unsigned long, XOR_OP)                             \
+  _name(ulonglong_xor, unsigned long long, XOR_OP)                    \
+  _name(int8_xor, int8_t, XOR_OP)                                     \
+  _name(int16_xor, int16_t, XOR_OP)                                   \
+  _name(int32_xor, int32_t, XOR_OP)                                   \
+  _name(int64_xor, int64_t, XOR_OP)                                   \
+  _name(uint8_xor, uint8_t, XOR_OP)                                   \
+  _name(uint16_xor, uint16_t, XOR_OP)                                 \
+  _name(uint32_xor, uint32_t, XOR_OP)                                 \
+  _name(uint64_xor, uint64_t, XOR_OP)                                 \
+  _name(size_xor, size_t, XOR_OP)                                     \
+                                                                      \
+  /* MAX operation */                                                 \
+  _name(char_max, char, MAX_OP)                                       \
+  _name(schar_max, signed char, MAX_OP)                               \
+  _name(short_max, short, MAX_OP)                                     \
+  _name(int_max, int, MAX_OP)                                         \
+  _name(long_max, long, MAX_OP)                                       \
+  _name(longlong_max, long long, MAX_OP)                              \
+  _name(ptrdiff_max, ptrdiff_t, MAX_OP)                               \
+  _name(uchar_max, unsigned char, MAX_OP)                             \
+  _name(ushort_max, unsigned short, MAX_OP)                           \
+  _name(uint_max, unsigned int, MAX_OP)                               \
+  _name(ulong_max, unsigned long, MAX_OP)                             \
+  _name(ulonglong_max, unsigned long long, MAX_OP)                    \
+  _name(int8_max, int8_t, MAX_OP)                                     \
+  _name(int16_max, int16_t, MAX_OP)                                   \
+  _name(int32_max, int32_t, MAX_OP)                                   \
+  _name(int64_max, int64_t, MAX_OP)                                   \
+  _name(uint8_max, uint8_t, MAX_OP)                                   \
+  _name(uint16_max, uint16_t, MAX_OP)                                 \
+  _name(uint32_max, uint32_t, MAX_OP)                                 \
+  _name(uint64_max, uint64_t, MAX_OP)                                 \
+  _name(size_max, size_t, MAX_OP)                                     \
+  _name(float_max, float, MAX_OP)                                     \
+  _name(double_max, double, MAX_OP)                                   \
+  _name(longdouble_max, long double, MAX_OP)                          \
+                                                                      \
+  /* MIN operation */                                                 \
+  _name(char_min, char, MIN_OP)                                       \
+  _name(schar_min, signed char, MIN_OP)                               \
+  _name(short_min, short, MIN_OP)                                     \
+  _name(int_min, int, MIN_OP)                                         \
+  _name(long_min, long, MIN_OP)                                       \
+  _name(longlong_min, long long, MIN_OP)                              \
+  _name(ptrdiff_min, ptrdiff_t, MIN_OP)                               \
+  _name(uchar_min, unsigned char, MIN_OP)                             \
+  _name(ushort_min, unsigned short, MIN_OP)                           \
+  _name(uint_min, unsigned int, MIN_OP)                               \
+  _name(ulong_min, unsigned long, MIN_OP)                             \
+  _name(ulonglong_min, unsigned long long, MIN_OP)                    \
+  _name(int8_min, int8_t, MIN_OP)                                     \
+  _name(int16_min, int16_t, MIN_OP)                                   \
+  _name(int32_min, int32_t, MIN_OP)                                   \
+  _name(int64_min, int64_t, MIN_OP)                                   \
+  _name(uint8_min, uint8_t, MIN_OP)                                   \
+  _name(uint16_min, uint16_t, MIN_OP)                                 \
+  _name(uint32_min, uint32_t, MIN_OP)                                 \
+  _name(uint64_min, uint64_t, MIN_OP)                                 \
+  _name(size_min, size_t, MIN_OP)                                     \
+  _name(float_min, float, MIN_OP)                                     \
+  _name(double_min, double, MIN_OP)                                   \
+  _name(longdouble_min, long double, MIN_OP)                          \
+                                                                      \
+  /* SUM operation */                                                 \
+  _name(char_sum, char, SUM_OP)                                       \
+  _name(schar_sum, signed char, SUM_OP)                               \
+  _name(short_sum, short, SUM_OP)                                     \
+  _name(int_sum, int, SUM_OP)                                         \
+  _name(long_sum, long, SUM_OP)                                       \
+  _name(longlong_sum, long long, SUM_OP)                              \
+  _name(ptrdiff_sum, ptrdiff_t, SUM_OP)                               \
+  _name(uchar_sum, unsigned char, SUM_OP)                             \
+  _name(ushort_sum, unsigned short, SUM_OP)                           \
+  _name(uint_sum, unsigned int, SUM_OP)                               \
+  _name(ulong_sum, unsigned long, SUM_OP)                             \
+  _name(ulonglong_sum, unsigned long long, SUM_OP)                    \
+  _name(int8_sum, int8_t, SUM_OP)                                     \
+  _name(int16_sum, int16_t, SUM_OP)                                   \
+  _name(int32_sum, int32_t, SUM_OP)                                   \
+  _name(int64_sum, int64_t, SUM_OP)                                   \
+  _name(uint8_sum, uint8_t, SUM_OP)                                   \
+  _name(uint16_sum, uint16_t, SUM_OP)                                 \
+  _name(uint32_sum, uint32_t, SUM_OP)                                 \
+  _name(uint64_sum, uint64_t, SUM_OP)                                 \
+  _name(size_sum, size_t, SUM_OP)                                     \
+  _name(float_sum, float, SUM_OP)                                     \
+  _name(double_sum, double, SUM_OP)                                   \
+  _name(longdouble_sum, long double, SUM_OP)                          \
+  _name(complexf_sum, float _Complex, SUM_OP)                         \
+  _name(complexd_sum, double _Complex, SUM_OP)                        \
+                                                                      \
+  /* PROD operation */                                                \
+  _name(char_prod, char, PROD_OP)                                     \
+  _name(schar_prod, signed char, PROD_OP)                             \
+  _name(short_prod, short, PROD_OP)                                   \
+  _name(int_prod, int, PROD_OP)                                       \
+  _name(long_prod, long, PROD_OP)                                     \
+  _name(longlong_prod, long long, PROD_OP)                            \
+  _name(ptrdiff_prod, ptrdiff_t, PROD_OP)                             \
+  _name(uchar_prod, unsigned char, PROD_OP)                           \
+  _name(ushort_prod, unsigned short, PROD_OP)                         \
+  _name(uint_prod, unsigned int, PROD_OP)                             \
+  _name(ulong_prod, unsigned long, PROD_OP)                           \
+  _name(ulonglong_prod, unsigned long long, PROD_OP)                  \
+  _name(int8_prod, int8_t, PROD_OP)                                   \
+  _name(int16_prod, int16_t, PROD_OP)                                 \
+  _name(int32_prod, int32_t, PROD_OP)                                 \
+  _name(int64_prod, int64_t, PROD_OP)                                 \
+  _name(uint8_prod, uint8_t, PROD_OP)                                 \
+  _name(uint16_prod, uint16_t, PROD_OP)                               \
+  _name(uint32_prod, uint32_t, PROD_OP)                               \
+  _name(uint64_prod, uint64_t, PROD_OP)                               \
+  _name(size_prod, size_t, PROD_OP)                                   \
+  _name(float_prod, float, PROD_OP)                                   \
+  _name(double_prod, double, PROD_OP)                                 \
+  _name(longdouble_prod, long double, PROD_OP)                        \
+  _name(complexf_prod, float _Complex, PROD_OP)                       \
   _name(complexd_prod, double _Complex, PROD_OP)
-
-
-
-
-
-
-
-// #define SHCOLL_REDUCE_DEFINE(_name)                                           \
-  /* AND operation */                                                         \
-  _name(short_and, short, AND_OP)                                             \
-  _name(int_and, int, AND_OP)                                                 \
-  _name(long_and, long, AND_OP)                                               \
-  _name(longlong_and, long long, AND_OP)                                      \
-                                                                              \
-  /* OR operation */                                                          \
-  _name(short_or, short, OR_OP)                                               \
-  _name(int_or, int, OR_OP)                                                   \
-  _name(long_or, long, OR_OP)                                                 \
-  _name(longlong_or, long long, OR_OP)                                        \
-                                                                              \
-  /* XOR operation */                                                         \
-  _name(short_xor, short, XOR_OP)                                             \
-  _name(int_xor, int, XOR_OP)                                                 \
-  _name(long_xor, long, XOR_OP)                                               \
-  _name(longlong_xor, long long, XOR_OP)                                      \
-                                                                              \
-  /* MAX operation */                                                         \
-  _name(short_max, short, MAX_OP)                                             \
-  _name(int_max, int, MAX_OP)                                                 \
-  _name(double_max, double, MAX_OP)                                           \
-  _name(float_max, float, MAX_OP)                                             \
-  _name(long_max, long, MAX_OP)                                               \
-  _name(longdouble_max, long double, MAX_OP)                                  \
-  _name(longlong_max, long long, MAX_OP)                                      \
-                                                                              \
-  /* MIN operation */                                                         \
-  _name(short_min, short, MIN_OP)                                             \
-  _name(int_min, int, MIN_OP)                                                 \
-  _name(double_min, double, MIN_OP)                                           \
-  _name(float_min, float, MIN_OP)                                             \
-  _name(long_min, long, MIN_OP)                                               \
-  _name(longdouble_min, long double, MIN_OP)                                  \
-  _name(longlong_min, long long, MIN_OP)                                      \
-                                                                              \
-  /* SUM operation */                                                         \
-  _name(complexd_sum, double _Complex, SUM_OP)                                \
-  _name(complexf_sum, float _Complex, SUM_OP)                                 \
-  _name(short_sum, short, SUM_OP)                                             \
-  _name(int_sum, int, SUM_OP)                                                 \
-  _name(double_sum, double, SUM_OP)                                           \
-  _name(float_sum, float, SUM_OP)                                             \
-  _name(long_sum, long, SUM_OP)                                               \
-  _name(longdouble_sum, long double, SUM_OP)                                  \
-  _name(longlong_sum, long long, SUM_OP)                                      \
-                                                                              \
-  /* PROD operation */                                                        \
-  _name(complexd_prod, double _Complex, PROD_OP)                              \
-  _name(complexf_prod, float _Complex, PROD_OP)                               \
-  _name(short_prod, short, PROD_OP)                                           \
-  _name(int_prod, int, PROD_OP)                                               \
-  _name(double_prod, double, PROD_OP)                                         \
-  _name(float_prod, float, PROD_OP)                                           \
-  _name(long_prod, long, PROD_OP)                                             \
-  _name(longdouble_prod, long double, PROD_OP)                                \
-  _name(longlong_prod, long long, PROD_OP)
-/* @formatter:off */
-
-
-
-/*
-
-  FIXME: which of these below are actually getting called?
-         I'm confused because we aren't using CMake?
-
- */
 
 #ifndef CMAKE
 SHCOLL_REDUCE_DEFINE(REDUCE_HELPER_LOCAL)
