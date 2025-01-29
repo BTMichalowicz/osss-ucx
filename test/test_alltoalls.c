@@ -145,19 +145,19 @@ int main(void) {
   shmem_init();
   int mype = shmem_my_pe();
 
-//   if (mype == 0) {
-//     printf(HLINE "\n");
-//     printf("    Running alltoalls64 test\n");
-//     printf(HLINE "\n");
-//   }
-//   test_alltoalls64();
+  if (mype == 0) {
+    printf(HLINE "\n");
+    printf("    Running alltoalls64 test\n");
+    printf(HLINE "\n");
+  }
+  test_alltoalls64();
 
-//   if (mype == 0) {
-//     printf(HLINE "\n");
-//     printf("    Running alltoalls_type test\n");
-//     printf(HLINE "\n");
-//   }
-//   test_alltoalls_type();
+  if (mype == 0) {
+    printf(HLINE "\n");
+    printf("    Running alltoalls_type test\n");
+    printf(HLINE "\n");
+  }
+  test_alltoalls_type();
 
   if (mype == 0) {
     printf(HLINE "\n");
