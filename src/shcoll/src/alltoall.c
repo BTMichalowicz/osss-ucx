@@ -243,7 +243,6 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
   void shcoll_alltoall##_size##_##_algo(                                       \
       void *dest, const void *source, size_t nelems, int PE_start,             \
       int logPE_stride, int PE_size, long *pSync) {                            \
-    printf("Running shcoll_alltoall%d_%s\n", _size, #_algo);                   \
     alltoall_helper_##_algo(dest, source, (_size) / (CHAR_BIT) * nelems,       \
                             PE_start, logPE_stride, PE_size, pSync);           \
   }
@@ -289,6 +288,7 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
 #define SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, _type, _typename)               \
   int shcoll_##_typename##_alltoall_##_algo(                                   \
       shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
+    printf("Running shcoll_%s_alltoall_%s\n", #_typename, #_algo);              \
     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
     int logPE_stride = 0;                                                      \
     int PE_size = shmem_team_n_pes(team);                                      \

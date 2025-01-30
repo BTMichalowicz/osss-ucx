@@ -246,7 +246,7 @@ SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
  * @param _peer Macro/function to calculate peer PE for exchanges
  * @param _cond Additional condition that must be met for PE participation
  */
-#define ALLTOALL_TEAM_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)           \
+#define ALLTOALLS_TEAM_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)          \
   inline static int alltoalls_team_helper_##_algo##_barrier(                   \
       void *dest, const void *source, ptrdiff_t dst_stride,                    \
       ptrdiff_t sst_stride, size_t nelems, int PE_start, int logPE_stride,     \
@@ -290,7 +290,7 @@ SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
 
  TODO: not yet tested and probably doesn't work
  */
-#define ALLTOALL_TEAM_HELPER_COUNTER_DEFINITION(_algo, _peer, _cond)           \
+#define ALLTOALLS_TEAM_HELPER_COUNTER_DEFINITION(_algo, _peer, _cond)          \
   inline static int alltoalls_team_helper_##_algo##_counter(                   \
       void *dest, const void *source, ptrdiff_t dst_stride,                    \
       ptrdiff_t sst_stride, size_t nelems, int PE_start, int logPE_stride,     \
@@ -329,19 +329,19 @@ SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
     return 0;                                                                  \
   }
 
-// Generate barrier-based helpers for each algorithm
-ALLTOALL_TEAM_HELPER_BARRIER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
-ALLTOALL_TEAM_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, XOR_PEER,
-                                        XOR_COND)
-ALLTOALL_TEAM_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
-                                        COLOR_COND)
+/* Generate barrier-based helpers for each algorithm */
+ALLTOALLS_TEAM_HELPER_BARRIER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
+ALLTOALLS_TEAM_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, XOR_PEER,
+                                         XOR_COND)
+ALLTOALLS_TEAM_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
+                                         COLOR_COND)
 
-// Generate counter-based helpers for each algorithm
-ALLTOALL_TEAM_HELPER_COUNTER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
-ALLTOALL_TEAM_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, XOR_PEER,
-                                        XOR_COND)
-ALLTOALL_TEAM_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
-                                        COLOR_COND)
+/* Generate counter-based helpers for each algorithm */
+ALLTOALLS_TEAM_HELPER_COUNTER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
+ALLTOALLS_TEAM_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, XOR_PEER,
+                                         XOR_COND)
+ALLTOALLS_TEAM_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
+                                         COLOR_COND)
 
 // @formatter:on
 
@@ -437,6 +437,19 @@ SHCOLL_ALLTOALLSMEM_DEFINITION(xor_pairwise_exchange_counter)
 
 SHCOLL_ALLTOALLSMEM_DEFINITION(color_pairwise_exchange_barrier)
 SHCOLL_ALLTOALLSMEM_DEFINITION(color_pairwise_exchange_counter)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -143,24 +143,29 @@ void shmemc_env_init(void) {
   proc.env.coll.barrier_all = NULL;
   proc.env.coll.sync = NULL;
   proc.env.coll.sync_all = NULL;
+
   proc.env.coll.broadcast = NULL;
   proc.env.coll.broadcastmem = NULL;
+  proc.env.coll.broadcast_size = NULL;
+
   proc.env.coll.collect = NULL;
   proc.env.coll.collectmem = NULL;
+  proc.env.coll.collect_size = NULL;
+
   proc.env.coll.fcollect = NULL;
   proc.env.coll.fcollectmem = NULL;
+  proc.env.coll.fcollect_size = NULL;
+
   proc.env.coll.alltoall = NULL;
   proc.env.coll.alltoallmem = NULL;
+  proc.env.coll.alltoall_size = NULL;
+
+
   proc.env.coll.alltoalls = NULL;
   proc.env.coll.alltoallsmem = NULL;
-  proc.env.coll.reductions = NULL;
-
-  /* Deprecated */
-  proc.env.coll.alltoall_size = NULL;
   proc.env.coll.alltoalls_size = NULL;
-  proc.env.coll.collect_size = NULL;
-  proc.env.coll.fcollect_size = NULL;
-  proc.env.coll.broadcast_size = NULL;
+  
+  proc.env.coll.reductions = NULL;
 
   /* Initialize from environment variables with defaults */
   CHECK_ENV(e, BARRIER_ALGO);

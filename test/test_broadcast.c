@@ -4,6 +4,8 @@
 #include "../build/build/include/shmem.h"
 
 #define ARRAY_SIZE 10
+#define NELEMS 4
+#define HLINE "----------------------------------------"
 
 // Helper function to verify broadcast results
 static int verify_broadcast(const void *dest, const void *source, size_t nelems,
@@ -125,14 +127,14 @@ static void test_sized_broadcast() {
   long *pSync = (long *)shmem_malloc(SHMEM_BCAST_SYNC_SIZE * sizeof(long));
 
   if (!source || !dest || !pSync) {
-    printf("PE %d: Failed to allocate memory: source=%p dest=%p pSync=%p\n",
-           me, (void*)source, (void*)dest, (void*)pSync);
+    printf("PE %d: Failed to allocate memory: source=%p dest=%p pSync=%p\n", me,
+           (void *)source, (void *)dest, (void *)pSync);
     return;
   }
 
   // Print addresses
-  printf("PE %d: source=%p dest=%p pSync=%p\n", 
-         me, (void*)source, (void*)dest, (void*)pSync);
+  printf("PE %d: source=%p dest=%p pSync=%p\n", me, (void *)source,
+         (void *)dest, (void *)pSync);
 
   // Initialize arrays to known values
   for (int i = 0; i < ARRAY_SIZE; i++) {
@@ -155,13 +157,13 @@ static void test_sized_broadcast() {
   // Test 32-bit broadcast
   printf("PE %d: Calling broadcast\n", me);
   shmem_broadcast32(dest,       // dest
-                   source,     // source
-                   ARRAY_SIZE, // nelems
-                   root,       // PE_root
-                   0,          // PE_start
-                   0,          // logPE_stride
-                   npes,       // PE_size
-                   pSync);     // pSync
+                    source,     // source
+                    ARRAY_SIZE, // nelems
+                    root,       // PE_root
+                    0,          // PE_start
+                    0,          // logPE_stride
+                    npes,       // PE_size
+                    pSync);     // pSync
 
   printf("PE %d: Broadcast completed\n", me);
   shmem_barrier_all();
@@ -193,20 +195,212 @@ static void test_sized_broadcast() {
   shmem_free(pSync);
 }
 
+/* Test sized broadcast (64 bit) */
+void test_broadcast32() {
+  int mype = shmem_my_pe();
+  int npes = shmem_n_pes();
+  int root = 0;
+
+  /* Allocate arrays */
+  int *source = shmem_malloc(NELEMS * sizeof(int));
+  int *dest = shmem_malloc(NELEMS * sizeof(int));
+  long *pSync = shmem_malloc(SHMEM_BCAST_SYNC_SIZE * sizeof(long));
+
+  if (!source || !dest || !pSync) {
+    printf("Failed to allocate memory\n");
+    return;
+  }
+
+  /* Initialize pSync */
+  for (int i = 0; i < SHMEM_BCAST_SYNC_SIZE; i++) {
+    pSync[i] = SHMEM_SYNC_VALUE;
+  }
+
+  /* Initialize source array */
+  if (mype == root) {
+    for (int i = 0; i < NELEMS; i++) {
+      source[i] = i + 1; // 1, 2, 3, 4
+    }
+    printf("PE %d: Original = ", mype);
+    for (int i = 0; i < NELEMS; i++) {
+      printf("%d ", source[i]);
+    }
+    printf("\n");
+  } else {
+    for (int i = 0; i < NELEMS; i++) {
+      source[i] = -1;
+    }
+  }
+
+  /* Initialize dest array */
+  for (int i = 0; i < NELEMS; i++) {
+    dest[i] = -1;
+  }
+
+  shmem_barrier_all();
+
+  /* Perform broadcast */
+  shmem_broadcast32(dest, source, NELEMS, root, 0, 0, npes, pSync);
+
+  /* Verify results */
+  if (mype == 1) { // Have a non-root PE show its results
+    printf("PE %d: Result = ", mype);
+    for (int i = 0; i < NELEMS; i++) {
+      printf("%d ", dest[i]);
+    }
+    printf("\n");
+  }
+
+  shmem_barrier_all();
+  shmem_free(source);
+  shmem_free(dest);
+  shmem_free(pSync);
+}
+
+/* Test typed broadcast */
+void test_broadcast_type() {
+  int mype = shmem_my_pe();
+  int npes = shmem_n_pes();
+  int root = 0;
+
+  /* Allocate arrays */
+  int *source = shmem_malloc(NELEMS * sizeof(int));
+  int *dest = shmem_malloc(NELEMS * sizeof(int));
+
+  if (!source || !dest) {
+    printf("Failed to allocate memory\n");
+    return;
+  }
+
+  /* Initialize source array */
+  if (mype == root) {
+    for (int i = 0; i < NELEMS; i++) {
+      source[i] = i + 1; // 1, 2, 3, 4
+    }
+    printf("PE %d: Original = ", mype);
+    for (int i = 0; i < NELEMS; i++) {
+      printf("%d ", source[i]);
+    }
+    printf("\n");
+  } else {
+    for (int i = 0; i < NELEMS; i++) {
+      source[i] = -1;
+    }
+  }
+
+  /* Initialize dest array */
+  for (int i = 0; i < NELEMS; i++) {
+    dest[i] = -1;
+  }
+
+  shmem_barrier_all();
+
+  /* Perform broadcast */
+  shmem_int_broadcast(SHMEM_TEAM_WORLD, dest, source, NELEMS, root);
+
+  /* Verify results */
+  if (mype == 1) { // Have a non-root PE show its results
+    printf("PE %d: Result = ", mype);
+    for (int i = 0; i < NELEMS; i++) {
+      printf("%d ", dest[i]);
+    }
+    printf("\n");
+  }
+
+  shmem_barrier_all();
+  shmem_free(source);
+  shmem_free(dest);
+}
+
+/* Test broadcastmem */
+void test_broadcastmem() {
+  int mype = shmem_my_pe();
+  int npes = shmem_n_pes();
+  int root = 0;
+
+  /* Allocate arrays */
+  int *source = shmem_malloc(NELEMS * sizeof(int));
+  int *dest = shmem_malloc(NELEMS * sizeof(int));
+
+  if (!source || !dest) {
+    printf("Failed to allocate memory\n");
+    return;
+  }
+
+  /* Initialize source array */
+  if (mype == root) {
+    for (int i = 0; i < NELEMS; i++) {
+      source[i] = i + 1; // 1, 2, 3, 4
+    }
+    printf("PE %d: Original = ", mype);
+    for (int i = 0; i < NELEMS; i++) {
+      printf("%d ", source[i]);
+    }
+    printf("\n");
+  } else {
+    for (int i = 0; i < NELEMS; i++) {
+      source[i] = -1;
+    }
+  }
+
+  /* Initialize dest array */
+  for (int i = 0; i < NELEMS; i++) {
+    dest[i] = -1;
+  }
+
+  shmem_barrier_all();
+
+  /* Perform broadcast */
+  shmem_broadcastmem(SHMEM_TEAM_WORLD, dest, source, NELEMS * sizeof(int),
+                     root);
+
+  /* Verify results */
+  if (mype == 1) { // Have a non-root PE show its results
+    printf("PE %d: Result = ", mype);
+    for (int i = 0; i < NELEMS; i++) {
+      printf("%d ", dest[i]);
+    }
+    printf("\n");
+  }
+
+  shmem_barrier_all();
+  shmem_free(source);
+  shmem_free(dest);
+}
+
 int main(void) {
   shmem_init();
 
   int me = shmem_my_pe();
   if (me == 0)
     printf("Starting broadcast tests\n");
-
-  test_sized_broadcast();
   shmem_barrier_all();
 
-  test_typed_broadcast();
+  if (me == 0) {
+    printf(HLINE "\n");
+    printf("    Running broadcast32 test\n");
+    printf(HLINE "\n");
+  }
+  shmem_barrier_all();
+  test_broadcast32();
   shmem_barrier_all();
 
-  test_broadcast_mem();
+  if (me == 0) {
+    printf(HLINE "\n");
+    printf("    Running broadcast_type test\n");
+    printf(HLINE "\n");
+  }
+  shmem_barrier_all();
+  test_broadcast_type();
+  shmem_barrier_all();
+
+  if (me == 0) {
+    printf(HLINE "\n");
+    printf("    Running broadcastmem test\n");
+    printf(HLINE "\n");
+  }
+  shmem_barrier_all();
+  test_broadcastmem();
   shmem_barrier_all();
 
   if (me == 0)

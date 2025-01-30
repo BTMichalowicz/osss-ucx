@@ -497,6 +497,11 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
   int shcoll_##_typename##_broadcast_##_algo(shmem_team_t team, _type *dest,   \
                                              const _type *source,              \
                                              size_t nelems, int PE_root) {     \
+    shmem_barrier_all();                                                       \
+    printf("PE %d: shcoll_%s_broadcast_%s\n", shmem_my_pe(), #_typename,       \
+           #_algo);                                                            \
+    shmem_barrier_all();                                                       \
+                                                                               \
     int PE_size = shmem_team_n_pes(team);                                      \
     int PE_start = shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD);   \
     int logPE_stride = 0;                                                      \
