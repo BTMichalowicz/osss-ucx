@@ -33,11 +33,11 @@ $oshcc --version
 #                          TESTS
 ################################################################
 
-# --- Hello world ---
-echo $hline ; echo "  Running Hello World test" ; echo $hline
-$oshcc hello_world.c -o ./bin/hello_world
-$oshrun $flags -np 2 ./bin/hello_world
-echo
+# # --- Hello world ---
+# echo $hline ; echo "  Running Hello World test" ; echo $hline
+# $oshcc hello_world.c -o ./bin/hello_world
+# $oshrun $flags -np 2 ./bin/hello_world
+# echo
 
 # # --- shmem_put ---
 # echo $hline ; echo "  Running shmem_put test" ; echo $hline
@@ -87,11 +87,11 @@ echo
 # $oshrun $flags -np 4 ./bin/test_alltoalls
 # echo
 
-# # --- shmem_collect ---
-# echo $hline ; echo "  Running shmem_collect test" ; echo $hline
-# $oshcc test_collect.c -o ./bin/test_collect
-# $oshrun $flags -np 4 ./bin/test_collect
-# echo
+# --- shmem_collect ---
+echo $hline ; echo "  Running shmem_collect test" ; echo $hline
+$oshcc test_collect.c -o ./bin/test_collect
+$oshrun $flags -np 4 ./bin/test_collect
+echo
 
 # # --- shmem_fcollect ---
 # echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
