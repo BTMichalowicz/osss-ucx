@@ -106,7 +106,6 @@
 #define UNTYPED_LAST                                                           \
   { "", NULL }
 
-
 /**
   TODO: Add separate macros for reduction registration
  */
@@ -115,7 +114,7 @@
 /**
  * @brief Table of alltoall collective algorithms for all types
  */
-static typed_op_t alltoall_tab[] = {
+static typed_op_t alltoall_type_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_barrier),
     TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_counter),
     TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_signal),
@@ -130,7 +129,7 @@ static typed_op_t alltoall_tab[] = {
 /**
  * @brief Table of generic alltoallmem collective algorithms
  */
-static untyped_op_t alltoallmem_tab[] = {
+static untyped_op_t alltoall_mem_tab[] = {
     UNTYPED_REG(alltoallmem, shift_exchange_barrier),
     UNTYPED_REG(alltoallmem, shift_exchange_counter),
     UNTYPED_REG(alltoallmem, shift_exchange_signal),
@@ -160,7 +159,7 @@ static sized_op_t alltoall_size_tab[] = {
 /**
  * @brief Table of alltoalls collective algorithms for all types
  */
-static typed_op_t alltoalls_tab[] = {
+static typed_op_t alltoalls_type_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_barrier),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_counter),
     TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_barrier),
@@ -172,7 +171,7 @@ static typed_op_t alltoalls_tab[] = {
 /**
  * @brief Table of generic alltoalls (deprecated)
  */
-static untyped_op_t alltoallsmem_tab[] = {
+static untyped_op_t alltoalls_mem_tab[] = {
     UNTYPED_REG(alltoallsmem, shift_exchange_barrier),
     UNTYPED_REG(alltoallsmem, shift_exchange_counter),
     UNTYPED_REG(alltoallsmem, xor_pairwise_exchange_barrier),
@@ -196,7 +195,7 @@ static sized_op_t alltoalls_size_tab[] = {
 /**
  * @brief Table of collect collective algorithms
  */
-static typed_op_t collect_tab[] = {
+static typed_op_t collect_type_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(collect, linear),
     TYPED_REG_FOR_ALL_TYPES(collect, all_linear),
     TYPED_REG_FOR_ALL_TYPES(collect, all_linear1),
@@ -210,7 +209,7 @@ static typed_op_t collect_tab[] = {
 /**
  * @brief Table of generic collectmem (deprecated)
  */
-static untyped_op_t collectmem_tab[] = {
+static untyped_op_t collect_mem_tab[] = {
     UNTYPED_REG(collectmem, linear),
     UNTYPED_REG(collectmem, all_linear),
     UNTYPED_REG(collectmem, all_linear1),
@@ -237,7 +236,7 @@ static sized_op_t collect_size_tab[] = {SIZED_REG(collect, linear),
 /**
  * @brief Table of fcollect collective algorithms
  */
-static typed_op_t fcollect_tab[] = {
+static typed_op_t fcollect_type_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(fcollect, linear),
     TYPED_REG_FOR_ALL_TYPES(fcollect, all_linear),
     TYPED_REG_FOR_ALL_TYPES(fcollect, all_linear1),
@@ -253,7 +252,7 @@ static typed_op_t fcollect_tab[] = {
 /**
  * @brief Table of generic fcollectmem (deprecated)
  */
-static untyped_op_t fcollectmem_tab[] = {
+static untyped_op_t fcollect_mem_tab[] = {
     UNTYPED_REG(fcollectmem, linear),
     UNTYPED_REG(fcollectmem, all_linear),
     UNTYPED_REG(fcollectmem, all_linear1),
@@ -319,7 +318,7 @@ static unsized_op_t sync_tab[] = {
 /**
  * @brief Table of broadcast collective algorithms
  */
-static typed_op_t broadcast_tab[] = {
+static typed_op_t broadcast_type_tab[] = {
     TYPED_REG_FOR_ALL_TYPES(broadcast, linear),
     TYPED_REG_FOR_ALL_TYPES(broadcast, complete_tree),
     TYPED_REG_FOR_ALL_TYPES(broadcast, binomial_tree),
@@ -331,7 +330,7 @@ static typed_op_t broadcast_tab[] = {
 /**
  * @brief Table of generic broadcastmem (deprecated)
  */
-static untyped_op_t broadcastmem_tab[] = {
+static untyped_op_t broadcast_mem_tab[] = {
     UNTYPED_REG(broadcastmem, linear),
     UNTYPED_REG(broadcastmem, complete_tree),
     UNTYPED_REG(broadcastmem, binomial_tree),
@@ -413,16 +412,30 @@ static int register_unsized(unsized_op_t *tabp, const char *op, coll_fn_t *fn) {
  * @param op Operation name to register
  * @param fn Pointer to store function pointer
  * @return 0 on success, -1 if operation not found
+
+ FIXME: this is not working as expected.
+
  */
 static int register_typed(typed_op_t *tabp, const char *op,
                           typed_coll_fn_t *fn) {
   typed_op_t *p;
+  char base_op[COLL_NAME_MAX];
 
+  /* Strip _type suffix if present */
+  size_t len = strlen(op);
+  if (len > 5 && strcmp(op + len - 5, "_type") == 0) {
+    strncpy(base_op, op, len - 5);
+    base_op[len - 5] = '\0';
+  } else {
+    strncpy(base_op, op, COLL_NAME_MAX - 1);
+    base_op[COLL_NAME_MAX - 1] = '\0';
+  }
+
+  /* Look up operation by name and type */
   for (p = tabp; p->f != NULL; ++p) {
-    if (strncmp(op, p->op, COLL_NAME_MAX) == 0) {
+    if (strncmp(base_op, p->op, COLL_NAME_MAX) == 0) {
       *fn = p->f;
       return 0;
-      /* NOT REACHED */
     }
   }
   return -1;
@@ -438,9 +451,19 @@ static int register_typed(typed_op_t *tabp, const char *op,
 static int register_untyped(untyped_op_t *tabp, const char *op,
                             untyped_coll_fn_t *fn) {
   untyped_op_t *p;
+  char op_name[COLL_NAME_MAX];
+  const char *mem_suffix = "_mem";
+
+  // Copy op name and handle _mem suffix
+  strncpy(op_name, op, COLL_NAME_MAX);
+  char *suffix_pos = strstr(op_name, mem_suffix);
+  if (suffix_pos != NULL) {
+    // Remove the underscore by shifting chars left
+    memmove(suffix_pos, suffix_pos + 1, strlen(suffix_pos));
+  }
 
   for (p = tabp; p->f != NULL; ++p) {
-    if (strncmp(op, p->op, COLL_NAME_MAX) == 0) {
+    if (strncmp(op_name, p->op, COLL_NAME_MAX) == 0) {
       *fn = p->f;
       return 0;
     }
@@ -492,24 +515,24 @@ coll_ops_t colls;
   }
 
 /* Register all collectives */
-REGISTER_TYPED(alltoall)
-REGISTER_UNTYPED(alltoallmem)
+REGISTER_TYPED(alltoall_type)
+REGISTER_UNTYPED(alltoall_mem)
 REGISTER_SIZED(alltoall_size)
 
-REGISTER_TYPED(alltoalls)
-REGISTER_UNTYPED(alltoallsmem)
+REGISTER_TYPED(alltoalls_type)
+REGISTER_UNTYPED(alltoalls_mem)
 REGISTER_SIZED(alltoalls_size)
 
-REGISTER_TYPED(collect)
-REGISTER_UNTYPED(collectmem)
+REGISTER_TYPED(collect_type)
+REGISTER_UNTYPED(collect_mem)
 REGISTER_SIZED(collect_size)
 
-REGISTER_TYPED(fcollect)
-REGISTER_UNTYPED(fcollectmem)
+REGISTER_TYPED(fcollect_type)
+REGISTER_UNTYPED(fcollect_mem)
 REGISTER_SIZED(fcollect_size)
 
-REGISTER_TYPED(broadcast)
-REGISTER_UNTYPED(broadcastmem)
+REGISTER_TYPED(broadcast_type)
+REGISTER_UNTYPED(broadcast_mem)
 REGISTER_SIZED(broadcast_size)
 
 REGISTER_UNSIZED(barrier_all)

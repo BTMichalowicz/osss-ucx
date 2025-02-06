@@ -144,25 +144,24 @@ void shmemc_env_init(void) {
   proc.env.coll.sync = NULL;
   proc.env.coll.sync_all = NULL;
 
-  proc.env.coll.broadcast = NULL;
-  proc.env.coll.broadcastmem = NULL;
+  proc.env.coll.broadcast_type = NULL;
+  proc.env.coll.broadcast_mem = NULL;
   proc.env.coll.broadcast_size = NULL;
 
-  proc.env.coll.collect = NULL;
-  proc.env.coll.collectmem = NULL;
+  proc.env.coll.collect_type = NULL;
+  proc.env.coll.collect_mem = NULL;
   proc.env.coll.collect_size = NULL;
 
-  proc.env.coll.fcollect = NULL;
-  proc.env.coll.fcollectmem = NULL;
+  proc.env.coll.fcollect_type = NULL;
+  proc.env.coll.fcollect_mem = NULL;
   proc.env.coll.fcollect_size = NULL;
 
-  proc.env.coll.alltoall = NULL;
-  proc.env.coll.alltoallmem = NULL;
+  proc.env.coll.alltoall_type = NULL;
+  proc.env.coll.alltoall_mem = NULL;
   proc.env.coll.alltoall_size = NULL;
 
-
-  proc.env.coll.alltoalls = NULL;
-  proc.env.coll.alltoallsmem = NULL;
+  proc.env.coll.alltoalls_type = NULL;
+  proc.env.coll.alltoalls_mem = NULL;
   proc.env.coll.alltoalls_size = NULL;
   
   proc.env.coll.reductions = NULL;
@@ -178,29 +177,29 @@ void shmemc_env_init(void) {
   proc.env.coll.sync_all = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC_ALL);
 
   CHECK_ENV(e, BROADCAST_ALGO);
-  proc.env.coll.broadcast = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
+  proc.env.coll.broadcast_type = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
   CHECK_ENV(e, BROADCASTMEM_ALGO);
-  proc.env.coll.broadcastmem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
+  proc.env.coll.broadcast_mem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
 
   CHECK_ENV(e, COLLECT_ALGO);
-  proc.env.coll.collect = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
+  proc.env.coll.collect_type = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
   CHECK_ENV(e, COLLECTMEM_ALGO);
-  proc.env.coll.collectmem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
+  proc.env.coll.collect_mem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
 
   CHECK_ENV(e, FCOLLECT_ALGO);
-  proc.env.coll.fcollect = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
+  proc.env.coll.fcollect_type = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
   CHECK_ENV(e, FCOLLECTMEM_ALGO);
-  proc.env.coll.fcollectmem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
+  proc.env.coll.fcollect_mem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
 
   CHECK_ENV(e, ALLTOALL_ALGO);
-  proc.env.coll.alltoall = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
+  proc.env.coll.alltoall_type = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
   CHECK_ENV(e, ALLTOALLMEM_ALGO);
-  proc.env.coll.alltoallmem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
+  proc.env.coll.alltoall_mem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
 
   CHECK_ENV(e, ALLTOALLS_ALGO);
-  proc.env.coll.alltoalls = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
+  proc.env.coll.alltoalls_type = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
   CHECK_ENV(e, ALLTOALLSMEM_ALGO);
-  proc.env.coll.alltoallsmem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
+  proc.env.coll.alltoalls_mem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
 
   /* Deprecated sized variants */
   CHECK_ENV(e, ALLTOALL_SIZE_ALGO);
@@ -271,27 +270,31 @@ void shmemc_env_finalize(void) {
 
   /* Free all collective algorithm strings */
   free(proc.env.coll.reductions);
-  free(proc.env.coll.alltoalls);
-  free(proc.env.coll.alltoallsmem);
-  free(proc.env.coll.alltoall);
-  free(proc.env.coll.alltoallmem);
-  free(proc.env.coll.fcollect);
-  free(proc.env.coll.fcollectmem);
-  free(proc.env.coll.collect);
-  free(proc.env.coll.collectmem);
+
+  free(proc.env.coll.alltoalls_size);
+  free(proc.env.coll.alltoalls_type);
+  free(proc.env.coll.alltoalls_mem);
+
+  free(proc.env.coll.alltoall_size);
+  free(proc.env.coll.alltoall_type);
+  free(proc.env.coll.alltoall_mem);
+
+  free(proc.env.coll.fcollect_size);
+  free(proc.env.coll.fcollect_type);
+  free(proc.env.coll.fcollect_mem);
+
+  free(proc.env.coll.collect_size);
+  free(proc.env.coll.collect_type);
+  free(proc.env.coll.collect_mem);
+
+  free(proc.env.coll.broadcast_size);
+  free(proc.env.coll.broadcast_type);
+  free(proc.env.coll.broadcast_mem);
+
   free(proc.env.coll.sync_all);
   free(proc.env.coll.sync);
   free(proc.env.coll.barrier_all);
   free(proc.env.coll.barrier);
-  free(proc.env.coll.broadcast);
-  free(proc.env.coll.broadcastmem);
-
-  /* Free deprecated variants */
-  free(proc.env.coll.alltoall_size);
-  free(proc.env.coll.alltoalls_size);
-  free(proc.env.coll.collect_size);
-  free(proc.env.coll.fcollect_size);
-  free(proc.env.coll.broadcast_size);
 
   free(proc.env.progress_threads);
 }
@@ -392,11 +395,25 @@ void shmemc_print_env_vars(FILE *stream, const char *prefix) {
   DESCRIBE_COLLECTIVE(barrier_all, BARRIER_ALL);
   DESCRIBE_COLLECTIVE(sync, SYNC);
   DESCRIBE_COLLECTIVE(sync_all, SYNC_ALL);
-  DESCRIBE_COLLECTIVE(broadcast, BROADCAST);
-  DESCRIBE_COLLECTIVE(collect, COLLECT);
-  DESCRIBE_COLLECTIVE(fcollect, FCOLLECT);
-  DESCRIBE_COLLECTIVE(alltoall, ALLTOALL);
-  DESCRIBE_COLLECTIVE(alltoalls, ALLTOALLS);
+
+  DESCRIBE_COLLECTIVE(broadcast_type, BROADCAST_TYPE);
+  DESCRIBE_COLLECTIVE(collect_type, COLLECT_TYPE);
+  DESCRIBE_COLLECTIVE(fcollect_type, FCOLLECT_TYPE);
+  DESCRIBE_COLLECTIVE(alltoall_type, ALLTOALL_TYPE);
+  DESCRIBE_COLLECTIVE(alltoalls_type, ALLTOALLS_TYPE);
+
+  DESCRIBE_COLLECTIVE(broadcast_mem, BROADCASTMEM);
+  DESCRIBE_COLLECTIVE(collect_mem, COLLECTMEM);
+  DESCRIBE_COLLECTIVE(fcollect_mem, FCOLLECTMEM);
+  DESCRIBE_COLLECTIVE(alltoall_mem, ALLTOALLMEM);
+  DESCRIBE_COLLECTIVE(alltoalls_mem, ALLTOALLSMEM);
+
+  DESCRIBE_COLLECTIVE(broadcast_size, BROADCAST_SIZE);
+  DESCRIBE_COLLECTIVE(collect_size, COLLECT_SIZE);
+  DESCRIBE_COLLECTIVE(fcollect_size, FCOLLECT_SIZE);
+  DESCRIBE_COLLECTIVE(alltoall_size, ALLTOALL_SIZE);
+  DESCRIBE_COLLECTIVE(alltoalls_size, ALLTOALLS_SIZE);
+
   DESCRIBE_COLLECTIVE(reductions, REDUCE);
 
   fprintf(stream, "%s%-*s %-*s %s\n", prefix, var_width,

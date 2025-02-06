@@ -28,24 +28,24 @@ typedef struct collectives {
   char *sync;
   char *sync_all;
 
-  char *broadcast;
-  char *broadcastmem;
+  char *broadcast_type;
+  char *broadcast_mem;
   char *broadcast_size;
 
-  char *collect;
-  char *collectmem;
+  char *collect_type;
+  char *collect_mem;
   char *collect_size;
 
-  char *fcollect;
-  char *fcollectmem;
+  char *fcollect_type;
+  char *fcollect_mem;
   char *fcollect_size;
 
-  char *alltoall;
-  char *alltoallmem;
+  char *alltoall_type;
+  char *alltoall_mem;
   char *alltoall_size;
 
-  char *alltoalls;
-  char *alltoallsmem;
+  char *alltoalls_type;
+  char *alltoalls_mem;
   char *alltoalls_size;
 
   char *reductions;

@@ -39,26 +39,25 @@
  */
 void collectives_init(void) {
   /* Current routines */
-  TRY(alltoall);
-  TRY(alltoallmem);
+  TRY(alltoall_type);
+  TRY(alltoall_mem);
 
-  TRY(alltoalls);
-  TRY(alltoallsmem);
+  TRY(alltoalls_type);
+  TRY(alltoalls_mem);
 
-  TRY(collect);
-  TRY(collectmem);
+  TRY(collect_type);
+  TRY(collect_mem);
 
-  TRY(fcollect);
-  TRY(fcollectmem);
+  TRY(fcollect_type);
+  TRY(fcollect_mem);
+
+  TRY(broadcast_type);
+  TRY(broadcast_mem);
 
   TRY(barrier);
   TRY(barrier_all);
   TRY(sync);
   TRY(sync_all);
-
-  TRY(broadcast);
-  TRY(broadcastmem);
-
   /* TODO: reductions */
 
   /* Deprecated */
@@ -122,7 +121,7 @@ void collectives_finalize(void) { return; }
                                    const _type *source, size_t nelems) {       \
     logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest,        \
            source, nelems);                                                    \
-    colls.alltoall.f(team, dest, source, nelems);                              \
+    colls.alltoall_type.f(team, dest, source, nelems);                         \
   }
 
 SHMEM_TYPENAME_ALLTOALL(float, float)
@@ -168,7 +167,7 @@ int shmem_alltoallmem(shmem_team_t team, void *dest, const void *source,
                       size_t nelems) {
   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
          nelems);
-  colls.alltoallmem.f(team, dest, source, nelems);
+  colls.alltoall_mem.f(team, dest, source, nelems);
 }
 
 /** @} */
@@ -222,7 +221,7 @@ int shmem_alltoallmem(shmem_team_t team, void *dest, const void *source,
                                     ptrdiff_t sst, size_t nelems) {            \
     logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %p, %p, %d)", __func__, team,      \
            source, dst, sst, nelems);                                          \
-    colls.alltoalls.f(team, dest, source, dst, sst, nelems);                   \
+    colls.alltoalls_type.f(team, dest, source, dst, sst, nelems);              \
   }
 
 SHMEM_TYPENAME_ALLTOALLS(float, float)
@@ -270,7 +269,7 @@ int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
                        ptrdiff_t dst, ptrdiff_t sst, size_t nelems) {
   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %td, %td, %d)", __func__, team, dest,
          source, dst, sst, nelems);
-  colls.alltoallsmem.f(team, dest, source, dst, sst, nelems);
+  colls.alltoalls_mem.f(team, dest, source, dst, sst, nelems);
 }
 
 /** @} */
@@ -341,7 +340,7 @@ int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
                                   const _type *source, size_t nelems) {        \
     logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, dest, source,      \
            nelems);                                                            \
-    colls.collect.f(team, dest, source, nelems);                               \
+    colls.collect_type.f(team, dest, source, nelems);                          \
   }
 
 SHMEM_TYPENAME_COLLECT(float, float)
@@ -387,7 +386,7 @@ int shmem_collectmem(shmem_team_t team, void *dest, const void *source,
                      size_t nelems) {
   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
          nelems);
-  colls.collectmem.f(team, dest, source, nelems);
+  colls.collect_mem.f(team, dest, source, nelems);
 }
 
 /** @} */
@@ -458,7 +457,7 @@ int shmem_collectmem(shmem_team_t team, void *dest, const void *source,
                                    const _type *source, size_t nelems) {       \
     logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, dest, source,      \
            nelems);                                                            \
-    colls.fcollect.f(team, dest, source, nelems);                              \
+    colls.fcollect_type.f(team, dest, source, nelems);                         \
   }
 
 SHMEM_TYPENAME_FCOLLECT(float, float)
@@ -504,7 +503,7 @@ int shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
                       size_t nelems) {
   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
          nelems);
-  colls.fcollectmem.f(team, dest, source, nelems);
+  colls.fcollect_mem.f(team, dest, source, nelems);
 }
 
 /** @} */
@@ -622,7 +621,7 @@ void shmem_sync_all(void) {
                                     int PE_root) {                             \
     logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,  \
            nelems, PE_root);                                                   \
-    colls.broadcast.f(team, dest, source, nelems, PE_root);                    \
+    colls.broadcast_type.f(team, dest, source, nelems, PE_root);                    \
   }
 
 SHMEM_TYPENAME_BROADCAST(float, float)
@@ -669,7 +668,7 @@ int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
                        size_t nelems, int PE_root) {
   logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,
          nelems, PE_root);
-  colls.broadcast.f(team, dest, source, nelems, PE_root);
+  colls.broadcast_mem.f(team, dest, source, nelems, PE_root);
 }
 
 /** @} */
