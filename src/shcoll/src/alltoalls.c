@@ -253,26 +253,38 @@ SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
       int PE_size) {                                                           \
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
-                                                                               \
-    /* Get my index in the active set */                                       \
     int me_as = (me - PE_start) / stride;                                      \
     if (me_as < 0 || me_as >= PE_size || _cond == 0) {                         \
       return -1;                                                               \
     }                                                                          \
                                                                                \
-    /* Each PE sends its data to every other PE */                             \
+    /* Allocate pSync from the symmetric heap */                               \
+    long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
+    if (pSync == NULL) {                                                       \
+      return -1;                                                               \
+    }                                                                          \
+    /* Initialize pSync */                                                     \
+    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+                                                                               \
     for (size_t i = 0; i < nelems; i++) {                                      \
+      /* Loop over each peer in the team */                                    \
       for (int pe = 0; pe < PE_size; pe++) {                                   \
         int peer = PE_start + pe * stride;                                     \
-        const char *src = (const char *)source + pe * sst_stride;              \
-        char *dst = (char *)dest + me_as * dst_stride;                         \
+        /* Compute the source pointer for element i from peer 'pe' */          \
+        const char *src =                                                      \
+            (const char *)source + pe * nelems * sst_stride + i * sst_stride;  \
+        /* Compute the destination pointer for element i in this PE's block */ \
+        char *dst =                                                            \
+            (char *)dest + me_as * nelems * dst_stride + i * dst_stride;       \
         shmem_putmem_nbi(dst, src, dst_stride, peer);                          \
       }                                                                        \
     }                                                                          \
                                                                                \
     shmem_fence();                                                             \
     shmem_barrier_all();                                                       \
-                                                                               \
+    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 
@@ -297,32 +309,36 @@ SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
       int PE_size) {                                                           \
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
-                                                                               \
-    /* Get my index in the active set */                                       \
     int me_as = (me - PE_start) / stride;                                      \
     if (me_as < 0 || me_as >= PE_size || _cond == 0) {                         \
       return -1;                                                               \
     }                                                                          \
                                                                                \
-    /* Copy local data */                                                      \
-    memcpy((char *)dest + me_as * dst_stride,                                  \
-           (const char *)source + me_as * sst_stride, nelems);                 \
+    /* Copy local data: each team member's block is contiguous */              \
+    memcpy((char *)dest + me_as * nelems * dst_stride,                         \
+           (const char *)source + me_as * nelems * sst_stride,                 \
+           nelems * dst_stride);                                               \
                                                                                \
+    /* Use a static counter (shared among calls) for atomic synchronization */ \
     static long counter = 0;                                                   \
                                                                                \
-    /* Exchange data with other PEs */                                         \
+    /* For each remote PE (i != me_as), exchange data element-by-element */    \
     for (int i = 0; i < PE_size; i++) {                                        \
       if (i == me_as)                                                          \
         continue;                                                              \
       int peer = PE_start + i * stride;                                        \
-      const char *src = (const char *)source + i * sst_stride;                 \
-      char *dst = (char *)dest + me_as * dst_stride;                           \
-      shmem_putmem_nbi(dst, src, nelems, peer);                                \
+      for (size_t j = 0; j < nelems; j++) {                                    \
+        const char *src =                                                      \
+            (const char *)source + i * nelems * sst_stride + j * sst_stride;   \
+        char *dst =                                                            \
+            (char *)dest + me_as * nelems * dst_stride + j * dst_stride;       \
+        shmem_putmem_nbi(dst, src, dst_stride, peer);                          \
+      }                                                                        \
       shmem_fence();                                                           \
       shmem_long_atomic_inc(&counter, peer);                                   \
     }                                                                          \
                                                                                \
-    /* Wait for all transfers */                                               \
+    /* Wait until the counter reaches (PE_size - 1) */                         \
     shmem_long_wait_until(&counter, SHMEM_CMP_EQ, PE_size - 1);                \
     counter = 0;                                                               \
                                                                                \
@@ -359,9 +375,10 @@ ALLTOALLS_TEAM_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
     int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
     int logPE_stride = 0;                                                      \
     int PE_size = shmem_team_n_pes(team);                                      \
-    int ret = alltoalls_team_helper_##_algo(                                   \
-        dest, source, dst * sizeof(_type), sst * sizeof(_type),                \
-        nelems * sizeof(_type), PE_start, logPE_stride, PE_size);              \
+    /* Convert element strides to byte strides and pass nelems as count */     \
+    int ret = alltoalls_team_helper_##_algo(dest, source, dst * sizeof(_type), \
+                                            sst * sizeof(_type), nelems,       \
+                                            PE_start, logPE_stride, PE_size);  \
     if (ret != 0) {                                                            \
       return -1;                                                               \
     }                                                                          \
@@ -437,240 +454,3 @@ SHCOLL_ALLTOALLSMEM_DEFINITION(xor_pairwise_exchange_counter)
 
 SHCOLL_ALLTOALLSMEM_DEFINITION(color_pairwise_exchange_barrier)
 SHCOLL_ALLTOALLSMEM_DEFINITION(color_pairwise_exchange_counter)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// /**
-//  * @brief Helper macro to define type-generic barrier-based alltoalls
-//  *
-//  * @param _algo Algorithm name
-//  * @param _peer Peer calculation macro
-//  * @param _cond Algorithm condition
-//  */
-// #define ALLTOALLS_TYPE_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond) \
-//   inline static int alltoalls_type_helper_##_algo##_barrier( \
-//       void *dest, const void *source, ptrdiff_t dst_stride, \
-//       ptrdiff_t sst_stride, size_t nelems, int PE_start, int logPE_stride, \
-//       int PE_size) { \
-//     const int stride = 1 << logPE_stride; \
-//     const int me = shmem_my_pe(); \
-//     uint8_t *dest_ptr = (uint8_t *)dest; \
-//     const uint8_t *source_ptr = (const uint8_t *)source; \
-//                                                                                \
-//     /* Get my index in the active set */ \
-//     int me_as = (me - PE_start) / stride; \
-//     if (me_as < 0 || me_as >= PE_size || _cond == 0) { \
-//       return -1; \
-//     } \
-//                                                                                \
-//     /* Send my data to each PE */ \
-//     for (int i = 0; i < PE_size; i++) { \
-//       int peer = PE_start + i * stride; \
-//       const uint8_t *src = source_ptr + i * sst_stride; \
-//       uint8_t *dst = dest_ptr + me_as * dst_stride; \
-//       shmem_putmem(dst, src, nelems, peer); \
-//     } \
-//                                                                                \
-//     shmem_fence(); \
-//     shmem_barrier_all(); \
-//                                                                                \
-//     return 0; \
-//   }
-
-// /**
-//  * @brief Helper macro to define type-generic counter-based alltoalls
-//  *
-//  * @param _algo Algorithm name
-//  * @param _peer Peer calculation macro
-//  * @param _cond Algorithm condition
-//  */
-// #define ALLTOALLS_TYPE_HELPER_COUNTER_DEFINITION(_algo, _peer, _cond) \
-//   inline static int alltoalls_type_helper_##_algo##_counter( \
-//       void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst, \
-//       size_t nelems, int PE_start, int logPE_stride, int PE_size) { \
-//     const int stride = 1 << logPE_stride; \
-//     const int me = shmem_my_pe(); \
-//     uint8_t *dest_ptr = (uint8_t *)dest; \
-//     const uint8_t *source_ptr = (uint8_t *)source; \
-//                                                                                \
-//     /* Get my index in the active set */ \
-//     int me_as = (me - PE_start) / stride; \
-//     if (me_as < 0 || me_as >= PE_size || _cond == 0) { \
-//       return -1; \
-//     } \
-//                                                                                \
-//     /* Copy local data with stride */ \
-//     for (size_t i = 0; i < nelems; i++) { \
-//       memcpy(dest_ptr + (me_as * dst + i) * nelems, \
-//              source_ptr + (me_as * sst + i) * nelems, nelems); \
-//     } \
-//                                                                                \
-//     /* Exchange data with counter-based synchronization */ \
-//     static long counter = 0; \
-//     for (int i = 0; i < PE_size; ++i) { \
-//       if (i == me_as) \
-//         continue; \
-//                                                                                \
-//       const int peer_as = _peer(i, me_as, PE_size); \
-//       const int peer = PE_start + peer_as * stride; \
-//                                                                                \
-//       shmem_putmem_nbi(dest_ptr + me_as * dst * nelems, \
-//                        source_ptr + peer_as * sst * nelems, nelems, peer); \
-//       shmem_fence(); \
-//       shmem_long_atomic_inc(&counter, peer); \
-//     } \
-//                                                                                \
-//     /* Wait for all counters */ \
-//     shmem_long_wait_until(&counter, SHMEM_CMP_EQ, PE_size - 1); \
-//     counter = 0; \
-//     return 0; \
-//   }
-
-// ALLTOALLS_TYPE_HELPER_BARRIER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
-// ALLTOALLS_TYPE_HELPER_COUNTER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
-
-// ALLTOALLS_TYPE_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, XOR_PEER,
-//                                          XOR_COND)
-// ALLTOALLS_TYPE_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, XOR_PEER,
-//                                          XOR_COND)
-
-// ALLTOALLS_TYPE_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
-//                                          COLOR_COND)
-// ALLTOALLS_TYPE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
-//                                          COLOR_COND)
-
-// /**
-//  * @brief Helper macro to define memory-based barrier alltoalls
-//  implementations
-//  *
-//  * This macro defines a helper function that implements the barrier-based
-//  * alltoalls operation for raw memory blocks. It handles the data movement
-//  and
-//  * synchronization using barriers.
-//  *
-//  * @param _algo Algorithm name to use in the function name
-//  * @param _peer Macro/function to calculate peer PE for exchanges
-//  * @param _cond Additional condition that must be met for PE participation
-//  */
-// #define ALLTOALLS_MEM_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond) \
-//   inline static int alltoalls_mem_helper_##_algo##_barrier( \
-//       void *dest, const void *source, ptrdiff_t dst_stride, \
-//       ptrdiff_t sst_stride, size_t nelems, int PE_start, int logPE_stride, \
-//       int PE_size) { \
-//     const int stride = 1 << logPE_stride; \
-//     const int me = shmem_my_pe(); \
-//                                                                                \
-//     /* Get my index in the active set */ \
-//     int me_as = (me - PE_start) / stride; \
-//     if (me_as < 0 || me_as >= PE_size || _cond == 0) { \
-//       return -1; \
-//     } \
-//                                                                                \
-//     /* Each PE sends its data to every other PE */ \
-//     for (size_t i = 0; i < nelems; i++) { \
-//       for (int pe = 0; pe < PE_size; pe++) { \
-//         int peer = PE_start + pe * stride; \
-//         const char *src = (const char *)source + pe * sst_stride; \
-//         char *dst = (char *)dest + me_as * dst_stride; \
-//         shmem_putmem_nbi(dst, src, dst_stride, peer); \
-//       } \
-//     } \
-//                                                                                \
-//     shmem_fence(); \
-//     shmem_barrier_all(); \
-//                                                                                \
-//     return 0; \
-//   }
-
-// /**
-//  * @brief Helper macro to define memory-based counter alltoalls
-//  implementations
-//  *
-//  * This macro defines a helper function that implements the counter-based
-//  * alltoalls operation for raw memory blocks. It handles the data movement
-//  and
-//  * synchronization using atomic counters instead of barriers.
-//  *
-//  * The counter-based approach allows for more asynchronous communication
-//  * compared to barriers, as PEs only need to wait for their specific
-//  exchanges
-//  * to complete rather than global synchronization.
-//  *
-//  * @param _algo Algorithm name to use in the function name
-//  * @param _peer Macro/function to calculate peer PE for exchanges
-//  * @param _cond Additional condition that must be met for PE participation
-
-//  FIXME: not tested, probably doesn't work
-//  */
-// #define ALLTOALLS_MEM_HELPER_COUNTER_DEFINITION(_algo, _peer, _cond) \
-//   inline static int alltoalls_mem_helper_##_algo##_counter( \
-//       void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst, \
-//       size_t nelems, int PE_start, int logPE_stride, int PE_size) { \
-//     const int stride = 1 << logPE_stride; \
-//     const int me = shmem_my_pe(); \
-//     uint8_t *dest_ptr = (uint8_t *)dest; \
-//     const uint8_t *source_ptr = (uint8_t *)source; \
-//                                                                                \
-//     /* Get my index in the active set */ \
-//     int me_as = (me - PE_start) / stride; \
-//     if (me_as < 0 || me_as >= PE_size || _cond == 0) { \
-//       return -1; \
-//     } \
-//                                                                                \
-//     /* Copy local data with stride */ \
-//     for (size_t i = 0; i < nelems; i++) { \
-//       memcpy(dest_ptr + (me_as * dst + i) * nelems, \
-//              source_ptr + (me_as * sst + i) * nelems, nelems); \
-//     } \
-//                                                                                \
-//     /* Exchange data with counter-based synchronization */ \
-//     static long counter = 0; \
-//     for (int i = 0; i < PE_size; ++i) { \
-//       if (i == me_as) \
-//         continue; \
-//                                                                                \
-//       const int peer_as = _peer(i, me_as, PE_size); \
-//       const int peer = PE_start + peer_as * stride; \
-//                                                                                \
-//       shmem_putmem_nbi(dest_ptr + me_as * dst * nelems, \
-//                        source_ptr + peer_as * sst * nelems, nelems, peer); \
-//       shmem_fence(); \
-//       shmem_long_atomic_inc(&counter, peer); \
-//     } \
-//                                                                                \
-//     /* Wait for all counters */ \
-//     shmem_long_wait_until(&counter, SHMEM_CMP_EQ, PE_size - 1); \
-//     counter = 0; \
-//     return 0; \
-//   }
-
-// /* Define helpers for each algorithm */
-// ALLTOALLS_MEM_HELPER_BARRIER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
-// ALLTOALLS_MEM_HELPER_COUNTER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
-
-// ALLTOALLS_MEM_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, XOR_PEER,
-//                                         XOR_COND)
-// ALLTOALLS_MEM_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, XOR_PEER,
-//                                         XOR_COND)
-
-// ALLTOALLS_MEM_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
-//                                         COLOR_COND)
-// ALLTOALLS_MEM_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
-//                                         COLOR_COND)

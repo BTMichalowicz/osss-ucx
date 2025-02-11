@@ -1,7 +1,6 @@
 /**
  * @file reductions.h
  * @brief Header file for OpenSHMEM reduction operations
- * @author OpenSHMEM team
  * @copyright For license: see LICENSE file at top-level
  *
  * This file contains declarations and macros for implementing OpenSHMEM

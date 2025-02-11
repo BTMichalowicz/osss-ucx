@@ -497,14 +497,12 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
   int shcoll_##_typename##_broadcast_##_algo(shmem_team_t team, _type *dest,   \
                                              const _type *source,              \
                                              size_t nelems, int PE_root) {     \
-    shmem_barrier_all();                                                       \
-    printf("PE %d: shcoll_%s_broadcast_%s\n", shmem_my_pe(), #_typename,       \
-           #_algo);                                                            \
-    shmem_barrier_all();                                                       \
-                                                                               \
-    int PE_size = shmem_team_n_pes(team);                                      \
-    int PE_start = shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD);   \
-    int logPE_stride = 0;                                                      \
+    /* Get team parameters */                                                  \
+    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
+    const int logPE_stride = 0;                                                \
+    const int PE_size = shmem_team_n_pes(team);                                \
+    const int world_root =                                                     \
+        shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD);              \
                                                                                \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_BCAST_SYNC_SIZE * sizeof(long));         \
@@ -520,10 +518,12 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
     shmem_team_sync(team);                                                     \
                                                                                \
     /* Zero out destination buffer */                                          \
-    memset(dest, 0, sizeof(_type) * nelems * PE_size);                         \
+    if (shmem_my_pe() != world_root) {                                         \
+      memset(dest, 0, nelems * sizeof(_type));                                 \
+    }                                                                          \
                                                                                \
     /* Perform broadcast */                                                    \
-    broadcast_helper_##_algo(dest, source, sizeof(_type) * nelems, PE_root,    \
+    broadcast_helper_##_algo(dest, source, nelems * sizeof(_type), PE_root,    \
                              PE_start, logPE_stride, PE_size, pSync);          \
                                                                                \
     /* Ensure broadcast completion */                                          \
@@ -584,10 +584,11 @@ DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
                                   const void *source, size_t nelems,           \
                                   int PE_root) {                               \
     /* Get team parameters */                                                  \
-    const int PE_start =                                                       \
-        shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD);              \
+    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
     const int logPE_stride = 0;                                                \
     const int PE_size = shmem_team_n_pes(team);                                \
+    const int world_root =                                                     \
+        shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD);              \
                                                                                \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_BCAST_SYNC_SIZE * sizeof(long));         \
@@ -602,8 +603,10 @@ DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
     /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* Zero out destination buffer */                                          \
-    memset(dest, 0, nelems);                                                   \
+    /* For team-based broadcasts, root PE should also update its dest */       \
+    if (shmem_my_pe() == world_root) {                                         \
+      memcpy(dest, source, nelems);                                            \
+    }                                                                          \
                                                                                \
     /* Perform broadcast */                                                    \
     broadcast_helper_##_algo(dest, source, nelems, PE_root, PE_start,          \

@@ -957,6 +957,9 @@ uint64_t shmem_signal_wait_until(uint64_t *sig_addr, int cmp,
   */
 
 // TODO: deprecate this, make a team-based sync for the C11 bindings
+// #if SHMEM_MAJOR_VERSION == 1 && SHMEM_MINOR_VERSION < 4
+// #endif
+
 void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)
     _DEPRECATED_BY(shmem_team_sync, 1.5);
 
@@ -3239,7 +3242,7 @@ int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
   void shmem_broadcast##_size(void *target, const void *source, size_t nelems, \
                               int PE_root, int PE_start, int logPE_stride,     \
                               int PE_size, long *pSync)                        \
-      _DEPRECATED_BY(shmem_broadcastmem or shmem_<typename> _broadcast, 1.5);
+      _DEPRECATED_BY(shmem_broadcastmem or shmem_<typename>_broadcast, 1.5);
 
 API_BROADCAST_SIZE(32)
 API_BROADCAST_SIZE(64)
@@ -3328,7 +3331,8 @@ int shmem_collectmem(shmem_team_t team, void *dest, const void *source,
   /* see \ref shmem_##_opname##64() */                                         \
   void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
                               int PE_start, int logPE_stride, int PE_size,     \
-                              long *pSync);
+                              long *pSync)                                     \
+      _DEPRECATED_BY(shmem_collectmem or shmem_<typename>_collect, 1.5);
 
 API_COLLECT_SIZE(collect, 32)
 API_COLLECT_SIZE(collect, 64)
@@ -3402,7 +3406,7 @@ int shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
   void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
                               int PE_start, int logPE_stride, int PE_size,     \
                               long *pSync)                                     \
-      _DEPRECATED_BY(shmem_fcollectmem or shmem_<typename> _fcollect, 1.5);
+      _DEPRECATED_BY(shmem_fcollectmem or shmem_<typename>_fcollect, 1.5);
 
 API_FCOLLECT_SIZE(fcollect, 32)
 API_FCOLLECT_SIZE(fcollect, 64)
@@ -3487,7 +3491,7 @@ int shmem_alltoallmem(shmem_team_t team, void *dest, const void *source,
   void shmem_alltoall##_size(void *target, const void *source, size_t nelems,  \
                              int PE_start, int logPE_stride, int PE_size,      \
                              long *pSync)                                      \
-      _DEPRECATED_BY(shmem_alltoallmem or shmem_<typename> _alltoall, 1.5);
+      _DEPRECATED_BY(shmem_alltoallmem or shmem_<typename>_alltoall, 1.5);
 
 API_ALLTOALL_SIZE(32)
 API_ALLTOALL_SIZE(64)
@@ -3564,7 +3568,7 @@ int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
   void shmem_alltoalls##_size(void *target, const void *source, ptrdiff_t dst, \
                               ptrdiff_t sst, size_t nelems, int PE_start,      \
                               int logPE_stride, int PE_size, long *pSync)      \
-      _DEPRECATED_BY(shmem_alltoallsmem or shmem_<typename> _alltoalls, 1.5);
+      _DEPRECATED_BY(shmem_alltoallsmem or shmem_<typename>_alltoalls, 1.5);
 
 API_ALLTOALLS_SIZE(32)
 API_ALLTOALLS_SIZE(64)

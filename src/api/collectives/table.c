@@ -58,6 +58,14 @@
   { "", NULL }
 
 /******************************************************** */
+
+/**
+
+  FIXME: the typed registration is not working. Currently
+  using a shim similar to the reductions.
+
+ */
+
 /**
  * @brief Macro to register a typed collective operation for a specific type
  * @param _op The collective operation name
@@ -77,6 +85,9 @@
  * @brief Macro to register a typed collective operation for all supported types
  * @param _op The collective operation name
  * @param _algo The algorithm implementation name
+
+ FIXME: the fact that the typed registration is not working probably has
+        something to do with this macro.
  */
 #define TYPED_REG_FOR_ALL_TYPES(_op, _algo)                                    \
   TYPED_REG(_op, _algo, float), TYPED_REG(_op, _algo, double),                 \
@@ -114,17 +125,17 @@
 /**
  * @brief Table of alltoall collective algorithms for all types
  */
-static typed_op_t alltoall_type_tab[] = {
-    TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_signal),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, xor_pairwise_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, xor_pairwise_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, xor_pairwise_exchange_signal),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, color_pairwise_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, color_pairwise_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, color_pairwise_exchange_signal),
-    TYPED_LAST};
+// static typed_op_t alltoall_type_tab[] = {
+//     TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_barrier),
+//     TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_counter),
+//     TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_signal),
+//     TYPED_REG_FOR_ALL_TYPES(alltoall, xor_pairwise_exchange_barrier),
+//     TYPED_REG_FOR_ALL_TYPES(alltoall, xor_pairwise_exchange_counter),
+//     TYPED_REG_FOR_ALL_TYPES(alltoall, xor_pairwise_exchange_signal),
+//     TYPED_REG_FOR_ALL_TYPES(alltoall, color_pairwise_exchange_barrier),
+//     TYPED_REG_FOR_ALL_TYPES(alltoall, color_pairwise_exchange_counter),
+//     TYPED_REG_FOR_ALL_TYPES(alltoall, color_pairwise_exchange_signal),
+//     TYPED_LAST};
 
 /**
  * @brief Table of generic alltoallmem collective algorithms
@@ -159,14 +170,14 @@ static sized_op_t alltoall_size_tab[] = {
 /**
  * @brief Table of alltoalls collective algorithms for all types
  */
-static typed_op_t alltoalls_type_tab[] = {
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_counter),
-    TYPED_LAST};
+// static typed_op_t alltoalls_type_tab[] = {
+//     TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_barrier),
+//     TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_counter),
+//     TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_barrier),
+//     TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_counter),
+//     TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_barrier),
+//     TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_counter),
+//     TYPED_LAST};
 
 /**
  * @brief Table of generic alltoalls (deprecated)
@@ -195,16 +206,16 @@ static sized_op_t alltoalls_size_tab[] = {
 /**
  * @brief Table of collect collective algorithms
  */
-static typed_op_t collect_type_tab[] = {
-    TYPED_REG_FOR_ALL_TYPES(collect, linear),
-    TYPED_REG_FOR_ALL_TYPES(collect, all_linear),
-    TYPED_REG_FOR_ALL_TYPES(collect, all_linear1),
-    TYPED_REG_FOR_ALL_TYPES(collect, rec_dbl),
-    TYPED_REG_FOR_ALL_TYPES(collect, rec_dbl_signal),
-    TYPED_REG_FOR_ALL_TYPES(collect, ring),
-    TYPED_REG_FOR_ALL_TYPES(collect, bruck),
-    TYPED_REG_FOR_ALL_TYPES(collect, bruck_no_rotate),
-    TYPED_LAST};
+// static typed_op_t collect_type_tab[] = {
+//     TYPED_REG_FOR_ALL_TYPES(collect, linear),
+//     TYPED_REG_FOR_ALL_TYPES(collect, all_linear),
+//     TYPED_REG_FOR_ALL_TYPES(collect, all_linear1),
+//     TYPED_REG_FOR_ALL_TYPES(collect, rec_dbl),
+//     TYPED_REG_FOR_ALL_TYPES(collect, rec_dbl_signal),
+//     TYPED_REG_FOR_ALL_TYPES(collect, ring),
+//     TYPED_REG_FOR_ALL_TYPES(collect, bruck),
+//     TYPED_REG_FOR_ALL_TYPES(collect, bruck_no_rotate),
+//     TYPED_LAST};
 
 /**
  * @brief Table of generic collectmem (deprecated)
@@ -236,18 +247,18 @@ static sized_op_t collect_size_tab[] = {SIZED_REG(collect, linear),
 /**
  * @brief Table of fcollect collective algorithms
  */
-static typed_op_t fcollect_type_tab[] = {
-    TYPED_REG_FOR_ALL_TYPES(fcollect, linear),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, all_linear),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, all_linear1),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, rec_dbl),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, ring),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_no_rotate),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_signal),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_inplace),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, neighbor_exchange),
-    TYPED_LAST};
+// static typed_op_t fcollect_type_tab[] = {
+//     TYPED_REG_FOR_ALL_TYPES(fcollect, linear),
+//     TYPED_REG_FOR_ALL_TYPES(fcollect, all_linear),
+//     TYPED_REG_FOR_ALL_TYPES(fcollect, all_linear1),
+//     TYPED_REG_FOR_ALL_TYPES(fcollect, rec_dbl),
+//     TYPED_REG_FOR_ALL_TYPES(fcollect, ring),
+//     TYPED_REG_FOR_ALL_TYPES(fcollect, bruck),
+//     TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_no_rotate),
+//     TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_signal),
+//     TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_inplace),
+//     TYPED_REG_FOR_ALL_TYPES(fcollect, neighbor_exchange),
+//     TYPED_LAST};
 
 /**
  * @brief Table of generic fcollectmem (deprecated)
@@ -279,6 +290,42 @@ static sized_op_t fcollect_size_tab[] = {SIZED_REG(fcollect, linear),
                                          SIZED_REG(fcollect, bruck_inplace),
                                          SIZED_REG(fcollect, neighbor_exchange),
                                          SIZED_LAST};
+
+/**
+ * @brief Table of broadcast collective algorithms
+ */
+// static typed_op_t broadcast_type_tab[] = {
+//     TYPED_REG_FOR_ALL_TYPES(broadcast, linear),
+//     TYPED_REG_FOR_ALL_TYPES(broadcast, complete_tree),
+//     TYPED_REG_FOR_ALL_TYPES(broadcast, binomial_tree),
+//     TYPED_REG_FOR_ALL_TYPES(broadcast, knomial_tree),
+//     TYPED_REG_FOR_ALL_TYPES(broadcast, knomial_tree_signal),
+//     TYPED_REG_FOR_ALL_TYPES(broadcast, scatter_collect),
+//     TYPED_LAST};
+
+/**
+ * @brief Table of generic broadcastmem (deprecated)
+ */
+static untyped_op_t broadcast_mem_tab[] = {
+    UNTYPED_REG(broadcastmem, linear),
+    UNTYPED_REG(broadcastmem, complete_tree),
+    UNTYPED_REG(broadcastmem, binomial_tree),
+    UNTYPED_REG(broadcastmem, knomial_tree),
+    UNTYPED_REG(broadcastmem, knomial_tree_signal),
+    UNTYPED_REG(broadcastmem, scatter_collect),
+    UNTYPED_LAST};
+
+/**
+ * @brief Table of sized broadcast (deprecated)
+ */
+static sized_op_t broadcast_size_tab[] = {
+    SIZED_REG(broadcast, linear),
+    SIZED_REG(broadcast, complete_tree),
+    SIZED_REG(broadcast, binomial_tree),
+    SIZED_REG(broadcast, knomial_tree),
+    SIZED_REG(broadcast, knomial_tree_signal),
+    SIZED_REG(broadcast, scatter_collect),
+    SIZED_LAST};
 
 /**
  * @brief Table of barrier_all collective algorithms
@@ -314,42 +361,6 @@ static unsized_op_t sync_tab[] = {
     UNSIZED_REG(sync, linear),        UNSIZED_REG(sync, complete_tree),
     UNSIZED_REG(sync, binomial_tree), UNSIZED_REG(sync, knomial_tree),
     UNSIZED_REG(sync, dissemination), UNSIZED_LAST};
-
-/**
- * @brief Table of broadcast collective algorithms
- */
-static typed_op_t broadcast_type_tab[] = {
-    TYPED_REG_FOR_ALL_TYPES(broadcast, linear),
-    TYPED_REG_FOR_ALL_TYPES(broadcast, complete_tree),
-    TYPED_REG_FOR_ALL_TYPES(broadcast, binomial_tree),
-    TYPED_REG_FOR_ALL_TYPES(broadcast, knomial_tree),
-    TYPED_REG_FOR_ALL_TYPES(broadcast, knomial_tree_signal),
-    TYPED_REG_FOR_ALL_TYPES(broadcast, scatter_collect),
-    TYPED_LAST};
-
-/**
- * @brief Table of generic broadcastmem (deprecated)
- */
-static untyped_op_t broadcast_mem_tab[] = {
-    UNTYPED_REG(broadcastmem, linear),
-    UNTYPED_REG(broadcastmem, complete_tree),
-    UNTYPED_REG(broadcastmem, binomial_tree),
-    UNTYPED_REG(broadcastmem, knomial_tree),
-    UNTYPED_REG(broadcastmem, knomial_tree_signal),
-    UNTYPED_REG(broadcastmem, scatter_collect),
-    UNTYPED_LAST};
-
-/**
- * @brief Table of sized broadcast (deprecated)
- */
-static sized_op_t broadcast_size_tab[] = {
-    SIZED_REG(broadcast, linear),
-    SIZED_REG(broadcast, complete_tree),
-    SIZED_REG(broadcast, binomial_tree),
-    SIZED_REG(broadcast, knomial_tree),
-    SIZED_REG(broadcast, knomial_tree_signal),
-    SIZED_REG(broadcast, scatter_collect),
-    SIZED_LAST};
 
 /******************************************************** */
 /**
@@ -515,23 +526,23 @@ coll_ops_t colls;
   }
 
 /* Register all collectives */
-REGISTER_TYPED(alltoall_type)
+// REGISTER_TYPED(alltoall_type)
 REGISTER_UNTYPED(alltoall_mem)
 REGISTER_SIZED(alltoall_size)
 
-REGISTER_TYPED(alltoalls_type)
+// REGISTER_TYPED(alltoalls_type)
 REGISTER_UNTYPED(alltoalls_mem)
 REGISTER_SIZED(alltoalls_size)
 
-REGISTER_TYPED(collect_type)
+// REGISTER_TYPED(collect_type)
 REGISTER_UNTYPED(collect_mem)
 REGISTER_SIZED(collect_size)
 
-REGISTER_TYPED(fcollect_type)
+// REGISTER_TYPED(fcollect_type)
 REGISTER_UNTYPED(fcollect_mem)
 REGISTER_SIZED(fcollect_size)
 
-REGISTER_TYPED(broadcast_type)
+// REGISTER_TYPED(broadcast_type)
 REGISTER_UNTYPED(broadcast_mem)
 REGISTER_SIZED(broadcast_size)
 

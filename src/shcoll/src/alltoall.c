@@ -236,8 +236,6 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
  *
  * @param _algo Algorithm name
  * @param _size Size in bits
-
- TODO: take out print statement
  */
 #define SHCOLL_ALLTOALL_SIZE_DEFINITION(_algo, _size)                          \
   void shcoll_alltoall##_size##_##_algo(                                       \
@@ -288,25 +286,37 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
 #define SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, _type, _typename)               \
   int shcoll_##_typename##_alltoall_##_algo(                                   \
       shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
-    printf("Running shcoll_%s_alltoall_%s\n", #_typename, #_algo);              \
-    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
-    int logPE_stride = 0;                                                      \
-    int PE_size = shmem_team_n_pes(team);                                      \
+    /* Get team parameters */                                                  \
+    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
+    const int logPE_stride = 0;                                                \
+    const int PE_size = shmem_team_n_pes(team);                                \
+                                                                               \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
     if (!pSync)                                                                \
       return -1;                                                               \
+                                                                               \
     /* Initialize pSync */                                                     \
     for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
+                                                                               \
     /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
+                                                                               \
     /* Perform alltoall */                                                     \
-    alltoall_helper_##_algo(dest, source, sizeof(_type) * nelems, PE_start,    \
+    alltoall_helper_##_algo(dest, source, nelems * sizeof(_type), PE_start,    \
                             logPE_stride, PE_size, pSync);                     \
-    /* Cleanup */                                                              \
+                                                                               \
+    /* Ensure alltoall completion */                                           \
     shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+                                                                               \
     shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
@@ -364,24 +374,37 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
 #define SHCOLL_ALLTOALLMEM_DEFINITION(_algo)                                   \
   int shcoll_alltoallmem_##_algo(shmem_team_t team, void *dest,                \
                                  const void *source, size_t nelems) {          \
-    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
-    int logPE_stride = 0;                                                      \
-    int PE_size = shmem_team_n_pes(team);                                      \
+    /* Get team parameters */                                                  \
+    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
+    const int logPE_stride = 0;                                                \
+    const int PE_size = shmem_team_n_pes(team);                                \
+                                                                               \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
     if (!pSync)                                                                \
       return -1;                                                               \
+                                                                               \
     /* Initialize pSync */                                                     \
     for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
+                                                                               \
     /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
+                                                                               \
     /* Perform alltoall */                                                     \
     alltoall_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,      \
                             PE_size, pSync);                                   \
-    /* Cleanup */                                                              \
+                                                                               \
+    /* Ensure alltoall completion */                                           \
     shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+                                                                               \
     shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
