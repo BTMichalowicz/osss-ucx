@@ -6,7 +6,7 @@ SOURCES = alltoall.c \
 				broadcast.c \
 				collect.c \
 				fcollect.c \
-				reduction.c
+				reduce.c
 
 SOURCES += util/bithacks.c \
 				util/broadcast-size.c \
@@ -34,6 +34,6 @@ nobase_include_HEADERS  = shcoll.h \
 				shcoll/collect.h \
 				shcoll/common.h \
 				shcoll/fcollect.h \
-				shcoll/reduction.h
+				shcoll/reduce.h
 
 EXTRA_DIST              = shcoll/compat.h

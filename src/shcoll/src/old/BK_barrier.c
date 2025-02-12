@@ -205,27 +205,27 @@ inline static void barrier_sync_helper_dissemination(int PE_start,
   }
 }
 
-#define SHCOLL_BARRIER_SYNC_DEFINITION(_algo)                                  \
-  void shcoll_barrier_##_algo(int PE_start, int logPE_stride, int PE_size,     \
+#define SHCOLL_BARRIER_SYNC_DEFINITION(_name)                                  \
+  void shcoll_barrier_##_name(int PE_start, int logPE_stride, int PE_size,     \
                               long *pSync) {                                   \
     shmem_quiet();                                                             \
-    barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
+    barrier_sync_helper_##_name(PE_start, logPE_stride, PE_size, pSync);       \
   }                                                                            \
                                                                                \
-  void shcoll_barrier_all_##_algo(long *pSync) {                               \
+  void shcoll_barrier_all_##_name(long *pSync) {                               \
     shmem_quiet();                                                             \
-    barrier_sync_helper_##_algo(0, 0, shmem_n_pes(), pSync);                   \
+    barrier_sync_helper_##_name(0, 0, shmem_n_pes(), pSync);                   \
   }                                                                            \
                                                                                \
-  void shcoll_sync_##_algo(int PE_start, int logPE_stride, int PE_size,        \
+  void shcoll_sync_##_name(int PE_start, int logPE_stride, int PE_size,        \
                            long *pSync) {                                      \
     /* TODO: memory fence */                                                   \
-    barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
+    barrier_sync_helper_##_name(PE_start, logPE_stride, PE_size, pSync);       \
   }                                                                            \
                                                                                \
-  void shcoll_sync_all_##_algo(long *pSync) {                                  \
+  void shcoll_sync_all_##_name(long *pSync) {                                  \
     /* TODO: memory fence */                                                   \
-    barrier_sync_helper_##_algo(0, 0, shmem_n_pes(), pSync);                   \
+    barrier_sync_helper_##_name(0, 0, shmem_n_pes(), pSync);                   \
   }
 
 /* @formatter:off */

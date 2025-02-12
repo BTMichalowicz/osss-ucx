@@ -1,4 +1,11 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file env.c
+ * @brief Environment variable handling and initialization
+ *
+ * This file contains functions for reading and handling environment variables
+ * that control OpenSHMEM runtime behavior, as well as initialization and
+ * finalization of environment settings.
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -17,15 +24,22 @@
 #include <string.h>
 #include <strings.h>
 
-/*
- * for string formatting
+/**
+ * @brief Buffer size for string formatting
  */
 #define BUFSIZE 16
 
-/*
- * detect whether option enabled
+/**
+ * @brief Test if an environment variable option is enabled
+ *
+ * @param str String value to test
+ * @return true if option is enabled, false otherwise
+ *
+ * Tests if an environment variable option is enabled by checking for:
+ * - First letter 'y' or 'Y'
+ * - String "on" (case insensitive)
+ * - Non-zero numeric value
  */
-
 static bool option_enabled_test(const char *str) {
   if (str == NULL) {
     return false;
@@ -46,15 +60,18 @@ static bool option_enabled_test(const char *str) {
   return false;
 }
 
-/*
- * read & save all our environment variables
+/**
+ * @brief Check for environment variable with SHMEM_ prefix
  */
-
 #define CHECK_ENV(_e, _name)                                                   \
   do {                                                                         \
     (_e) = getenv("SHMEM_" #_name);                                            \
   } while (0)
 
+/**
+ * @brief Check for environment variable with SHMEM_ prefix, falling back to
+ * SMA_ prefix
+ */
 #define CHECK_ENV_WITH_DEPRECATION(_e, _name)                                  \
   do {                                                                         \
     CHECK_ENV(_e, _name);                                                      \
@@ -63,6 +80,15 @@ static bool option_enabled_test(const char *str) {
     }                                                                          \
   } while (0)
 
+/**
+ * @brief Initialize environment settings from environment variables
+ *
+ * Reads environment variables and initializes runtime settings including:
+ * - Debug/logging options
+ * - Symmetric heap size
+ * - Collective algorithm selections
+ * - Progress thread settings
+ */
 void shmemc_env_init(void) {
   char *e;
   int r;
@@ -113,17 +139,35 @@ void shmemc_env_init(void) {
     proc.env.logging_events = strdup(e); /* free@end */
   }
 
+  /* Initialize all collective variables to NULL */
   proc.env.coll.barrier = NULL;
   proc.env.coll.barrier_all = NULL;
   proc.env.coll.sync = NULL;
   proc.env.coll.sync_all = NULL;
-  proc.env.coll.broadcast = NULL;
-  proc.env.coll.collect = NULL;
-  proc.env.coll.fcollect = NULL;
-  proc.env.coll.alltoall = NULL;
-  proc.env.coll.alltoalls = NULL;
+
+  proc.env.coll.broadcast_type = NULL;
+  proc.env.coll.broadcast_mem = NULL;
+  proc.env.coll.broadcast_size = NULL;
+
+  proc.env.coll.collect_type = NULL;
+  proc.env.coll.collect_mem = NULL;
+  proc.env.coll.collect_size = NULL;
+
+  proc.env.coll.fcollect_type = NULL;
+  proc.env.coll.fcollect_mem = NULL;
+  proc.env.coll.fcollect_size = NULL;
+
+  proc.env.coll.alltoall_type = NULL;
+  proc.env.coll.alltoall_mem = NULL;
+  proc.env.coll.alltoall_size = NULL;
+
+  proc.env.coll.alltoalls_type = NULL;
+  proc.env.coll.alltoalls_mem = NULL;
+  proc.env.coll.alltoalls_size = NULL;
+
   proc.env.coll.reductions = NULL;
 
+  /* Initialize from environment variables with defaults */
   CHECK_ENV(e, BARRIER_ALGO);
   proc.env.coll.barrier = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BARRIER);
   CHECK_ENV(e, BARRIER_ALL_ALGO);
@@ -134,25 +178,63 @@ void shmemc_env_init(void) {
   CHECK_ENV(e, SYNC_ALL_ALGO);
   proc.env.coll.sync_all =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC_ALL);
+
   CHECK_ENV(e, BROADCAST_ALGO);
-  proc.env.coll.broadcast =
+  proc.env.coll.broadcast_type =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
+  CHECK_ENV(e, BROADCASTMEM_ALGO);
+  proc.env.coll.broadcast_mem =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
+
   CHECK_ENV(e, COLLECT_ALGO);
-  proc.env.coll.collect = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
+  proc.env.coll.collect_type =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
+  CHECK_ENV(e, COLLECTMEM_ALGO);
+  proc.env.coll.collect_mem =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
+
   CHECK_ENV(e, FCOLLECT_ALGO);
-  proc.env.coll.fcollect =
+  proc.env.coll.fcollect_type =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
+  CHECK_ENV(e, FCOLLECTMEM_ALGO);
+  proc.env.coll.fcollect_mem =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
+
   CHECK_ENV(e, ALLTOALL_ALGO);
-  proc.env.coll.alltoall =
+  proc.env.coll.alltoall_type =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
+  CHECK_ENV(e, ALLTOALLMEM_ALGO);
+  proc.env.coll.alltoall_mem =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
+
   CHECK_ENV(e, ALLTOALLS_ALGO);
-  proc.env.coll.alltoalls =
+  proc.env.coll.alltoalls_type =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
-  CHECK_ENV(e, REDUCE_ALGO);
+  CHECK_ENV(e, ALLTOALLSMEM_ALGO);
+  proc.env.coll.alltoalls_mem =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
+
+  /* Deprecated sized variants */
+  CHECK_ENV(e, ALLTOALL_SIZE_ALGO);
+  proc.env.coll.alltoall_size =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
+  CHECK_ENV(e, ALLTOALLS_SIZE_ALGO);
+  proc.env.coll.alltoalls_size =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
+  CHECK_ENV(e, COLLECT_SIZE_ALGO);
+  proc.env.coll.collect_size =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
+  CHECK_ENV(e, FCOLLECT_SIZE_ALGO);
+  proc.env.coll.fcollect_size =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
+  CHECK_ENV(e, BROADCAST_SIZE_ALGO);
+  proc.env.coll.broadcast_size =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
+
   /* TODO currently ignored */
+  CHECK_ENV(e, REDUCE_ALGO);
   proc.env.coll.reductions =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_REDUCTIONS);
-  /* collectives to free@end */
 
   proc.env.progress_threads = NULL;
 
@@ -195,33 +277,60 @@ void shmemc_env_init(void) {
 #undef CHECK_ENV
 #undef CHECK_ENV_WITH_DEPRECATION
 
+/**
+ * @brief Clean up environment settings
+ *
+ * Frees memory allocated for environment variable strings
+ */
 void shmemc_env_finalize(void) {
   free(proc.env.logging_file);
   free(proc.env.logging_events);
   free(proc.env.heap_spec);
 
+  /* Free all collective algorithm strings */
   free(proc.env.coll.reductions);
-  free(proc.env.coll.alltoalls);
-  free(proc.env.coll.alltoall);
-  free(proc.env.coll.fcollect);
-  free(proc.env.coll.collect);
+
+  free(proc.env.coll.alltoalls_size);
+  free(proc.env.coll.alltoalls_type);
+  free(proc.env.coll.alltoalls_mem);
+
+  free(proc.env.coll.alltoall_size);
+  free(proc.env.coll.alltoall_type);
+  free(proc.env.coll.alltoall_mem);
+
+  free(proc.env.coll.fcollect_size);
+  free(proc.env.coll.fcollect_type);
+  free(proc.env.coll.fcollect_mem);
+
+  free(proc.env.coll.collect_size);
+  free(proc.env.coll.collect_type);
+  free(proc.env.coll.collect_mem);
+
+  free(proc.env.coll.broadcast_size);
+  free(proc.env.coll.broadcast_type);
+  free(proc.env.coll.broadcast_mem);
+
   free(proc.env.coll.sync_all);
   free(proc.env.coll.sync);
   free(proc.env.coll.barrier_all);
   free(proc.env.coll.barrier);
-  free(proc.env.coll.broadcast);
 
   free(proc.env.progress_threads);
 }
 
-/*
- * all terminals are 80 columns, right? :)
+/**
+ * @brief Constants for formatting environment variable output
  */
-
 static const int var_width = 22;
 static const int val_width = 10;
 static const int hr_width = 74;
 
+/**
+ * @brief Print a horizontal rule to the output stream
+ *
+ * @param stream Output stream
+ * @param prefix String prefix for the line
+ */
 inline static void hr(FILE *stream, const char *prefix) {
   int i;
 
@@ -232,6 +341,14 @@ inline static void hr(FILE *stream, const char *prefix) {
   fprintf(stream, "\n");
 }
 
+/**
+ * @brief Print environment variable settings
+ *
+ * @param stream Output stream to print to
+ * @param prefix String prefix for each line
+ *
+ * Prints current values of all environment variables and their descriptions
+ */
 void shmemc_print_env_vars(FILE *stream, const char *prefix) {
   fprintf(stream,
           "%sEnvironment Variable Information.  "
@@ -297,11 +414,25 @@ void shmemc_print_env_vars(FILE *stream, const char *prefix) {
   DESCRIBE_COLLECTIVE(barrier_all, BARRIER_ALL);
   DESCRIBE_COLLECTIVE(sync, SYNC);
   DESCRIBE_COLLECTIVE(sync_all, SYNC_ALL);
-  DESCRIBE_COLLECTIVE(broadcast, BROADCAST);
-  DESCRIBE_COLLECTIVE(collect, COLLECT);
-  DESCRIBE_COLLECTIVE(fcollect, FCOLLECT);
-  DESCRIBE_COLLECTIVE(alltoall, ALLTOALL);
-  DESCRIBE_COLLECTIVE(alltoalls, ALLTOALLS);
+
+  DESCRIBE_COLLECTIVE(broadcast_type, BROADCAST_TYPE);
+  DESCRIBE_COLLECTIVE(collect_type, COLLECT_TYPE);
+  DESCRIBE_COLLECTIVE(fcollect_type, FCOLLECT_TYPE);
+  DESCRIBE_COLLECTIVE(alltoall_type, ALLTOALL_TYPE);
+  DESCRIBE_COLLECTIVE(alltoalls_type, ALLTOALLS_TYPE);
+
+  DESCRIBE_COLLECTIVE(broadcast_mem, BROADCASTMEM);
+  DESCRIBE_COLLECTIVE(collect_mem, COLLECTMEM);
+  DESCRIBE_COLLECTIVE(fcollect_mem, FCOLLECTMEM);
+  DESCRIBE_COLLECTIVE(alltoall_mem, ALLTOALLMEM);
+  DESCRIBE_COLLECTIVE(alltoalls_mem, ALLTOALLSMEM);
+
+  DESCRIBE_COLLECTIVE(broadcast_size, BROADCAST_SIZE);
+  DESCRIBE_COLLECTIVE(collect_size, COLLECT_SIZE);
+  DESCRIBE_COLLECTIVE(fcollect_size, FCOLLECT_SIZE);
+  DESCRIBE_COLLECTIVE(alltoall_size, ALLTOALL_SIZE);
+  DESCRIBE_COLLECTIVE(alltoalls_size, ALLTOALLS_SIZE);
+
   DESCRIBE_COLLECTIVE(reductions, REDUCE);
 
   fprintf(stream, "%s%-*s %-*s %s\n", prefix, var_width,

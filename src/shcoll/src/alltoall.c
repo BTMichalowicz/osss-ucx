@@ -2,20 +2,17 @@
  * @file alltoall.c
  * @brief Implementation of all-to-all collective operations
  *
- * This file contains implementations of all-to-all collective operations using
- * different algorithms and synchronization methods:
+ * This file implements various algorithms for all-to-all collective operations:
  * - Shift exchange
  * - XOR pairwise exchange
  * - Color pairwise exchange
  *
- * Each algorithm has variants using different synchronization:
+ * Each algorithm has variants using different synchronization methods:
  * - Barrier-based
  * - Signal-based
  * - Counter-based
- */
-
-/*
- * For license: see LICENSE file at top-level
+ *
+ * @copyright For license: see LICENSE file at top-level
  */
 
 #include "shcoll.h"
@@ -25,10 +22,12 @@
 #include <limits.h>
 #include <assert.h>
 
+#include <stdio.h>
+
 /**
  * @brief Calculate edge color for color pairwise exchange algorithm
  *
- * @param i Current iteration index
+ * @param i Current round number
  * @param me Current PE index
  * @param npes Total number of PEs
  * @return Edge color value
@@ -57,10 +56,10 @@ inline static int edge_color(int i, int me, int npes) {
 static int alltoall_rounds_sync = INT32_MAX;
 
 /**
- * @brief Set number of rounds between synchronizations for alltoalls
+ * @brief Set number of rounds between synchronizations for alltoall operations
  * @param rounds_sync Number of rounds between synchronizations
  */
-void shcoll_set_alltoalls_round_sync(int rounds_sync) {
+void shcoll_set_alltoall_round_sync(int rounds_sync) {
   alltoall_rounds_sync = rounds_sync;
 }
 
@@ -68,13 +67,13 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
  * @brief Helper macro to define barrier-based alltoall implementations
  *
  * @param _algo Algorithm name
- * @param _peer Function to determine peer PE
- * @param _cond Additional condition for participation
+ * @param _peer Function to calculate peer PE
+ * @param _cond Condition that must be satisfied
  */
 #define ALLTOALL_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)                \
-  inline static int alltoall_helper_##_algo##_barrier(                         \
+  inline static void alltoall_helper_##_algo##_barrier(                        \
       void *dest, const void *source, size_t nelems, int PE_start,             \
-      int logPE_stride, int PE_size) {                                         \
+      int logPE_stride, int PE_size, long *pSync) {                            \
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
                                                                                \
@@ -87,57 +86,38 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
     int i;                                                                     \
     int peer_as;                                                               \
                                                                                \
-    /* Validate the condition */                                               \
-    if (!(_cond)) {                                                            \
-      return -1;                                                               \
-    }                                                                          \
+    assert(_cond);                                                             \
                                                                                \
-    /* Copy own data to destination */                                         \
     memcpy(dest_ptr, source_ptr, nelems);                                      \
                                                                                \
-    /* Perform non-blocking put operations to all peers */                     \
     for (i = 1; i < PE_size; i++) {                                            \
       peer_as = _peer(i, me_as, PE_size);                                      \
       source_ptr = ((uint8_t *)source) + peer_as * nelems;                     \
                                                                                \
-      /* Ensure peer_as is within valid range */                               \
-      if (peer_as < 0 || peer_as >= PE_size) {                                 \
-        return -1;                                                             \
-      }                                                                        \
-                                                                               \
-      /* Perform non-blocking put */                                           \
       shmem_putmem_nbi(dest_ptr, source_ptr, nelems,                           \
                        PE_start + peer_as * stride);                           \
                                                                                \
-      /* Periodically synchronize to ensure progress */                        \
       if (i % alltoall_rounds_sync == 0) {                                     \
-        if (shmem_team_sync(SHMEM_TEAM_WORLD) != SHMEM_SUCCESS) {              \
-          return -1;                                                           \
-        }                                                                      \
+        /* TODO: change to auto shcoll barrier */                              \
+        shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);  \
       }                                                                        \
     }                                                                          \
                                                                                \
-    /* Final synchronization after all puts */                                 \
-    if (shmem_team_sync(SHMEM_TEAM_WORLD) != SHMEM_SUCCESS) {                  \
-      return -1;                                                               \
-    }                                                                          \
-                                                                               \
-    /* If all operations are successful */                                     \
-    return 0;                                                                  \
+    /* TODO: change to auto shcoll barrier */                                  \
+    shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
   }
 
-// FIXME: test to make sure this works
 /**
  * @brief Helper macro to define counter-based alltoall implementations
  *
  * @param _algo Algorithm name
- * @param _peer Function to determine peer PE
- * @param _cond Additional condition for participation
+ * @param _peer Function to calculate peer PE
+ * @param _cond Condition that must be satisfied
  */
 #define ALLTOALL_HELPER_COUNTER_DEFINITION(_algo, _peer, _cond)                \
-  inline static int alltoall_helper_##_algo##_counter(                         \
+  inline static void alltoall_helper_##_algo##_counter(                        \
       void *dest, const void *source, size_t nelems, int PE_start,             \
-      int logPE_stride, int PE_size) {                                         \
+      int logPE_stride, int PE_size, long *pSync) {                            \
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
                                                                                \
@@ -150,22 +130,12 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
     int i;                                                                     \
     int peer_as;                                                               \
                                                                                \
-    /* Validate the condition */                                               \
-    if (!(_cond)) {                                                            \
-      return -1;                                                               \
-    }                                                                          \
+    assert(_cond);                                                             \
                                                                                \
     for (i = 1; i < PE_size; i++) {                                            \
       peer_as = _peer(i, me_as, PE_size);                                      \
-                                                                               \
-      /* Ensure peer_as is within valid range */                               \
-      if (peer_as < 0 || peer_as >= PE_size) {                                 \
-        return -1;                                                             \
-      }                                                                        \
-                                                                               \
       source_ptr = ((uint8_t *)source) + peer_as * nelems;                     \
                                                                                \
-      /* Perform non-blocking put */                                           \
       shmem_putmem_nbi(dest_ptr, source_ptr, nelems,                           \
                        PE_start + peer_as * stride);                           \
     }                                                                          \
@@ -173,30 +143,29 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
     source_ptr = ((uint8_t *)source) + me_as * nelems;                         \
     memcpy(dest_ptr, source_ptr, nelems);                                      \
                                                                                \
-    /* Ensure all non-blocking operations are complete */                      \
     shmem_fence();                                                             \
                                                                                \
-    /* Final synchronization */                                                \
-    if (shmem_team_sync(SHMEM_TEAM_WORLD) != SHMEM_SUCCESS) {                  \
-      return -1;                                                               \
+    for (i = 1; i < PE_size; i++) {                                            \
+      peer_as = _peer(i, me_as, PE_size);                                      \
+      shmem_long_atomic_inc(pSync, PE_start + peer_as * stride);               \
     }                                                                          \
                                                                                \
-    /* If all operations are successful */                                     \
-    return 0;                                                                  \
+    shmem_long_wait_until(pSync, SHMEM_CMP_EQ,                                 \
+                          SHCOLL_SYNC_VALUE + PE_size - 1);                    \
+    shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);                                \
   }
 
-// FIXME: test to make sure this works
 /**
  * @brief Helper macro to define signal-based alltoall implementations
  *
  * @param _algo Algorithm name
- * @param _peer Function to determine peer PE
- * @param _cond Additional condition for participation
+ * @param _peer Function to calculate peer PE
+ * @param _cond Condition that must be satisfied
  */
 #define ALLTOALL_HELPER_SIGNAL_DEFINITION(_algo, _peer, _cond)                 \
-  inline static int alltoall_helper_##_algo##_signal(                          \
+  inline static void alltoall_helper_##_algo##_signal(                         \
       void *dest, const void *source, size_t nelems, int PE_start,             \
-      int logPE_stride, int PE_size) {                                         \
+      int logPE_stride, int PE_size, long *pSync) {                            \
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
                                                                                \
@@ -206,26 +175,16 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
     void *const dest_ptr = ((uint8_t *)dest) + me_as * nelems;                 \
     void const *source_ptr;                                                    \
                                                                                \
+    assert(_cond);                                                             \
+                                                                               \
     int i;                                                                     \
     int peer_as;                                                               \
                                                                                \
-    /* Validate the condition */                                               \
-    if (!(_cond)) {                                                            \
-      return -1;                                                               \
-    }                                                                          \
-                                                                               \
     for (i = 1; i < PE_size; i++) {                                            \
       peer_as = _peer(i, me_as, PE_size);                                      \
-                                                                               \
-      /* Ensure peer_as is within valid range */                               \
-      if (peer_as < 0 || peer_as >= PE_size) {                                 \
-        return -1;                                                             \
-      }                                                                        \
-                                                                               \
       source_ptr = ((uint8_t *)source) + peer_as * nelems;                     \
                                                                                \
-      /* Perform non-blocking signal put */                                    \
-      shmem_putmem_signal_nb(dest_ptr, source_ptr, nelems, NULL,               \
+      shmem_putmem_signal_nb(dest_ptr, source_ptr, nelems, pSync + i - 1,      \
                              SHCOLL_SYNC_VALUE + 1,                            \
                              PE_start + peer_as * stride, NULL);               \
     }                                                                          \
@@ -233,25 +192,22 @@ void shcoll_set_alltoalls_round_sync(int rounds_sync) {
     source_ptr = ((uint8_t *)source) + me_as * nelems;                         \
     memcpy(dest_ptr, source_ptr, nelems);                                      \
                                                                                \
-    /* Final synchronization */                                                \
-    if (shmem_team_sync(SHMEM_TEAM_WORLD) != SHMEM_SUCCESS) {                  \
-      return -1;                                                               \
+    for (i = 1; i < PE_size; i++) {                                            \
+      shmem_long_wait_until(pSync + i - 1, SHMEM_CMP_GT, SHCOLL_SYNC_VALUE);   \
+      shmem_long_p(pSync + i - 1, SHCOLL_SYNC_VALUE, me);                      \
     }                                                                          \
-                                                                               \
-    /* If all operations are successful */                                     \
-    return 0;                                                                  \
   }
 
 // @formatter:off
 
-/** @brief Calculate peer PE using shift pattern */
+/** @brief Peer calculation for shift exchange algorithm */
 #define SHIFT_PEER(I, ME, NPES) (((ME) + (I)) % (NPES))
 ALLTOALL_HELPER_BARRIER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
 ALLTOALL_HELPER_COUNTER_DEFINITION(shift_exchange, SHIFT_PEER, 1)
 ALLTOALL_HELPER_SIGNAL_DEFINITION(shift_exchange, SHIFT_PEER,
                                   PE_size - 1 <= SHCOLL_ALLTOALL_SYNC_SIZE)
 
-/** @brief Calculate peer PE using XOR pattern */
+/** @brief Peer calculation for XOR exchange algorithm */
 #define XOR_PEER(I, ME, NPES) ((I) ^ (ME))
 #define XOR_COND (((PE_size - 1) & PE_size) == 0)
 
@@ -261,7 +217,7 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(xor_pairwise_exchange, XOR_PEER,
                                   XOR_COND &&PE_size - 1 <=
                                       SHCOLL_ALLTOALL_SYNC_SIZE)
 
-/** @brief Calculate peer PE using color pattern */
+/** @brief Peer calculation for color exchange algorithm */
 #define COLOR_PEER(I, ME, NPES) edge_color(I, ME, NPES)
 #define COLOR_COND (PE_size % 2 == 0)
 
@@ -276,68 +232,191 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
 // @formatter:on
 
 /**
- * @brief Define type-specific alltoall implementation
+ * @brief Helper macro to define SIZE alltoall implementations
+ *
+ * @param _algo Algorithm name
+ * @param _size Size in bits
+ */
+#define SHCOLL_ALLTOALL_SIZE_DEFINITION(_algo, _size)                          \
+  void shcoll_alltoall##_size##_##_algo(                                       \
+      void *dest, const void *source, size_t nelems, int PE_start,             \
+      int logPE_stride, int PE_size, long *pSync) {                            \
+    alltoall_helper_##_algo(dest, source, (_size) / (CHAR_BIT) * nelems,       \
+                            PE_start, logPE_stride, PE_size, pSync);           \
+  }
+
+// @formatter:off
+
+SHCOLL_ALLTOALL_SIZE_DEFINITION(shift_exchange_barrier, 32)
+SHCOLL_ALLTOALL_SIZE_DEFINITION(shift_exchange_barrier, 64)
+
+SHCOLL_ALLTOALL_SIZE_DEFINITION(shift_exchange_counter, 32)
+SHCOLL_ALLTOALL_SIZE_DEFINITION(shift_exchange_counter, 64)
+
+SHCOLL_ALLTOALL_SIZE_DEFINITION(shift_exchange_signal, 32)
+SHCOLL_ALLTOALL_SIZE_DEFINITION(shift_exchange_signal, 64)
+
+SHCOLL_ALLTOALL_SIZE_DEFINITION(xor_pairwise_exchange_barrier, 32)
+SHCOLL_ALLTOALL_SIZE_DEFINITION(xor_pairwise_exchange_barrier, 64)
+
+SHCOLL_ALLTOALL_SIZE_DEFINITION(xor_pairwise_exchange_counter, 32)
+SHCOLL_ALLTOALL_SIZE_DEFINITION(xor_pairwise_exchange_counter, 64)
+
+SHCOLL_ALLTOALL_SIZE_DEFINITION(xor_pairwise_exchange_signal, 32)
+SHCOLL_ALLTOALL_SIZE_DEFINITION(xor_pairwise_exchange_signal, 64)
+
+SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_counter, 32)
+SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_counter, 64)
+
+SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_barrier, 32)
+SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_barrier, 64)
+
+SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 32)
+SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
+
+// @formatter:on
+
+/**
+ * @brief Helper macro to define typed alltoall implementations
  *
  * @param _algo Algorithm name
  * @param _type Data type
  * @param _typename Type name string
  */
-#define SHCOLL_ALLTOALL_DEFINITION(_algo, _type, _typename)                    \
+#define SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, _type, _typename)               \
   int shcoll_##_typename##_alltoall_##_algo(                                   \
       shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
-    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
-    int logPE_stride = 0;                                                      \
-    int PE_size = shmem_team_n_pes(team);                                      \
-    int ret = alltoall_helper_##_algo(dest, source, sizeof(_type) * nelems,    \
-                                      PE_start, logPE_stride, PE_size);        \
-    if (ret != 0) {                                                            \
+    /* Get team parameters */                                                  \
+    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
+    const int logPE_stride = 0;                                                \
+    const int PE_size = shmem_team_n_pes(team);                                \
+                                                                               \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
+    if (!pSync)                                                                \
       return -1;                                                               \
+                                                                               \
+    /* Initialize pSync */                                                     \
+    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
+                                                                               \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Perform alltoall */                                                     \
+    alltoall_helper_##_algo(dest, source, nelems * sizeof(_type), PE_start,    \
+                            logPE_stride, PE_size, pSync);                     \
+                                                                               \
+    /* Ensure alltoall completion */                                           \
+    shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+                                                                               \
+    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 
-// @formatter:off
-
 /**
- * @brief Define alltoall implementations for all supported types
+ * @brief Helper macro to define alltoall implementations for all types
  *
- * @param _algo Algorithm name to generate implementations for
+ * @param _algo Algorithm name
  */
 #define DEFINE_SHCOLL_ALLTOALL_TYPES(_algo)                                    \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, float, float)                              \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, double, double)                            \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, long double, longdouble)                   \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, char, char)                                \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, signed char, schar)                        \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, short, short)                              \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, int, int)                                  \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, long, long)                                \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, long long, longlong)                       \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, unsigned char, uchar)                      \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, unsigned short, ushort)                    \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, unsigned int, uint)                        \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, unsigned long, ulong)                      \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, unsigned long long, ulonglong)             \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, int8_t, int8)                              \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, int16_t, int16)                            \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, int32_t, int32)                            \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, int64_t, int64)                            \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, uint8_t, uint8)                            \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, uint16_t, uint16)                          \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, uint32_t, uint32)                          \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, uint64_t, uint64)                          \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, size_t, size)                              \
-  SHCOLL_ALLTOALL_DEFINITION(_algo, ptrdiff_t, ptrdiff)
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, float, float)                         \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, double, double)                       \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, long double, longdouble)              \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, char, char)                           \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, signed char, schar)                   \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, short, short)                         \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, int, int)                             \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, long, long)                           \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, long long, longlong)                  \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned char, uchar)                 \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned short, ushort)               \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned int, uint)                   \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned long, ulong)                 \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned long long, ulonglong)        \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, int8_t, int8)                         \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, int16_t, int16)                       \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, int32_t, int32)                       \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, int64_t, int64)                       \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, uint8_t, uint8)                       \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, uint16_t, uint16)                     \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, uint32_t, uint32)                     \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, uint64_t, uint64)                     \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, size_t, size)                         \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
 
-/* Define for all algorithms */
+// @formatter:off
+
 DEFINE_SHCOLL_ALLTOALL_TYPES(shift_exchange_barrier)
 DEFINE_SHCOLL_ALLTOALL_TYPES(shift_exchange_counter)
 DEFINE_SHCOLL_ALLTOALL_TYPES(shift_exchange_signal)
+
 DEFINE_SHCOLL_ALLTOALL_TYPES(xor_pairwise_exchange_barrier)
 DEFINE_SHCOLL_ALLTOALL_TYPES(xor_pairwise_exchange_counter)
 DEFINE_SHCOLL_ALLTOALL_TYPES(xor_pairwise_exchange_signal)
+
 DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_barrier)
 DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_counter)
 DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
+
+/**
+ * @brief Helper macro to define alltoallmem implementations
+ *
+ * @param _algo Algorithm name
+ */
+#define SHCOLL_ALLTOALLMEM_DEFINITION(_algo)                                   \
+  int shcoll_alltoallmem_##_algo(shmem_team_t team, void *dest,                \
+                                 const void *source, size_t nelems) {          \
+    /* Get team parameters */                                                  \
+    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
+    const int logPE_stride = 0;                                                \
+    const int PE_size = shmem_team_n_pes(team);                                \
+                                                                               \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+                                                                               \
+    /* Initialize pSync */                                                     \
+    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+                                                                               \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Perform alltoall */                                                     \
+    alltoall_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,      \
+                            PE_size, pSync);                                   \
+                                                                               \
+    /* Ensure alltoall completion */                                           \
+    shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+                                                                               \
+    shmem_free(pSync);                                                         \
+    return 0;                                                                  \
+  }
+
+SHCOLL_ALLTOALLMEM_DEFINITION(shift_exchange_barrier)
+SHCOLL_ALLTOALLMEM_DEFINITION(shift_exchange_counter)
+SHCOLL_ALLTOALLMEM_DEFINITION(shift_exchange_signal)
+SHCOLL_ALLTOALLMEM_DEFINITION(xor_pairwise_exchange_barrier)
+SHCOLL_ALLTOALLMEM_DEFINITION(xor_pairwise_exchange_counter)
+SHCOLL_ALLTOALLMEM_DEFINITION(xor_pairwise_exchange_signal)
+SHCOLL_ALLTOALLMEM_DEFINITION(color_pairwise_exchange_barrier)
+SHCOLL_ALLTOALLMEM_DEFINITION(color_pairwise_exchange_counter)
+SHCOLL_ALLTOALLMEM_DEFINITION(color_pairwise_exchange_signal)
 
 // @formatter:on

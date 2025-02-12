@@ -62,15 +62,33 @@ typedef struct untyped_op {
  * @brief Structure containing all collective operation implementations
  */
 typedef struct coll_ops {
-  typed_op_t alltoall;      /**< All-to-all operation */
-  typed_op_t alltoalls;     /**< Strided all-to-all operation */
-  typed_op_t collect;       /**< Collect operation */
-  typed_op_t fcollect;      /**< Ordered collect operation */
-  typed_op_t broadcast;     /**< Broadcast operation */
-  unsized_op_t barrier;     /**< Team barrier operation */
-  unsized_op_t barrier_all; /**< Global barrier operation */
-  unsized_op_t sync;        /**< Team synchronization operation */
+  /* Current routines */
+  // typed_op_t alltoall_type;      /**< Typed all-to-all operation */
+  untyped_op_t alltoall_mem; /**< Generic all-to-all memory operation */
+  sized_op_t alltoall_size;  /**< Sized all-to-all operation */
+
+  // typed_op_t alltoalls_type;      /**< Typed strided all-to-all operation */
+  untyped_op_t
+      alltoalls_mem;         /**< Generic strided all-to-all memory operation */
+  sized_op_t alltoalls_size; /**< Sized strided all-to-all operation */
+
+  // typed_op_t collect_type;      /**< Typed collect operation */
+  untyped_op_t collect_mem; /**< Generic collect memory operation */
+  sized_op_t collect_size;  /**< Sized collect operation */
+
+  // typed_op_t fcollect_type;      /**< Typed ordered collect operation */
+  untyped_op_t fcollect_mem; /**< Generic ordered collect memory operation */
+  sized_op_t fcollect_size;  /**< Sized ordered collect operation */
+
+  // typed_op_t broadcast_type;      /**< Typed broadcast operation */
+  untyped_op_t broadcast_mem; /**< Generic broadcast memory operation */
+  sized_op_t broadcast_size;  /**< Sized broadcast operation */
+
+  unsized_op_t barrier_all; /**< Typed global barrier operation */
+  unsized_op_t sync;        /**< Synchronization operation */
   unsized_op_t sync_all;    /**< Global synchronization operation */
+  unsized_op_t barrier;     /**< Barrier operation */
+
 } coll_ops_t;
 
 /** Global collective operations table */
@@ -85,10 +103,25 @@ int register_barrier_all(const char *op);
 int register_sync_all(const char *op);
 int register_barrier(const char *op);
 int register_sync(const char *op);
-int register_broadcast(const char *op);
-int register_alltoall(const char *op);
-int register_alltoalls(const char *op);
-int register_collect(const char *op);
-int register_fcollect(const char *op);
+
+// int register_alltoall_type(const char *op);
+int register_alltoall_mem(const char *op);
+int register_alltoall_size(const char *op);
+
+// int register_alltoalls_type(const char *op);
+int register_alltoalls_mem(const char *op);
+int register_alltoalls_size(const char *op);
+
+// int register_collect_type(const char *op);
+int register_collect_mem(const char *op);
+int register_collect_size(const char *op);
+
+// int register_fcollect_type(const char *op);
+int register_fcollect_mem(const char *op);
+int register_fcollect_size(const char *op);
+
+// int register_broadcast_type(const char *op);
+int register_broadcast_mem(const char *op);
+int register_broadcast_size(const char *op);
 
 #endif

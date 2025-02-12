@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 HLINE="--------------------------------------------"
 pwd=$(pwd)
 
@@ -33,8 +32,7 @@ export SHMEM_LAUNCHER="$OMPI_BIN/mpiexec"
   --with-ucx=$UCX_DIR     \
   --enable-logging        \
   --with-heap-size=10G
-
-
+  
   #--enable-debug          \
 
 # ---  Compile
