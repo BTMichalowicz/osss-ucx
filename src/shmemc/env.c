@@ -3,7 +3,7 @@
  * @brief Environment variable handling and initialization
  *
  * This file contains functions for reading and handling environment variables
- * that control OpenSHMEM runtime behavior, as well as initialization and 
+ * that control OpenSHMEM runtime behavior, as well as initialization and
  * finalization of environment settings.
  */
 
@@ -69,7 +69,8 @@ static bool option_enabled_test(const char *str) {
   } while (0)
 
 /**
- * @brief Check for environment variable with SHMEM_ prefix, falling back to SMA_ prefix
+ * @brief Check for environment variable with SHMEM_ prefix, falling back to
+ * SMA_ prefix
  */
 #define CHECK_ENV_WITH_DEPRECATION(_e, _name)                                  \
   do {                                                                         \
@@ -163,59 +164,77 @@ void shmemc_env_init(void) {
   proc.env.coll.alltoalls_type = NULL;
   proc.env.coll.alltoalls_mem = NULL;
   proc.env.coll.alltoalls_size = NULL;
-  
+
   proc.env.coll.reductions = NULL;
 
   /* Initialize from environment variables with defaults */
   CHECK_ENV(e, BARRIER_ALGO);
   proc.env.coll.barrier = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BARRIER);
   CHECK_ENV(e, BARRIER_ALL_ALGO);
-  proc.env.coll.barrier_all = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BARRIER_ALL);
+  proc.env.coll.barrier_all =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BARRIER_ALL);
   CHECK_ENV(e, SYNC_ALGO);
   proc.env.coll.sync = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC);
   CHECK_ENV(e, SYNC_ALL_ALGO);
-  proc.env.coll.sync_all = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC_ALL);
+  proc.env.coll.sync_all =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC_ALL);
 
   CHECK_ENV(e, BROADCAST_ALGO);
-  proc.env.coll.broadcast_type = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
+  proc.env.coll.broadcast_type =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
   CHECK_ENV(e, BROADCASTMEM_ALGO);
-  proc.env.coll.broadcast_mem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
+  proc.env.coll.broadcast_mem =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
 
   CHECK_ENV(e, COLLECT_ALGO);
-  proc.env.coll.collect_type = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
+  proc.env.coll.collect_type =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
   CHECK_ENV(e, COLLECTMEM_ALGO);
-  proc.env.coll.collect_mem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
+  proc.env.coll.collect_mem =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
 
   CHECK_ENV(e, FCOLLECT_ALGO);
-  proc.env.coll.fcollect_type = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
+  proc.env.coll.fcollect_type =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
   CHECK_ENV(e, FCOLLECTMEM_ALGO);
-  proc.env.coll.fcollect_mem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
+  proc.env.coll.fcollect_mem =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
 
   CHECK_ENV(e, ALLTOALL_ALGO);
-  proc.env.coll.alltoall_type = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
+  proc.env.coll.alltoall_type =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
   CHECK_ENV(e, ALLTOALLMEM_ALGO);
-  proc.env.coll.alltoall_mem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
+  proc.env.coll.alltoall_mem =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
 
   CHECK_ENV(e, ALLTOALLS_ALGO);
-  proc.env.coll.alltoalls_type = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
+  proc.env.coll.alltoalls_type =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
   CHECK_ENV(e, ALLTOALLSMEM_ALGO);
-  proc.env.coll.alltoalls_mem = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
+  proc.env.coll.alltoalls_mem =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
 
   /* Deprecated sized variants */
   CHECK_ENV(e, ALLTOALL_SIZE_ALGO);
-  proc.env.coll.alltoall_size = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
+  proc.env.coll.alltoall_size =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALL);
   CHECK_ENV(e, ALLTOALLS_SIZE_ALGO);
-  proc.env.coll.alltoalls_size = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
+  proc.env.coll.alltoalls_size =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_ALLTOALLS);
   CHECK_ENV(e, COLLECT_SIZE_ALGO);
-  proc.env.coll.collect_size = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
+  proc.env.coll.collect_size =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_COLLECT);
   CHECK_ENV(e, FCOLLECT_SIZE_ALGO);
-  proc.env.coll.fcollect_size = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
+  proc.env.coll.fcollect_size =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_FCOLLECT);
   CHECK_ENV(e, BROADCAST_SIZE_ALGO);
-  proc.env.coll.broadcast_size = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
+  proc.env.coll.broadcast_size =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
 
   /* TODO currently ignored */
   CHECK_ENV(e, REDUCE_ALGO);
-  proc.env.coll.reductions = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_REDUCTIONS);
+  proc.env.coll.reductions =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_REDUCTIONS);
 
   proc.env.progress_threads = NULL;
 

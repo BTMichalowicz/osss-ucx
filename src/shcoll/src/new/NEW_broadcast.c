@@ -365,9 +365,9 @@ inline static int broadcast_helper_scatter_collect(shmem_team_t team,
  */
 #define SHCOLL_BROADCAST_DEFINITION(_algo, _type, _typename)                   \
   int shcoll_##_typename##_broadcast_##_algo(                                  \
-      shmem_team_t team, _type *dest, const _type *source, size_t nelems) {   \
+      shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
     return broadcast_helper_##_algo(team, dest, source,                        \
-                                  sizeof(_type) * nelems, 0);                  \
+                                    sizeof(_type) * nelems, 0);                \
   }
 
 /* @formatter:off */

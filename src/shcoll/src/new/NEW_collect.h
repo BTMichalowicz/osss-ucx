@@ -47,14 +47,6 @@ DECLARE_FOR_ALL_TYPES_COLLECT(simple)
 
 #endif /* ! _SHCOLL_COLLECT_H */
 
-
-
-
-
-
-
-
-
 // #ifndef _SHCOLL_COLLECT_H
 // #define _SHCOLL_COLLECT_H 1
 

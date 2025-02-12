@@ -464,12 +464,12 @@ void shmem_alltoalls64(void *target, const void *source, ptrdiff_t dst,
 //  * @param _type The C data type
 //  * @param _typename The type name string
 //  */
-// #define SHMEM_TYPENAME_COLLECT(_type, _typename)                               \
-//   int shmem_##_typename##_collect(shmem_team_t team, _type *dest,              \
-//                                   const _type *source, size_t nelems) {        \
-//     logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, dest, source,      \
-//            nelems);                                                            \
-//     colls.collect_type.f(team, dest, source, nelems);                          \
+// #define SHMEM_TYPENAME_COLLECT(_type, _typename) \
+//   int shmem_##_typename##_collect(shmem_team_t team, _type *dest, \
+//                                   const _type *source, size_t nelems) { \
+//     logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, dest, source, \
+//            nelems); \
+//     colls.collect_type.f(team, dest, source, nelems); \
 //   }
 
 // SHMEM_TYPENAME_COLLECT(float, float)
@@ -676,7 +676,6 @@ void shmem_collect64(void *target, const void *source, size_t nelems,
 // SHMEM_TYPENAME_FCOLLECT(size_t, size)
 // SHMEM_TYPENAME_FCOLLECT(ptrdiff_t, ptrdiff)
 
-
 /**
  * bruck_inplace (default)
  * bruck
@@ -690,7 +689,6 @@ void shmem_collect64(void *target, const void *source, size_t nelems,
  * neighbor_exchange
  */
 SHIM_FCOLLECT_TYPE(bruck_inplace)
-
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_fcollectmem = pshmem_fcollectmem
@@ -827,13 +825,14 @@ void shmem_fcollect64(void *target, const void *source, size_t nelems,
 //  * @param _type The C data type
 //  * @param _typename The type name string
 //  */
-// #define SHMEM_TYPENAME_BROADCAST(_type, _typename)                             \
-//   int shmem_##_typename##_broadcast(shmem_team_t team, _type *dest,            \
-//                                     const _type *source, size_t nelems,        \
-//                                     int PE_root) {                             \
-//     logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,  \
-//            nelems, PE_root);                                                   \
-//     colls.broadcast_type.f(team, dest, source, nelems, PE_root);               \
+// #define SHMEM_TYPENAME_BROADCAST(_type, _typename) \
+//   int shmem_##_typename##_broadcast(shmem_team_t team, _type *dest, \
+//                                     const _type *source, size_t nelems, \
+//                                     int PE_root) { \
+//     logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,
+//     \
+//            nelems, PE_root); \
+//     colls.broadcast_type.f(team, dest, source, nelems, PE_root); \
 //   }
 
 // SHMEM_TYPENAME_BROADCAST(float, float)
@@ -870,8 +869,6 @@ void shmem_fcollect64(void *target, const void *source, size_t nelems,
  * knomial_tree_signal
  */
 SHIM_BROADCAST_TYPE(binomial_tree)
-
-
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_broadcastmem = pshmem_broadcastmem

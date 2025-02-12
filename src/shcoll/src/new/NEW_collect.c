@@ -74,7 +74,6 @@ inline static int collect_helper_linear(void *dest, const void *source,
   return 0;
 }
 
-
 inline static int collect_helper_all_linear(void *dest, const void *source,
                                             size_t nbytes, int PE_start,
                                             int logPE_stride, int PE_size) {
@@ -136,7 +135,6 @@ inline static int collect_helper_all_linear(void *dest, const void *source,
 
   return 0;
 }
-
 
 inline static int collect_helper_all_linear1(void *dest, const void *source,
                                              size_t nbytes, int PE_start,
@@ -264,7 +262,6 @@ inline static int collect_helper_rec_dbl(void *dest, const void *source,
   return 0;
 }
 
-
 inline static int collect_helper_rec_dbl_signal(void *dest, const void *source,
                                                 size_t nbytes, int PE_start,
                                                 int logPE_stride, int PE_size) {
@@ -329,8 +326,6 @@ inline static int collect_helper_rec_dbl_signal(void *dest, const void *source,
 
   return 0;
 }
-
-
 
 /* TODO Find a better way to choose this value */
 #define RING_DIFF 10
@@ -476,7 +471,6 @@ inline static int collect_helper_bruck_no_rotate(void *dest, const void *source,
   return 0;
 }
 
-
 inline static int collect_helper_simple(void *dest, const void *source,
                                         size_t nbytes, int PE_start,
                                         int logPE_stride, int PE_size) {
@@ -513,7 +507,6 @@ inline static int collect_helper_simple(void *dest, const void *source,
     return collect_helper_##_algo(dest, source, sizeof(_type) * nelems,        \
                                   PE_start, logPE_stride, PE_size);            \
   }
-
 
 /* Define all types for each algorithm */
 #define DEFINE_SHCOLL_COLLECT_TYPES(_algo)                                     \
@@ -552,14 +545,3 @@ DEFINE_SHCOLL_COLLECT_TYPES(ring)
 DEFINE_SHCOLL_COLLECT_TYPES(bruck)
 DEFINE_SHCOLL_COLLECT_TYPES(bruck_no_rotate)
 DEFINE_SHCOLL_COLLECT_TYPES(simple)
-
-
-
-
-
-
-
-
-
-
-

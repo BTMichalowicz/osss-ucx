@@ -247,7 +247,7 @@ inline static void exchange_one_rkeys_and_heaps(size_t r) {
 #ifndef ENABLE_ALIGNED_ADDRESSES
     exchange_one_heap(r, pe);
 #endif /* ! ENABLE_ALIGNED_ADDRESSES */
-  }    /* PE loop */
+  } /* PE loop */
 }
 
 void shmemc_pmi_exchange_rkeys_and_heaps(void) {

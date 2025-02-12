@@ -75,11 +75,11 @@ $oshcc --version
 # $oshrun $flags -np 2 ./bin/test_team_sync
 # echo
 
-# # --- shmem_alltoall ---
-# echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
-# $oshcc test_alltoall.c -o ./bin/test_alltoall
-# $oshrun $flags -np 4 ./bin/test_alltoall
-# echo
+# --- shmem_alltoall ---
+echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
+$oshcc test_alltoall.c -o ./bin/test_alltoall
+$oshrun $flags -np 4 ./bin/test_alltoall
+echo
 
 # --- shmem_alltoalls ---
 echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
@@ -87,26 +87,26 @@ $oshcc test_alltoalls.c -o ./bin/test_alltoalls
 $oshrun $flags -np 4 ./bin/test_alltoalls
 echo
 
-# # --- shmem_collect ---
-# echo $hline ; echo "  Running shmem_collect test" ; echo $hline
-# $oshcc test_collect.c -o ./bin/test_collect
-# $oshrun $flags -np 4 ./bin/test_collect
-# echo
+# --- shmem_collect ---
+echo $hline ; echo "  Running shmem_collect test" ; echo $hline
+$oshcc test_collect.c -o ./bin/test_collect
+$oshrun $flags -np 4 ./bin/test_collect
+echo
 
-# # --- shmem_fcollect ---
-# echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
-# $oshcc test_fcollect.c -o ./bin/test_fcollect
-# $oshrun $flags -np 4 ./bin/test_fcollect
-# echo
+# --- shmem_fcollect ---
+echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
+$oshcc test_fcollect.c -o ./bin/test_fcollect
+$oshrun $flags -np 4 ./bin/test_fcollect
+echo
 
-# # --- shmem_broadcast ---
-# echo $hline ; echo "  Running shmem_broadcast test" ; echo $hline
-# $oshcc test_broadcast.c -o ./bin/test_broadcast
-# $oshrun $flags -np 4 ./bin/test_broadcast
-# echo
+# --- shmem_broadcast ---
+echo $hline ; echo "  Running shmem_broadcast test" ; echo $hline
+$oshcc test_broadcast.c -o ./bin/test_broadcast
+$oshrun $flags -np 4 ./bin/test_broadcast
+echo
 
-# # --- shmem_reduce ---
-# echo $hline ; echo "  Running shmem_reduce test" ; echo $hline
-# $oshcc test_reduce.c -o ./bin/test_reduce
-# $oshrun $flags -np 4 ./bin/test_reduce
-# echo
+# --- shmem_reduce ---
+echo $hline ; echo "  Running shmem_reduce test" ; echo $hline
+$oshcc test_reduce.c -o ./bin/test_reduce
+$oshrun $flags -np 4 ./bin/test_reduce
+echo

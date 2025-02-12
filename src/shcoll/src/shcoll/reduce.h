@@ -227,4 +227,3 @@ SHCOLL_REDUCE_DECLARE_ALL(rabenseifner2) /**< Modified Rabenseifner's algorithm 
 // clang-format on
 
 #endif /* ! _SHCOLL_REDUCTION_H */
-

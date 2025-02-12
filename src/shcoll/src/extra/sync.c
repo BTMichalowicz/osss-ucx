@@ -24,7 +24,7 @@ void shcoll_set_knomial_tree_radix_barrier(int tree_radix) {
  * Linear sync implementation
  */
 inline static void sync_helper_linear(int PE_start, int logPE_stride,
-                                     int PE_size, long *pSync) {
+                                      int PE_size, long *pSync) {
   const int me = shmem_my_pe();
   const int stride = 1 << logPE_stride;
   int i;
@@ -83,7 +83,7 @@ inline static int sync_team_helper_linear(shmem_team_t team) {
  * Complete tree sync implementation
  */
 inline static void sync_helper_complete_tree(int PE_start, int logPE_stride,
-                                            int PE_size, long *pSync) {
+                                             int PE_size, long *pSync) {
   const int me = shmem_my_pe();
   const int stride = 1 << logPE_stride;
 
@@ -162,7 +162,7 @@ inline static int sync_team_helper_complete_tree(shmem_team_t team) {
  * Binomial tree sync implementation
  */
 inline static void sync_helper_binomial_tree(int PE_start, int logPE_stride,
-                                            int PE_size, long *pSync) {
+                                             int PE_size, long *pSync) {
   const int me = shmem_my_pe();
   const int stride = 1 << logPE_stride;
 
@@ -241,7 +241,7 @@ inline static int sync_team_helper_binomial_tree(shmem_team_t team) {
  * Knomial tree sync implementation
  */
 inline static void sync_helper_knomial_tree(int PE_start, int logPE_stride,
-                                           int PE_size, long *pSync) {
+                                            int PE_size, long *pSync) {
   const int me = shmem_my_pe();
   const int stride = 1 << logPE_stride;
 
@@ -320,7 +320,7 @@ inline static int sync_team_helper_knomial_tree(shmem_team_t team) {
  * Dissemination sync implementation
  */
 inline static void sync_helper_dissemination(int PE_start, int logPE_stride,
-                                            int PE_size, long *pSync) {
+                                             int PE_size, long *pSync) {
   const int me = shmem_my_pe();
   const int stride = 1 << logPE_stride;
   /* Calculate my index in the active set */

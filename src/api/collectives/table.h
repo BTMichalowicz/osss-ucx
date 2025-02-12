@@ -65,23 +65,24 @@ typedef struct coll_ops {
   /* Current routines */
   // typed_op_t alltoall_type;      /**< Typed all-to-all operation */
   untyped_op_t alltoall_mem; /**< Generic all-to-all memory operation */
-  sized_op_t alltoall_size; /**< Sized all-to-all operation */
+  sized_op_t alltoall_size;  /**< Sized all-to-all operation */
 
   // typed_op_t alltoalls_type;      /**< Typed strided all-to-all operation */
-  untyped_op_t alltoalls_mem; /**< Generic strided all-to-all memory operation */
+  untyped_op_t
+      alltoalls_mem;         /**< Generic strided all-to-all memory operation */
   sized_op_t alltoalls_size; /**< Sized strided all-to-all operation */
 
   // typed_op_t collect_type;      /**< Typed collect operation */
   untyped_op_t collect_mem; /**< Generic collect memory operation */
-  sized_op_t collect_size; /**< Sized collect operation */
+  sized_op_t collect_size;  /**< Sized collect operation */
 
   // typed_op_t fcollect_type;      /**< Typed ordered collect operation */
   untyped_op_t fcollect_mem; /**< Generic ordered collect memory operation */
-  sized_op_t fcollect_size; /**< Sized ordered collect operation */
+  sized_op_t fcollect_size;  /**< Sized ordered collect operation */
 
   // typed_op_t broadcast_type;      /**< Typed broadcast operation */
   untyped_op_t broadcast_mem; /**< Generic broadcast memory operation */
-  sized_op_t broadcast_size; /**< Sized broadcast operation */
+  sized_op_t broadcast_size;  /**< Sized broadcast operation */
 
   unsized_op_t barrier_all; /**< Typed global barrier operation */
   unsized_op_t sync;        /**< Synchronization operation */

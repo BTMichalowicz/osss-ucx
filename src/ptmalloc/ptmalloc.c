@@ -1216,7 +1216,7 @@ int mspace_mallopt(int, int);
 #endif /* MSPACES */
 
 #ifdef __cplusplus
-};     /* end of extern "C" */
+}; /* end of extern "C" */
 #endif /* __cplusplus */
 
 /*
@@ -1401,9 +1401,9 @@ extern size_t getpagesize();
 
 /* the number of bytes to offset an address to align it */
 #define align_offset(A)                                                        \
-  ((((size_t)(A)&CHUNK_ALIGN_MASK) == 0)                                       \
+  ((((size_t)(A) & CHUNK_ALIGN_MASK) == 0)                                     \
        ? 0                                                                     \
-       : ((MALLOC_ALIGNMENT - ((size_t)(A)&CHUNK_ALIGN_MASK)) &                \
+       : ((MALLOC_ALIGNMENT - ((size_t)(A) & CHUNK_ALIGN_MASK)) &              \
           CHUNK_ALIGN_MASK))
 
 /* -------------------------- MMAP preliminaries ------------------------- */
@@ -1974,7 +1974,7 @@ typedef unsigned int flag_t;          /* The type of various bit flag sets */
 
 /* conversion from malloc headers to user pointers, and back */
 #define chunk2mem(p) ((void *)((char *)(p) + TWO_SIZE_T_SIZES))
-#define mem2chunk(mem) ((mchunkptr)((char *)(mem)-TWO_SIZE_T_SIZES))
+#define mem2chunk(mem) ((mchunkptr)((char *)(mem) - TWO_SIZE_T_SIZES))
 /* chunk associated with aligned address A */
 #define align_as_chunk(A) (mchunkptr)((A) + align_offset(chunk2mem(A)))
 
@@ -2641,7 +2641,7 @@ static size_t traverse_and_check(mstate m);
 /* The size of the smallest chunk held in bin with index i */
 #define minsize_for_tree_index(i)                                              \
   ((SIZE_T_ONE << (((i) >> 1) + TREEBIN_SHIFT)) |                              \
-   (((size_t)((i)&SIZE_T_ONE)) << (((i) >> 1) + TREEBIN_SHIFT - 1)))
+   (((size_t)((i) & SIZE_T_ONE)) << (((i) >> 1) + TREEBIN_SHIFT - 1)))
 
 /* ------------------------ Operations on bin maps ----------------------- */
 
