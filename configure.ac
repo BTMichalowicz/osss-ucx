@@ -12,7 +12,8 @@ m4_define([pkg_bugreport],  [anthony.curtis@stonybrook.edu])
 m4_define([pkg_url],        [https://github.com/openshmem-org/osss-ucx.git])
 
 m4_define([spec_major_version],     [1])
-m4_define([spec_minor_version],     [4])
+# m4_define([spec_minor_version],     [4])
+m4_define([spec_minor_version],     [5])
 m4_define([spec_max_name_len],      [64])
 # quoted to make C string literal
 m4_define([spec_vendor_string],     ["pkg_name"])

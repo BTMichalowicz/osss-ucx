@@ -1,6 +1,11 @@
-//
-// Created by Srdan Milakovic on 5/17/18.
-//
+/**
+ * @file fcollect.c
+ * @brief Implementation of various fcollect algorithms for OpenSHMEM
+ * collectives
+ * @author Srdan Milakovic
+ * @author Michael Beebe
+ * @date Created on 5/17/18, edited on 1/4/25
+ */
 
 #include "shcoll.h"
 #include "shcoll/compat.h"
@@ -12,7 +17,15 @@
 #include <assert.h>
 
 /**
- @param pSync pSync should have at least 2 elements
+ * Helper function implementing linear fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= 2
  */
 inline static void fcollect_helper_linear(void *dest, const void *source,
                                           size_t nbytes, int PE_start,
@@ -36,6 +49,17 @@ inline static void fcollect_helper_linear(void *dest, const void *source,
                            PE_start, logPE_stride, PE_size, pSync + 1);
 }
 
+/**
+ * Helper function implementing all-to-all linear fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= 1
+ */
 inline static void fcollect_helper_all_linear(void *dest, const void *source,
                                               size_t nbytes, int PE_start,
                                               int logPE_stride, int PE_size,
@@ -65,6 +89,17 @@ inline static void fcollect_helper_all_linear(void *dest, const void *source,
   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 }
 
+/**
+ * Helper function implementing all-to-all linear fcollect algorithm variant 1
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= 1
+ */
 inline static void fcollect_helper_all_linear1(void *dest, const void *source,
                                                size_t nbytes, int PE_start,
                                                int logPE_stride, int PE_size,
@@ -87,7 +122,15 @@ inline static void fcollect_helper_all_linear1(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least ⌈log(max_rank)⌉ elements
+ * Helper function implementing recursive doubling fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
  */
 inline static void fcollect_helper_rec_dbl(void *dest, const void *source,
                                            size_t nbytes, int PE_start,
@@ -123,7 +166,15 @@ inline static void fcollect_helper_rec_dbl(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least 1 element
+ * Helper function implementing ring-based fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= 1
  */
 inline static void fcollect_helper_ring(void *dest, const void *source,
                                         size_t nbytes, int PE_start,
@@ -154,7 +205,15 @@ inline static void fcollect_helper_ring(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least ⌈log(max_rank)⌉ elements
+ * Helper function implementing Bruck's fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
  */
 inline static void fcollect_helper_bruck(void *dest, const void *source,
                                          size_t nbytes, int PE_start,
@@ -192,7 +251,16 @@ inline static void fcollect_helper_bruck(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least ⌈log(max_rank)⌉ elements
+ * Helper function implementing Bruck's fcollect algorithm without final
+ * rotation
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
  */
 inline static void fcollect_helper_bruck_no_rotate(void *dest,
                                                    const void *source,
@@ -240,7 +308,16 @@ inline static void fcollect_helper_bruck_no_rotate(void *dest,
 }
 
 /**
- * @param pSync pSync should have at least ⌈log(max_rank)⌉ elements
+ * Helper function implementing Bruck's fcollect algorithm with signal
+ * operations
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
  */
 inline static void fcollect_helper_bruck_signal(void *dest, const void *source,
                                                 size_t nbytes, int PE_start,
@@ -278,7 +355,15 @@ inline static void fcollect_helper_bruck_signal(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least ⌈log(max_rank)⌉ elements
+ * Helper function implementing in-place Bruck's fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= ⌈log(max_rank)⌉
  */
 inline static void fcollect_helper_bruck_inplace(void *dest, const void *source,
                                                  size_t nbytes, int PE_start,
@@ -316,7 +401,15 @@ inline static void fcollect_helper_bruck_inplace(void *dest, const void *source,
 }
 
 /**
- * @param pSync pSync should have at least 2 elements
+ * Helper function implementing neighbor exchange fcollect algorithm
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array of size >= 2
  */
 inline static void
 fcollect_helper_neighbor_exchange(void *dest, const void *source, size_t nbytes,
@@ -388,44 +481,182 @@ fcollect_helper_neighbor_exchange(void *dest, const void *source, size_t nbytes,
   pSync[1] = SHCOLL_SYNC_VALUE;
 }
 
-#define SHCOLL_FCOLLECT_DEFINITION(_name, _size)                               \
-  void shcoll_fcollect##_size##_##_name(                                       \
+/**
+ * Macro to define fcollect functions for different data sizes
+ *
+ * @param _algo Algorithm name
+ * @param _size Data size in bits
+ */
+#define SHCOLL_FCOLLECT_SIZE_DEFINITION(_algo, _size)                          \
+  void shcoll_fcollect##_size##_##_algo(                                       \
       void *dest, const void *source, size_t nelems, int PE_start,             \
       int logPE_stride, int PE_size, long *pSync) {                            \
-    fcollect_helper_##_name(dest, source, (_size) / CHAR_BIT * nelems,         \
+    fcollect_helper_##_algo(dest, source, (_size) / CHAR_BIT * nelems,         \
                             PE_start, logPE_stride, PE_size, pSync);           \
   }
 
 /* @formatter:off */
 
-SHCOLL_FCOLLECT_DEFINITION(linear, 32)
-SHCOLL_FCOLLECT_DEFINITION(linear, 64)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(linear, 32)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(linear, 64)
 
-SHCOLL_FCOLLECT_DEFINITION(all_linear, 32)
-SHCOLL_FCOLLECT_DEFINITION(all_linear, 64)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(all_linear, 32)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(all_linear, 64)
 
-SHCOLL_FCOLLECT_DEFINITION(all_linear1, 32)
-SHCOLL_FCOLLECT_DEFINITION(all_linear1, 64)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(all_linear1, 32)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(all_linear1, 64)
 
-SHCOLL_FCOLLECT_DEFINITION(rec_dbl, 32)
-SHCOLL_FCOLLECT_DEFINITION(rec_dbl, 64)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(rec_dbl, 32)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(rec_dbl, 64)
 
-SHCOLL_FCOLLECT_DEFINITION(ring, 32)
-SHCOLL_FCOLLECT_DEFINITION(ring, 64)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(ring, 32)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(ring, 64)
 
-SHCOLL_FCOLLECT_DEFINITION(bruck, 32)
-SHCOLL_FCOLLECT_DEFINITION(bruck, 64)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(bruck, 32)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(bruck, 64)
 
-SHCOLL_FCOLLECT_DEFINITION(bruck_no_rotate, 32)
-SHCOLL_FCOLLECT_DEFINITION(bruck_no_rotate, 64)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(bruck_no_rotate, 32)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(bruck_no_rotate, 64)
 
-SHCOLL_FCOLLECT_DEFINITION(bruck_signal, 32)
-SHCOLL_FCOLLECT_DEFINITION(bruck_signal, 64)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(bruck_signal, 32)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(bruck_signal, 64)
 
-SHCOLL_FCOLLECT_DEFINITION(bruck_inplace, 32)
-SHCOLL_FCOLLECT_DEFINITION(bruck_inplace, 64)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(bruck_inplace, 32)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(bruck_inplace, 64)
 
-SHCOLL_FCOLLECT_DEFINITION(neighbor_exchange, 32)
-SHCOLL_FCOLLECT_DEFINITION(neighbor_exchange, 64)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 32)
+SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
 
 /* @formatter:on */
+
+/**
+ * Macro to define fcollect functions for different data types
+ *
+ * @param _algo Algorithm name
+ * @param type Data type
+ * @param _typename Type name string
+ */
+#define SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, type, _typename)                \
+  int shcoll_##_typename##_fcollect_##_algo(                                   \
+      shmem_team_t team, type *dest, const type *source, size_t nelems) {      \
+    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
+    int logPE_stride = 0;                                                      \
+    int PE_size = shmem_team_n_pes(team);                                      \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+    /* Initialize pSync */                                                     \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
+    /* Zero out destination buffer */                                          \
+    memset(dest, 0, sizeof(type) * nelems * PE_size);                          \
+    /* Perform fcollect */                                                     \
+    fcollect_helper_##_algo(dest, source,                                      \
+                            sizeof(type) * nelems, /* total bytes per PE */    \
+                            PE_start, logPE_stride, PE_size, pSync);           \
+    /* Ensure collection is complete */                                        \
+    shmem_team_sync(team);                                                     \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+    shmem_free(pSync);                                                         \
+    return 0;                                                                  \
+  }
+
+/* @formatter:off */
+
+/**
+ * Macro to define fcollect functions for all supported data types
+ *
+ * @param _algo Algorithm name
+ */
+#define DEFINE_SHCOLL_FCOLLECT_TYPES(_algo)                                    \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, float, float)                         \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, double, double)                       \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, long double, longdouble)              \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, unsigned char, uchar)                 \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, char, char)                           \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, signed char, schar)                   \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, short, short)                         \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, int, int)                             \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, long, long)                           \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, long long, longlong)                  \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, unsigned short, ushort)               \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, unsigned int, uint)                   \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, unsigned long, ulong)                 \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, unsigned long long, ulonglong)        \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, int8_t, int8)                         \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, int16_t, int16)                       \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, int32_t, int32)                       \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, int64_t, int64)                       \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, uint8_t, uint8)                       \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, uint16_t, uint16)                     \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, uint32_t, uint32)                     \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, uint64_t, uint64)                     \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, size_t, size)                         \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
+
+/* @formatter:on */
+
+DEFINE_SHCOLL_FCOLLECT_TYPES(linear)
+DEFINE_SHCOLL_FCOLLECT_TYPES(all_linear)
+DEFINE_SHCOLL_FCOLLECT_TYPES(all_linear1)
+DEFINE_SHCOLL_FCOLLECT_TYPES(rec_dbl)
+DEFINE_SHCOLL_FCOLLECT_TYPES(ring)
+DEFINE_SHCOLL_FCOLLECT_TYPES(bruck)
+DEFINE_SHCOLL_FCOLLECT_TYPES(bruck_no_rotate)
+DEFINE_SHCOLL_FCOLLECT_TYPES(bruck_signal)
+DEFINE_SHCOLL_FCOLLECT_TYPES(bruck_inplace)
+DEFINE_SHCOLL_FCOLLECT_TYPES(neighbor_exchange)
+
+/**
+ * @brief Macro to declare fcollectmem implementations for different algorithms
+ */
+#define SHCOLL_FCOLLECTMEM_DEFINITION(_algo)                                   \
+  int shcoll_fcollectmem_##_algo(shmem_team_t team, void *dest,                \
+                                 const void *source, size_t nelems) {          \
+    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
+    int logPE_stride = 0;                                                      \
+    int PE_size = shmem_team_n_pes(team);                                      \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+    /* Initialize pSync */                                                     \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
+    /* Zero out destination buffer */                                          \
+    memset(dest, 0, nelems *PE_size);                                          \
+    /* Perform fcollect */                                                     \
+    fcollect_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,      \
+                            PE_size, pSync);                                   \
+    /* Ensure collection is complete */                                        \
+    shmem_team_sync(team);                                                     \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+    shmem_free(pSync);                                                         \
+    return 0;                                                                  \
+  }
+
+SHCOLL_FCOLLECTMEM_DEFINITION(linear)
+SHCOLL_FCOLLECTMEM_DEFINITION(all_linear)
+SHCOLL_FCOLLECTMEM_DEFINITION(all_linear1)
+SHCOLL_FCOLLECTMEM_DEFINITION(rec_dbl)
+SHCOLL_FCOLLECTMEM_DEFINITION(ring)
+SHCOLL_FCOLLECTMEM_DEFINITION(bruck)
+SHCOLL_FCOLLECTMEM_DEFINITION(bruck_no_rotate)
+SHCOLL_FCOLLECTMEM_DEFINITION(bruck_signal)
+SHCOLL_FCOLLECTMEM_DEFINITION(bruck_inplace)
+SHCOLL_FCOLLECTMEM_DEFINITION(neighbor_exchange)

@@ -1,6 +1,13 @@
-//
-// Created by Srdan Milakovic on 5/15/18.
-//
+/**
+ * @file collect.c
+ * @brief Implementation of collective communication routines for OpenSHMEM
+ * @author Srdan Milakovic
+ * @date 5/15/18
+ *
+ * This file contains implementations of various collect algorithms for
+ * OpenSHMEM, including linear, recursive doubling, ring, and Bruck's algorithm
+ * variants.
+ */
 
 #include "shcoll.h"
 #include "shcoll/compat.h"
@@ -12,6 +19,46 @@
 #include <limits.h>
 #include <assert.h>
 
+/**
+ * @brief Simple collect helper that uses prefix sum and memcpy
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
+inline static void collect_helper_simple(void *dest, const void *source,
+                                         size_t nbytes, int PE_start,
+                                         int logPE_stride, int PE_size,
+                                         long *pSync) {
+  const int stride = 1 << logPE_stride;
+  const int me = shmem_my_pe();
+  size_t block_offset;
+
+  exclusive_prefix_sum(&block_offset, nbytes, PE_start, logPE_stride, PE_size,
+                       pSync);
+
+  // Copy local data
+  memcpy((char *)dest + block_offset, source, nbytes);
+
+  // Barrier to ensure all PEs have copied their local data
+  shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);
+}
+
+/**
+ * @brief Linear collect helper that uses PE 0 as coordinator
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void collect_helper_linear(void *dest, const void *source,
                                          size_t nbytes, int PE_start,
                                          int logPE_stride, int PE_size,
@@ -61,6 +108,17 @@ inline static void collect_helper_linear(void *dest, const void *source,
   shmem_size_p(offset, SHCOLL_SYNC_VALUE, me);
 }
 
+/**
+ * @brief All-to-all linear collect helper
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void collect_helper_all_linear(void *dest, const void *source,
                                              size_t nbytes, int PE_start,
                                              int logPE_stride, int PE_size,
@@ -98,6 +156,17 @@ inline static void collect_helper_all_linear(void *dest, const void *source,
   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 }
 
+/**
+ * @brief All-to-all linear collect helper variant using binomial tree barrier
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void collect_helper_all_linear1(void *dest, const void *source,
                                               size_t nbytes, int PE_start,
                                               int logPE_stride, int PE_size,
@@ -127,6 +196,17 @@ inline static void collect_helper_all_linear1(void *dest, const void *source,
   shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);
 }
 
+/**
+ * @brief Recursive doubling collect helper
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void collect_helper_rec_dbl(void *dest, const void *source,
                                           size_t nbytes, int PE_start,
                                           int logPE_stride, int PE_size,
@@ -173,6 +253,17 @@ inline static void collect_helper_rec_dbl(void *dest, const void *source,
   }
 }
 
+/**
+ * @brief Recursive doubling collect helper using signal operations
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void collect_helper_rec_dbl_signal(void *dest, const void *source,
                                                  size_t nbytes, int PE_start,
                                                  int logPE_stride, int PE_size,
@@ -222,6 +313,17 @@ inline static void collect_helper_rec_dbl_signal(void *dest, const void *source,
 /* TODO Find a better way to choose this value */
 #define RING_DIFF 10
 
+/**
+ * @brief Ring algorithm collect helper
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void collect_helper_ring(void *dest, const void *source,
                                        size_t nbytes, int PE_start,
                                        int logPE_stride, int PE_size,
@@ -288,6 +390,17 @@ inline static void collect_helper_ring(void *dest, const void *source,
   shmem_long_atomic_add(receiver_progress, -round, me);
 }
 
+/**
+ * @brief Bruck's algorithm collect helper
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void collect_helper_bruck(void *dest, const void *source,
                                         size_t nbytes, int PE_start,
                                         int logPE_stride, int PE_size,
@@ -365,6 +478,17 @@ inline static void collect_helper_bruck(void *dest, const void *source,
   rotate(dest, total_nbytes, block_offset);
 }
 
+/**
+ * @brief Bruck's algorithm collect helper without final rotation
+ *
+ * @param dest Destination buffer on all PEs
+ * @param source Source buffer containing local data
+ * @param nbytes Number of bytes to collect from each PE
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between consecutive PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
+ */
 inline static void collect_helper_bruck_no_rotate(void *dest,
                                                   const void *source,
                                                   size_t nbytes, int PE_start,
@@ -461,38 +585,182 @@ inline static void collect_helper_bruck_no_rotate(void *dest,
   shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, barrier_pSync);
 }
 
-#define SHCOLL_COLLECT_DEFINITION(_name, _size)                                \
-  void shcoll_collect##_size##_##_name(                                        \
+/**
+ * @brief Macro to define collect functions for different data sizes
+ */
+#define SHCOLL_COLLECT_SIZE_DEFINITION(_algo, _size)                           \
+  void shcoll_collect##_size##_##_algo(                                        \
       void *dest, const void *source, size_t nelems, int PE_start,             \
       int logPE_stride, int PE_size, long *pSync) {                            \
-    collect_helper_##_name(dest, source, (_size) / CHAR_BIT * nelems,          \
+    collect_helper_##_algo(dest, source, (_size) / CHAR_BIT * nelems,          \
                            PE_start, logPE_stride, PE_size, pSync);            \
   }
 
 /* @formatter:off */
 
-SHCOLL_COLLECT_DEFINITION(linear, 32)
-SHCOLL_COLLECT_DEFINITION(linear, 64)
+SHCOLL_COLLECT_SIZE_DEFINITION(linear, 32)
+SHCOLL_COLLECT_SIZE_DEFINITION(linear, 64)
 
-SHCOLL_COLLECT_DEFINITION(all_linear, 32)
-SHCOLL_COLLECT_DEFINITION(all_linear, 64)
+SHCOLL_COLLECT_SIZE_DEFINITION(all_linear, 32)
+SHCOLL_COLLECT_SIZE_DEFINITION(all_linear, 64)
 
-SHCOLL_COLLECT_DEFINITION(all_linear1, 32)
-SHCOLL_COLLECT_DEFINITION(all_linear1, 64)
+SHCOLL_COLLECT_SIZE_DEFINITION(all_linear1, 32)
+SHCOLL_COLLECT_SIZE_DEFINITION(all_linear1, 64)
 
-SHCOLL_COLLECT_DEFINITION(rec_dbl, 32)
-SHCOLL_COLLECT_DEFINITION(rec_dbl, 64)
+SHCOLL_COLLECT_SIZE_DEFINITION(rec_dbl, 32)
+SHCOLL_COLLECT_SIZE_DEFINITION(rec_dbl, 64)
 
-SHCOLL_COLLECT_DEFINITION(rec_dbl_signal, 32)
-SHCOLL_COLLECT_DEFINITION(rec_dbl_signal, 64)
+SHCOLL_COLLECT_SIZE_DEFINITION(rec_dbl_signal, 32)
+SHCOLL_COLLECT_SIZE_DEFINITION(rec_dbl_signal, 64)
 
-SHCOLL_COLLECT_DEFINITION(ring, 32)
-SHCOLL_COLLECT_DEFINITION(ring, 64)
+SHCOLL_COLLECT_SIZE_DEFINITION(ring, 32)
+SHCOLL_COLLECT_SIZE_DEFINITION(ring, 64)
 
-SHCOLL_COLLECT_DEFINITION(bruck, 32)
-SHCOLL_COLLECT_DEFINITION(bruck, 64)
+SHCOLL_COLLECT_SIZE_DEFINITION(bruck, 32)
+SHCOLL_COLLECT_SIZE_DEFINITION(bruck, 64)
 
-SHCOLL_COLLECT_DEFINITION(bruck_no_rotate, 32)
-SHCOLL_COLLECT_DEFINITION(bruck_no_rotate, 64)
+SHCOLL_COLLECT_SIZE_DEFINITION(bruck_no_rotate, 32)
+SHCOLL_COLLECT_SIZE_DEFINITION(bruck_no_rotate, 64)
+
+SHCOLL_COLLECT_SIZE_DEFINITION(simple, 32)
+SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
 
 /* @formatter:on */
+
+/**
+ * @brief Macro to define collect functions for different data types
+ */
+#define SHCOLL_COLLECT_TYPE_DEFINITION(_algo, _type, _typename)                \
+  int shcoll_##_typename##_collect_##_algo(                                    \
+      shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
+    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
+    int logPE_stride = 0;                                                      \
+    int PE_size = shmem_team_n_pes(team);                                      \
+    /* Verify COLLECT_SYNC_SIZE is sufficient */                               \
+    if (SHCOLL_COLLECT_SYNC_SIZE < (2 + PREFIX_SUM_SYNC_SIZE + 32)) {          \
+      return -1; /* Not enough sync space */                                   \
+    }                                                                          \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+    /* Initialize all of pSync */                                              \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
+    /* Zero out destination buffer */                                          \
+    memset(dest, 0, sizeof(_type) * nelems * PE_size);                         \
+    /* Perform collect */                                                      \
+    collect_helper_linear(dest, source,                                        \
+                          sizeof(_type) * nelems, /* total bytes per PE */     \
+                          PE_start, logPE_stride, PE_size, pSync);             \
+    /* Ensure collection is complete */                                        \
+    shmem_team_sync(team);                                                     \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+    shmem_team_sync(team);                                                     \
+    shmem_free(pSync);                                                         \
+    return 0;                                                                  \
+  }
+
+/* @formatter:off */
+
+#define DEFINE_SHCOLL_COLLECT_TYPES(_algo)                                     \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, float, float)                          \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, double, double)                        \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, long double, longdouble)               \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, unsigned char, uchar)                  \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, char, char)                            \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, signed char, schar)                    \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, short, short)                          \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, int, int)                              \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, long, long)                            \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, long long, longlong)                   \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, unsigned short, ushort)                \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, unsigned int, uint)                    \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, unsigned long, ulong)                  \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, unsigned long long, ulonglong)         \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, int8_t, int8)                          \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, int16_t, int16)                        \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, int32_t, int32)                        \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, int64_t, int64)                        \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, uint8_t, uint8)                        \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, uint16_t, uint16)                      \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, uint32_t, uint32)                      \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, uint64_t, uint64)                      \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, size_t, size)                          \
+  SHCOLL_COLLECT_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
+
+/* @formatter:on */
+
+DEFINE_SHCOLL_COLLECT_TYPES(linear)
+DEFINE_SHCOLL_COLLECT_TYPES(all_linear)
+DEFINE_SHCOLL_COLLECT_TYPES(all_linear1)
+DEFINE_SHCOLL_COLLECT_TYPES(rec_dbl)
+DEFINE_SHCOLL_COLLECT_TYPES(rec_dbl_signal)
+DEFINE_SHCOLL_COLLECT_TYPES(ring)
+DEFINE_SHCOLL_COLLECT_TYPES(bruck)
+DEFINE_SHCOLL_COLLECT_TYPES(bruck_no_rotate)
+DEFINE_SHCOLL_COLLECT_TYPES(simple)
+
+/**
+ * @brief Macro to declare collectmem implementations for different algorithms
+ */
+#define SHCOLL_COLLECTMEM_DEFINITION(_algo)                                    \
+  int shcoll_collectmem_##_algo(shmem_team_t team, void *dest,                 \
+                                const void *source, size_t nelems) {           \
+    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
+    int logPE_stride = 0;                                                      \
+    int PE_size = shmem_team_n_pes(team);                                      \
+                                                                               \
+    /* Verify COLLECT_SYNC_SIZE is sufficient */                               \
+    if (SHCOLL_COLLECT_SYNC_SIZE < (2 + PREFIX_SUM_SYNC_SIZE + 32)) {          \
+      return -1; /* Not enough sync space */                                   \
+    }                                                                          \
+                                                                               \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+                                                                               \
+    /* Initialize all of pSync */                                              \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+                                                                               \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_barrier_all();                                                       \
+                                                                               \
+    /* Zero out destination buffer */                                          \
+    memset(dest, 0, nelems *PE_size);                                          \
+                                                                               \
+    /* Perform collect */                                                      \
+    collect_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,       \
+                           PE_size, pSync);                                    \
+                                                                               \
+    /* Ensure collection is complete */                                        \
+    shmem_barrier_all();                                                       \
+                                                                               \
+    /* Reset pSync before freeing */                                           \
+    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+                                                                               \
+    shmem_barrier_all();                                                       \
+    shmem_free(pSync);                                                         \
+    return 0;                                                                  \
+  }
+
+SHCOLL_COLLECTMEM_DEFINITION(linear)
+SHCOLL_COLLECTMEM_DEFINITION(all_linear)
+SHCOLL_COLLECTMEM_DEFINITION(all_linear1)
+SHCOLL_COLLECTMEM_DEFINITION(rec_dbl)
+SHCOLL_COLLECTMEM_DEFINITION(rec_dbl_signal)
+SHCOLL_COLLECTMEM_DEFINITION(ring)
+SHCOLL_COLLECTMEM_DEFINITION(bruck)
+SHCOLL_COLLECTMEM_DEFINITION(bruck_no_rotate)
+SHCOLL_COLLECTMEM_DEFINITION(simple)

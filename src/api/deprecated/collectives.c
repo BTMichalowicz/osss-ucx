@@ -20,4 +20,3 @@
  */
 
 static const shmemu_version_t v = {.major = 1, .minor = 5};
-

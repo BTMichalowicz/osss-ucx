@@ -1,6 +1,7 @@
 #!/bin/bash
 
 HLINE="--------------------------------------------"
+pwd=$(pwd)
 
 # --- Clean up generated files
 echo $HLINE
@@ -29,9 +30,10 @@ export SHMEM_LAUNCHER="$OMPI_BIN/mpiexec"
   --prefix=$PREFIX        \
   --with-pmix=$PMIX_DIR   \
   --with-ucx=$UCX_DIR     \
-  --enable-debug          \
   --enable-logging        \
   --with-heap-size=10G
+  
+  #--enable-debug          \
 
 # ---  Compile
 echo $HLINE
@@ -39,4 +41,12 @@ echo "            COMPILING"
 echo $HLINE
 make -j $(( $(nproc) - 1 )) install
 
+
+
+
+# --- Run test script
+echo ; echo ; echo ; echo
+cd $pwd
+cd test
+./test.sh
 

@@ -183,7 +183,7 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
   void shcoll_alltoall##_size##_##_name(                                       \
       void *dest, const void *source, size_t nelems, int PE_start,             \
       int logPE_stride, int PE_size, long *pSync) {                            \
-    alltoall_helper_##_name(dest, source, (_size) / (CHAR_BIT)*nelems,         \
+    alltoall_helper_##_name(dest, source, (_size) / (CHAR_BIT) * nelems,       \
                             PE_start, logPE_stride, PE_size, pSync);           \
   }
 
