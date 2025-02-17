@@ -92,6 +92,11 @@ SHMEM_TYPE_WAIT_UNTIL(uint64, uint64_t, 64)
 SHMEM_TYPE_WAIT_UNTIL(size, size_t, 64)
 SHMEM_TYPE_WAIT_UNTIL(ptrdiff, ptrdiff_t, 64)
 
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_signal_wait_until = pshmem_signal_wait_until
+#define shmem_signal_wait_until pshmem_signal_wait_until
+#endif /* ENABLE_PSHMEM */
+
 uint64_t shmem_signal_wait_until(uint64_t *sig_addr, int cmp,
                                  uint64_t cmp_value) {
   shmem_uint64_wait_until(sig_addr, cmp, cmp_value);
