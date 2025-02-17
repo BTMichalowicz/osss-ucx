@@ -1,3 +1,13 @@
+/**
+ * @file put_signal.c
+ * @brief Implements signal-based put routines for SHMEM.
+ *
+ * This file provides implementations for both blocking and non-blocking
+ * remote memory put operations with signaling. It also sets up the PSHMEM
+ * interface using weak symbol definitions. In particular, it defines routines
+ * such as shmem_signal_fetch that atomically fetch the current signal value.
+ */
+
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
@@ -398,9 +408,24 @@ API_DECL_SIZED_PUT_SIGNAL_NBI(128)
 SHMEM_CTX_DECL_PUTMEM_SIGNAL_NBI()
 API_DECL_PUTMEM_SIGNAL_NBI()
 
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_signal_fetch = pshmem_signal_fetch
+#define shmem_signal_fetch pshmem_signal_fetch
+#endif /* ENABLE_PSHMEM */
+
+/**
+ * @brief Atomically fetch the current signal value.
+ *
+ * This routine atomically retrieves the value stored at the signaling address.
+ * It uses the default SHMEM context and performs the fetch operation with mutex
+ * protection.
+ *
+ * @param sig_addr Pointer to the signal variable.
+ *
+ * @return The current value of the signal.
+ */
 uint64_t shmem_signal_fetch(const uint64_t *sig_addr) {
   uint64_t v;
-
   SHMEMT_MUTEX_NOPROTECT(
       shmemc_ctx_fetch(SHMEM_CTX_DEFAULT, (uint64_t *)sig_addr,
                        sizeof(*sig_addr), shmemc_my_pe(), &v));
