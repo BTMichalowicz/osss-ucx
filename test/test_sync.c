@@ -117,6 +117,9 @@ int main(void) {
   /* Test the deprecated active-set-based shmem_sync */
   test_active_set_sync();
 
+  /* Synchronize all PEs */
+  shmem_barrier_all();
+
   /* Test the C11 team-based shmem_sync */
   test_team_based_sync();
 

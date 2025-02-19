@@ -69,11 +69,11 @@ $oshcc --version
 #          ./bin/test_ctx_get_team
 # echo
 
-# # --- shmem_team_sync ---
-# echo $hline ; echo "  Running shmem_team_sync test" ; echo $hline
-# $oshcc test_team_sync.c -o ./bin/test_team_sync
-# $oshrun $flags -np 2 ./bin/test_team_sync
-# echo
+# --- shmem_team_sync ---
+echo $hline ; echo "  Running shmem_team_sync test" ; echo $hline
+$oshcc test_team_sync.c -o ./bin/test_team_sync
+$oshrun $flags -np 2 ./bin/test_team_sync
+echo
 
 # # --- shmem_alltoall ---
 # echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline

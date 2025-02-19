@@ -1032,7 +1032,7 @@ void shmem_sync_all(void) {
  * @param PE_size Number of PEs in the active set
  * @param pSync Symmetric work array
  */
-void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync) {
+void shmem_sync_deprecated(int PE_start, int logPE_stride, int PE_size, long *pSync) {
   logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
          logPE_stride, PE_size, pSync);
   colls.sync.f(PE_start, logPE_stride, PE_size, pSync);
