@@ -1,23 +1,10 @@
-- Debug the following for runtime errors:
-  - shmem_broadcast<size>
-  - shmem_<typename>_broadcast
-  - shmem_broadcastmem
-  - shmem_alltoallsmem
-
-- Table registration for reductions?
+- Table registration for reductions and tpyed colls
 
 - All collectives
   - Check the logger string formats in shcoll-shim.c
   - Add a checker to make sure sure src and dest data are on the
     symmetric heap?
 
-- Handle the creation of c11 bindings for all new/updated routines
-  - shmem_sync
-    - Figure out how to make the 1.4<= version of shmem_sync backward compatible
-      in the C11 bindings
-    - implement the generic team-based sync for the C11 bindings
+- Update include/pshmem.h with all the new routines
 
-
-- handle pshmem insterface for all the new stuff (if necessary)
 - Do we need to deal with extensions for additional types for the collectives?
-

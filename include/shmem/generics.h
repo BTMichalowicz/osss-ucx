@@ -1,4 +1,19 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file generics.h
+ * @brief OpenSHMEM generic type macros and definitions
+ *
+ * This file contains C11 generic selection macros that map generic OpenSHMEM
+ * operations to their type-specific implementations.
+ *
+ * The macros use _Generic to select the appropriate typed function based on
+ * argument types. For example, shmem_put() will map to shmem_float_put() for
+ * float arguments, shmem_long_put() for long arguments, etc.
+ *
+ * Most operations have both context-based and non-context variants. The context
+ * versions take a shmem_ctx_t as their first argument.
+ *
+ * @copyright For license: see LICENSE file at top-level
+ */
 
 #ifndef _SHMEM_API_GENERICS_H
 #define _SHMEM_API_GENERICS_H 1
@@ -14,18 +29,20 @@
 #if SHMEM_HAS_C11
 
 /**
- * Contexts-based generics
- *
+ * @defgroup generics OpenSHMEM Generic Operations
+ * @{
  */
 
-/*
+/**
+ * @brief Helper function for generic selection fallback
+ *
  * This stops the not-a-context case turning into an error when
  * the value type doesn't match anything
  */
 inline static void shmem_generics_nomatch(void) {}
 
-/*
- * get numbered args out of parameter list
+/**
+ * @brief Get numbered args out of parameter list
  * (thanks to SOS)
  */
 #define SHC11_GET_ARG1_HELPER(_arg1, ...) _arg1
@@ -913,6 +930,7 @@ inline static void shmem_generics_nomatch(void) {}
       unsigned long long *: shmem_ulonglong_wait_until_all_vector,             \
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
+/* see \ref shmem_wait_until_some_vector() */
 #define shmem_wait_until_some_vector(_ivars, _nelems, _indices, _status, _cmp, \
                                      _cmp_value)                               \
   _Generic(_ivars,                                                             \
@@ -927,6 +945,7 @@ inline static void shmem_generics_nomatch(void) {}
       default: shmem_generics_nomatch)(_ivars, _nelems, _indices, _status,     \
                                        _cmp, _cmp_value)
 
+/* see \ref shmem_wait_until_any_vector() */
 #define shmem_wait_until_any_vector(_ivars, _nelems, _status, _cmp,            \
                                     _cmp_value)                                \
   _Generic(_ivars,                                                             \
@@ -941,6 +960,7 @@ inline static void shmem_generics_nomatch(void) {}
       default: shmem_generics_nomatch)(_ivars, _nelems, _status, _cmp,         \
                                        _cmp_value)
 
+/* see \ref shmem_test_all() */
 #define shmem_test_all(_ivars, _nelems, _status, _cmp, _cmp_value)             \
   _Generic(_ivars,                                                             \
       short *: shmem_short_test_all,                                           \
@@ -954,6 +974,7 @@ inline static void shmem_generics_nomatch(void) {}
       default: shmem_generics_nomatch)(_ivars, _nelems, _status, _cmp,         \
                                        _cmp_value)
 
+/* see \ref shmem_test_any() */
 #define shmem_test_any(_ivars, _nelems, _status, _cmp, _cmp_value)             \
   _Generic(_ivars,                                                             \
       short *: shmem_short_test_any,                                           \
@@ -967,6 +988,7 @@ inline static void shmem_generics_nomatch(void) {}
       default: shmem_generics_nomatch)(_ivars, _nelems, _status, _cmp,         \
                                        _cmp_value)
 
+/* see \ref shmem_test_some() */
 #define shmem_test_some(_ivars, _nelems, _indices, _status, _cmp, _cmp_value)  \
   _Generic(_ivars,                                                             \
       short *: shmem_short_test_some,                                          \
@@ -993,6 +1015,7 @@ inline static void shmem_generics_nomatch(void) {}
       unsigned long long *: shmem_ulonglong_test_all_vector,                   \
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
+/* see \ref shmem_test_some_vector() */
 #define shmem_test_some_vector(_ivars, _nelems, _indices, _status, _cmp,       \
                                _cmp_value)                                     \
   _Generic(_ivars,                                                             \
@@ -1007,6 +1030,7 @@ inline static void shmem_generics_nomatch(void) {}
       default: shmem_generics_nomatch)(_ivars, _nelems, _indices, _status,     \
                                        _cmp, _cmp_value)
 
+/* see \ref shmem_test_any_vector() */
 #define shmem_test_any_vector(_ivars, _nelems, _status, _cmp, _cmp_value)      \
   _Generic(_ivars,                                                             \
       short *: shmem_short_test_any_vector,                                    \
@@ -1019,6 +1043,226 @@ inline static void shmem_generics_nomatch(void) {}
       unsigned long long *: shmem_ulonglong_test_any_vector,                   \
       default: shmem_generics_nomatch)(_ivars, _nelems, _status, _cmp,         \
                                        _cmp_value)
+
+/* see \ref shmem_alltoall() */
+#define shmem_alltoall(...)                                                    \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      float *: shmem_float_alltoall,                                           \
+      double *: shmem_double_alltoall,                                         \
+      long double *: shmem_longdouble_alltoall,                                \
+      signed char *: shmem_schar_alltoall,                                     \
+      char *: shmem_char_alltoall,                                             \
+      short *: shmem_short_alltoall,                                           \
+      int *: shmem_int_alltoall,                                               \
+      long *: shmem_long_alltoall,                                             \
+      long long *: shmem_longlong_alltoall,                                    \
+      unsigned char *: shmem_uchar_alltoall,                                   \
+      unsigned short *: shmem_ushort_alltoall,                                 \
+      unsigned int *: shmem_uint_alltoall,                                     \
+      unsigned long *: shmem_ulong_alltoall,                                   \
+      unsigned long long *: shmem_ulonglong_alltoall,                          \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_alltoalls() */
+#define shmem_alltoalls(...)                                                   \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      float *: shmem_float_alltoalls,                                          \
+      double *: shmem_double_alltoalls,                                        \
+      long double *: shmem_longdouble_alltoalls,                               \
+      signed char *: shmem_schar_alltoalls,                                    \
+      char *: shmem_char_alltoalls,                                            \
+      short *: shmem_short_alltoalls,                                          \
+      int *: shmem_int_alltoalls,                                              \
+      long *: shmem_long_alltoalls,                                            \
+      long long *: shmem_longlong_alltoalls,                                   \
+      unsigned char *: shmem_uchar_alltoalls,                                  \
+      unsigned short *: shmem_ushort_alltoalls,                                \
+      unsigned int *: shmem_uint_alltoalls,                                    \
+      unsigned long *: shmem_ulong_alltoalls,                                  \
+      unsigned long long *: shmem_ulonglong_alltoalls,                         \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_alltoalls() */
+#define shmem_collect(...)                                                     \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      float *: shmem_float_collect,                                            \
+      double *: shmem_double_collect,                                          \
+      long double *: shmem_longdouble_collect,                                 \
+      signed char *: shmem_schar_collect,                                      \
+      char *: shmem_char_collect,                                              \
+      short *: shmem_short_collect,                                            \
+      int *: shmem_int_collect,                                                \
+      long *: shmem_long_collect,                                              \
+      long long *: shmem_longlong_collect,                                     \
+      unsigned char *: shmem_uchar_collect,                                    \
+      unsigned short *: shmem_ushort_collect,                                  \
+      unsigned int *: shmem_uint_collect,                                      \
+      unsigned long *: shmem_ulong_collect,                                    \
+      unsigned long long *: shmem_ulonglong_collect,                           \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_collect() */
+#define shmem_fcollect(...)                                                    \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      float *: shmem_float_fcollect,                                           \
+      double *: shmem_double_fcollect,                                         \
+      long double *: shmem_longdouble_fcollect,                                \
+      signed char *: shmem_schar_fcollect,                                     \
+      char *: shmem_char_fcollect,                                             \
+      short *: shmem_short_fcollect,                                           \
+      int *: shmem_int_fcollect,                                               \
+      long *: shmem_long_fcollect,                                             \
+      long long *: shmem_longlong_fcollect,                                    \
+      unsigned char *: shmem_uchar_fcollect,                                   \
+      unsigned short *: shmem_ushort_fcollect,                                 \
+      unsigned int *: shmem_uint_fcollect,                                     \
+      unsigned long *: shmem_ulong_fcollect,                                   \
+      unsigned long long *: shmem_ulonglong_fcollect,                          \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_fcollect() */
+#define shmem_broadcast(...)                                                   \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      float *: shmem_float_broadcast,                                          \
+      double *: shmem_double_broadcast,                                        \
+      long double *: shmem_longdouble_broadcast,                               \
+      signed char *: shmem_schar_broadcast,                                    \
+      char *: shmem_char_broadcast,                                            \
+      short *: shmem_short_broadcast,                                          \
+      int *: shmem_int_broadcast,                                              \
+      long *: shmem_long_broadcast,                                            \
+      long long *: shmem_longlong_broadcast,                                   \
+      unsigned char *: shmem_uchar_broadcast,                                  \
+      unsigned short *: shmem_ushort_broadcast,                                \
+      unsigned int *: shmem_uint_broadcast,                                    \
+      unsigned long *: shmem_ulong_broadcast,                                  \
+      unsigned long long *: shmem_ulonglong_broadcast,                         \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* TODO: active set-based reductions? */
+
+/* see \ref shmem_and_reduce() */
+#define shmem_and_reduce(...)                                                  \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      unsigned char *: shmem_uchar_and_reduce,                                 \
+      unsigned short *: shmem_ushort_and_reduce,                               \
+      unsigned int *: shmem_uint_and_reduce,                                   \
+      unsigned long *: shmem_ulong_and_reduce,                                 \
+      unsigned long long *: shmem_ulonglong_and_reduce,                        \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_and_reduce() */
+#define shmem_or_reduce(...)                                                   \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      unsigned char *: shmem_uchar_or_reduce,                                  \
+      unsigned short *: shmem_ushort_or_reduce,                                \
+      unsigned int *: shmem_uint_or_reduce,                                    \
+      unsigned long *: shmem_ulong_or_reduce,                                  \
+      unsigned long long *: shmem_ulonglong_or_reduce,                         \
+      size_t *: shmem_size_or_reduce,                                          \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_or_reduce() */
+#define shmem_xor_reduce(...)                                                  \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      unsigned char *: shmem_uchar_xor_reduce,                                 \
+      unsigned short *: shmem_ushort_xor_reduce,                               \
+      unsigned int *: shmem_uint_xor_reduce,                                   \
+      unsigned long *: shmem_ulong_xor_reduce,                                 \
+      unsigned long long *: shmem_ulonglong_xor_reduce,                        \
+      size_t *: shmem_size_xor_reduce,                                         \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_xor_reduce() */
+#define shmem_max_reduce(...)                                                  \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      char *: shmem_char_max_reduce,                                           \
+      signed char *: shmem_schar_max_reduce,                                   \
+      short *: shmem_short_max_reduce,                                         \
+      int *: shmem_int_max_reduce,                                             \
+      long *: shmem_long_max_reduce,                                           \
+      long long *: shmem_longlong_max_reduce,                                  \
+      ptrdiff_t *: shmem_ptrdiff_max_reduce,                                   \
+      unsigned char *: shmem_uchar_max_reduce,                                 \
+      unsigned short *: shmem_ushort_max_reduce,                               \
+      unsigned int *: shmem_uint_max_reduce,                                   \
+      unsigned long *: shmem_ulong_max_reduce,                                 \
+      unsigned long long *: shmem_ulonglong_max_reduce,                        \
+      size_t *: shmem_size_max_reduce,                                         \
+      float *: shmem_float_max_reduce,                                         \
+      double *: shmem_double_max_reduce,                                       \
+      long double *: shmem_longdouble_max_reduce,                              \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_max_reduce() */
+#define shmem_min_reduce(...)                                                  \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      char *: shmem_char_min_reduce,                                           \
+      signed char *: shmem_schar_min_reduce,                                   \
+      short *: shmem_short_min_reduce,                                         \
+      int *: shmem_int_min_reduce,                                             \
+      long *: shmem_long_min_reduce,                                           \
+      long long *: shmem_longlong_min_reduce,                                  \
+      ptrdiff_t *: shmem_ptrdiff_min_reduce,                                   \
+      unsigned char *: shmem_uchar_min_reduce,                                 \
+      unsigned short *: shmem_ushort_min_reduce,                               \
+      unsigned int *: shmem_uint_min_reduce,                                   \
+      unsigned long *: shmem_ulong_min_reduce,                                 \
+      unsigned long long *: shmem_ulonglong_min_reduce,                        \
+      size_t *: shmem_size_min_reduce,                                         \
+      float *: shmem_float_min_reduce,                                         \
+      double *: shmem_double_min_reduce,                                       \
+      long double *: shmem_longdouble_min_reduce,                              \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_min_reduce() */
+#define shmem_sum_reduce(...)                                                  \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      char *: shmem_char_sum_reduce,                                           \
+      signed char *: shmem_schar_sum_reduce,                                   \
+      short *: shmem_short_sum_reduce,                                         \
+      int *: shmem_int_sum_reduce,                                             \
+      long *: shmem_long_sum_reduce,                                           \
+      long long *: shmem_longlong_sum_reduce,                                  \
+      ptrdiff_t *: shmem_ptrdiff_sum_reduce,                                   \
+      unsigned char *: shmem_uchar_sum_reduce,                                 \
+      unsigned short *: shmem_ushort_sum_reduce,                               \
+      unsigned int *: shmem_uint_sum_reduce,                                   \
+      unsigned long *: shmem_ulong_sum_reduce,                                 \
+      unsigned long long *: shmem_ulonglong_sum_reduce,                        \
+      size_t *: shmem_size_sum_reduce,                                         \
+      float *: shmem_float_sum_reduce,                                         \
+      double *: shmem_double_sum_reduce,                                       \
+      long double *: shmem_longdouble_sum_reduce,                              \
+      double _Complex *: shmem_complexd_sum_reduce,                            \
+      float _Complex *: shmem_complexf_sum_reduce,                             \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_prod_reduce() */
+#define shmem_prod_reduce(...)                                                 \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
+      char *: shmem_char_prod_reduce,                                          \
+      signed char *: shmem_schar_prod_reduce,                                  \
+      short *: shmem_short_prod_reduce,                                        \
+      int *: shmem_int_prod_reduce,                                            \
+      long *: shmem_long_prod_reduce,                                          \
+      long long *: shmem_longlong_prod_reduce,                                 \
+      ptrdiff_t *: shmem_ptrdiff_prod_reduce,                                  \
+      unsigned char *: shmem_uchar_prod_reduce,                                \
+      unsigned short *: shmem_ushort_prod_reduce,                              \
+      unsigned int *: shmem_uint_prod_reduce,                                  \
+      unsigned long *: shmem_ulong_prod_reduce,                                \
+      unsigned long long *: shmem_ulonglong_prod_reduce,                       \
+      size_t *: shmem_size_prod_reduce,                                        \
+      float *: shmem_float_prod_reduce,                                        \
+      double *: shmem_double_prod_reduce,                                      \
+      long double *: shmem_longdouble_prod_reduce,                             \
+      double _Complex *: shmem_complexd_prod_reduce,                           \
+      float _Complex *: shmem_complexf_prod_reduce,                            \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
+/* see \ref shmem_sync() */
+#define shmem_sync(team) shmem_team_sync(team)
 
 #endif /* SHMEM_HAS_C11 */
 
