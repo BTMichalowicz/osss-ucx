@@ -1262,6 +1262,7 @@ inline static void shmem_generics_nomatch(void) {}
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
 /* see \ref shmem_sync() */
+// FIXME: this causes redefinition errors 
 #define shmem_sync(team) shmem_team_sync(team)
 
 #endif /* SHMEM_HAS_C11 */
