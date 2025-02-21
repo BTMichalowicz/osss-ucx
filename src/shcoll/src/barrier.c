@@ -1,23 +1,57 @@
+/**
+ * @file barrier.c
+ * @brief Implementation of OpenSHMEM barrier and sync collective operations
+ *
+ * This file implements various algorithms for barrier synchronization
+ * including:
+ * - Linear barrier
+ * - Complete tree barrier
+ * - Binomial tree barrier
+ * - K-nomial tree barrier
+ * - Dissemination barrier
+ *
+ * Each algorithm is implemented for both barrier and sync operations, and
+ * includes variants for team-based and global (all PEs) synchronization.
+ */
+
 #include "shcoll.h"
 #include "util/trees.h"
 
 #include "shmem.h"
 
+/** Default tree degree for tree-based barrier algorithms */
 static int tree_degree_barrier = 2;
+
+/** Default radix for k-nomial tree barrier algorithm */
 static int knomial_tree_radix_barrier = 2;
 
+/**
+ * @brief Set the tree degree for tree-based barrier algorithms
+ * @param tree_degree The tree degree to use
+ */
 void shcoll_set_tree_degree(int tree_degree) {
   tree_degree_barrier = tree_degree;
 }
 
+/**
+ * @brief Set the radix for k-nomial tree barrier algorithm
+ * @param tree_radix The tree radix to use
+ */
 void shcoll_set_knomial_tree_radix_barrier(int tree_radix) {
   knomial_tree_radix_barrier = tree_radix;
 }
 
-/*
- * Linear barrier implementation
+/**
+ * @brief Helper function implementing linear barrier algorithm
+ *
+ * Uses a centralized approach where all PEs signal the root PE and wait for
+ * acknowledgement.
+ *
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
  */
-
 inline static void barrier_sync_helper_linear(int PE_start, int logPE_stride,
                                               int PE_size, long *pSync) {
   const int me = shmem_my_pe();
@@ -48,10 +82,16 @@ inline static void barrier_sync_helper_linear(int PE_start, int logPE_stride,
   }
 }
 
-/*
- * Complete tree barrier implementation
+/**
+ * @brief Helper function implementing complete tree barrier algorithm
+ *
+ * Uses a complete tree topology where each node has a fixed number of children.
+ *
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
  */
-
 inline static void barrier_sync_helper_complete_tree(int PE_start,
                                                      int logPE_stride,
                                                      int PE_size, long *pSync) {
@@ -90,10 +130,16 @@ inline static void barrier_sync_helper_complete_tree(int PE_start,
   }
 }
 
-/*
- * Binomial tree barrier implementation
+/**
+ * @brief Helper function implementing binomial tree barrier algorithm
+ *
+ * Uses a binomial tree topology where nodes have varying numbers of children.
+ *
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
  */
-
 inline static void barrier_sync_helper_binomial_tree(int PE_start,
                                                      int logPE_stride,
                                                      int PE_size, long *pSync) {
@@ -132,10 +178,16 @@ inline static void barrier_sync_helper_binomial_tree(int PE_start,
   }
 }
 
-/*
- * Knomial tree barrier implementation
+/**
+ * @brief Helper function implementing k-nomial tree barrier algorithm
+ *
+ * Uses a k-nomial tree topology with configurable radix.
+ *
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
  */
-
 inline static void barrier_sync_helper_knomial_tree(int PE_start,
                                                     int logPE_stride,
                                                     int PE_size, long *pSync) {
@@ -174,10 +226,17 @@ inline static void barrier_sync_helper_knomial_tree(int PE_start,
   }
 }
 
-/*
- * Dissemination barrier implementation
+/**
+ * @brief Helper function implementing dissemination barrier algorithm
+ *
+ * Uses a dissemination pattern where each PE communicates with a sequence of
+ * partners.
+ *
+ * @param PE_start First PE in the active set
+ * @param logPE_stride Log2 of stride between PEs
+ * @param PE_size Number of PEs in the active set
+ * @param pSync Symmetric work array
  */
-
 inline static void barrier_sync_helper_dissemination(int PE_start,
                                                      int logPE_stride,
                                                      int PE_size, long *pSync) {
@@ -205,6 +264,17 @@ inline static void barrier_sync_helper_dissemination(int PE_start,
   }
 }
 
+/**
+ * @brief Macro to define barrier and sync functions for a given algorithm
+ *
+ * Defines four functions for each algorithm:
+ * - barrier: Active set barrier with memory ordering
+ * - barrier_all: Global barrier with memory ordering
+ * - sync: Active set barrier without memory ordering
+ * - sync_all: Global barrier without memory ordering
+ *
+ * @param _algo Algorithm name to generate functions for
+ */
 #define SHCOLL_BARRIER_SYNC_DEFINITION(_algo)                                  \
   void shcoll_barrier_##_algo(int PE_start, int logPE_stride, int PE_size,     \
                               long *pSync) {                                   \
@@ -237,3 +307,40 @@ SHCOLL_BARRIER_SYNC_DEFINITION(binomial_tree)
 SHCOLL_BARRIER_SYNC_DEFINITION(dissemination)
 
 /* @formatter:on */
+
+/**
+ * @brief Macro to define team sync function for a given algorithm
+ *
+ * Defines a team-based synchronization function that allocates its own pSync
+ * array.
+ *
+ * @param _algo Algorithm name to generate function for
+ */
+#define SHCOLL_TEAM_SYNC_DEFINITION(_algo)                                     \
+  int shcoll_team_sync_##_algo(shmem_team_t team) {                            \
+    /* Get team parameters */                                                  \
+    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
+    const int logPE_stride = 0;                                                \
+    const int PE_size = shmem_team_n_pes(team);                                \
+                                                                               \
+    /* Allocate pSync from symmetric heap */                                   \
+    long *pSync = shmem_malloc(SHCOLL_BARRIER_SYNC_SIZE * sizeof(long));       \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+                                                                               \
+    /* Initialize pSync */                                                     \
+    for (int i = 0; i < SHCOLL_BARRIER_SYNC_SIZE; i++) {                       \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    }                                                                          \
+                                                                               \
+    barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
+                                                                               \
+    shmem_free(pSync);                                                         \
+    return 0;                                                                  \
+  }
+
+SHCOLL_TEAM_SYNC_DEFINITION(linear)
+SHCOLL_TEAM_SYNC_DEFINITION(complete_tree)
+SHCOLL_TEAM_SYNC_DEFINITION(knomial_tree)
+SHCOLL_TEAM_SYNC_DEFINITION(binomial_tree)
+SHCOLL_TEAM_SYNC_DEFINITION(dissemination)

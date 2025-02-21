@@ -1,3 +1,6 @@
+- Reimplent shmem_team_sync so it uses the deprecated shmem_sync's subroutines
+  Need to implement shmem_team_sync along with the collectives.
+
 - Table registration for reductions and tpyed colls
 
 - All collectives

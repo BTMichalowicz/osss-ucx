@@ -362,6 +362,14 @@ static unsized_op_t sync_tab[] = {
     UNSIZED_REG(sync, binomial_tree), UNSIZED_REG(sync, knomial_tree),
     UNSIZED_REG(sync, dissemination), UNSIZED_LAST};
 
+/**
+ * @brief Table of team_sync collective algorithms
+ */
+static untyped_op_t team_sync_tab[] = {
+    UNTYPED_REG(team_sync, linear), UNTYPED_REG(team_sync, complete_tree),
+    UNTYPED_REG(team_sync, binomial_tree), UNTYPED_REG(team_sync, knomial_tree),
+    UNTYPED_REG(team_sync, dissemination), UNTYPED_LAST};
+
 /******************************************************** */
 /**
  * @brief Register a sized collective operation
@@ -550,6 +558,7 @@ REGISTER_UNSIZED(barrier_all)
 REGISTER_UNSIZED(sync)
 REGISTER_UNSIZED(sync_all)
 REGISTER_UNSIZED(barrier)
+REGISTER_UNTYPED(team_sync)
 
 /*
  * TODO: reductions

@@ -26,6 +26,7 @@
 typedef struct collectives {
   char *barrier_all;
   char *sync;
+  char *team_sync;
   char *sync_all;
 
   char *broadcast_type;

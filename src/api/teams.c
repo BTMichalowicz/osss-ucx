@@ -225,19 +225,16 @@ int shmem_ctx_get_team(shmem_ctx_t ctx, shmem_team_t *team) {
   return 0;
 }
 
-/**
- * @brief Synchronize all PEs in the team.
- *
- * @param team The team handle.
- * @return 0 on success, or -1 if the team is invalid.
-
- TODO: this does not work. Needs to be implemented
-       along with the collectives.
- */
-int shmem_team_sync(shmem_team_t team) {
-  if (team == SHMEM_TEAM_INVALID || team == NULL) {
-    return -1;
-  }
-  shmemc_team_h th = (shmemc_team_h)team;
-  return shmemc_team_sync(th);
-}
+// /**
+//  * @brief Synchronize all PEs in the team.
+//  *
+//  * @param team The team handle.
+//  * @return 0 on success, or -1 if the team is invalid.
+//  */
+// int shmem_team_sync(shmem_team_t team) {
+//   if (team == SHMEM_TEAM_INVALID || team == NULL) {
+//     return -1;
+//   }
+//   shmemc_team_h th = (shmemc_team_h)team;
+//   return shmemc_team_sync(th);
+// }

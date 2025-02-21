@@ -31,16 +31,20 @@
 #include "../build/build/include/shmem.h"
 #include <stdio.h>
 
-#define PSYNC_SIZE 128
 
 /* Function to test the deprecated active-set-based shmem_sync */
 void test_active_set_sync() {
   int my_pe = shmem_my_pe();
   int npes = shmem_n_pes();
 
-  /* Allocate symmetric memory for pSync */
-  long *pSync = (long *)shmem_malloc(PSYNC_SIZE * sizeof(long));
-  for (int i = 0; i < PSYNC_SIZE; i++) {
+  /* Allocate symmetric memory for pSync with the correct size */
+  long *pSync = (long *)shmem_malloc(SHMEM_BARRIER_SYNC_SIZE * sizeof(long));
+  if (!pSync) {
+    fprintf(stderr, "PE %d: Failed to allocate pSync\n", my_pe);
+    shmem_global_exit(1);
+  }
+
+  for (int i = 0; i < SHMEM_BARRIER_SYNC_SIZE; i++) {
     pSync[i] = SHMEM_SYNC_VALUE;
   }
 
@@ -58,6 +62,7 @@ void test_active_set_sync() {
 void test_team_based_sync() {
   int my_pe = shmem_my_pe();
   int npes = shmem_n_pes();
+  static int x = 10101;
 
   shmem_team_t twos_team = SHMEM_TEAM_INVALID;
   shmem_team_t threes_team = SHMEM_TEAM_INVALID;
@@ -72,16 +77,12 @@ void test_team_based_sync() {
                              &threes_team);
   }
 
-  int mype_twos = shmem_team_my_pe(twos_team);
-  int mype_threes = shmem_team_my_pe(threes_team);
-  int npes_twos = shmem_team_n_pes(twos_team);
-  int npes_threes = shmem_team_n_pes(threes_team);
-
   if (twos_team != SHMEM_TEAM_INVALID) {
-    int x = 10101;
-    shmem_p(&x, 2,
-            shmem_team_translate_pe(twos_team, (mype_twos + 1) % npes_twos,
-                                    SHMEM_TEAM_WORLD));
+    int mype_twos = shmem_team_my_pe(twos_team);
+    int npes_twos = shmem_team_n_pes(twos_team);
+    int target_pe = shmem_team_translate_pe(
+        twos_team, (mype_twos + 1) % npes_twos, SHMEM_TEAM_WORLD);
+    shmem_p(&x, 2, target_pe);
     shmem_quiet();
     shmem_sync(twos_team);
   }
@@ -89,23 +90,22 @@ void test_team_based_sync() {
   shmem_sync(SHMEM_TEAM_WORLD);
 
   if (threes_team != SHMEM_TEAM_INVALID) {
-    int x = 10101;
-    shmem_p(&x, 3,
-            shmem_team_translate_pe(threes_team,
-                                    (mype_threes + 1) % npes_threes,
-                                    SHMEM_TEAM_WORLD));
+    int mype_threes = shmem_team_my_pe(threes_team);
+    int npes_threes = shmem_team_n_pes(threes_team);
+    int target_pe = shmem_team_translate_pe(
+        threes_team, (mype_threes + 1) % npes_threes, SHMEM_TEAM_WORLD);
+    shmem_p(&x, 3, target_pe);
     shmem_quiet();
     shmem_sync(threes_team);
   }
 
-  int x = 10101;
   if (my_pe && my_pe % 3 == 0) {
     if (x != 3)
       shmem_global_exit(3);
   } else if (my_pe && my_pe % 2 == 0) {
     if (x != 2)
       shmem_global_exit(2);
-  } else if (x != 1) {
+  } else if (x != 10101) {
     shmem_global_exit(1);
   }
 }

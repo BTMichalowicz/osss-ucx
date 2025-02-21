@@ -143,6 +143,7 @@ void shmemc_env_init(void) {
   proc.env.coll.barrier = NULL;
   proc.env.coll.barrier_all = NULL;
   proc.env.coll.sync = NULL;
+  proc.env.coll.team_sync = NULL;
   proc.env.coll.sync_all = NULL;
 
   proc.env.coll.broadcast_type = NULL;
@@ -170,11 +171,18 @@ void shmemc_env_init(void) {
   /* Initialize from environment variables with defaults */
   CHECK_ENV(e, BARRIER_ALGO);
   proc.env.coll.barrier = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BARRIER);
+  
   CHECK_ENV(e, BARRIER_ALL_ALGO);
   proc.env.coll.barrier_all =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BARRIER_ALL);
+  
   CHECK_ENV(e, SYNC_ALGO);
   proc.env.coll.sync = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC);
+
+  CHECK_ENV(e, TEAM_SYNC_ALGO);
+  proc.env.coll.team_sync =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC);
+
   CHECK_ENV(e, SYNC_ALL_ALGO);
   proc.env.coll.sync_all =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC_ALL);
@@ -312,6 +320,7 @@ void shmemc_env_finalize(void) {
 
   free(proc.env.coll.sync_all);
   free(proc.env.coll.sync);
+  free(proc.env.coll.team_sync);
   free(proc.env.coll.barrier_all);
   free(proc.env.coll.barrier);
 
@@ -413,6 +422,7 @@ void shmemc_print_env_vars(FILE *stream, const char *prefix) {
   DESCRIBE_COLLECTIVE(barrier, BARRIER);
   DESCRIBE_COLLECTIVE(barrier_all, BARRIER_ALL);
   DESCRIBE_COLLECTIVE(sync, SYNC);
+  DESCRIBE_COLLECTIVE(team_sync, TEAM_SYNC);
   DESCRIBE_COLLECTIVE(sync_all, SYNC_ALL);
 
   DESCRIBE_COLLECTIVE(broadcast_type, BROADCAST_TYPE);

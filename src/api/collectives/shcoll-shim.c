@@ -19,6 +19,8 @@
 #include "collectives/reductions.h"
 #include "collectives/typed.h"
 
+#include "shmem/teams.h"
+
 /**
  * @brief Helper macro to register collective operations
  * @param _cname Name of the collective operation to register
@@ -65,6 +67,7 @@ void collectives_init(void) {
   TRY(barrier);
   TRY(barrier_all);
   TRY(sync);
+  TRY(team_sync);
   TRY(sync_all);
 
   /* TODO: reductions */
@@ -1056,6 +1059,22 @@ void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync) {
          logPE_stride, PE_size, pSync);
 
   colls.barrier.f(PE_start, logPE_stride, PE_size, pSync);
+}
+
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_team_sync = pshmem_team_sync
+#define shmem_team_sync pshmem_team_sync
+#endif /* ENABLE_PSHMEM */
+
+/**
+ * @brief Synchronizes a team of PEs
+ *
+ * @param team The team to synchronize
+ */
+int shmem_team_sync(shmem_team_t team) {
+  logger(LOG_COLLECTIVES, "%s(%p)", __func__, team);
+
+  colls.team_sync.f(team);
 }
 
 /** @} */

@@ -86,6 +86,7 @@ typedef struct coll_ops {
 
   unsized_op_t barrier_all; /**< Typed global barrier operation */
   unsized_op_t sync;        /**< Synchronization operation */
+  untyped_op_t team_sync;   /**< Team synchronization operation */
   unsized_op_t sync_all;    /**< Global synchronization operation */
   unsized_op_t barrier;     /**< Barrier operation */
 
@@ -103,6 +104,7 @@ int register_barrier_all(const char *op);
 int register_sync_all(const char *op);
 int register_barrier(const char *op);
 int register_sync(const char *op);
+int register_team_sync(const char *op);
 
 // int register_alltoall_type(const char *op);
 int register_alltoall_mem(const char *op);
