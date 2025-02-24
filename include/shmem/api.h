@@ -2837,6 +2837,7 @@ API_AND_REDUCE_TYPE(uint8_t, uint8)
 API_AND_REDUCE_TYPE(uint16_t, uint16)
 API_AND_REDUCE_TYPE(uint32_t, uint32)
 API_AND_REDUCE_TYPE(uint64_t, uint64)
+API_AND_REDUCE_TYPE(size_t, size)
 
 /**
  * @brief Performs a bitwise OR reduction across a team

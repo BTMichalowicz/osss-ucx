@@ -567,18 +567,20 @@
  * bitwise operation and algorithm.
  */
 #define SHIM_REDUCE_BITWISE_TYPES(_op, _algo)                                  \
-  SHIM_REDUCE_DECLARE(short, short, _op, _algo)                                \
-  SHIM_REDUCE_DECLARE(ushort, unsigned short, _op, _algo)                      \
-  SHIM_REDUCE_DECLARE(int, int, _op, _algo)                                    \
-  SHIM_REDUCE_DECLARE(uint, unsigned int, _op, _algo)                          \
-  SHIM_REDUCE_DECLARE(long, long, _op, _algo)                                  \
-  SHIM_REDUCE_DECLARE(ulong, unsigned long, _op, _algo)                        \
-  SHIM_REDUCE_DECLARE(longlong, long long, _op, _algo)                         \
-  SHIM_REDUCE_DECLARE(ulonglong, unsigned long long, _op, _algo)               \
-  SHIM_REDUCE_DECLARE(uint8, uint8_t, _op, _algo)                              \
-  SHIM_REDUCE_DECLARE(uint16, uint16_t, _op, _algo)                            \
-  SHIM_REDUCE_DECLARE(uint32, uint32_t, _op, _algo)                            \
-  SHIM_REDUCE_DECLARE(uint64, uint64_t, _op, _algo)
+  SHIM_REDUCE_DECLARE(uchar, unsigned char, _op, _algo)                \
+  SHIM_REDUCE_DECLARE(ushort, unsigned short, _op, _algo)              \
+  SHIM_REDUCE_DECLARE(uint, unsigned int, _op, _algo)                  \
+  SHIM_REDUCE_DECLARE(ulong, unsigned long, _op, _algo)                \
+  SHIM_REDUCE_DECLARE(ulonglong, unsigned long long, _op, _algo)      \
+  SHIM_REDUCE_DECLARE(int8, int8_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(int16, int16_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(int32, int32_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(int64, int64_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(uint8, uint8_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(uint16, uint16_t, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(uint32, uint32_t, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(uint64, uint64_t, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(size, size_t, _op, _algo)
 
 /**
  * @brief Macro to declare min/max reduction operations for numeric types
@@ -590,16 +592,29 @@
  * the specified min/max operation and algorithm.
  */
 #define SHIM_REDUCE_MINMAX_TYPES(_op, _algo)                                   \
+  SHIM_REDUCE_DECLARE(char, char, _op, _algo)                                  \
+  SHIM_REDUCE_DECLARE(schar, signed char, _op, _algo)                          \
   SHIM_REDUCE_DECLARE(short, short, _op, _algo)                                \
   SHIM_REDUCE_DECLARE(int, int, _op, _algo)                                    \
   SHIM_REDUCE_DECLARE(long, long, _op, _algo)                                  \
   SHIM_REDUCE_DECLARE(longlong, long long, _op, _algo)                         \
+  SHIM_REDUCE_DECLARE(ptrdiff, ptrdiff_t, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(uchar, unsigned char, _op, _algo)                        \
+  SHIM_REDUCE_DECLARE(ushort, unsigned short, _op, _algo)                      \
+  SHIM_REDUCE_DECLARE(uint, unsigned int, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(ulong, unsigned long, _op, _algo)                        \
+  SHIM_REDUCE_DECLARE(ulonglong, unsigned long long, _op, _algo)               \
+  SHIM_REDUCE_DECLARE(int8, int8_t, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(int16, int16_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(int32, int32_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(int64, int64_t, _op, _algo)                              \
   SHIM_REDUCE_DECLARE(uint8, uint8_t, _op, _algo)                              \
   SHIM_REDUCE_DECLARE(uint16, uint16_t, _op, _algo)                            \
   SHIM_REDUCE_DECLARE(uint32, uint32_t, _op, _algo)                            \
   SHIM_REDUCE_DECLARE(uint64, uint64_t, _op, _algo)                            \
-  SHIM_REDUCE_DECLARE(double, double, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(size, size_t, _op, _algo)                                \
   SHIM_REDUCE_DECLARE(float, float, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(double, double, _op, _algo)                              \
   SHIM_REDUCE_DECLARE(longdouble, long double, _op, _algo)
 
 /**
