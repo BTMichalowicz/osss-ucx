@@ -171,17 +171,16 @@ void shmemc_env_init(void) {
   /* Initialize from environment variables with defaults */
   CHECK_ENV(e, BARRIER_ALGO);
   proc.env.coll.barrier = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BARRIER);
-  
+
   CHECK_ENV(e, BARRIER_ALL_ALGO);
   proc.env.coll.barrier_all =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BARRIER_ALL);
-  
+
   CHECK_ENV(e, SYNC_ALGO);
   proc.env.coll.sync = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC);
 
   CHECK_ENV(e, TEAM_SYNC_ALGO);
-  proc.env.coll.team_sync =
-      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC);
+  proc.env.coll.team_sync = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC);
 
   CHECK_ENV(e, SYNC_ALL_ALGO);
   proc.env.coll.sync_all =

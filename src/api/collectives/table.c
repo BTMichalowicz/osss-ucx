@@ -365,10 +365,12 @@ static unsized_op_t sync_tab[] = {
 /**
  * @brief Table of team_sync collective algorithms
  */
-static untyped_op_t team_sync_tab[] = {
-    UNTYPED_REG(team_sync, linear), UNTYPED_REG(team_sync, complete_tree),
-    UNTYPED_REG(team_sync, binomial_tree), UNTYPED_REG(team_sync, knomial_tree),
-    UNTYPED_REG(team_sync, dissemination), UNTYPED_LAST};
+static untyped_op_t team_sync_tab[] = {UNTYPED_REG(team_sync, linear),
+                                       UNTYPED_REG(team_sync, complete_tree),
+                                       UNTYPED_REG(team_sync, binomial_tree),
+                                       UNTYPED_REG(team_sync, knomial_tree),
+                                       UNTYPED_REG(team_sync, dissemination),
+                                       UNTYPED_LAST};
 
 /******************************************************** */
 /**
