@@ -1371,9 +1371,7 @@ API_DECL_TEST_AND_WAIT_UNTIL(test, int, int, int);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, long, long);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, longlong, long long);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, uchar, unsigned char);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, ushort, unsigned short);
-// API_DECL_TEST_AND_WAIT_UNTIL(test, int, ushort, unsigned short)
-// _DEPRECATED;
+API_DECL_TEST_AND_WAIT_UNTIL(test, int, ushort, unsigned short) _DEPRECATED;
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, uint, unsigned int);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, ulong, unsigned long);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, ulonglong, unsigned long long);
@@ -2473,7 +2471,16 @@ SHMEM_DECL_AMO2_NBI(fetch_xor, uint64, uint64_t)
  *
  */
 
+/* see \ref shmem_ulong_atomic_fetch_xor() */
+SHMEM_DECL_AMO2(fetch_xor, int, int)
+/* see \ref shmem_ulong_atomic_fetch_xor() */
+SHMEM_DECL_AMO2(fetch_xor, long, long)
+/* see \ref shmem_ulong_atomic_fetch_xor() */
+SHMEM_DECL_AMO2(fetch_xor, longlong, long long)
+/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, uint, unsigned int)
+/* see \ref shmem_ulong_atomic_fetch_xor() */
+SHMEM_DECL_AMO2(fetch_xor, ulong, unsigned long)
 /* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, ulonglong, unsigned long long)
 /* see \ref shmem_ulong_atomic_fetch_xor() */
@@ -2484,6 +2491,10 @@ SHMEM_DECL_AMO2(fetch_xor, int64, int64_t)
 SHMEM_DECL_AMO2(fetch_xor, uint32, uint32_t)
 /* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, uint64, uint64_t)
+/* see \ref shmem_ulong_atomic_fetch_xor() */
+SHMEM_DECL_AMO2(fetch_xor, size, size_t)
+/* see \ref shmem_ulong_atomic_fetch_xor() */
+SHMEM_DECL_AMO2(fetch_xor, ptrdiff, ptrdiff_t)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -3665,13 +3676,11 @@ void shmem_ctx_destroy(shmem_ctx_t ctx);
 #undef shmem_sync
 #endif
 
-
 /* --- Begin new variadic macro override for shmem_sync --- */
 /* Define helper functions for the two cases */
-#define _SHMEM_SYNC_4(PE_start, logPE_stride, PE_size, pSync) \
+#define _SHMEM_SYNC_4(PE_start, logPE_stride, PE_size, pSync)                  \
   shmem_sync_deprecated(PE_start, logPE_stride, PE_size, pSync)
-#define _SHMEM_SYNC_1(team) \
-  shmem_team_sync(team)
+#define _SHMEM_SYNC_1(team) shmem_team_sync(team)
 
 /* Helper macro to select the 5th argument */
 #define _GET_5TH_ARG(a, b, c, d, e, ...) e
@@ -3680,8 +3689,10 @@ void shmem_ctx_destroy(shmem_ctx_t ctx);
    - If one argument is provided, it expands to _SHMEM_SYNC_1(team)
    - If four arguments are provided, it expands to _SHMEM_SYNC_4(...)
 */
-#define shmem_sync(...) \
-  _GET_5TH_ARG(__VA_ARGS__, _SHMEM_SYNC_4, _SHMEM_SYNC_4, _SHMEM_SYNC_4, _SHMEM_SYNC_1)(__VA_ARGS__)
+#define shmem_sync(...)                                                        \
+  _GET_5TH_ARG(__VA_ARGS__, _SHMEM_SYNC_4, _SHMEM_SYNC_4, _SHMEM_SYNC_4,       \
+               _SHMEM_SYNC_1)                                                  \
+  (__VA_ARGS__)
 /* --- End new variadic macro override for shmem_sync --- */
 
 #endif /* ! _SHMEM_API_H */

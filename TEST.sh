@@ -14,11 +14,9 @@ HLINE="---------------------------------------------------------"
 
 # --- Function to test version 1.4
 test_1_4() {
-  echo ; echo ; echo ; echo
   cd ../tests-sos-1.4
   echo $HLINE
   echo "Running tests in $(pwd)"
-  echo $HLINE
   ./TEST.sh
   cd $OSSS_DIR
 }
@@ -26,10 +24,8 @@ test_1_4() {
 # --- Function to test version 1.5  
 test_1_5() {
   cd ../tests-sos-1.5
-  echo ; echo ; echo ; echo
   echo $HLINE
   echo "Running tests in $(pwd)"
-  echo $HLINE
   ./TEST.sh
   cd $OSSS_DIR
 }

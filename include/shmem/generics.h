@@ -481,6 +481,26 @@ inline static void shmem_generics_nomatch(void) {}
       unsigned long long *: shmem_ulonglong_atomic_compare_swap,               \
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
+/* see \ref shmem_long_atomic_compare_swap_nbi() */
+#define shmem_atomic_compare_swap_nbi(...)                                     \
+  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                   \
+      shmem_ctx_t: _Generic(SHC11_TYPE_EVAL_PTR_OR_SCALAR(                     \
+                                SHC11_GET_ARG2(__VA_ARGS__)),                  \
+      int *: shmem_ctx_int_atomic_compare_swap_nbi,                            \
+      long *: shmem_ctx_long_atomic_compare_swap_nbi,                          \
+      long long *: shmem_ctx_longlong_atomic_compare_swap_nbi,                 \
+      unsigned int *: shmem_ctx_uint_atomic_compare_swap_nbi,                  \
+      unsigned long *: shmem_ctx_ulong_atomic_compare_swap_nbi,                \
+      unsigned long long *: shmem_ctx_ulonglong_atomic_compare_swap_nbi,       \
+      default: shmem_generics_nomatch),                                        \
+      int *: shmem_int_atomic_compare_swap_nbi,                                \
+      long *: shmem_long_atomic_compare_swap_nbi,                              \
+      long long *: shmem_longlong_atomic_compare_swap_nbi,                     \
+      unsigned int *: shmem_uint_atomic_compare_swap_nbi,                      \
+      unsigned long *: shmem_ulong_atomic_compare_swap_nbi,                    \
+      unsigned long long *: shmem_ulonglong_atomic_compare_swap_nbi,           \
+      default: shmem_generics_nomatch)(__VA_ARGS__)
+
 /* see \ref shmem_long_atomic_fetch_add() */
 #define shmem_atomic_fetch_add(...)                                            \
   _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                   \
@@ -1262,7 +1282,7 @@ inline static void shmem_generics_nomatch(void) {}
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
 /* see \ref shmem_sync() */
-// FIXME: this causes redefinition errors 
+// FIXME: this causes redefinition errors
 #define shmem_sync(team) shmem_team_sync(team)
 
 #endif /* SHMEM_HAS_C11 */
