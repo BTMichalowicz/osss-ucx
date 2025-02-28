@@ -23,7 +23,7 @@ test_1_4() {
 
 # --- Function to test version 1.5  
 test_1_5() {
-  cd ../tests-sos-1.5
+  cd ../tests-sos-1.5.2
   echo $HLINE
   echo "Running tests in $(pwd)"
   ./TEST.sh

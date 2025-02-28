@@ -40,9 +40,12 @@ int shmem_team_split_2d(shmem_team_t parent_team, int xrange,
                         long xaxis_mask, shmem_team_t *xaxis_team,
                         const shmem_team_config_t *yaxis_config,
                         long yaxis_mask, shmem_team_t *yaxis_team);
+
 void shmem_team_destroy(shmem_team_t team);
 int shmem_team_create_ctx(shmem_team_t team, long options, shmem_ctx_t *ctxp);
 int shmem_ctx_get_team(shmem_ctx_t ctx, shmem_team_t *team);
 int shmem_team_sync(shmem_team_t team);
+
+void *shmem_team_ptr(shmem_team_t team, const void *dest, int pe);
 
 #endif /* ! _SHMEM_API_TEAMS_H */

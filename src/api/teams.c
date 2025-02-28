@@ -225,12 +225,12 @@ int shmem_ctx_get_team(shmem_ctx_t ctx, shmem_team_t *team) {
   return 0;
 }
 
-// /**
-//  * @brief Synchronize all PEs in the team.
-//  *
-//  * @param team The team handle.
-//  * @return 0 on success, or -1 if the team is invalid.
-//  */
+/**
+ * @brief Synchronize all PEs in the team.
+ *
+ * @param team The team handle.
+ * @return 0 on success, or -1 if the team is invalid.
+ */
 // int shmem_team_sync(shmem_team_t team) {
 //   if (team == SHMEM_TEAM_INVALID || team == NULL) {
 //     return -1;
@@ -238,3 +238,52 @@ int shmem_ctx_get_team(shmem_ctx_t ctx, shmem_team_t *team) {
 //   shmemc_team_h th = (shmemc_team_h)team;
 //   return shmemc_team_sync(th);
 // }
+
+/**
+ * @brief Returns a local pointer to a symmetric data object on the specified PE
+ * in the specified team.
+ *
+ * This routine can provide efficient means to accomplish communication when a
+ * sequence of reads and writes to a data object on a remote PE does not match
+ * the access pattern provided in an OpenSHMEM data transfer routine.
+ *
+ * @param team A handle to the specified team.
+ * @param dest The symmetric address of the remotely accessible data object to
+ * be referenced.
+ * @param pe An integer that indicates the PE number in the provided team on
+ * which dest is to be accessed.
+ * @return A local pointer to the remotely accessible data object when it can be
+ *         accessed using memory loads and stores. Otherwise, a null pointer is
+ * returned.
+ */
+void *shmem_team_ptr(shmem_team_t team, const void *dest, int pe) {
+  /* If team equals SHMEM_TEAM_INVALID, return NULL */
+  if (team == SHMEM_TEAM_INVALID) {
+    return NULL;
+  }
+
+  /* If team equals SHMEM_TEAM_WORLD, behavior is identical to shmem_ptr */
+  if (team == SHMEM_TEAM_WORLD) {
+    return shmemc_ctx_ptr(SHMEM_CTX_DEFAULT, dest, pe);
+  }
+
+  /* Otherwise, validate team and translate PE */
+  shmemc_team_h th = (shmemc_team_h)team;
+  if (th == NULL) {
+    return NULL;
+  }
+
+  /* Validate PE range */
+  if (pe < 0 || pe >= th->nranks) {
+    return NULL;
+  }
+
+  /* Translate team-relative PE to global PE */
+  int global_pe = shmemc_team_translate_pe(th, pe, &shmemc_team_world);
+  if (global_pe < 0) {
+    return NULL;
+  }
+
+  /* Get the pointer using the global PE */
+  return shmemc_ctx_ptr(SHMEM_CTX_DEFAULT, dest, global_pe);
+}

@@ -1162,6 +1162,7 @@ inline static void shmem_generics_nomatch(void) {}
 /* TODO: active set-based reductions? */
 
 /* see \ref shmem_and_reduce() */
+// FIXME: what about size_t?
 #define shmem_and_reduce(...)                                                  \
   _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
       unsigned char *: shmem_uchar_and_reduce,                                 \
@@ -1169,9 +1170,13 @@ inline static void shmem_generics_nomatch(void) {}
       unsigned int *: shmem_uint_and_reduce,                                   \
       unsigned long *: shmem_ulong_and_reduce,                                 \
       unsigned long long *: shmem_ulonglong_and_reduce,                        \
+      int8_t *: shmem_int8_and_reduce,                                         \
+      int16_t *: shmem_int16_and_reduce,                                       \
+      int32_t *: shmem_int32_and_reduce,                                       \
+      int64_t *: shmem_int64_and_reduce,                                       \
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
-/* see \ref shmem_and_reduce() */
+/* see \ref shmem_or_reduce() */
 #define shmem_or_reduce(...)                                                   \
   _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
       unsigned char *: shmem_uchar_or_reduce,                                  \
@@ -1179,10 +1184,13 @@ inline static void shmem_generics_nomatch(void) {}
       unsigned int *: shmem_uint_or_reduce,                                    \
       unsigned long *: shmem_ulong_or_reduce,                                  \
       unsigned long long *: shmem_ulonglong_or_reduce,                         \
-      size_t *: shmem_size_or_reduce,                                          \
+      int8_t *: shmem_int8_or_reduce,                                          \
+      int16_t *: shmem_int16_or_reduce,                                        \
+      int32_t *: shmem_int32_or_reduce,                                        \
+      int64_t *: shmem_int64_or_reduce,                                        \
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
-/* see \ref shmem_or_reduce() */
+/* see \ref shmem_xor_reduce() */
 #define shmem_xor_reduce(...)                                                  \
   _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
       unsigned char *: shmem_uchar_xor_reduce,                                 \
@@ -1190,10 +1198,13 @@ inline static void shmem_generics_nomatch(void) {}
       unsigned int *: shmem_uint_xor_reduce,                                   \
       unsigned long *: shmem_ulong_xor_reduce,                                 \
       unsigned long long *: shmem_ulonglong_xor_reduce,                        \
-      size_t *: shmem_size_xor_reduce,                                         \
+      int8_t *: shmem_int8_xor_reduce,                                         \
+      int16_t *: shmem_int16_xor_reduce,                                       \
+      int32_t *: shmem_int32_xor_reduce,                                       \
+      int64_t *: shmem_int64_xor_reduce,                                       \
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
-/* see \ref shmem_xor_reduce() */
+/* see \ref shmem_max_reduce() */
 #define shmem_max_reduce(...)                                                  \
   _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
       char *: shmem_char_max_reduce,                                           \
@@ -1202,19 +1213,17 @@ inline static void shmem_generics_nomatch(void) {}
       int *: shmem_int_max_reduce,                                             \
       long *: shmem_long_max_reduce,                                           \
       long long *: shmem_longlong_max_reduce,                                  \
-      ptrdiff_t *: shmem_ptrdiff_max_reduce,                                   \
       unsigned char *: shmem_uchar_max_reduce,                                 \
       unsigned short *: shmem_ushort_max_reduce,                               \
       unsigned int *: shmem_uint_max_reduce,                                   \
       unsigned long *: shmem_ulong_max_reduce,                                 \
       unsigned long long *: shmem_ulonglong_max_reduce,                        \
-      size_t *: shmem_size_max_reduce,                                         \
       float *: shmem_float_max_reduce,                                         \
       double *: shmem_double_max_reduce,                                       \
       long double *: shmem_longdouble_max_reduce,                              \
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
-/* see \ref shmem_max_reduce() */
+/* see \ref shmem_min_reduce() */
 #define shmem_min_reduce(...)                                                  \
   _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
       char *: shmem_char_min_reduce,                                           \
@@ -1223,19 +1232,17 @@ inline static void shmem_generics_nomatch(void) {}
       int *: shmem_int_min_reduce,                                             \
       long *: shmem_long_min_reduce,                                           \
       long long *: shmem_longlong_min_reduce,                                  \
-      ptrdiff_t *: shmem_ptrdiff_min_reduce,                                   \
       unsigned char *: shmem_uchar_min_reduce,                                 \
       unsigned short *: shmem_ushort_min_reduce,                               \
       unsigned int *: shmem_uint_min_reduce,                                   \
       unsigned long *: shmem_ulong_min_reduce,                                 \
       unsigned long long *: shmem_ulonglong_min_reduce,                        \
-      size_t *: shmem_size_min_reduce,                                         \
       float *: shmem_float_min_reduce,                                         \
       double *: shmem_double_min_reduce,                                       \
       long double *: shmem_longdouble_min_reduce,                              \
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
-/* see \ref shmem_min_reduce() */
+/* see \ref shmem_sum_reduce() */
 #define shmem_sum_reduce(...)                                                  \
   _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
       char *: shmem_char_sum_reduce,                                           \
@@ -1244,13 +1251,11 @@ inline static void shmem_generics_nomatch(void) {}
       int *: shmem_int_sum_reduce,                                             \
       long *: shmem_long_sum_reduce,                                           \
       long long *: shmem_longlong_sum_reduce,                                  \
-      ptrdiff_t *: shmem_ptrdiff_sum_reduce,                                   \
       unsigned char *: shmem_uchar_sum_reduce,                                 \
       unsigned short *: shmem_ushort_sum_reduce,                               \
       unsigned int *: shmem_uint_sum_reduce,                                   \
       unsigned long *: shmem_ulong_sum_reduce,                                 \
       unsigned long long *: shmem_ulonglong_sum_reduce,                        \
-      size_t *: shmem_size_sum_reduce,                                         \
       float *: shmem_float_sum_reduce,                                         \
       double *: shmem_double_sum_reduce,                                       \
       long double *: shmem_longdouble_sum_reduce,                              \
@@ -1267,13 +1272,11 @@ inline static void shmem_generics_nomatch(void) {}
       int *: shmem_int_prod_reduce,                                            \
       long *: shmem_long_prod_reduce,                                          \
       long long *: shmem_longlong_prod_reduce,                                 \
-      ptrdiff_t *: shmem_ptrdiff_prod_reduce,                                  \
       unsigned char *: shmem_uchar_prod_reduce,                                \
       unsigned short *: shmem_ushort_prod_reduce,                              \
       unsigned int *: shmem_uint_prod_reduce,                                  \
       unsigned long *: shmem_ulong_prod_reduce,                                \
       unsigned long long *: shmem_ulonglong_prod_reduce,                       \
-      size_t *: shmem_size_prod_reduce,                                        \
       float *: shmem_float_prod_reduce,                                        \
       double *: shmem_double_prod_reduce,                                      \
       long double *: shmem_longdouble_prod_reduce,                             \
@@ -1282,7 +1285,6 @@ inline static void shmem_generics_nomatch(void) {}
       default: shmem_generics_nomatch)(__VA_ARGS__)
 
 /* see \ref shmem_sync() */
-// FIXME: this causes redefinition errors
 #define shmem_sync(team) shmem_team_sync(team)
 
 #endif /* SHMEM_HAS_C11 */

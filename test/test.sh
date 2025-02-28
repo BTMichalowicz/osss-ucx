@@ -75,11 +75,11 @@ $oshcc test_team_sync.c -o ./bin/test_team_sync
 $oshrun $flags -np 2 ./bin/test_team_sync
 echo
 
-# # --- shmem_alltoall ---
-# echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
-# $oshcc test_alltoall.c -o ./bin/test_alltoall
-# $oshrun $flags -np 4 ./bin/test_alltoall
-# echo
+# --- shmem_alltoall ---
+echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
+$oshcc test_alltoall.c -o ./bin/test_alltoall
+$oshrun $flags -np 4 ./bin/test_alltoall
+echo
 
 # # --- shmem_alltoalls ---
 # echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
@@ -111,8 +111,8 @@ echo
 # $oshrun $flags -np 4 ./bin/test_reduce
 # echo
 
-# --- shmem_sync ---
-echo $hline ; echo "  Running shmem_sync test" ; echo $hline
-$oshcc test_sync.c -o ./bin/test_sync
-$oshrun $flags -np 4 ./bin/test_sync
-echo
+## --- shmem_sync ---
+#echo $hline ; echo "  Running shmem_sync test" ; echo $hline
+#$oshcc test_sync.c -o ./bin/test_sync
+#$oshrun $flags -np 4 ./bin/test_sync
+#echo

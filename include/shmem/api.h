@@ -2839,6 +2839,11 @@ API_AND_REDUCE_TYPE(uint32_t, uint32)
 API_AND_REDUCE_TYPE(uint64_t, uint64)
 API_AND_REDUCE_TYPE(size_t, size)
 
+// API_AND_REDUCE_TYPE(short, short)
+// API_AND_REDUCE_TYPE(int, int)
+// API_AND_REDUCE_TYPE(long, long)
+// API_AND_REDUCE_TYPE(long long, longlong)
+
 /**
  * @brief Performs a bitwise OR reduction across a team
  *
@@ -2876,6 +2881,11 @@ API_OR_REDUCE_TYPE(uint32_t, uint32)
 API_OR_REDUCE_TYPE(uint64_t, uint64)
 API_OR_REDUCE_TYPE(size_t, size)
 
+// API_OR_REDUCE_TYPE(short, short)
+// API_OR_REDUCE_TYPE(int, int)
+// API_OR_REDUCE_TYPE(long, long)
+// API_OR_REDUCE_TYPE(long long, longlong)
+
 /**
  * @brief Performs a bitwise XOR reduction across a team
  *
@@ -2912,6 +2922,12 @@ API_XOR_REDUCE_TYPE(uint16_t, uint16)
 API_XOR_REDUCE_TYPE(uint32_t, uint32)
 API_XOR_REDUCE_TYPE(uint64_t, uint64)
 API_XOR_REDUCE_TYPE(size_t, size)
+
+// API_XOR_REDUCE_TYPE(short, short)
+// API_XOR_REDUCE_TYPE(int, int)
+// API_XOR_REDUCE_TYPE(long, long)
+// API_XOR_REDUCE_TYPE(long long, longlong)
+
 
 /**
  * @brief Performs a maximum value reduction across a team

@@ -353,3 +353,29 @@ int shmemc_team_sync(shmemc_team_h th) {
   /* Successful synchronization across all contexts */
   return 0;
 }
+
+// /**
+//  * @brief Implementation of team-relative pointer access
+//  *
+//  * @param th The team handle
+//  * @param dest The symmetric address of the remotely accessible data object
+//  * @param pe Team-relative PE number
+//  * @return Pointer to the remote object or NULL if not accessible
+//  */
+// void *shmemc_team_ptr(shmemc_team_h th, const void *dest, int pe) {
+//   int global_pe;
+
+//   /* Validate the PE is within team range */
+//   if (pe < 0 || pe >= th->nranks) {
+//     return NULL;
+//   }
+
+//   /* Convert team-relative PE to global PE */
+//   global_pe = shmemc_team_translate_pe(th, pe, &shmemc_team_world);
+//   if (global_pe < 0) {
+//     return NULL;
+//   }
+
+//   /* Call the original shmemc_ptr function with the global PE */
+//   return shmemc_ptr(dest, global_pe);
+// }
