@@ -84,13 +84,16 @@ int shmem_team_n_pes(shmem_team_t team) {
  * @brief Get the configuration of the team.
  *
  * @param team A valid team handle.
+ * @param config_mask Bitwise mask representing the set of configuration
+ * parameters to fetch.
  * @param config Pointer to the configuration structure to be filled.
  * @return 0 on success or -1 if the team is invalid.
  */
-int shmem_team_get_config(shmem_team_t team, shmem_team_config_t *config) {
+int shmem_team_get_config(shmem_team_t team, long config_mask,
+                          shmem_team_config_t *config) {
   if (team != SHMEM_TEAM_INVALID) {
     shmemc_team_h th = (shmemc_team_h)team;
-    return shmemc_team_get_config(th, config);
+    return shmemc_team_get_config(th, config_mask, config);
   } else {
     return -1;
   }

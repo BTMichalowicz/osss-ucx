@@ -101,8 +101,8 @@ void shmemc_teams_finalize(void);
 
 int shmemc_team_my_pe(shmemc_team_h th);
 int shmemc_team_n_pes(shmemc_team_h th);
-
-int shmemc_team_get_config(shmemc_team_h th, shmem_team_config_t *config);
+int shmemc_team_get_config(shmemc_team_h th, long config_mask,
+                           shmem_team_config_t *config);
 int shmemc_team_translate_pe(shmemc_team_h sh, int src_pe, shmemc_team_h dh);
 
 int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,

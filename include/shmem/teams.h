@@ -29,7 +29,8 @@ typedef struct shmem_team_config {
 
 int shmem_team_my_pe(shmem_team_t team);
 int shmem_team_n_pes(shmem_team_t team);
-int shmem_team_get_config(shmem_team_t team, shmem_team_config_t *config);
+int shmem_team_get_config(shmem_team_t team, long config_mask,
+                          shmem_team_config_t *config);
 int shmem_team_translate_pe(shmem_team_t src_team, int src_pe,
                             shmem_team_t dest_team);
 int shmem_team_split_strided(shmem_team_t parent_team, int start, int stride,
