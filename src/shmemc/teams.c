@@ -196,17 +196,18 @@ int shmemc_team_n_pes(shmemc_team_h th) { return th->nranks; }
  * retrieve the team's configuration
  */
 
-int shmemc_team_get_config(shmemc_team_h th, long config_mask, shmem_team_config_t *config) {
+int shmemc_team_get_config(shmemc_team_h th, long config_mask,
+                           shmem_team_config_t *config) {
   /* Initialize config structure to zero */
   memset(config, 0, sizeof(shmem_team_config_t));
-  
+
   /* Apply the configuration mask to retrieve requested parameters */
   if (config_mask & SHMEM_TEAM_NUM_CONTEXTS) {
     config->num_contexts = th->cfg.num_contexts;
   }
-  
+
   /* Add handling for other configuration parameters as they are added */
-  
+
   return 0;
 }
 
@@ -263,8 +264,10 @@ int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,
   initialize_common_team(newt, NULL, nc);
 
   newt->parent = parh;
-
   newt->nranks = size;
+
+  /* Initialize rank to -1 (invalid) */
+  newt->rank = -1;
 
   walk = start;
   for (i = 0; i < size; ++i) {
@@ -273,16 +276,27 @@ int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,
     k = kh_get(map, parh->fwd, walk);
     const int up = kh_val(parh->fwd, k);
 
+    /* Check if this PE is part of the team */
     if (is_member(up, start, size)) {
       k = kh_put(map, newt->fwd, i, &absent);
       kh_val(newt->fwd, k) = up;
 
       k = kh_put(map, newt->rev, up, &absent);
       kh_val(newt->rev, k) = i;
+
+      /* If this is the calling PE, set the team rank */
+      if (up == proc.li.rank) {
+        newt->rank = i;
+      }
     }
 
     walk += stride;
   }
+
+  /* Verify that the calling PE is part of the team */
+  // if (newt->rank == -1) {
+  //   shmemu_warn("Calling PE %d is not part of the new team", proc.li.rank);
+  // }
 
   *newh = newt;
 
@@ -294,16 +308,161 @@ int shmemc_team_split_2d(shmemc_team_h parh, int xrange,
                          long xaxis_mask, shmemc_team_h *xaxish,
                          const shmem_team_config_t *yaxis_config,
                          long yaxis_mask, shmemc_team_h *yaxish) {
-  /* TODO */
-  NO_WARN_UNUSED(parh);
-  NO_WARN_UNUSED(xrange);
-  NO_WARN_UNUSED(xaxis_config);
-  NO_WARN_UNUSED(xaxis_mask);
-  NO_WARN_UNUSED(xaxish);
-  NO_WARN_UNUSED(yaxis_config);
-  NO_WARN_UNUSED(yaxis_mask);
-  NO_WARN_UNUSED(yaxish);
+  int parent_size, my_pe_in_parent;
+  int yrange;
+  int my_x, my_y;
+  int i, ret;
+  shmemc_team_h xaxis_team = NULL;
+  shmemc_team_h yaxis_team = NULL;
 
+  /* Get the parent team size and our PE in the parent team */
+  parent_size = parh->nranks;
+  my_pe_in_parent = parh->rank;
+
+  /* Boundary check for xrange */
+  if (xrange <= 0) {
+    shmemu_warn("xrange must be positive");
+    return -1;
+  }
+
+  /* If xrange is greater than parent team size, treat it as equal to parent
+   * size */
+  if (xrange > parent_size) {
+    xrange = parent_size;
+  }
+
+  /* Calculate yrange: ceiling of (parent_size / xrange) */
+  yrange = (parent_size + xrange - 1) / xrange;
+
+  /* Calculate our coordinates in the 2D grid */
+  my_x = my_pe_in_parent % xrange;
+  my_y = my_pe_in_parent / xrange;
+
+  /* Create the x-axis team (all PEs with the same y coordinate) */
+  xaxis_team = (shmemc_team_h)malloc(sizeof(*xaxis_team));
+  if (xaxis_team == NULL) {
+    goto cleanup;
+  }
+
+  /* Initialize the x-axis team */
+  int nc_x =
+      (xaxis_mask & SHMEM_TEAM_NUM_CONTEXTS) ? xaxis_config->num_contexts : 0;
+  initialize_common_team(xaxis_team, NULL, nc_x);
+  xaxis_team->parent = parh;
+
+  /* x-axis team size is minimum of xrange or remaining PEs in last row */
+  if (my_y == yrange - 1 && parent_size % xrange != 0) {
+    /* Last row might be incomplete */
+    xaxis_team->nranks = parent_size % xrange;
+  } else {
+    xaxis_team->nranks = xrange;
+  }
+
+  /* Initialize rank to -1 (invalid) */
+  xaxis_team->rank = -1;
+
+  /* Map PEs to the x-axis team */
+  int absent;
+  int x_team_idx = 0;
+
+  /* Populate the x-axis team with PEs that have the same y-coordinate */
+  for (i = 0; i < parent_size; i++) {
+    int pe_y = i / xrange;
+
+    /* Only include PEs with the same y-coordinate as me */
+    if (pe_y == my_y) {
+      khint_t k;
+      int global_pe;
+
+      /* Get the global PE from the parent team */
+      k = kh_get(map, parh->fwd, i);
+      global_pe = kh_val(parh->fwd, k);
+
+      /* Add to the x-axis team mapping */
+      k = kh_put(map, xaxis_team->fwd, x_team_idx, &absent);
+      kh_val(xaxis_team->fwd, k) = global_pe;
+
+      k = kh_put(map, xaxis_team->rev, global_pe, &absent);
+      kh_val(xaxis_team->rev, k) = x_team_idx;
+
+      /* If this is me, set my rank in the x-axis team */
+      if (i == my_pe_in_parent) {
+        xaxis_team->rank = x_team_idx;
+      }
+
+      x_team_idx++;
+    }
+  }
+
+  /* Create the y-axis team (all PEs with the same x coordinate) */
+  yaxis_team = (shmemc_team_h)malloc(sizeof(*yaxis_team));
+  if (yaxis_team == NULL) {
+    goto cleanup;
+  }
+
+  /* Initialize the y-axis team */
+  int nc_y =
+      (yaxis_mask & SHMEM_TEAM_NUM_CONTEXTS) ? yaxis_config->num_contexts : 0;
+  initialize_common_team(yaxis_team, NULL, nc_y);
+  yaxis_team->parent = parh;
+
+  /* y-axis team size is at most yrange */
+  int actual_y_size = (my_x < parent_size % xrange && parent_size % xrange != 0)
+                          ? yrange
+                          : (parent_size - 1) / xrange + 1;
+  yaxis_team->nranks = actual_y_size;
+
+  /* Initialize rank to -1 (invalid) */
+  yaxis_team->rank = -1;
+
+  /* Map PEs to the y-axis team */
+  int y_team_idx = 0;
+
+  /* Populate the y-axis team with PEs that have the same x-coordinate */
+  for (i = 0; i < parent_size; i++) {
+    int pe_x = i % xrange;
+
+    /* Only include PEs with the same x-coordinate as me */
+    if (pe_x == my_x) {
+      khint_t k;
+      int global_pe;
+
+      /* Get the global PE from the parent team */
+      k = kh_get(map, parh->fwd, i);
+      global_pe = kh_val(parh->fwd, k);
+
+      /* Add to the y-axis team mapping */
+      k = kh_put(map, yaxis_team->fwd, y_team_idx, &absent);
+      kh_val(yaxis_team->fwd, k) = global_pe;
+
+      k = kh_put(map, yaxis_team->rev, global_pe, &absent);
+      kh_val(yaxis_team->rev, k) = y_team_idx;
+
+      /* If this is me, set my rank in the y-axis team */
+      if (i == my_pe_in_parent) {
+        yaxis_team->rank = y_team_idx;
+      }
+
+      y_team_idx++;
+    }
+  }
+
+  /* All good, assign the teams and return success */
+  *xaxish = xaxis_team;
+  *yaxish = yaxis_team;
+  return 0;
+
+cleanup:
+  /* Clean up in case of error */
+  if (xaxis_team != NULL) {
+    free(xaxis_team);
+  }
+  if (yaxis_team != NULL) {
+    free(yaxis_team);
+  }
+
+  *xaxish = SHMEM_TEAM_INVALID;
+  *yaxish = SHMEM_TEAM_INVALID;
   return -1;
 }
 
