@@ -196,18 +196,17 @@ int shmemc_team_n_pes(shmemc_team_h th) { return th->nranks; }
  * retrieve the team's configuration
  */
 
-int shmemc_team_get_config(shmemc_team_h th, long config_mask,
-                           shmem_team_config_t *config) {
+int shmemc_team_get_config(shmemc_team_h th, long config_mask, shmem_team_config_t *config) {
   /* Initialize config structure to zero */
   memset(config, 0, sizeof(shmem_team_config_t));
-
+  
   /* Apply the configuration mask to retrieve requested parameters */
   if (config_mask & SHMEM_TEAM_NUM_CONTEXTS) {
     config->num_contexts = th->cfg.num_contexts;
   }
-
+  
   /* Add handling for other configuration parameters as they are added */
-
+  
   return 0;
 }
 
