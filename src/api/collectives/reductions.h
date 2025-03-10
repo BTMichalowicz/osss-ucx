@@ -581,11 +581,6 @@
   SHIM_REDUCE_DECLARE(uint32, uint32_t, _op, _algo)                            \
   SHIM_REDUCE_DECLARE(uint64, uint64_t, _op, _algo)                            \
   SHIM_REDUCE_DECLARE(size, size_t, _op, _algo)
-  //                                                                              \
-  // SHIM_REDUCE_DECLARE(short, short, _op, _algo)                                \
-  // SHIM_REDUCE_DECLARE(int, int, _op, _algo)                                    \
-  // SHIM_REDUCE_DECLARE(long, long, _op, _algo)                                  \
-  // SHIM_REDUCE_DECLARE(longlong, long long, _op, _algo)
 
 /**
  * @brief Macro to declare min/max reduction operations for numeric types
