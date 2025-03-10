@@ -356,16 +356,16 @@ void shmem_pcontrol(const int level, ...);
  */
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_CTX_PUTGET(_opname, _name, _type)                             \
+#define API_DECL_CTX_PUTGET(_opname, _typename, _type)                         \
   /* see \ref shmem_ctx_long_##_opname() */                                    \
-  void shmem_ctx_##_name##_##_opname(shmem_ctx_t ctx, _type *dest,             \
-                                     const _type *src, size_t nelems, int pe); \
+  void shmem_ctx_##_typename##_##_opname(                                      \
+      shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems, int pe);  \
   /* see \ref shmem_ctx_long_i##_opname() */                                   \
-  void shmem_ctx_##_name##_i##_opname(shmem_ctx_t ctx, _type *dest,            \
-                                      const _type *src, ptrdiff_t tst,         \
-                                      ptrdiff_t sst, size_t nelems, int pe);   \
+  void shmem_ctx_##_typename##_i##_opname(                                     \
+      shmem_ctx_t ctx, _type *dest, const _type *src, ptrdiff_t tst,           \
+      ptrdiff_t sst, size_t nelems, int pe);                                   \
   /* see \ref shmem_ctx_long_##_opname##_nbi() */                              \
-  void shmem_ctx_##_name##_##_opname##_nbi(                                    \
+  void shmem_ctx_##_typename##_##_opname##_nbi(                                \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems, int pe);
 
 API_DECL_CTX_PUTGET(put, float, float)
@@ -421,14 +421,14 @@ API_DECL_CTX_PUTGET(get, ptrdiff, ptrdiff_t)
 #undef API_DECL_CTX_PUTGET
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_PUTGET(_opname, _name, _type)                                 \
-  void shmem_##_name##_##_opname(_type *dest, const _type *src, size_t nelems, \
-                                 int pe);                                      \
-  void shmem_##_name##_i##_opname(_type *dest, const _type *src,               \
-                                  ptrdiff_t tst, ptrdiff_t sst, size_t nelems, \
-                                  int pe);                                     \
-  void shmem_##_name##_##_opname##_nbi(_type *dest, const _type *src,          \
-                                       size_t nelems, int pe);
+#define API_DECL_PUTGET(_opname, _typename, _type)                             \
+  void shmem_##_typename##_##_opname(_type *dest, const _type *src,            \
+                                     size_t nelems, int pe);                   \
+  void shmem_##_typename##_i##_opname(_type *dest, const _type *src,           \
+                                      ptrdiff_t tst, ptrdiff_t sst,            \
+                                      size_t nelems, int pe);                  \
+  void shmem_##_typename##_##_opname##_nbi(_type *dest, const _type *src,      \
+                                           size_t nelems, int pe);
 
 API_DECL_PUTGET(put, float, float)
 API_DECL_PUTGET(put, double, double)
@@ -559,9 +559,10 @@ API_DECL_PUTGET_MEM(get)
 #undef API_DECL_PUTGET_MEM
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_CTX_DECL_P(_name, _type)                                           \
+#define API_CTX_DECL_P(_typename, _type)                                       \
   /* see \ref shmem_ctx_long_p() */                                            \
-  void shmem_ctx_##_name##_p(shmem_ctx_t ctx, _type *dest, _type src, int pe);
+  void shmem_ctx_##_typename##_p(shmem_ctx_t ctx, _type *dest, _type src,      \
+                                 int pe);
 
 API_CTX_DECL_P(float, float)
 API_CTX_DECL_P(double, double)
@@ -591,8 +592,8 @@ API_CTX_DECL_P(ptrdiff, ptrdiff_t)
 #undef API_CTX_DECL_P
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_P(_name, _type)                                               \
-  void shmem_##_name##_p(_type *dest, _type src, int pe);
+#define API_DECL_P(_typename, _type)                                           \
+  void shmem_##_typename##_p(_type *dest, _type src, int pe);
 
 API_DECL_P(float, float)
 API_DECL_P(double, double)
@@ -622,9 +623,9 @@ API_DECL_P(ptrdiff, ptrdiff_t)
 #undef API_DECL_P
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_CTX_DECL_G(_name, _type)                                           \
+#define API_CTX_DECL_G(_typename, _type)                                       \
   /* see \ref shmem_ctx_long_g() */                                            \
-  _type shmem_ctx_##_name##_g(shmem_ctx_t ctx, const _type *src, int pe);
+  _type shmem_ctx_##_typename##_g(shmem_ctx_t ctx, const _type *src, int pe);
 
 API_CTX_DECL_G(float, float)
 API_CTX_DECL_G(double, double)
@@ -654,8 +655,8 @@ API_CTX_DECL_G(ptrdiff, ptrdiff_t)
 #undef API_CTX_DECL_G
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_G(_name, _type)                                               \
-  _type shmem_##_name##_g(const _type *src, int pe);
+#define API_DECL_G(_typename, _type)                                           \
+  _type shmem_##_typename##_g(const _type *src, int pe);
 
 API_DECL_G(float, float)
 API_DECL_G(double, double)
@@ -685,8 +686,8 @@ API_DECL_G(ptrdiff, ptrdiff_t)
 #undef API_DECL_G
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_CTX_PUT_SIGNAL(_name, _type)                                  \
-  void shmem_ctx_##_name##_put_signal(                                         \
+#define API_DECL_CTX_PUT_SIGNAL(_typename, _type)                              \
+  void shmem_ctx_##_typename##_put_signal(                                     \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems,           \
       uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 
@@ -716,8 +717,8 @@ API_DECL_CTX_PUT_SIGNAL(size, size_t);
 API_DECL_CTX_PUT_SIGNAL(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_CTX_PUT_SIGNAL_NBI(_name, _type)                              \
-  void shmem_ctx_##_name##_put_signal_nbi(                                     \
+#define API_DECL_CTX_PUT_SIGNAL_NBI(_typename, _type)                          \
+  void shmem_ctx_##_typename##_put_signal_nbi(                                 \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems,           \
       uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 
@@ -747,10 +748,10 @@ API_DECL_CTX_PUT_SIGNAL_NBI(size, size_t);
 API_DECL_CTX_PUT_SIGNAL_NBI(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_PUT_SIGNAL(_name, _type)                                      \
-  void shmem_##_name##_put_signal(_type *dest, const _type *src,               \
-                                  size_t nelems, uint64_t *sig_addr,           \
-                                  uint64_t signal, int sig_op, int pe)
+#define API_DECL_PUT_SIGNAL(_typename, _type)                                  \
+  void shmem_##_typename##_put_signal(_type *dest, const _type *src,           \
+                                      size_t nelems, uint64_t *sig_addr,       \
+                                      uint64_t signal, int sig_op, int pe)
 
 API_DECL_PUT_SIGNAL(float, float);
 API_DECL_PUT_SIGNAL(double, double);
@@ -778,10 +779,10 @@ API_DECL_PUT_SIGNAL(size, size_t);
 API_DECL_PUT_SIGNAL(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_PUT_SIGNAL_NBI(_name, _type)                                  \
-  void shmem_##_name##_put_signal_nbi(_type *dest, const _type *src,           \
-                                      size_t nelems, uint64_t *sig_addr,       \
-                                      uint64_t signal, int sig_op, int pe)
+#define API_DECL_PUT_SIGNAL_NBI(_typename, _type)                              \
+  void shmem_##_typename##_put_signal_nbi(_type *dest, const _type *src,       \
+                                          size_t nelems, uint64_t *sig_addr,   \
+                                          uint64_t signal, int sig_op, int pe)
 
 API_DECL_PUT_SIGNAL_NBI(float, float);
 API_DECL_PUT_SIGNAL_NBI(double, double);
@@ -1341,9 +1342,9 @@ void *shmem_align(size_t alignment, size_t size) _WUR;
 void *shmem_malloc_with_hints(size_t size, long hints) _WUR;
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_TEST_AND_WAIT_UNTIL(_opname, _rettype, _name, _type)          \
-  /* see \ref shmem_##_name##_opname() */                                      \
-  _rettype shmem_##_name##_##_opname(_type *ivar, int cmp, _type cmp_value)
+#define API_DECL_TEST_AND_WAIT_UNTIL(_opname, _rettype, _typename, _type)      \
+  /* see \ref shmem_##_typename##_opname() */                                  \
+  _rettype shmem_##_typename##_##_opname(_type *ivar, int cmp, _type cmp_value)
 
 /**
  * @brief test for symmetric variable to change value
@@ -1425,9 +1426,10 @@ API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ptrdiff, ptrdiff_t);
 #undef API_DECL_TEST_AND_WAIT_UNTIL
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_TEST_ALL(_opname, _type)                                      \
-  int shmem_##_opname##_test_all(_type *ivars, size_t nelems,                  \
-                                 const int *status, int cmp, _type cmp_value)
+#define API_DECL_TEST_ALL(_typename, _type)                                    \
+  int shmem_##_typename##_test_all(_type *ivars, size_t nelems,                \
+                                   const int *status, int cmp,                 \
+                                   _type cmp_value)
 
 API_DECL_TEST_ALL(short, short) _DEPRECATED;
 API_DECL_TEST_ALL(int, int);
@@ -1445,10 +1447,10 @@ API_DECL_TEST_ALL(size, size_t);
 API_DECL_TEST_ALL(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_TEST_ANY(_opname, _type)                                      \
-  size_t shmem_##_opname##_test_any(_type *ivars, size_t nelems,               \
-                                    const int *status, int cmp,                \
-                                    _type cmp_value)
+#define API_DECL_TEST_ANY(_typename, _type)                                    \
+  size_t shmem_##_typename##_test_any(_type *ivars, size_t nelems,             \
+                                      const int *status, int cmp,              \
+                                      _type cmp_value)
 
 API_DECL_TEST_ANY(short, short) _DEPRECATED;
 API_DECL_TEST_ANY(int, int);
@@ -1466,10 +1468,10 @@ API_DECL_TEST_ANY(size, size_t);
 API_DECL_TEST_ANY(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_TEST_SOME(_opname, _type)                                     \
-  size_t shmem_##_opname##_test_some(_type *ivars, size_t nelems,              \
-                                     size_t *indices, const int *status,       \
-                                     int cmp, _type cmp_value)
+#define API_DECL_TEST_SOME(_typename, _type)                                   \
+  size_t shmem_##_typename##_test_some(_type *ivars, size_t nelems,            \
+                                       size_t *indices, const int *status,     \
+                                       int cmp, _type cmp_value)
 
 API_DECL_TEST_SOME(short, short) _DEPRECATED;
 API_DECL_TEST_SOME(int, int);
@@ -1487,10 +1489,10 @@ API_DECL_TEST_SOME(size, size_t);
 API_DECL_TEST_SOME(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_TEST_ALL_VECTOR(_opname, _type)                               \
-  int shmem_##_opname##_test_all_vector(_type *ivars, size_t nelems,           \
-                                        const int *status, int cmp,            \
-                                        _type *cmp_values)
+#define API_DECL_TEST_ALL_VECTOR(_typename, _type)                             \
+  int shmem_##_typename##_test_all_vector(_type *ivars, size_t nelems,         \
+                                          const int *status, int cmp,          \
+                                          _type *cmp_values)
 
 API_DECL_TEST_ALL_VECTOR(short, short) _DEPRECATED;
 API_DECL_TEST_ALL_VECTOR(int, int);
@@ -1508,10 +1510,10 @@ API_DECL_TEST_ALL_VECTOR(size, size_t);
 API_DECL_TEST_ALL_VECTOR(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_TEST_ANY_VECTOR(_opname, _type)                               \
-  size_t shmem_##_opname##_test_any_vector(_type *ivars, size_t nelems,        \
-                                           const int *status, int cmp,         \
-                                           _type *cmp_values)
+#define API_DECL_TEST_ANY_VECTOR(_typename, _type)                             \
+  size_t shmem_##_typename##_test_any_vector(_type *ivars, size_t nelems,      \
+                                             const int *status, int cmp,       \
+                                             _type *cmp_values)
 
 API_DECL_TEST_ANY_VECTOR(short, short) _DEPRECATED;
 API_DECL_TEST_ANY_VECTOR(int, int);
@@ -1529,8 +1531,8 @@ API_DECL_TEST_ANY_VECTOR(size, size_t);
 API_DECL_TEST_ANY_VECTOR(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_TEST_SOME_VECTOR(_opname, _type)                              \
-  size_t shmem_##_opname##_test_some_vector(                                   \
+#define API_DECL_TEST_SOME_VECTOR(_typename, _type)                            \
+  size_t shmem_##_typename##_test_some_vector(                                 \
       _type *ivars, size_t nelems, size_t *indices, const int *status,         \
       int cmp, _type *cmp_values)
 
@@ -1550,10 +1552,10 @@ API_DECL_TEST_SOME_VECTOR(size, size_t);
 API_DECL_TEST_SOME_VECTOR(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_WAIT_UNTIL_ALL(_opname, _type)                                \
-  void shmem_##_opname##_wait_until_all(_type *ivars, size_t nelems,           \
-                                        const int *status, int cmp,            \
-                                        _type cmp_value)
+#define API_DECL_WAIT_UNTIL_ALL(_typename, _type)                              \
+  void shmem_##_typename##_wait_until_all(_type *ivars, size_t nelems,         \
+                                          const int *status, int cmp,          \
+                                          _type cmp_value)
 
 API_DECL_WAIT_UNTIL_ALL(short, short) _DEPRECATED;
 API_DECL_WAIT_UNTIL_ALL(int, int);
@@ -1571,10 +1573,10 @@ API_DECL_WAIT_UNTIL_ALL(size, size_t);
 API_DECL_WAIT_UNTIL_ALL(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_WAIT_UNTIL_ANY(_opname, _type)                                \
-  size_t shmem_##_opname##_wait_until_any(_type *ivars, size_t nelems,         \
-                                          const int *status, int cmp,          \
-                                          _type cmp_value)
+#define API_DECL_WAIT_UNTIL_ANY(_typename, _type)                              \
+  size_t shmem_##_typename##_wait_until_any(_type *ivars, size_t nelems,       \
+                                            const int *status, int cmp,        \
+                                            _type cmp_value)
 
 API_DECL_WAIT_UNTIL_ANY(short, short) _DEPRECATED;
 API_DECL_WAIT_UNTIL_ANY(int, int);
@@ -1592,10 +1594,10 @@ API_DECL_WAIT_UNTIL_ANY(size, size_t);
 API_DECL_WAIT_UNTIL_ANY(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_WAIT_UNTIL_SOME(_opname, _type)                               \
-  size_t shmem_##_opname##_wait_until_some(_type *ivars, size_t nelems,        \
-                                           size_t *indices, const int *status, \
-                                           int cmp, _type cmp_value)
+#define API_DECL_WAIT_UNTIL_SOME(_typename, _type)                             \
+  size_t shmem_##_typename##_wait_until_some(                                  \
+      _type *ivars, size_t nelems, size_t *indices, const int *status,         \
+      int cmp, _type cmp_value)
 
 API_DECL_WAIT_UNTIL_SOME(short, short) _DEPRECATED;
 API_DECL_WAIT_UNTIL_SOME(int, int);
@@ -1613,10 +1615,10 @@ API_DECL_WAIT_UNTIL_SOME(size, size_t);
 API_DECL_WAIT_UNTIL_SOME(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_WAIT_UNTIL_ALL_VECTOR(_opname, _type)                         \
-  void shmem_##_opname##_wait_until_all_vector(_type *ivars, size_t nelems,    \
-                                               const int *status, int cmp,     \
-                                               _type *cmp_values)
+#define API_DECL_WAIT_UNTIL_ALL_VECTOR(_typename, _type)                       \
+  void shmem_##_typename##_wait_until_all_vector(_type *ivars, size_t nelems,  \
+                                                 const int *status, int cmp,   \
+                                                 _type *cmp_values)
 
 API_DECL_WAIT_UNTIL_ALL_VECTOR(short, short) _DEPRECATED;
 API_DECL_WAIT_UNTIL_ALL_VECTOR(int, int);
@@ -1634,10 +1636,10 @@ API_DECL_WAIT_UNTIL_ALL_VECTOR(size, size_t);
 API_DECL_WAIT_UNTIL_ALL_VECTOR(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_WAIT_UNTIL_ANY_VECTOR(_opname, _type)                         \
-  size_t shmem_##_opname##_wait_until_any_vector(_type *ivars, size_t nelems,  \
-                                                 const int *status, int cmp,   \
-                                                 _type *cmp_values)
+#define API_DECL_WAIT_UNTIL_ANY_VECTOR(_typename, _type)                       \
+  size_t shmem_##_typename##_wait_until_any_vector(                            \
+      _type *ivars, size_t nelems, const int *status, int cmp,                 \
+      _type *cmp_values)
 
 API_DECL_WAIT_UNTIL_ANY_VECTOR(short, short) _DEPRECATED;
 API_DECL_WAIT_UNTIL_ANY_VECTOR(int, int);
@@ -1655,8 +1657,8 @@ API_DECL_WAIT_UNTIL_ANY_VECTOR(size, size_t);
 API_DECL_WAIT_UNTIL_ANY_VECTOR(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_WAIT_UNTIL_SOME_VECTOR(_opname, _type)                        \
-  size_t shmem_##_opname##_wait_until_some_vector(                             \
+#define API_DECL_WAIT_UNTIL_SOME_VECTOR(_typename, _type)                      \
+  size_t shmem_##_typename##_wait_until_some_vector(                           \
       _type *ivars, size_t nelems, size_t *indices, const int *status,         \
       int cmp, _type *cmp_values)
 
@@ -1710,10 +1712,12 @@ API_DECL_WAIT_UNTIL_SOME_VECTOR(ptrdiff, ptrdiff_t);
  * by \ref shmem_long_wait_until
  *
  */
-#define API_DECL_WAIT(_name, _type)                                            \
-  /* see \ref shmem_##_name##_wait() */                                        \
-  void shmem_##_name##_##wait(_type *ivar, _type cmp_value) _DEPRECATED_BY(    \
-      shmem_##_name##_wait_until with compare operator SHMEM_CMP_NE, 1.4);
+#define API_DECL_WAIT(_typename, _type)                                        \
+  /* see \ref shmem_##_typename##_wait() */                                    \
+  void shmem_##_typename##_##wait(_type *ivar, _type cmp_value)                \
+      _DEPRECATED_BY(                                                          \
+          shmem_##_typename##_wait_until with compare operator SHMEM_CMP_NE,   \
+          1.4);
 
 API_DECL_WAIT(longdouble, long double)
 API_DECL_WAIT(schar, signed char)
@@ -1754,12 +1758,12 @@ API_DECL_WAIT(ptrdiff, ptrdiff_t)
  * None.
  *
  */
-#define API_CTX_DECL_SWAP(_name, _type)                                        \
+#define API_CTX_DECL_SWAP(_typename, _type)                                    \
   /* see \ref shmem_ctx_long_atomic_swap() */                                  \
-  _type shmem_ctx_##_name##_atomic_swap(shmem_ctx_t ctx, _type *target,        \
-                                        _type value, int pe) _WUR;             \
+  _type shmem_ctx_##_typename##_atomic_swap(shmem_ctx_t ctx, _type *target,    \
+                                            _type value, int pe) _WUR;         \
   /* see \ref shmem_long_atomic_swap() */                                      \
-  _type shmem_##_name##_atomic_swap(_type *target, _type value, int pe);
+  _type shmem_##_typename##_atomic_swap(_type *target, _type value, int pe);
 
 API_CTX_DECL_SWAP(float, float)
 API_CTX_DECL_SWAP(double, double)
@@ -1780,13 +1784,13 @@ API_CTX_DECL_SWAP(ptrdiff, ptrdiff_t)
 #undef API_CTX_DECL_SWAP
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_CTX_DECL_SWAP_NBI(_name, _type)                                    \
+#define API_CTX_DECL_SWAP_NBI(_typename, _type)                                \
   /* see \ref shmem_ctx_long_atomic_swap_nbi() */                              \
-  void shmem_ctx_##_name##_atomic_swap_nbi(                                    \
+  void shmem_ctx_##_typename##_atomic_swap_nbi(                                \
       shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe);      \
   /* see \ref shmem_long_atomic_swap_nbi() */                                  \
-  void shmem_##_name##_atomic_swap_nbi(_type *fetch, _type *target,            \
-                                       _type value, int pe);
+  void shmem_##_typename##_atomic_swap_nbi(_type *fetch, _type *target,        \
+                                           _type value, int pe);
 
 API_CTX_DECL_SWAP_NBI(float, float)
 API_CTX_DECL_SWAP_NBI(double, double)
@@ -1841,13 +1845,13 @@ double shmem_double_swap(double *target, double value, int pe)
  * None.
  *
  */
-#define API_CTX_DECL_CSWAP(_name, _type)                                       \
+#define API_CTX_DECL_CSWAP(_typename, _type)                                   \
   /* see \ref shmem_ctx_long_atomic_compare_swap() */                          \
-  _type shmem_ctx_##_name##_atomic_compare_swap(                               \
+  _type shmem_ctx_##_typename##_atomic_compare_swap(                           \
       shmem_ctx_t ctx, _type *target, _type cond, _type value, int pe) _WUR;   \
   /* see \ref shmem_long_atomic_compare_swap() */                              \
-  _type shmem_##_name##_atomic_compare_swap(_type *target, _type cond,         \
-                                            _type value, int pe);
+  _type shmem_##_typename##_atomic_compare_swap(_type *target, _type cond,     \
+                                                _type value, int pe);
 
 /* no reals */
 API_CTX_DECL_CSWAP(int, int)
@@ -1866,13 +1870,13 @@ API_CTX_DECL_CSWAP(ptrdiff, ptrdiff_t)
 #undef API_CTX_DECL_CSWAP
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_CTX_DECL_CSWAP_NBI(_name, _type)                                   \
+#define API_CTX_DECL_CSWAP_NBI(_typename, _type)                               \
   /* see \ref shmem_ctx_long_atomic_compare_swap_nbi() */                      \
-  void shmem_ctx_##_name##_atomic_compare_swap_nbi(                            \
+  void shmem_ctx_##_typename##_atomic_compare_swap_nbi(                        \
       shmem_ctx_t ctx, _type *fetch, _type *target, _type cond, _type value,   \
       int pe);                                                                 \
   /* see \ref shmem_long_atomic_compare_swap_nbi() */                          \
-  void shmem_##_name##_atomic_compare_swap_nbi(                                \
+  void shmem_##_typename##_atomic_compare_swap_nbi(                            \
       _type *target, _type *fetch, _type cond, _type value, int pe);
 
 /* no reals */
@@ -2927,7 +2931,6 @@ API_XOR_REDUCE_TYPE(size_t, size)
 // API_XOR_REDUCE_TYPE(int, int)
 // API_XOR_REDUCE_TYPE(long, long)
 // API_XOR_REDUCE_TYPE(long long, longlong)
-
 
 /**
  * @brief Performs a maximum value reduction across a team
