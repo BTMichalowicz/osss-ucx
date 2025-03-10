@@ -1,6 +1,7 @@
 INSTALL
 COPYING
 build
+scratch
 .vscode
 
 .libs
