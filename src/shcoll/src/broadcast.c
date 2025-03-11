@@ -501,6 +501,7 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
     const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
     const int logPE_stride = 0;                                                \
     const int PE_size = shmem_team_n_pes(team);                                \
+    const int me = shmem_my_pe();                                              \
     const int world_root =                                                     \
         shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD);              \
                                                                                \
@@ -517,13 +518,17 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
     /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* Zero out destination buffer */                                          \
-    if (shmem_my_pe() != world_root) {                                         \
+    /* Initialize destination buffer */                                        \
+    if (me != world_root) {                                                    \
+      /* Non-root PEs: zero out destination buffer */                          \
       memset(dest, 0, nelems * sizeof(_type));                                 \
+    } else {                                                                   \
+      /* Root PE: copy from source to destination */                           \
+      memcpy(dest, source, nelems * sizeof(_type));                            \
     }                                                                          \
                                                                                \
-    /* Perform broadcast */                                                    \
-    broadcast_helper_##_algo(dest, source, nelems * sizeof(_type), PE_root,    \
+    /* Perform broadcast - Note we now always use dest as target */            \
+    broadcast_helper_##_algo(dest, dest, nelems * sizeof(_type), PE_root,      \
                              PE_start, logPE_stride, PE_size, pSync);          \
                                                                                \
     /* Ensure broadcast completion */                                          \

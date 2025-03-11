@@ -1082,7 +1082,6 @@ void shmem_quiet(void);
  * accessibility
  */
 
-////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief checks whether the caller PE can communicate with the named PE
  * @page shmem_pe_accessible
