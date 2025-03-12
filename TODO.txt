@@ -11,3 +11,12 @@
 - Update include/pshmem.h with all the new routines
 
 - Do we need to deal with extensions for additional types for the collectives?
+
+- All new routines. Should we be checking whether shmem_init has been called
+  in everything? i.e., something like this:
+
+    SHMEMU_CHECK_INIT();
+    SHMEMU_CHECK_PE_ARG_RANGE(pe, 8);
+    SHMEMU_CHECK_SYMMETRIC(dest, 2);
+    SHMEMU_CHECK_SYMMETRIC(src 5);
+ 
