@@ -31,7 +31,7 @@ export SHMEM_LAUNCHER="$OMPI_BIN/mpiexec"
   --with-pmix=$PMIX_DIR   \
   --with-ucx=$UCX_DIR     \
   --enable-logging        \
-  --with-heap-size=2G
+  --with-heap-size=5K
   
   #--enable-debug          \
 
