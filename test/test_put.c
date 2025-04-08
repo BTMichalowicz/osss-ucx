@@ -34,8 +34,8 @@ int main(void) {
 
     /* PE 0 performs a put to PE 1 */
     if (my_pe == 0) {
-        shmem_put(dest, src, 10, 1);  /* Put 10 elements into PE 1's dest array */
-        printf("PE %d: shmem_put completed.\n", my_pe);
+        shmem_long_put(dest, src, 10, 1);  /* Put 10 elements into PE 1's dest array */
+        printf("PE %d: shmem_long_put completed.\n", my_pe);
     }
 
     /* Synchronize all PEs again */

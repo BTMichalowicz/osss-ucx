@@ -1,6 +1,3 @@
-- Reimplent shmem_team_sync so it uses the deprecated shmem_sync's subroutines
-  Need to implement shmem_team_sync along with the collectives.
-
 - Table registration for reductions and tpyed colls
 
 - All collectives
@@ -10,7 +7,7 @@
 
 - Update include/pshmem.h with all the new routines
 
-- Do we need to deal with extensions for additional types for the collectives?
+- Anything need to be dome with shmemx?
 
 - All new routines. Should we be checking whether shmem_init has been called
   in everything? i.e., something like this:

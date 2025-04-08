@@ -9,7 +9,7 @@ export UCX_RC_DEVX_ENABLED=n
 # export UCX_LOG_LEVEL=debug
 
 # --- Turn on verbose SHMEM logging
-export SHMEM_DEBUG=on
+# export SHMEM_DEBUG=on
 
 # --- Set OSSS bins from build directory
 oshcc="../build/build/bin/oshcc"
@@ -20,7 +20,7 @@ rm -rf bin
 mkdir bin
 
 # --- Set flags for mpiexec
-flags="--bind-to core --map-by core --allow-run-as-root"
+#flags="--bind-to core --map-by core --allow-run-as-root"
 hline="-------------------------------"
 
 # --- Print log levels ---
@@ -34,16 +34,16 @@ $oshcc --version
 ################################################################
 
 # # --- Hello world ---
-# echo $hline ; echo "  Running Hello World test" ; echo $hline
-# $oshcc hello_world.c -o ./bin/hello_world
-# $oshrun $flags -np 2 ./bin/hello_world
-# echo
+echo $hline ; echo "  Running Hello World test" ; echo $hline
+$oshcc hello_world.c -o ./bin/hello_world
+$oshrun $flags -np 2 ./bin/hello_world
+echo
 
-# # --- shmem_put ---
-# echo $hline ; echo "  Running shmem_put test" ; echo $hline
-# $oshcc test_put.c -o ./bin/test_put
-# $oshrun $flags -np 2 ./bin/test_put
-# echo
+# --- shmem_put ---
+echo $hline ; echo "  Running shmem_put test" ; echo $hline
+$oshcc test_put.c -o ./bin/test_put
+$oshrun $flags -np 2 ./bin/test_put
+echo
 
 # # --- shmem_info ---
 # echo $hline ; echo "  Running shmem_info test" ; echo $hline
@@ -69,17 +69,17 @@ $oshcc --version
 #          ./bin/test_ctx_get_team
 # echo
 
-# --- shmem_team_sync ---
-echo $hline ; echo "  Running shmem_team_sync test" ; echo $hline
-$oshcc test_team_sync.c -o ./bin/test_team_sync
-$oshrun $flags -np 2 ./bin/test_team_sync
-echo
-
-# --- shmem_alltoall ---
-echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
-$oshcc test_alltoall.c -o ./bin/test_alltoall
-$oshrun $flags -np 4 ./bin/test_alltoall
-echo
+# # --- shmem_team_sync ---
+# echo $hline ; echo "  Running shmem_team_sync test" ; echo $hline
+# $oshcc test_team_sync.c -o ./bin/test_team_sync
+# $oshrun $flags -np 2 ./bin/test_team_sync
+# echo
+# 
+# # --- shmem_alltoall ---
+# echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
+# $oshcc test_alltoall.c -o ./bin/test_alltoall
+# $oshrun $flags -np 4 ./bin/test_alltoall
+# echo
 
 # # --- shmem_alltoalls ---
 # echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
