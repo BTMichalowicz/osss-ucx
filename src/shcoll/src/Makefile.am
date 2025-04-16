@@ -21,6 +21,9 @@ FIND_SHMEM_H = -I$(top_srcdir)/include \
 # BUILD_CFLAGS            = -w
 BUILD_CFLAGS            =
 BUILD_CFLAGS           += -I.. $(FIND_SHMEM_H)
+BUILD_CFLAGS           += -I$(top_srcdir)/src/shmemu \
+                         -I$(top_srcdir)/src/shmemc \
+                         -I$(top_srcdir)/src/shmemt
 
 lib_LTLIBRARIES         = libshcoll.la
 libshcoll_la_SOURCES    = $(SOURCES)

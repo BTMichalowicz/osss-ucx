@@ -34,10 +34,8 @@ export SHMEM_LAUNCHER="$OMPI_BIN/mpirun"
   --prefix=$PREFIX        \
   --with-pmix=$PMIX_DIR   \
   --with-ucx=$UCX_DIR     \
-  --enable-logging        \
-  --with-heap-size=1M
-  
-  #--enable-debug          \
+  --with-heap-size=1M #    \
+  # --enable-debug
 
 # ---  Compile
 echo $HLINE
