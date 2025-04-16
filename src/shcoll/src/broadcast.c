@@ -498,7 +498,8 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
                                              const _type *source,              \
                                              size_t nelems, int PE_root) {     \
     /* Get team parameters */                                                  \
-    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
+    /* TODO: make sure the team PE numbers is handled correctly */             \
+    const int PE_start = 0;                                                    \
     const int logPE_stride = 0;                                                \
     const int PE_size = shmem_team_n_pes(team);                                \
     const int me = shmem_my_pe();                                              \
@@ -589,6 +590,7 @@ DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
                                   const void *source, size_t nelems,           \
                                   int PE_root) {                               \
     /* Get team parameters */                                                  \
+    /* TODO: make sure the team PE numbers is handled correctly */             \
     const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
     const int logPE_stride = 0;                                                \
     const int PE_size = shmem_team_n_pes(team);                                \

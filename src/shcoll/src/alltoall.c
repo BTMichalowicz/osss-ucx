@@ -287,7 +287,8 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
   int shcoll_##_typename##_alltoall_##_algo(                                   \
       shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
     /* Get team parameters */                                                  \
-    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
+    /* TODO: use shmem_translate PE to the team's PE 0  */                     \
+    const int PE_start = 0;                                                    \
     const int logPE_stride = 0;                                                \
     const int PE_size = shmem_team_n_pes(team);                                \
                                                                                \
@@ -375,6 +376,7 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
   int shcoll_alltoallmem_##_algo(shmem_team_t team, void *dest,                \
                                  const void *source, size_t nelems) {          \
     /* Get team parameters */                                                  \
+    /* TODO: use shmem_translate PE to the team's PE 0  */                     \
     const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
     const int logPE_stride = 0;                                                \
     const int PE_size = shmem_team_n_pes(team);                                \
