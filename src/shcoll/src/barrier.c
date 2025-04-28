@@ -274,26 +274,52 @@ inline static void barrier_sync_helper_dissemination(int PE_start,
  * - sync_all: Global barrier without memory ordering
  *
  * @param _algo Algorithm name to generate functions for
+ *
+ * TODO: Double check sanity checks
  */
 #define SHCOLL_BARRIER_SYNC_DEFINITION(_algo)                                  \
   void shcoll_barrier_##_algo(int PE_start, int logPE_stride, int PE_size,     \
                               long *pSync) {                                   \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_POSITIVE(PE_size, "PE_size");                                 \
+    SHMEMU_CHECK_NON_NEGATIVE(PE_start, "PE_start");                           \
+    SHMEMU_CHECK_NON_NEGATIVE(logPE_stride, "logPE_stride");                   \
+    SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_BARRIER_SYNC_SIZE);    \
     shmem_quiet();                                                             \
     barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
   }                                                                            \
                                                                                \
   void shcoll_barrier_all_##_algo(long *pSync) {                               \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_BARRIER_SYNC_SIZE);    \
     shmem_quiet();                                                             \
     barrier_sync_helper_##_algo(0, 0, shmem_n_pes(), pSync);                   \
   }                                                                            \
                                                                                \
   void shcoll_sync_##_algo(int PE_start, int logPE_stride, int PE_size,        \
                            long *pSync) {                                      \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_POSITIVE(PE_size, "PE_size");                                 \
+    SHMEMU_CHECK_NON_NEGATIVE(PE_start, "PE_start");                           \
+    SHMEMU_CHECK_NON_NEGATIVE(logPE_stride, "logPE_stride");                   \
+    SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_BARRIER_SYNC_SIZE);    \
     /* TODO: memory fence */                                                   \
     barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
   }                                                                            \
                                                                                \
   void shcoll_sync_all_##_algo(long *pSync) {                                  \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_BARRIER_SYNC_SIZE);    \
     /* TODO: memory fence */                                                   \
     barrier_sync_helper_##_algo(0, 0, shmem_n_pes(), pSync);                   \
   }
@@ -318,6 +344,10 @@ SHCOLL_BARRIER_SYNC_DEFINITION(dissemination)
  */
 #define SHCOLL_TEAM_SYNC_DEFINITION(_algo)                                     \
   int shcoll_team_sync_##_algo(shmem_team_t team) {                            \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+                                                                               \
     /* Get team parameters */                                                  \
     const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
     const int logPE_stride = 0;                                                \
