@@ -94,6 +94,22 @@ inline static int edge_color(int i, int me, int npes) {
       void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,            \
       size_t nelems, int PE_start, int logPE_stride, int PE_size,              \
       long *pSync) {                                                           \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_POSITIVE(PE_size, "PE_size");                                 \
+    SHMEMU_CHECK_NON_NEGATIVE(PE_start, "PE_start");                           \
+    SHMEMU_CHECK_NON_NEGATIVE(logPE_stride, "logPE_stride");                   \
+    SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
+    SHMEMU_CHECK_NULL(dest, "dest");                                           \
+    SHMEMU_CHECK_NULL(source, "source");                                       \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                           \
+    const size_t element_size_bytes = (_size) / CHAR_BIT;                      \
+    const size_t total_extent_bytes = element_size_bytes * nelems * PE_size;   \
+    SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                          \
+    SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                        \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);    \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes, total_extent_bytes); \
+                                                                               \
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
                                                                                \
@@ -143,6 +159,22 @@ inline static int edge_color(int i, int me, int npes) {
       void *dest, const void *source, ptrdiff_t dst, ptrdiff_t sst,            \
       size_t nelems, int PE_start, int logPE_stride, int PE_size,              \
       long *pSync) {                                                           \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_POSITIVE(PE_size, "PE_size");                                 \
+    SHMEMU_CHECK_NON_NEGATIVE(PE_start, "PE_start");                           \
+    SHMEMU_CHECK_NON_NEGATIVE(logPE_stride, "logPE_stride");                   \
+    SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
+    SHMEMU_CHECK_NULL(dest, "dest");                                           \
+    SHMEMU_CHECK_NULL(source, "source");                                       \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                           \
+    const size_t element_size_bytes = (_size) / CHAR_BIT;                      \
+    const size_t total_extent_bytes = element_size_bytes * nelems * PE_size;   \
+    SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                          \
+    SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                        \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);    \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes, total_extent_bytes); \
+                                                                               \
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
                                                                                \
@@ -372,14 +404,28 @@ ALLTOALLS_TEAM_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
   int shcoll_##_typename##_alltoalls_##_algo(                                  \
       shmem_team_t team, _type *dest, const _type *source, ptrdiff_t dst,      \
       ptrdiff_t sst, size_t nelems) {                                          \
-    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+    SHMEMU_CHECK_NULL(dest, "dest");                                           \
+    SHMEMU_CHECK_NULL(source, "source");                                       \
+                                                                               \
+    const int PE_size = shmem_team_n_pes(team);                                \
+    const size_t total_extent_bytes = sizeof(_type) * nelems * PE_size;        \
+    SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                          \
+    SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                        \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes, total_extent_bytes); \
+                                                                               \
+    /* Note: PE_start and logPE_stride are 0 for teams */                      \
+    int PE_start = 0;                                                          \
     int logPE_stride = 0;                                                      \
-    int PE_size = shmem_team_n_pes(team);                                      \
     /* Convert element strides to byte strides and pass nelems as count */     \
     int ret = alltoalls_team_helper_##_algo(dest, source, dst * sizeof(_type), \
                                             sst * sizeof(_type), nelems,       \
                                             PE_start, logPE_stride, PE_size);  \
+                                                                               \
     if (ret != 0) {                                                            \
+      /* The helper function itself should have called shmemu_fatal on error */\
       return -1;                                                               \
     }                                                                          \
     return 0;                                                                  \
@@ -433,13 +479,28 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
   int shcoll_alltoallsmem_##_algo(shmem_team_t team, void *dest,               \
                                   const void *source, ptrdiff_t dst,           \
                                   ptrdiff_t sst, size_t nelems) {              \
-    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+    SHMEMU_CHECK_NULL(dest, "dest");                                           \
+    SHMEMU_CHECK_NULL(source, "source");                                       \
+                                                                               \
+    const int PE_size = shmem_team_n_pes(team);                                \
+    /* Buffer Checks - nelems is already total bytes per PE for mem version */ \
+    const size_t total_extent_bytes = nelems * PE_size;                        \
+    SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                          \
+    SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                        \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes, total_extent_bytes); \
+                                                                               \
+    /* Note: PE_start and logPE_stride are 0 for teams */                      \
+    int PE_start = 0;                                                          \
     int logPE_stride = 0;                                                      \
-    int PE_size = shmem_team_n_pes(team);                                      \
     /* For memory version, dst and sst are already in bytes */                 \
     int ret = alltoalls_team_helper_##_algo(dest, source, dst, sst, nelems,    \
                                             PE_start, logPE_stride, PE_size);  \
+                                                                               \
     if (ret != 0) {                                                            \
+      /* The helper function itself should have called shmemu_fatal on error */\
       return -1;                                                               \
     }                                                                          \
     return 0;                                                                  \

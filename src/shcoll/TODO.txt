@@ -1,6 +1,4 @@
 - Add sanity checks to:
-  - alltoalls
-  - barrier
   - reductions
 
 - Add internal psync pool to:
