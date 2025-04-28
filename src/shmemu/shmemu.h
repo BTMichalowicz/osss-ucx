@@ -329,12 +329,16 @@ int shmemu_thread_level(const char *tn);
 
 #define SHMEMU_CHECK_BUFFER_OVERLAP(_dest, _source, _dest_size, _source_size)  \
   do {                                                                         \
-    if ((char *)(_dest) + (_dest_size) > (char *)(_source) &&                  \
-        (char *)(_source) + (_source_size) > (char *)(_dest)) {                \
-      shmemu_fatal("In %s(), source buffer (%p) and destination buffer (%p) "  \
-                   "have an illegal overlap",                                  \
-                   __func__, (_source), (_dest));                              \
-      /* NOT REACHED */                                                        \
+    /* Only check for actual overlap if the base pointers are different */     \
+    if ((void *)(_dest) != (void *)(_source)) {                                \
+      if ((char *)(_dest) + (_dest_size) > (char *)(_source) &&                \
+          (char *)(_source) + (_source_size) > (char *)(_dest)) {              \
+        shmemu_fatal(                                                          \
+            "In %s(), source buffer (%p) and destination buffer (%p) "         \
+            "have an illegal overlap",                                         \
+            __func__, (_source), (_dest));                                     \
+        /* NOT REACHED */                                                      \
+      }                                                                        \
     }                                                                          \
   } while (0)
 

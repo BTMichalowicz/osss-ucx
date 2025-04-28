@@ -491,6 +491,19 @@ fcollect_helper_neighbor_exchange(void *dest, const void *source, size_t nbytes,
   void shcoll_fcollect##_size##_##_algo(                                       \
       void *dest, const void *source, size_t nelems, int PE_start,             \
       int logPE_stride, int PE_size, long *pSync) {                            \
+    /* Sanity checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_POSITIVE(PE_size, "PE_size");                                 \
+    SHMEMU_CHECK_NON_NEGATIVE(PE_start, "PE_start");                           \
+    SHMEMU_CHECK_NON_NEGATIVE(logPE_stride, "logPE_stride");                   \
+    SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
+    SHMEMU_CHECK_SYMMETRIC(dest, (_size) / (CHAR_BIT) * nelems * PE_size);     \
+    SHMEMU_CHECK_SYMMETRIC(source, (_size) / (CHAR_BIT) * nelems);             \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_COLLECT_SYNC_SIZE);    \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
+                                (_size) / (CHAR_BIT) * nelems * PE_size,       \
+                                (_size) / (CHAR_BIT) * nelems);                \
+    /* Perform fcollect */                                                     \
     fcollect_helper_##_algo(dest, source, (_size) / CHAR_BIT * nelems,         \
                             PE_start, logPE_stride, PE_size, pSync);           \
   }
@@ -539,13 +552,28 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
 #define SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, type, _typename)                \
   int shcoll_##_typename##_fcollect_##_algo(                                   \
       shmem_team_t team, type *dest, const type *source, size_t nelems) {      \
-    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+                                                                               \
+    const int PE_size = shmem_team_n_pes(team);                                \
+    /* Buffer Checks */                                                        \
+    SHMEMU_CHECK_SYMMETRIC(dest, sizeof(type) * nelems * PE_size);             \
+    SHMEMU_CHECK_SYMMETRIC(source, sizeof(type) * nelems);                     \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, sizeof(type) * nelems * PE_size, \
+                                sizeof(type) * nelems);                        \
+                                                                               \
+    /* TODO: use internal psync pool and team translate PE to team's PE 0 */   \
+    int PE_start = 0;                                                          \
     int logPE_stride = 0;                                                      \
-    int PE_size = shmem_team_n_pes(team);                                      \
+                                                                               \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
-    if (!pSync)                                                                \
+    if (!pSync) {                                                              \
+      shmemu_fatal("Failed to allocate pSync in shcoll_%s_fcollect_%s",        \
+                   #_typename, #_algo);                                        \
       return -1;                                                               \
+    }                                                                          \
     /* Initialize pSync */                                                     \
     for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
@@ -621,13 +649,34 @@ DEFINE_SHCOLL_FCOLLECT_TYPES(neighbor_exchange)
 #define SHCOLL_FCOLLECTMEM_DEFINITION(_algo)                                   \
   int shcoll_fcollectmem_##_algo(shmem_team_t team, void *dest,                \
                                  const void *source, size_t nelems) {          \
-    int PE_start = shmem_team_translate_pe(team, 0, SHMEM_TEAM_WORLD);         \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+    SHMEMU_CHECK_NULL(dest, "dest");                                           \
+    SHMEMU_CHECK_NULL(source, "source");                                       \
+                                                                               \
+    const int PE_size = shmem_team_n_pes(team);                                \
+    /* Buffer Checks */                                                        \
+    SHMEMU_CHECK_SYMMETRIC(dest, nelems *PE_size);                             \
+    SHMEMU_CHECK_SYMMETRIC(source, nelems);                                    \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size, nelems);        \
+                                                                               \
+    /* TODO: use internal psync pool and team translate PE to team's PE 0 */   \
+    int PE_start = 0;                                                          \
     int logPE_stride = 0;                                                      \
-    int PE_size = shmem_team_n_pes(team);                                      \
+    /* Verify COLLECT_SYNC_SIZE - FCOLLECT uses COLLECT's sync size */         \
+    if (SHCOLL_COLLECT_SYNC_SIZE < 32) { /* Check minimum size needed */       \
+      shmemu_fatal("SHCOLL_COLLECT_SYNC_SIZE (%d) too small for %s algorithm", \
+                   SHCOLL_COLLECT_SYNC_SIZE, #_algo);                          \
+      return -1;                                                               \
+    }                                                                          \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
-    if (!pSync)                                                                \
+    if (!pSync) {                                                              \
+      shmemu_fatal("Failed to allocate pSync in shcoll_fcollectmem_%s",        \
+                   #_algo);                                                    \
       return -1;                                                               \
+    }                                                                          \
     /* Initialize pSync */                                                     \
     for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \

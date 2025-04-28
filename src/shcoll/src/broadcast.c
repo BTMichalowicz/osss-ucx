@@ -458,9 +458,8 @@ broadcast_helper_scatter_collect(void *target, const void *source,
     SHMEMU_CHECK_SYMMETRIC(dest, (_size) / (CHAR_BIT) * nelems * PE_size);     \
     SHMEMU_CHECK_SYMMETRIC(source, (_size) / (CHAR_BIT) * nelems * PE_size);   \
     SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);   \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
-                                (_size) / (CHAR_BIT) * nelems * PE_size,       \
-                                (_size) / (CHAR_BIT) * nelems * PE_size);      \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, (_size) / (CHAR_BIT) * nelems,   \
+                                (_size) / (CHAR_BIT) * nelems);                \
     /* Perform broadcast */                                                    \
     broadcast_helper_##_algo(dest, source, ((_size) / CHAR_BIT) * nelems,      \
                              PE_root, PE_start, logPE_stride, PE_size, pSync); \
@@ -524,9 +523,8 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
     SHMEMU_CHECK_SYMMETRIC(source, sizeof(_type) * nelems * PE_size);          \
                                                                                \
     /* Check for overlap between source and destination */                     \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
-                                sizeof(_type) * nelems * PE_size,              \
-                                sizeof(_type) * nelems * PE_size);             \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, sizeof(_type) * nelems,          \
+                                sizeof(_type) * nelems);                       \
                                                                                \
     /* Get team parameters */                                                  \
     /* TODO: use internal psync pool and team translate PE to team's PE 0 */   \
@@ -637,8 +635,7 @@ DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
     SHMEMU_CHECK_SYMMETRIC(source, nelems *PE_size);                           \
                                                                                \
     /* Check for overlap between source and destination */                     \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size,                 \
-                                nelems *PE_size);                              \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems, nelems);                 \
                                                                                \
     /* Get team parameters */                                                  \
     /* TODO: use internal psync pool and team translate PE to team's PE 0 */   \
