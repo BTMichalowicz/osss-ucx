@@ -449,6 +449,19 @@ broadcast_helper_scatter_collect(void *target, const void *source,
   void shcoll_broadcast##_size##_##_algo(                                      \
       void *dest, const void *source, size_t nelems, int PE_root,              \
       int PE_start, int logPE_stride, int PE_size, long *pSync) {              \
+    /* Sanity checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_POSITIVE(PE_size, "PE_size");                                 \
+    SHMEMU_CHECK_NON_NEGATIVE(PE_start, "PE_start");                           \
+    SHMEMU_CHECK_NON_NEGATIVE(logPE_stride, "logPE_stride");                   \
+    SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
+    SHMEMU_CHECK_SYMMETRIC(dest, (_size) / (CHAR_BIT) * nelems * PE_size);     \
+    SHMEMU_CHECK_SYMMETRIC(source, (_size) / (CHAR_BIT) * nelems * PE_size);   \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);   \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
+                                (_size) / (CHAR_BIT) * nelems * PE_size,       \
+                                (_size) / (CHAR_BIT) * nelems * PE_size);      \
+    /* Perform broadcast */                                                    \
     broadcast_helper_##_algo(dest, source, ((_size) / CHAR_BIT) * nelems,      \
                              PE_root, PE_start, logPE_stride, PE_size, pSync); \
   }
@@ -497,11 +510,28 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
   int shcoll_##_typename##_broadcast_##_algo(shmem_team_t team, _type *dest,   \
                                              const _type *source,              \
                                              size_t nelems, int PE_root) {     \
+    /* Check initialization */                                                 \
+    SHMEMU_CHECK_INIT();                                                       \
+                                                                               \
+    /* Check team validity */                                                  \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+                                                                               \
     /* Get team parameters */                                                  \
-    /* TODO: make sure the team PE numbers is handled correctly */             \
+    const int PE_size = shmem_team_n_pes(team);                                \
+                                                                               \
+    /* Check buffer symmetry */                                                \
+    SHMEMU_CHECK_SYMMETRIC(dest, sizeof(_type) * nelems * PE_size);            \
+    SHMEMU_CHECK_SYMMETRIC(source, sizeof(_type) * nelems * PE_size);          \
+                                                                               \
+    /* Check for overlap between source and destination */                     \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
+                                sizeof(_type) * nelems * PE_size,              \
+                                sizeof(_type) * nelems * PE_size);             \
+                                                                               \
+    /* Get team parameters */                                                  \
+    /* TODO: use internal psync pool and team translate PE to team's PE 0 */   \
     const int PE_start = 0;                                                    \
     const int logPE_stride = 0;                                                \
-    const int PE_size = shmem_team_n_pes(team);                                \
     const int me = shmem_my_pe();                                              \
     const int world_root =                                                     \
         shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD);              \
@@ -589,11 +619,31 @@ DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
   int shcoll_broadcastmem_##_algo(shmem_team_t team, void *dest,               \
                                   const void *source, size_t nelems,           \
                                   int PE_root) {                               \
+    /* Check initialization */                                                 \
+    SHMEMU_CHECK_INIT();                                                       \
+                                                                               \
+    /* Check team validity */                                                  \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+                                                                               \
+    /* Check for NULL pointers */                                              \
+    SHMEMU_CHECK_NULL(dest, "dest");                                           \
+    SHMEMU_CHECK_NULL(source, "source");                                       \
+                                                                               \
     /* Get team parameters */                                                  \
-    /* TODO: make sure the team PE numbers is handled correctly */             \
-    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
-    const int logPE_stride = 0;                                                \
     const int PE_size = shmem_team_n_pes(team);                                \
+                                                                               \
+    /* Check buffer symmetry */                                                \
+    SHMEMU_CHECK_SYMMETRIC(dest, nelems *PE_size);                             \
+    SHMEMU_CHECK_SYMMETRIC(source, nelems *PE_size);                           \
+                                                                               \
+    /* Check for overlap between source and destination */                     \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size,                 \
+                                nelems *PE_size);                              \
+                                                                               \
+    /* Get team parameters */                                                  \
+    /* TODO: use internal psync pool and team translate PE to team's PE 0 */   \
+    const int PE_start = 0;                                                    \
+    const int logPE_stride = 0;                                                \
     const int world_root =                                                     \
         shmem_team_translate_pe(team, PE_root, SHMEM_TEAM_WORLD);              \
                                                                                \

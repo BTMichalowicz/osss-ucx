@@ -318,7 +318,7 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
                                 sizeof(_type) * nelems * PE_size);             \
                                                                                \
     /* Get team parameters */                                                  \
-    /* TODO: use shmem_translate PE to the team's PE 0  */                     \
+    /* TODO: use internal psync pool and team translate PE to team's PE 0 */   \
     const int PE_start = 0;                                                    \
     const int logPE_stride = 0;                                                \
                                                                                \
