@@ -37,7 +37,7 @@
 
 /**
  * @brief Branch prediction optimization macros
- * 
+ *
  * These macros help the compiler optimize branch prediction by indicating
  * which branches are likely/unlikely to be taken.
  */
@@ -160,8 +160,8 @@ void shmemu_warn(const char *fmt, ...);
  * @brief Version information structure
  */
 typedef struct shmemu_version {
-  int major;  /**< Major version number */
-  int minor;  /**< Minor version number */
+  int major; /**< Major version number */
+  int minor; /**< Minor version number */
 } shmemu_version_t;
 
 #ifdef ENABLE_LOGGING
@@ -322,8 +322,7 @@ int shmemu_thread_level(const char *tn);
 #define SHMEMU_CHECK_TEAM_VALID(_team)                                         \
   do {                                                                         \
     if ((_team) == SHMEM_TEAM_INVALID) {                                       \
-      shmemu_fatal("In %s(), team argument is invalid",                        \
-                   __func__);                                                  \
+      shmemu_fatal("In %s(), team argument is invalid", __func__);             \
       /* NOT REACHED */                                                        \
     }                                                                          \
   } while (0)
@@ -342,8 +341,7 @@ int shmemu_thread_level(const char *tn);
 #define SHMEMU_CHECK_NULL(_ptr, _name)                                         \
   do {                                                                         \
     if ((_ptr) == NULL) {                                                      \
-      shmemu_fatal("In %s(), %s cannot be NULL",                               \
-                   __func__, (_name));                                         \
+      shmemu_fatal("In %s(), %s cannot be NULL", __func__, (_name));           \
       /* NOT REACHED */                                                        \
     }                                                                          \
   } while (0)
@@ -351,8 +349,8 @@ int shmemu_thread_level(const char *tn);
 #define SHMEMU_CHECK_POSITIVE(_val, _name)                                     \
   do {                                                                         \
     if ((_val) <= 0) {                                                         \
-      shmemu_fatal("In %s(), %s must be positive (got %d)",                    \
-                   __func__, (_name), (_val));                                 \
+      shmemu_fatal("In %s(), %s must be positive (got %d)", __func__, (_name), \
+                   (_val));                                                    \
       /* NOT REACHED */                                                        \
     }                                                                          \
   } while (0)
@@ -360,8 +358,23 @@ int shmemu_thread_level(const char *tn);
 #define SHMEMU_CHECK_NON_NEGATIVE(_val, _name)                                 \
   do {                                                                         \
     if ((_val) < 0) {                                                          \
-      shmemu_fatal("In %s(), %s must be non-negative (got %d)",                \
-                   __func__, (_name), (_val));                                 \
+      shmemu_fatal("In %s(), %s must be non-negative (got %d)", __func__,      \
+                   (_name), (_val));                                           \
+      /* NOT REACHED */                                                        \
+    }                                                                          \
+  } while (0)
+
+#define SHMEMU_CHECK_ACTIVE_SET_RANGE(_pe_start, _log_pe_stride, _pe_size)     \
+  do {                                                                         \
+    const int _local_stride = 1 << (_log_pe_stride);                           \
+    const int _local_max_pe = (_pe_start) + ((_pe_size) - 1) * _local_stride;  \
+    const int _local_n_pes = shmem_n_pes(); /* Cache n_pes call */             \
+    if (shmemu_unlikely(_local_max_pe >= _local_n_pes)) {                      \
+      shmemu_fatal(                                                            \
+          "In %s(), active set PE range ending at PE %d (size %d, start %d, "  \
+          "stride 2^%d) exceeds number of PEs (%d)",                           \
+          __func__, _local_max_pe, (_pe_size), (_pe_start), (_log_pe_stride),  \
+          _local_n_pes);                                                       \
       /* NOT REACHED */                                                        \
     }                                                                          \
   } while (0)
@@ -387,6 +400,7 @@ int shmemu_thread_level(const char *tn);
 #define SHMEMU_CHECK_NULL(_ptr, _name)
 #define SHMEMU_CHECK_POSITIVE(_val, _name)
 #define SHMEMU_CHECK_NON_NEGATIVE(_val, _name)
+#define SHMEMU_CHECK_ACTIVE_SET_RANGE(_pe_start, _log_pe_stride, _pe_size)
 
 #endif /* ENABLE_DEBUG */
 

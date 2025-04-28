@@ -1,0 +1,25 @@
+- Add sanity checks to:
+  - alltoalls
+  - barrier
+  - broadcast
+  - collect
+  - fcollect
+  - reductions
+
+- Add internal psync pool to:
+  - alltoall
+  - alltoalls
+  - barrier
+  - broadcast
+  - collect
+  - fcollect
+  - reductions
+
+- Add internal team mechanism to:
+  - alltoall
+  - alltoalls
+  - barrier
+  - broadcast
+  - collect
+  - fcollect
+  - reductions

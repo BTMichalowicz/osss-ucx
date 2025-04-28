@@ -241,33 +241,19 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
   void shcoll_alltoall##_size##_##_algo(                                       \
       void *dest, const void *source, size_t nelems, int PE_start,             \
       int logPE_stride, int PE_size, long *pSync) {                            \
-    /* Check initialization */                                                 \
+    /* Sanity checks */                                                        \
     SHMEMU_CHECK_INIT();                                                       \
-                                                                               \
-    /* Check PE parameters */                                                  \
     SHMEMU_CHECK_POSITIVE(PE_size, "PE_size");                                 \
     SHMEMU_CHECK_NON_NEGATIVE(PE_start, "PE_start");                           \
     SHMEMU_CHECK_NON_NEGATIVE(logPE_stride, "logPE_stride");                   \
-                                                                               \
-    /* Check active set range */                                               \
-    const int stride = 1 << logPE_stride;                                      \
-    const int max_pe = PE_start + (PE_size - 1) * stride;                      \
-    if (max_pe >= shmem_n_pes()) {                                             \
-      shmemu_fatal("In %s(), active set PE range [%d, %d] exceeds number of PEs (%d)", \
-                   __func__, PE_start, max_pe, shmem_n_pes());                 \
-      return;                                                                  \
-    }                                                                          \
-                                                                               \
-    /* Check buffer symmetry */                                                \
+    SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
     SHMEMU_CHECK_SYMMETRIC(dest, (_size) / (CHAR_BIT) * nelems * PE_size);     \
     SHMEMU_CHECK_SYMMETRIC(source, (_size) / (CHAR_BIT) * nelems * PE_size);   \
     SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);   \
-                                                                               \
-    /* Check for overlap between source and destination */                     \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
-                               (_size) / (CHAR_BIT) * nelems * PE_size,        \
-                               (_size) / (CHAR_BIT) * nelems * PE_size);       \
-                                                                               \
+                                (_size) / (CHAR_BIT) * nelems * PE_size,       \
+                                (_size) / (CHAR_BIT) * nelems * PE_size);      \
+    /* Perform alltoall */                                                     \
     alltoall_helper_##_algo(dest, source, (_size) / (CHAR_BIT) * nelems,       \
                             PE_start, logPE_stride, PE_size, pSync);           \
   }
@@ -313,24 +299,24 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
 #define SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, _type, _typename)               \
   int shcoll_##_typename##_alltoall_##_algo(                                   \
       shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
-    /* Check initialization */                                                  \
-    SHMEMU_CHECK_INIT();                                                        \
-                                                                                \
-    /* Check team validity */                                                   \
-    SHMEMU_CHECK_TEAM_VALID(team);                                              \
-                                                                                \
-    /* Get team parameters */                                                   \
-    const int PE_size = shmem_team_n_pes(team);                                 \
-                                                                                \
-    /* Check buffer symmetry */                                                 \
-    SHMEMU_CHECK_SYMMETRIC(dest, sizeof(_type) * nelems * PE_size);             \
-    SHMEMU_CHECK_SYMMETRIC(source, sizeof(_type) * nelems * PE_size);           \
-                                                                                \
-    /* Check for overlap between source and destination */                      \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                   \
-                              sizeof(_type) * nelems * PE_size,                 \
-                              sizeof(_type) * nelems * PE_size);                \
-                                                                                \
+    /* Check initialization */                                                 \
+    SHMEMU_CHECK_INIT();                                                       \
+                                                                               \
+    /* Check team validity */                                                  \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+                                                                               \
+    /* Get team parameters */                                                  \
+    const int PE_size = shmem_team_n_pes(team);                                \
+                                                                               \
+    /* Check buffer symmetry */                                                \
+    SHMEMU_CHECK_SYMMETRIC(dest, sizeof(_type) * nelems * PE_size);            \
+    SHMEMU_CHECK_SYMMETRIC(source, sizeof(_type) * nelems * PE_size);          \
+                                                                               \
+    /* Check for overlap between source and destination */                     \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
+                                sizeof(_type) * nelems * PE_size,              \
+                                sizeof(_type) * nelems * PE_size);             \
+                                                                               \
     /* Get team parameters */                                                  \
     /* TODO: use shmem_translate PE to the team's PE 0  */                     \
     const int PE_start = 0;                                                    \
@@ -339,9 +325,8 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
     if (!pSync) {                                                              \
-      shmemu_fatal("In %s(), failed to allocate pSync array",                  \
-                   __func__);                                                   \
-      return -1;                                                                \
+      shmemu_fatal("In %s(), failed to allocate pSync array", __func__);       \
+      return -1;                                                               \
     }                                                                          \
                                                                                \
     /* Initialize pSync */                                                     \
@@ -436,24 +421,22 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
     const int PE_size = shmem_team_n_pes(team);                                \
                                                                                \
     /* Check buffer symmetry */                                                \
-    SHMEMU_CHECK_SYMMETRIC(dest, nelems * PE_size);                            \
-    SHMEMU_CHECK_SYMMETRIC(source, nelems * PE_size);                          \
+    SHMEMU_CHECK_SYMMETRIC(dest, nelems *PE_size);                             \
+    SHMEMU_CHECK_SYMMETRIC(source, nelems *PE_size);                           \
                                                                                \
-    /* Check for overlap between source and destination */                      \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
-                               nelems * PE_size,                               \
-                               nelems * PE_size);                              \
+    /* Check for overlap between source and destination */                     \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size,                 \
+                                nelems *PE_size);                              \
                                                                                \
     /* Get team parameters */                                                  \
-    /* TODO: use shmem_translate PE to the team's PE 0  */                     \
+    /* TODO: use internal psync pool and team translate PE to team's PE 0 */   \
     const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
     const int logPE_stride = 0;                                                \
                                                                                \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
     if (!pSync) {                                                              \
-      shmemu_fatal("In %s(), failed to allocate pSync array",                  \
-                   __func__);                                                  \
+      shmemu_fatal("In %s(), failed to allocate pSync array", __func__);       \
       return -1;                                                               \
     }                                                                          \
                                                                                \
