@@ -383,6 +383,18 @@ int shmemu_thread_level(const char *tn);
     }                                                                          \
   } while (0)
 
+#define SHMEMU_CHECK_TEAM_STRIDE(_stride, _func_name)                          \
+  do {                                                                         \
+    if (shmemu_unlikely((_stride) <= 0)) {                                     \
+      shmemu_warn("In %s(), invalid team stride (%d) <= 0.", _func_name,       \
+                  (_stride));                                                  \
+    } else if (shmemu_unlikely(((_stride) & ((_stride) - 1)) !=                \
+                               0)) { /* Check pow2 */                          \
+      shmemu_warn("In %s(), team stride (%d) is not a positive power of 2.",   \
+                  _func_name, (_stride));                                      \
+    }                                                                          \
+  } while (0)
+
 #else /* ! ENABLE_DEBUG */
 
 /*
@@ -405,6 +417,7 @@ int shmemu_thread_level(const char *tn);
 #define SHMEMU_CHECK_POSITIVE(_val, _name)
 #define SHMEMU_CHECK_NON_NEGATIVE(_val, _name)
 #define SHMEMU_CHECK_ACTIVE_SET_RANGE(_pe_start, _log_pe_stride, _pe_size)
+#define SHMEMU_CHECK_TEAM_STRIDE(_stride, _func_name)
 
 #endif /* ENABLE_DEBUG */
 

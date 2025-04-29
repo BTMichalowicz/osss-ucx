@@ -1,4 +1,8 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file teams.c
+ * @brief Implementation of OpenSHMEM teams functionality
+ * @license See LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -13,17 +17,23 @@
 
 #include <stdlib.h>
 
+/** Default teams */
 shmemc_team_t shmemc_team_world;
 shmemc_team_t shmemc_team_shared;
 
-static shmemc_team_h world = &shmemc_team_world;
-static shmemc_team_h shared = &shmemc_team_shared;
-static shmemc_team_h invalid = NULL;
+/** Global team representing all PEs */
+shmemc_team_h world = &shmemc_team_world;
 
-/*
- * clear up the allocated SHMEM contexts in a team
+/** Global team representing PEs on same node */
+shmemc_team_h shared = &shmemc_team_shared;
+
+/** Invalid team handle */
+shmemc_team_h invalid = NULL;
+
+/**
+ * @brief Destroy all contexts allocated to a team
+ * @param th Team handle
  */
-
 static void shmemc_team_contexts_destroy(shmemc_team_h th) {
   size_t c;
 
@@ -34,6 +44,10 @@ static void shmemc_team_contexts_destroy(shmemc_team_h th) {
 }
 
 #if 0
+/**
+ * @brief Debug function to dump team info
+ * @param th Team handle
+ */
 static void
 dump_team(shmemc_team_h th)
 {
@@ -63,6 +77,10 @@ dump_team(shmemc_team_h th)
 }
 #endif
 
+/**
+ * @brief Initialize synchronization buffers for a team
+ * @param th Team handle
+ */
 static void initialize_psync_buffers(shmemc_team_h th) {
   unsigned nsync;
 
@@ -83,6 +101,10 @@ static void initialize_psync_buffers(shmemc_team_h th) {
   }
 }
 
+/**
+ * @brief Free synchronization buffers for a team
+ * @param th Team handle
+ */
 static void finalize_psync_buffers(shmemc_team_h th) {
   unsigned nsync;
 
@@ -91,8 +113,11 @@ static void finalize_psync_buffers(shmemc_team_h th) {
   }
 }
 
-/*
- * common setup
+/**
+ * @brief Initialize common team attributes
+ * @param th Team handle
+ * @param name Team name
+ * @param cfg_nctxts Number of contexts to configure
  */
 static void initialize_common_team(shmemc_team_h th, const char *name,
                                    int cfg_nctxts) {
@@ -109,13 +134,15 @@ static void initialize_common_team(shmemc_team_h th, const char *name,
   th->rev = kh_init(map);
 
   initialize_psync_buffers(th);
+
+  /* Initialize geometry to sane defaults (overridden below) */
+  th->start = -1;
+  th->stride = -1;
 }
 
-/*
- * set up world/shared per PE
- *
+/**
+ * @brief Initialize the world team
  */
-
 static void initialize_team_world(void) {
   int i;
   int absent;
@@ -125,6 +152,8 @@ static void initialize_team_world(void) {
   /* populate from launch info */
   world->rank = proc.li.rank;
   world->nranks = proc.li.nranks;
+  world->start = 0;  /* SHMEM_TEAM_WORLD starts at PE 0 */
+  world->stride = 1; /* SHMEM_TEAM_WORLD has stride 1 */
 
   for (i = 0; i < proc.li.nranks; ++i) {
     khiter_t k;
@@ -136,6 +165,9 @@ static void initialize_team_world(void) {
   }
 }
 
+/**
+ * @brief Initialize the shared team
+ */
 static void initialize_team_shared(void) {
   int i;
   int absent;
@@ -145,6 +177,11 @@ static void initialize_team_shared(void) {
 
   shared->rank = -1;
   shared->nranks = proc.li.npeers;
+  /* Shared team maps contiguous ranks 0..N-1 to the global PEs in peers */
+  /* Start is the global PE of the first peer (rank 0) */
+  shared->start = (shared->nranks > 0) ? proc.li.peers[0] : -1;
+  /* Stride within the shared team concept is 1 */
+  shared->stride = 1;
 
   for (i = 0; i < proc.li.npeers; ++i) {
     khiter_t k;
@@ -160,21 +197,27 @@ static void initialize_team_shared(void) {
   }
 }
 
-/*
- * clean up team resources at end
+/**
+ * @brief Clean up team resources
+ * @param th Team handle
  */
-
 static void finalize_team(shmemc_team_h th) {
   finalize_psync_buffers(th);
 
   shmemc_team_contexts_destroy(th);
 }
 
+/**
+ * @brief Initialize teams subsystem
+ */
 void shmemc_teams_init(void) {
   initialize_team_world();
   initialize_team_shared();
 }
 
+/**
+ * @brief Finalize teams subsystem
+ */
 void shmemc_teams_finalize(void) {
   finalize_team(shared);
   finalize_team(world);
@@ -184,18 +227,27 @@ void shmemc_teams_finalize(void) {
  * ----------------------------------------------------------------
  */
 
-/*
- * per-team rank queries
+/**
+ * @brief Get PE rank in team
+ * @param th Team handle
+ * @return PE rank in team
  */
-
 int shmemc_team_my_pe(shmemc_team_h th) { return th->rank; }
 
+/**
+ * @brief Get number of PEs in team
+ * @param th Team handle
+ * @return Number of PEs in team
+ */
 int shmemc_team_n_pes(shmemc_team_h th) { return th->nranks; }
 
-/*
- * retrieve the team's configuration
+/**
+ * @brief Get team configuration
+ * @param th Team handle
+ * @param config_mask Configuration mask
+ * @param config Configuration structure to populate
+ * @return 0 on success, -1 on failure
  */
-
 int shmemc_team_get_config(shmemc_team_h th, long config_mask,
                            shmem_team_config_t *config) {
   /* Initialize config structure to zero */
@@ -206,15 +258,18 @@ int shmemc_team_get_config(shmemc_team_h th, long config_mask,
     config->num_contexts = th->cfg.num_contexts;
   }
 
-  /* Add handling for other configuration parameters as they are added */
+  /* TODO: Add handling for other configuration parameters as they are added */
 
   return 0;
 }
 
-/*
- * what's the SOURCEHANDLE team SRC_PE in the DESTHANDLE team?
+/**
+ * @brief Translate PE number between teams
+ * @param sh Source team handle
+ * @param src_pe PE number in source team
+ * @param dh Destination team handle
+ * @return PE number in destination team, or -1 if invalid
  */
-
 int shmemc_team_translate_pe(shmemc_team_h sh, int src_pe, shmemc_team_h dh) {
   khiter_t k;
   int wpe;
@@ -240,10 +295,28 @@ int shmemc_team_translate_pe(shmemc_team_h sh, int src_pe, shmemc_team_h dh) {
   return kh_val(dh->rev, k);
 }
 
+/**
+ * @brief Check if PE is member of strided team
+ * @param parent_pe PE number in parent team
+ * @param start Start PE
+ * @param stride Stride between PEs
+ * @return true if PE is member, false otherwise
+ */
 static bool is_member(int parent_pe, int start, int stride) {
   return ((parent_pe - start) % stride) == 0;
 }
 
+/**
+ * @brief Split team into strided subteam
+ * @param parh Parent team handle
+ * @param start Start PE
+ * @param stride Stride between PEs
+ * @param size Size of new team
+ * @param config Team configuration
+ * @param config_mask Configuration mask
+ * @param newh New team handle
+ * @return 0 on success, -1 on failure
+ */
 int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,
                               int size, const shmem_team_config_t *config,
                               long config_mask, shmemc_team_h *newh) {
@@ -265,6 +338,8 @@ int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,
 
   newt->parent = parh;
   newt->nranks = size;
+  newt->start = start;   /* Store the start PE */
+  newt->stride = stride; /* Store the stride */
 
   /* Initialize rank to -1 (invalid) */
   newt->rank = -1;
@@ -303,6 +378,18 @@ int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,
   return 0;
 }
 
+/**
+ * @brief Split team into 2D grid
+ * @param parh Parent team handle
+ * @param xrange Size of x dimension
+ * @param xaxis_config X-axis team configuration
+ * @param xaxis_mask X-axis configuration mask
+ * @param xaxish X-axis team handle
+ * @param yaxis_config Y-axis team configuration
+ * @param yaxis_mask Y-axis configuration mask
+ * @param yaxish Y-axis team handle
+ * @return 0 on success, -1 on failure
+ */
 int shmemc_team_split_2d(shmemc_team_h parh, int xrange,
                          const shmem_team_config_t *xaxis_config,
                          long xaxis_mask, shmemc_team_h *xaxish,
@@ -358,6 +445,26 @@ int shmemc_team_split_2d(shmemc_team_h parh, int xrange,
     xaxis_team->nranks = xrange;
   }
 
+  /* Calculate start and stride for x-axis team */
+  int xaxis_global_pe_0 = -1;
+  int xaxis_global_pe_1 = -1;
+  int parent_pe_0 = my_y * xrange + 0; /* Parent rank for (0, my_y) */
+  khint_t k0 = kh_get(map, parh->fwd, parent_pe_0);
+  if (k0 != kh_end(parh->fwd)) {
+    xaxis_global_pe_0 = kh_val(parh->fwd, k0);
+  }
+  if (xaxis_team->nranks > 1) {
+    int parent_pe_1 = my_y * xrange + 1; /* Parent rank for (1, my_y) */
+    khint_t k1 = kh_get(map, parh->fwd, parent_pe_1);
+    if (k1 != kh_end(parh->fwd)) {
+      xaxis_global_pe_1 = kh_val(parh->fwd, k1);
+    }
+  }
+  xaxis_team->start = xaxis_global_pe_0;
+  xaxis_team->stride = (xaxis_team->nranks > 1 && xaxis_global_pe_1 != -1)
+                           ? (xaxis_global_pe_1 - xaxis_global_pe_0)
+                           : 1;
+
   /* Initialize rank to -1 (invalid) */
   xaxis_team->rank = -1;
 
@@ -407,10 +514,35 @@ int shmemc_team_split_2d(shmemc_team_h parh, int xrange,
   yaxis_team->parent = parh;
 
   /* y-axis team size is at most yrange */
-  int actual_y_size = (my_x < parent_size % xrange && parent_size % xrange != 0)
-                          ? yrange
-                          : (parent_size - 1) / xrange + 1;
+  int actual_y_size =
+      (my_x < parent_size % xrange && parent_size % xrange != 0)
+          ? yrange
+          : (parent_size % xrange == 0
+                 ? yrange
+                 : (my_x < parent_size % xrange
+                        ? yrange
+                        : yrange - 1)); /* Handle incomplete last column */
   yaxis_team->nranks = actual_y_size;
+
+  /* Calculate start and stride for y-axis team */
+  int yaxis_global_pe_0 = -1;
+  int yaxis_global_pe_1 = -1;
+  int parent_pe_y0 = 0 * xrange + my_x; /* Parent rank for (my_x, 0) */
+  k0 = kh_get(map, parh->fwd, parent_pe_y0);
+  if (k0 != kh_end(parh->fwd)) {
+    yaxis_global_pe_0 = kh_val(parh->fwd, k0);
+  }
+  if (yaxis_team->nranks > 1) {
+    int parent_pe_y1 = 1 * xrange + my_x; /* Parent rank for (my_x, 1) */
+    khint_t k1 = kh_get(map, parh->fwd, parent_pe_y1);
+    if (k1 != kh_end(parh->fwd)) {
+      yaxis_global_pe_1 = kh_val(parh->fwd, k1);
+    }
+  }
+  yaxis_team->start = yaxis_global_pe_0;
+  yaxis_team->stride = (yaxis_team->nranks > 1 && yaxis_global_pe_1 != -1)
+                           ? (yaxis_global_pe_1 - yaxis_global_pe_0)
+                           : 1;
 
   /* Initialize rank to -1 (invalid) */
   yaxis_team->rank = -1;
@@ -466,10 +598,11 @@ cleanup:
   return -1;
 }
 
-/*
- * teams that the library defined in advance cannot be destroyed.
+/**
+ * @brief Destroy a team
+ * @param th Team handle
+ * @note Predefined teams cannot be destroyed
  */
-
 void shmemc_team_destroy(shmemc_team_h th) {
   if (th->parent != NULL) {
     size_t c;
@@ -489,6 +622,11 @@ void shmemc_team_destroy(shmemc_team_h th) {
   }
 }
 
+/**
+ * @brief Synchronize team contexts
+ * @param th Team handle
+ * @return 0 on success, -1 on failure
+ */
 int shmemc_team_sync(shmemc_team_h th) {
   /* Validate the team handle */
   if (th == NULL) {

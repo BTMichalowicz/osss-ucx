@@ -102,13 +102,14 @@ inline static int edge_color(int i, int me, int npes) {
     SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
     SHMEMU_CHECK_NULL(source, "source");                                       \
-    SHMEMU_CHECK_NULL(pSync, "pSync");                                           \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
     const size_t element_size_bytes = (_size) / CHAR_BIT;                      \
     const size_t total_extent_bytes = element_size_bytes * nelems * PE_size;   \
     SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                          \
     SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                        \
-    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);    \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes, total_extent_bytes); \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);   \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes,              \
+                                total_extent_bytes);                           \
                                                                                \
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
@@ -167,13 +168,14 @@ inline static int edge_color(int i, int me, int npes) {
     SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
     SHMEMU_CHECK_NULL(source, "source");                                       \
-    SHMEMU_CHECK_NULL(pSync, "pSync");                                           \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
     const size_t element_size_bytes = (_size) / CHAR_BIT;                      \
     const size_t total_extent_bytes = element_size_bytes * nelems * PE_size;   \
     SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                          \
     SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                        \
-    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);    \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes, total_extent_bytes); \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);   \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes,              \
+                                total_extent_bytes);                           \
                                                                                \
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
@@ -414,7 +416,8 @@ ALLTOALLS_TEAM_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
     const size_t total_extent_bytes = sizeof(_type) * nelems * PE_size;        \
     SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                          \
     SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                        \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes, total_extent_bytes); \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes,              \
+                                total_extent_bytes);                           \
                                                                                \
     /* Note: PE_start and logPE_stride are 0 for teams */                      \
     int PE_start = 0;                                                          \
@@ -425,7 +428,8 @@ ALLTOALLS_TEAM_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
                                             PE_start, logPE_stride, PE_size);  \
                                                                                \
     if (ret != 0) {                                                            \
-      /* The helper function itself should have called shmemu_fatal on error */\
+      /* The helper function itself should have called shmemu_fatal on error   \
+       */                                                                      \
       return -1;                                                               \
     }                                                                          \
     return 0;                                                                  \
@@ -490,7 +494,8 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
     const size_t total_extent_bytes = nelems * PE_size;                        \
     SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                          \
     SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                        \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes, total_extent_bytes); \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes,              \
+                                total_extent_bytes);                           \
                                                                                \
     /* Note: PE_start and logPE_stride are 0 for teams */                      \
     int PE_start = 0;                                                          \
@@ -500,7 +505,8 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
                                             PE_start, logPE_stride, PE_size);  \
                                                                                \
     if (ret != 0) {                                                            \
-      /* The helper function itself should have called shmemu_fatal on error */\
+      /* The helper function itself should have called shmemu_fatal on error   \
+       */                                                                      \
       return -1;                                                               \
     }                                                                          \
     return 0;                                                                  \
