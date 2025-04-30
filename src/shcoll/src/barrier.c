@@ -18,6 +18,7 @@
 #include "util/trees.h"
 
 #include "shmem.h"
+#include <math.h>
 
 /** Default tree degree for tree-based barrier algorithms */
 static int tree_degree_barrier = 2;
@@ -349,23 +350,19 @@ SHCOLL_BARRIER_SYNC_DEFINITION(dissemination)
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
                                                                                \
     /* Get team parameters */                                                  \
-    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
-    const int logPE_stride = 0;                                                \
-    const int PE_size = shmem_team_n_pes(team);                                \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
+    const int PE_start = team_h->start;                                        \
+    const int stride = team_h->stride;                                         \
+    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
+    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
+    const int PE_size = team_h->nranks;                                        \
                                                                                \
-    /* Allocate pSync from symmetric heap */                                   \
-    long *pSync = shmem_malloc(SHCOLL_BARRIER_SYNC_SIZE * sizeof(long));       \
-    if (!pSync)                                                                \
-      return -1;                                                               \
+    /* Use the team's pre-allocated pSync */                                   \
+    long *pSync = team_h->pSyncs[0];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[0]");                             \
                                                                                \
-    /* Initialize pSync */                                                     \
-    for (int i = 0; i < SHCOLL_BARRIER_SYNC_SIZE; i++) {                       \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
-                                                                               \
+    /* Call the internal barrier helper */                                     \
     barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
-                                                                               \
-    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 

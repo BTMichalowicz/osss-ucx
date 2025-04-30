@@ -5,11 +5,9 @@
   - reductions
 
 - Add internal psync pool to:
-  - barrier
   - collect
   - fcollect
   - reductions
 
 - Add internal team mechanism to:
-  - barrier
   - reductions
