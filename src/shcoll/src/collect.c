@@ -643,6 +643,8 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
 
 /**
  * @brief Macro to define collect functions for different data types
+ *
+ * TODO: need a better way of handling the pSync allocation
  */
 #define SHCOLL_COLLECT_TYPE_DEFINITION(_algo, _type, _typename)                \
   int shcoll_##_typename##_collect_##_algo(                                    \
@@ -672,7 +674,7 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
     long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
     SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
                                                                                \
-    /* Initialize all of pSync */                                              \
+    /* Initialize pSync */                                                     \
     for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
@@ -742,6 +744,8 @@ DEFINE_SHCOLL_COLLECT_TYPES(simple)
 
 /**
  * @brief Macro to declare collectmem implementations for different algorithms
+ *
+ * TODO: need a better way of handling the pSync allocation
  */
 #define SHCOLL_COLLECTMEM_DEFINITION(_algo)                                    \
   int shcoll_collectmem_##_algo(shmem_team_t team, void *dest,                 \
@@ -749,11 +753,11 @@ DEFINE_SHCOLL_COLLECT_TYPES(simple)
     /* Sanity Checks */                                                        \
     SHMEMU_CHECK_INIT();                                                       \
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
-    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
     SHMEMU_CHECK_NULL(source, "source");                                       \
                                                                                \
     /* Get team parameters */                                                  \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
     const int PE_size = team_h->nranks;                                        \
     const int PE_start = team_h->start;                                        \
     const int stride = team_h->stride;                                         \
