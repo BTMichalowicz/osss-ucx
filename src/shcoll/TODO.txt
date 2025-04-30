@@ -5,8 +5,6 @@
   - reductions
 
 - Add internal psync pool to:
-  - alltoall
-  - alltoalls
   - barrier
   - broadcast
   - collect
@@ -14,10 +12,7 @@
   - reductions
 
 - Add internal team mechanism to:
-  - alltoall
-  - alltoalls
   - barrier
   - broadcast
-  - collect
   - fcollect
   - reductions

@@ -18,6 +18,7 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
+#include <math.h>
 
 /**
  * @brief Simple collect helper that uses prefix sum and memcpy
@@ -649,8 +650,17 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
     /* Sanity Checks */                                                        \
     SHMEMU_CHECK_INIT();                                                       \
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
+    SHMEMU_CHECK_NULL(dest, "dest");                                           \
+    SHMEMU_CHECK_NULL(source, "source");                                       \
                                                                                \
-    const int PE_size = shmem_team_n_pes(team);                                \
+    /* Get team parameters */                                                  \
+    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
+    const int PE_size = team_h->nranks;                                        \
+    const int PE_start = team_h->start;                                        \
+    const int stride = team_h->stride;                                         \
+    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
+    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
+                                                                               \
     /* Buffer Checks */                                                        \
     SHMEMU_CHECK_SYMMETRIC(dest, sizeof(_type) * nelems * PE_size);            \
     SHMEMU_CHECK_SYMMETRIC(source, sizeof(_type) * nelems);                    \
@@ -658,36 +668,34 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
                                 sizeof(_type) * nelems * PE_size,              \
                                 sizeof(_type) * nelems);                       \
                                                                                \
-    /* TODO: use internal psync pool and team translate PE to team's PE 0 */   \
-    int PE_start = 0;                                                          \
-    int logPE_stride = 0;                                                      \
-                                                                               \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
-    if (!pSync) {                                                              \
-      shmemu_fatal("Failed to allocate pSync in shcoll_%s_collect_%s",         \
-                   #_typename, #_algo);                                        \
-      return -1;                                                               \
-    }                                                                          \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
+                                                                               \
     /* Initialize all of pSync */                                              \
     for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
+                                                                               \
     /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
+                                                                               \
     /* Zero out destination buffer */                                          \
     memset(dest, 0, sizeof(_type) * nelems * PE_size);                         \
+                                                                               \
     /* Perform collect */                                                      \
-    collect_helper_linear(dest, source,                                        \
-                          sizeof(_type) * nelems, /* total bytes per PE */     \
-                          PE_start, logPE_stride, PE_size, pSync);             \
+    collect_helper_##_algo(dest, source,                                       \
+                           sizeof(_type) * nelems, /* total bytes per PE */    \
+                           PE_start, logPE_stride, PE_size, pSync);            \
+                                                                               \
     /* Ensure collection is complete */                                        \
     shmem_team_sync(team);                                                     \
+                                                                               \
     /* Reset pSync before freeing */                                           \
     for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
-    shmem_team_sync(team);                                                     \
+                                                                               \
     shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
@@ -741,33 +749,25 @@ DEFINE_SHCOLL_COLLECT_TYPES(simple)
     /* Sanity Checks */                                                        \
     SHMEMU_CHECK_INIT();                                                       \
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
+    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
     SHMEMU_CHECK_NULL(source, "source");                                       \
                                                                                \
-    const int PE_size = shmem_team_n_pes(team);                                \
+    /* Get team parameters */                                                  \
+    const int PE_size = team_h->nranks;                                        \
+    const int PE_start = team_h->start;                                        \
+    const int stride = team_h->stride;                                         \
+    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
+    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
+                                                                               \
     /* Buffer Checks */                                                        \
     SHMEMU_CHECK_SYMMETRIC(dest, nelems *PE_size);                             \
     SHMEMU_CHECK_SYMMETRIC(source, nelems);                                    \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size, nelems);        \
                                                                                \
-    /* TODO: use internal psync pool and team translate PE to team's PE 0 */   \
-    int PE_start = 0;                                                          \
-    int logPE_stride = 0;                                                      \
-                                                                               \
-    /* Verify COLLECT_SYNC_SIZE is sufficient */                               \
-    if (SHCOLL_COLLECT_SYNC_SIZE < (2 + PREFIX_SUM_SYNC_SIZE + 32)) {          \
-      shmemu_fatal("SHCOLL_COLLECT_SYNC_SIZE (%d) too small for %s algorithm", \
-                   SHCOLL_COLLECT_SYNC_SIZE, #_algo);                          \
-      return -1; /* Not enough sync space */                                   \
-    }                                                                          \
-                                                                               \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
-    if (!pSync) {                                                              \
-      shmemu_fatal("Failed to allocate pSync in shcoll_collectmem_%s",         \
-                   #_algo);                                                    \
-      return -1;                                                               \
-    }                                                                          \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
                                                                                \
     /* Initialize all of pSync */                                              \
     for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
@@ -775,24 +775,24 @@ DEFINE_SHCOLL_COLLECT_TYPES(simple)
     }                                                                          \
                                                                                \
     /* Ensure all PEs have initialized pSync */                                \
-    shmem_barrier_all();                                                       \
+    shmem_team_sync(team);                                                     \
                                                                                \
     /* Zero out destination buffer */                                          \
     memset(dest, 0, nelems *PE_size);                                          \
                                                                                \
-    /* Perform collect */                                                      \
+    /* Perform collect using extracted geometry */                             \
     collect_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,       \
                            PE_size, pSync);                                    \
                                                                                \
     /* Ensure collection is complete */                                        \
-    shmem_barrier_all();                                                       \
+    shmem_team_sync(team);                                                     \
                                                                                \
     /* Reset pSync before freeing */                                           \
     for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
       pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
                                                                                \
-    shmem_barrier_all();                                                       \
+    /* Free the pSync slot */                                                  \
     shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
