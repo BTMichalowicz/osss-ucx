@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include <stdio.h>
+#include <math.h>
 
 /**
  * @brief Calculate edge color for color-based exchange algorithm
@@ -277,29 +278,20 @@ SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
  * based on the specified algorithm.
  *
  * @param _algo Algorithm name to use in the function name
- * @param _peer Macro/function to calculate peer PE for exchanges
+ * @param _peer Macro/function to calculate peer PE for exchanges (unused here)
  * @param _cond Additional condition that must be met for PE participation
+ * (unused here)
  */
 #define ALLTOALLS_TEAM_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)          \
   inline static int alltoalls_team_helper_##_algo##_barrier(                   \
       void *dest, const void *source, ptrdiff_t dst_stride,                    \
       ptrdiff_t sst_stride, size_t nelems, int PE_start, int logPE_stride,     \
-      int PE_size) {                                                           \
+      int PE_size, long *pSync) { /* Added pSync parameter */                  \
     const int stride = 1 << logPE_stride;                                      \
     const int me = shmem_my_pe();                                              \
     int me_as = (me - PE_start) / stride;                                      \
     if (me_as < 0 || me_as >= PE_size || _cond == 0) {                         \
       return -1;                                                               \
-    }                                                                          \
-                                                                               \
-    /* Allocate pSync from the symmetric heap */                               \
-    long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
-    if (pSync == NULL) {                                                       \
-      return -1;                                                               \
-    }                                                                          \
-    /* Initialize pSync */                                                     \
-    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
     }                                                                          \
                                                                                \
     for (size_t i = 0; i < nelems; i++) {                                      \
@@ -317,8 +309,8 @@ SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
     }                                                                          \
                                                                                \
     shmem_fence();                                                             \
-    shmem_barrier_all();                                                       \
-    shmem_free(pSync);                                                         \
+    /* Use the provided pSync for barrier */                                   \
+    shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
     return 0;                                                                  \
   }
 
@@ -412,20 +404,25 @@ ALLTOALLS_TEAM_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, COLOR_PEER,
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
     SHMEMU_CHECK_NULL(source, "source");                                       \
                                                                                \
-    const int PE_size = shmem_team_n_pes(team);                                \
+    /* Cast to internal handle and get geometry */                             \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
+    const int PE_size = team_h->nranks;                                        \
+    const int PE_start = team_h->start;                                        \
+    const int stride = team_h->stride;                                         \
+    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
+    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
+                                                                               \
     const size_t total_extent_bytes = sizeof(_type) * nelems * PE_size;        \
     SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                          \
     SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                        \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes,              \
                                 total_extent_bytes);                           \
                                                                                \
-    /* Note: PE_start and logPE_stride are 0 for teams */                      \
-    int PE_start = 0;                                                          \
-    int logPE_stride = 0;                                                      \
     /* Convert element strides to byte strides and pass nelems as count */     \
-    int ret = alltoalls_team_helper_##_algo(dest, source, dst * sizeof(_type), \
-                                            sst * sizeof(_type), nelems,       \
-                                            PE_start, logPE_stride, PE_size);  \
+    int ret = alltoalls_team_helper_##_algo(                                   \
+        dest, source, dst * sizeof(_type), sst * sizeof(_type), nelems,        \
+        PE_start, logPE_stride, PE_size,                                       \
+        team_h->pSyncs[0]); /* Pass team pSync */                              \
                                                                                \
     if (ret != 0) {                                                            \
       /* The helper function itself should have called shmemu_fatal on error   \
@@ -489,20 +486,24 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
     SHMEMU_CHECK_NULL(source, "source");                                       \
                                                                                \
-    const int PE_size = shmem_team_n_pes(team);                                \
-    /* Buffer Checks - nelems is already total bytes per PE for mem version */ \
+    /* Cast to internal handle and get geometry */                             \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
+    const int PE_size = team_h->nranks;                                        \
+    const int PE_start = team_h->start;                                        \
+    const int stride = team_h->stride;                                         \
+    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
+    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
+                                                                               \
     const size_t total_extent_bytes = nelems * PE_size;                        \
     SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                          \
     SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                        \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes,              \
                                 total_extent_bytes);                           \
                                                                                \
-    /* Note: PE_start and logPE_stride are 0 for teams */                      \
-    int PE_start = 0;                                                          \
-    int logPE_stride = 0;                                                      \
     /* For memory version, dst and sst are already in bytes */                 \
-    int ret = alltoalls_team_helper_##_algo(dest, source, dst, sst, nelems,    \
-                                            PE_start, logPE_stride, PE_size);  \
+    int ret = alltoalls_team_helper_##_algo(                                   \
+        dest, source, dst, sst, nelems, PE_start, logPE_stride, PE_size,       \
+        team_h->pSyncs[0]); /* Pass team pSync */                              \
                                                                                \
     if (ret != 0) {                                                            \
       /* The helper function itself should have called shmemu_fatal on error   \
