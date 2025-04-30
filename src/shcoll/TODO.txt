@@ -6,12 +6,10 @@
 
 - Add internal psync pool to:
   - barrier
-  - broadcast
   - collect
   - fcollect
   - reductions
 
 - Add internal team mechanism to:
   - barrier
-  - broadcast
   - reductions
