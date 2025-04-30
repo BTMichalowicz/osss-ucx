@@ -14,5 +14,4 @@
 - Add internal team mechanism to:
   - barrier
   - broadcast
-  - fcollect
   - reductions
