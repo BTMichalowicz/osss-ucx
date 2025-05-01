@@ -656,7 +656,7 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
     SHMEMU_CHECK_NULL(source, "source");                                       \
                                                                                \
     /* Get team parameters */                                                  \
-    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
     const int PE_size = team_h->nranks;                                        \
     const int PE_start = team_h->start;                                        \
     const int stride = team_h->stride;                                         \
