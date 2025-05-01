@@ -326,8 +326,8 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
                                 sizeof(_type) * nelems * PE_size);             \
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
-    long *pSync = team_h->pSyncs[0];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[0]"); /* Use check macro */       \
+    long *pSync = team_h->pSyncs[1];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[1]"); /* Use check macro */       \
                                                                                \
     /* Ensure pSync is initialized (potentially redundant but safe) */         \
     shmem_team_sync(team);                                                     \
@@ -426,8 +426,8 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
     /* Assume index 0 is for general collectives */                            \
-    long *pSync = team_h->pSyncs[0];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[0]"); /* Use check macro */       \
+    long *pSync = team_h->pSyncs[1];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[1]"); /* Use check macro */       \
                                                                                \
     /* Ensure pSync is initialized (potentially redundant but safe) */         \
     /* The team init should handle this, but let's sync before use */          \

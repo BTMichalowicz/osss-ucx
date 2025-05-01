@@ -532,13 +532,8 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
                                 sizeof(_type) * nelems);                       \
                                                                                \
     /* Allocate and initialize pSync */                                        \
-    long *pSync = shmem_malloc(SHCOLL_BCAST_SYNC_SIZE * sizeof(long));         \
-    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
-    for (int i = 0; i < SHCOLL_BCAST_SYNC_SIZE; ++i) {                         \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
-    /* Ensure all PEs have initialized pSync */                                \
-    shmem_team_sync(team);                                                     \
+    long *pSync = team_h->pSyncs[1];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[1]");                             \
                                                                                \
     /* Initialize destination buffer */                                        \
     int me_as = shmem_team_my_pe(team);                                        \
@@ -547,6 +542,9 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
     else                                                                       \
       memcpy(dest, source, nelems * sizeof(_type));                            \
                                                                                \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
+                                                                               \
     /* Perform broadcast */                                                    \
     broadcast_helper_##_algo(dest, dest, nelems * sizeof(_type), PE_root,      \
                              PE_start, logPE_stride, PE_size, pSync);          \
@@ -554,11 +552,6 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
     /* Ensure broadcast completion */                                          \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* Reset and free pSync */                                                 \
-    for (int i = 0; i < SHCOLL_BCAST_SYNC_SIZE; ++i) {                         \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
-    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 
@@ -595,6 +588,9 @@ DEFINE_SHCOLL_BROADCAST_TYPES(knomial_tree)
 DEFINE_SHCOLL_BROADCAST_TYPES(knomial_tree_signal)
 DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
 
+/**
+ * @brief Macro for memory broadcast implementations using legacy helpers
+ */
 #define SHCOLL_BROADCASTMEM_DEFINITION(_algo)                                  \
   int shcoll_broadcastmem_##_algo(shmem_team_t team, void *dest,               \
                                   const void *source, size_t nelems,           \
@@ -619,17 +615,15 @@ DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems, nelems);                 \
                                                                                \
     /* Allocate and initialize pSync */                                        \
-    long *pSync = shmem_malloc(SHCOLL_BCAST_SYNC_SIZE * sizeof(long));         \
-    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
-    for (int i = 0; i < SHCOLL_BCAST_SYNC_SIZE; ++i) {                         \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
-    /* Ensure all PEs have initialized pSync */                                \
-    shmem_team_sync(team);                                                     \
+    long *pSync = team_h->pSyncs[1];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[1]");                             \
                                                                                \
     /* Initialize destination buffer on root */                                \
     if (shmem_team_my_pe(team) == PE_root)                                     \
       memcpy(dest, source, nelems);                                            \
+                                                                               \
+    /* Ensure all PEs have initialized pSync */                                \
+    shmem_team_sync(team);                                                     \
                                                                                \
     /* Perform broadcast */                                                    \
     broadcast_helper_##_algo(dest, source, nelems, PE_root, PE_start,          \
@@ -638,11 +632,6 @@ DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
     /* Ensure broadcast completion */                                          \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* Reset and free pSync */                                                 \
-    for (int i = 0; i < SHCOLL_BCAST_SYNC_SIZE; ++i) {                         \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
-    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 

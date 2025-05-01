@@ -43,39 +43,25 @@ static void shmemc_team_contexts_destroy(shmemc_team_h th) {
   free(th->ctxts);
 }
 
-#if 0
 /**
  * @brief Debug function to dump team info
  * @param th Team handle
  */
-static void
-dump_team(shmemc_team_h th)
-{
-   int key, val;
+static void dump_team(shmemc_team_h th) {
+  int key, val;
 
-   printf("==========================================\n");
+  printf("==========================================\n");
 
-   kh_foreach(th->fwd, key, val,
-              {
-                  printf("fwd: %d -> %d\n", key, val);
-              }
-              );
-   kh_foreach(th->rev, key, val,
-              {
-                  printf("rev: %d -> %d\n", key, val);
-              }
-              );
-   printf("\n");
+  kh_foreach(th->fwd, key, val, { printf("fwd: %d -> %d\n", key, val); });
+  kh_foreach(th->rev, key, val, { printf("rev: %d -> %d\n", key, val); });
+  printf("\n");
 
-   printf("Team = %p (%s)\n", (void *) th, th->name);
+  printf("Team = %p (%s)\n", (void *)th, th->name);
 
-   printf("  global rank = %d, mype = %4d, npes = %4d\n",
-          proc.li.rank,
-          th->rank,
-          th->nranks);
-   printf("------------------------------------------\n");
+  printf("  global rank = %d, mype = %4d, npes = %4d\n", proc.li.rank, th->rank,
+         th->nranks);
+  printf("------------------------------------------\n");
 }
-#endif
 
 /**
  * @brief Initialize synchronization buffers for a team

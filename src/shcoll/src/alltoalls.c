@@ -347,8 +347,8 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
                                 total_extent_bytes);                           \
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
-    long *pSync = team_h->pSyncs[0];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[0]");                             \
+    long *pSync = team_h->pSyncs[1];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[1]");                             \
                                                                                \
     /* Ensure pSync is initialized and previous ops are complete */            \
     shmem_team_sync(team); /* Barrier before starting */                       \
@@ -369,7 +369,8 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
       char *dest_bytes = (char *)dest;                                         \
       const ptrdiff_t sst_bytes = sst * element_size_bytes;                    \
       const ptrdiff_t dst_bytes = dst * element_size_bytes;                    \
-      const int me_as = (shmem_my_pe() - PE_start) / stride;                   \
+      /* const int me_as = (shmem_my_pe() - PE_start) / stride; */             \
+      const int me_as = shmem_team_my_pe(team);                                \
                                                                                \
       /* 1. Local Copy (byte by byte respecting strides) */                    \
       for (size_t k = 0; k < nelems; ++k) {                                    \
@@ -475,8 +476,8 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
                                 total_extent_bytes);                           \
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
-    long *pSync = team_h->pSyncs[0];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[0]");                             \
+    long *pSync = team_h->pSyncs[1];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[1]");                             \
                                                                                \
     /* Ensure pSync is initialized and previous ops are complete */            \
     shmem_team_sync(team);                                                     \
