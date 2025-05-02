@@ -309,11 +309,10 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
                                                                                \
     /* Get team parameters */                                                  \
     const int PE_size = team_h->nranks;                                        \
-    const int PE_start = team_h->start;         /* Use stored start */         \
-    const int stride = team_h->stride;          /* Use stored stride */        \
+    const int PE_start = team_h->start; /* Use stored start */                 \
+    const int stride = team_h->stride;  /* Use stored stride */                \
     SHMEMU_CHECK_TEAM_STRIDE(stride, __func__); /* Check stride if DEBUG */    \
-    /* Calculate log2 stride, assuming stride is valid (checked above if       \
-     * DEBUG) */                                                               \
+    /* Calculate log2 stride, assuming stride is valid */                      \
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
                                                                                \
     /* Check buffer symmetry */                                                \
