@@ -131,11 +131,23 @@
 #define TYPED_TO_ALL_REG(_op, _algo, _typename)                                \
   { #_algo, #_typename, shcoll_##_typename##_##_op##_to_all_##_algo }
 
+/**
+ * @brief Macro to register a typed to_all collective operation for bitwise
+ * operations
+ * @param _op The collective operation name (and, or, xor)
+ * @param _algo The algorithm implementation name
+ */
 #define TYPED_REG_FOR_BITWISE_TO_ALL(_op, _algo)                               \
   TYPED_TO_ALL_REG(_op, _algo, short), TYPED_TO_ALL_REG(_op, _algo, int),      \
       TYPED_TO_ALL_REG(_op, _algo, long),                                      \
       TYPED_TO_ALL_REG(_op, _algo, longlong)
 
+/**
+ * @brief Macro to register a typed to_all collective operation for min/max
+ * operations
+ * @param _op The collective operation name (min, max)
+ * @param _algo The algorithm implementation name
+ */
 #define TYPED_REG_FOR_MINMAX_TO_ALL(_op, _algo)                                \
   TYPED_TO_ALL_REG(_op, _algo, short), TYPED_TO_ALL_REG(_op, _algo, int),      \
       TYPED_TO_ALL_REG(_op, _algo, long),                                      \
@@ -144,6 +156,12 @@
       TYPED_TO_ALL_REG(_op, _algo, float),                                     \
       TYPED_TO_ALL_REG(_op, _algo, longdouble)
 
+/**
+ * @brief Macro to register a typed to_all collective operation for arithmetic
+ * operations
+ * @param _op The collective operation name (sum, prod)
+ * @param _algo The algorithm implementation name
+ */
 #define TYPED_REG_FOR_ARITH_TO_ALL(_op, _algo)                                 \
   TYPED_TO_ALL_REG(_op, _algo, short), TYPED_TO_ALL_REG(_op, _algo, int),      \
       TYPED_TO_ALL_REG(_op, _algo, long),                                      \
@@ -163,6 +181,12 @@
 #define TYPED_REDUCE_REG(_op, _algo, _typename)                                \
   { #_algo, #_typename, shcoll_##_typename##_##_op##_reduce_##_algo }
 
+/**
+ * @brief Macro to register a typed reduce collective operation for bitwise
+ * operations
+ * @param _op The collective operation name (and, or, xor)
+ * @param _algo The algorithm implementation name
+ */
 #define TYPED_REG_FOR_BITWISE_REDUCE(_op, _algo)                               \
   TYPED_REDUCE_REG(_op, _algo, uchar), TYPED_REDUCE_REG(_op, _algo, ushort),   \
       TYPED_REDUCE_REG(_op, _algo, uint), TYPED_REDUCE_REG(_op, _algo, ulong), \
@@ -175,6 +199,12 @@
       TYPED_REDUCE_REG(_op, _algo, uint32),                                    \
       TYPED_REDUCE_REG(_op, _algo, uint64), TYPED_REDUCE_REG(_op, _algo, size)
 
+/**
+ * @brief Macro to register a typed reduce collective operation for min/max
+ * operations
+ * @param _op The collective operation name (min, max)
+ * @param _algo The algorithm implementation name
+ */
 #define TYPED_REG_FOR_MINMAX_REDUCE(_op, _algo)                                \
   TYPED_REDUCE_REG(_op, _algo, char), TYPED_REDUCE_REG(_op, _algo, schar),     \
       TYPED_REDUCE_REG(_op, _algo, short), TYPED_REDUCE_REG(_op, _algo, int),  \
@@ -196,6 +226,12 @@
       TYPED_REDUCE_REG(_op, _algo, double),                                    \
       TYPED_REDUCE_REG(_op, _algo, longdouble)
 
+/**
+ * @brief Macro to register a typed reduce collective operation for arithmetic
+ * operations
+ * @param _op The collective operation name (sum, prod)
+ * @param _algo The algorithm implementation name
+ */
 #define TYPED_REG_FOR_ARITH_REDUCE(_op, _algo)                                 \
   TYPED_REDUCE_REG(_op, _algo, char), TYPED_REDUCE_REG(_op, _algo, schar),     \
       TYPED_REDUCE_REG(_op, _algo, short), TYPED_REDUCE_REG(_op, _algo, int),  \
@@ -724,7 +760,7 @@ static int register_typed(typed_op_t *tabp, const char *op,
  * @return 0 on success, -1 if operation not found
  */
 static int register_to_all(typed_to_all_op_t *tabp, const char *op,
-                          typed_to_all_fn_t *fn) {
+                           typed_to_all_fn_t *fn) {
   typed_to_all_op_t *p;
   char base_op[COLL_NAME_MAX] = {0};
   char req_type[COLL_NAME_MAX] = {0};

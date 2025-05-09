@@ -953,24 +953,6 @@ void shmem_broadcast64(void *target, const void *source, size_t nelems,
 ///////////////////////////////////////////////////////////////////////
 
 /**
- * @defgroup TODO: reductions Reduction Operations
- * @{
- */
-
-/*
- * reductions:
- *
- * linear
- * binomial
- * rec_dbl
- * rabenseifner
- * rabenseifner2
- *
- */
-// SHIM_TO_ALL_ALL(rec_dbl)
-// SHIM_REDUCE_ALL(rec_dbl)
-
-/**
  * @brief Declares a to_all operation for a given type and operation
  *
  * @param _typename The type name

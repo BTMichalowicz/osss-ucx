@@ -16,7 +16,9 @@
  * ---------------------------------------------------------------------
  *
  * Deprecations as of 1.5.
- *
+ * 
+ * This is not currently used. The deprecations for all collectives are
+ * handled in include/shmem/api.h
  */
 
 static const shmemu_version_t v = {.major = 1, .minor = 5};

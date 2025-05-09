@@ -966,6 +966,23 @@ SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_RABENSEIFNER2)
   void shcoll_##_typename_op##_to_all_##_algo(                                 \
       _type *dest, const _type *source, int nreduce, int PE_start,             \
       int logPE_stride, int PE_size, _type *pWrk, long *pSync) {               \
+    /* Sanity Checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_POSITIVE(PE_size, "PE_size");                                 \
+    SHMEMU_CHECK_NON_NEGATIVE(PE_start, "PE_start");                           \
+    SHMEMU_CHECK_NON_NEGATIVE(logPE_stride, "logPE_stride");                   \
+    SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
+    SHMEMU_CHECK_NULL(dest, "dest");                                           \
+    SHMEMU_CHECK_NULL(source, "source");                                       \
+    SHMEMU_CHECK_NULL(pWrk, "pWrk");                                           \
+    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
+    SHMEMU_CHECK_SYMMETRIC(dest, sizeof(_type) * nreduce);                     \
+    SHMEMU_CHECK_SYMMETRIC(source, sizeof(_type) * nreduce);                   \
+    SHMEMU_CHECK_SYMMETRIC(pWrk,                                               \
+                           sizeof(_type) * SHCOLL_REDUCE_MIN_WRKDATA_SIZE);    \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_REDUCE_SYNC_SIZE);     \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, sizeof(_type) * nreduce,         \
+                                sizeof(_type) * nreduce);                      \
     /* dispatch into the helper routine */                                     \
     reduce_helper_##_typename_op##_##_algo(                                    \
         dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync);  \
@@ -1174,12 +1191,16 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
  * @param _type Actual type (e.g. int)
  * @param _op Operation (e.g. sum)
  * @param _algo Algorithm name (e.g. linear)
+ *
+ *
  */
 #define SHCOLL_REDUCE_DEFINITION(_typename, _type, _op, _algo)                 \
   int shcoll_##_typename##_##_op##_reduce_##_algo(                             \
       shmem_team_t team, _type *dest, const _type *source, size_t nreduce) {   \
     SHMEMU_CHECK_INIT();                                                       \
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
+    SHMEMU_CHECK_SYMMETRIC(dest, "dest");                                      \
+    SHMEMU_CHECK_SYMMETRIC(source, "source");                                  \
     shmemc_team_h team_h = (shmemc_team_h)team;                                \
     int PE_start = team_h->start;                                              \
     int PE_size = team_h->nranks;                                              \
