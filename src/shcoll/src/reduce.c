@@ -1,4 +1,4 @@
-/**
+/*
  * @file reduction.c
  * @brief Implementation of collective reduction operations
  *
@@ -22,8 +22,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 
-/**
+/*
  * @brief Helper macro to define local reduction operations
  *
  * @param _name Name of the reduction operation (e.g. sum, prod)
@@ -40,7 +41,7 @@
     }                                                                          \
   }
 
-/**
+/*
  * @brief Helper macro to define linear reduction operations
  *
  * Implements a linear reduction algorithm where PE 0 sequentially reduces
@@ -51,7 +52,7 @@
  * @param _op Binary operator to apply
  */
 #define REDUCE_HELPER_LINEAR(_name, _type, _op)                                \
-  void shcoll_##_name##_to_all_linear(                                         \
+  void reduce_helper_##_name##_linear(                                         \
       _type *dest, const _type *source, int nreduce, int PE_start,             \
       int logPE_stride, int PE_size, _type *pWrk, long *pSync) {               \
     const int stride = 1 << logPE_stride;                                      \
@@ -88,7 +89,7 @@
                              PE_start, logPE_stride, PE_size, pSync + 1);      \
   }
 
-/**
+/*
  * @brief Helper macro to define binomial tree reduction operations
  *
  * Implements a binomial tree reduction algorithm for better scalability.
@@ -98,7 +99,7 @@
  * @param _op Binary operator to apply
  */
 #define REDUCE_HELPER_BINOMIAL(_name, _type, _op)                              \
-  void shcoll_##_name##_to_all_binomial(                                       \
+  void reduce_helper_##_name##_binomial(                                       \
       _type *dest, const _type *source, int nreduce, int PE_start,             \
       int logPE_stride, int PE_size, _type *pWrk, long *pSync) {               \
     const int stride = 1 << logPE_stride;                                      \
@@ -168,7 +169,7 @@
     free(tmp_array);                                                           \
   }
 
-/**
+/*
  * @brief Helper macro to define recursive doubling reduction operations
  *
  * Implements a recursive doubling algorithm for better scalability.
@@ -178,7 +179,7 @@
  * @param _op Binary operator to apply
  */
 #define REDUCE_HELPER_REC_DBL(_name, _type, _op)                               \
-  void shcoll_##_name##_to_all_rec_dbl(                                        \
+  void reduce_helper_##_name##_rec_dbl(                                        \
       _type *dest, const _type *source, int nreduce, int PE_start,             \
       int logPE_stride, int PE_size, _type *pWrk, long *pSync) {               \
     const int stride = 1 << logPE_stride;                                      \
@@ -290,7 +291,7 @@
     }                                                                          \
   }
 
-/**
+/*
  * @brief Helper macro to define Rabenseifner reduction operations
  *
  * Implements Rabenseifner's reduction algorithm which combines recursive
@@ -302,7 +303,7 @@
  * @param _op Binary operator to apply
  */
 #define REDUCE_HELPER_RABENSEIFNER(_name, _type, _op)                          \
-  void shcoll_##_name##_to_all_rabenseifner(                                   \
+  void reduce_helper_##_name##_rabenseifner(                                   \
       _type *dest, const _type *source, int nreduce, int PE_start,             \
       int logPE_stride, int PE_size, _type *pWrk, long *pSync) {               \
     const int stride = 1 << logPE_stride;                                      \
@@ -452,8 +453,8 @@
       }                                                                        \
     }                                                                          \
                                                                                \
-    /* For nodes in the power 2 set, destination will contain the reduced      \
-     * block */                                                                \
+    /* For nodes in the power 2 set, dest contains data that should be reduced \
+     */                                                                        \
                                                                                \
     /* Do collect with the nodes in power 2 set */                             \
     if (me_p2s != -1) {                                                        \
@@ -508,8 +509,16 @@
     }                                                                          \
   }
 
+/**
+ * @brief Helper macro to define Rabenseifner reduction operations
+ *
+ * This function implements the Rabenseifner's algorithm for reducing data
+ * across all PEs in a team. It uses a parallel reduction approach to
+ * efficiently compute the desired operation (e.g., sum, product, etc.)
+ * on the input data.
+ */
 #define REDUCE_HELPER_RABENSEIFNER2(_name, _type, _op)                         \
-  void shcoll_##_name##_to_all_rabenseifner2(                                  \
+  void reduce_helper_##_name##_rabenseifner2(                                  \
       _type *dest, const _type *source, int nreduce, int PE_start,             \
       int logPE_stride, int PE_size, _type *pWrk, long *pSync) {               \
     const int stride = 1 << logPE_stride;                                      \
@@ -665,8 +674,8 @@
       }                                                                        \
     }                                                                          \
                                                                                \
-    /* For nodes in the power 2 set, destination will contain the reduced      \
-     * block */                                                                \
+    /* For nodes in the power 2 set, dest contains data that should be reduced \
+     */                                                                        \
                                                                                \
     /* Do collect with the nodes in power 2 set */                             \
     if (me_p2s != -1) {                                                        \
@@ -735,196 +744,577 @@
   or write separate subroutines?
 
  */
+/**
+ * @file reduce.c
+ * @brief Collective reduction operations for OpenSHMEM
+ *
+ * This file implements various reduction operations (AND, OR, XOR, MAX, MIN,
+ * SUM, PROD) across multiple processing elements (PEs) using different
+ * algorithms.
+ */
 
-#define SHCOLL_REDUCE_DEFINE(_name)                                            \
-  /* AND operation */                                                          \
-  _name(char_and, char, AND_OP) _name(schar_and, signed char, AND_OP)          \
-      _name(short_and, short, AND_OP) _name(int_and, int, AND_OP) _name(       \
-          long_and, long, AND_OP) _name(longlong_and, long long, AND_OP)       \
-          _name(ptrdiff_and, ptrdiff_t, AND_OP) _name(uchar_and,               \
-                                                      unsigned char, AND_OP)   \
-              _name(ushort_and, unsigned short,                                \
-                    AND_OP) _name(uint_and, unsigned int, AND_OP)              \
-                  _name(ulong_and, unsigned long,                              \
-                        AND_OP) _name(ulonglong_and, unsigned long long,       \
-                                      AND_OP) _name(int8_and, int8_t, AND_OP)  \
-                      _name(int16_and, int16_t, AND_OP) _name(int32_and,       \
-                                                              int32_t, AND_OP) \
-                          _name(int64_and, int64_t, AND_OP)                    \
-                              _name(uint8_and, uint8_t, AND_OP)                \
-                                  _name(uint16_and, uint16_t, AND_OP)          \
-                                      _name(uint32_and, uint32_t, AND_OP)      \
-                                          _name(uint64_and, uint64_t, AND_OP)  \
-                                              _name(size_and, size_t, AND_OP)  \
-                                                                               \
-      /* OR operation */                                                       \
-      _name(char_or, char, OR_OP) _name(schar_or, signed char, OR_OP)          \
-          _name(short_or, short, OR_OP) _name(int_or, int, OR_OP) _name(       \
-              long_or, long, OR_OP) _name(longlong_or, long long, OR_OP)       \
-              _name(ptrdiff_or, ptrdiff_t, OR_OP) _name(uchar_or,              \
-                                                        unsigned char, OR_OP)  \
-                  _name(ushort_or, unsigned short,                             \
-                        OR_OP) _name(uint_or, unsigned int, OR_OP)             \
-                      _name(ulong_or, unsigned long,                           \
-                            OR_OP) _name(ulonglong_or, unsigned long long,     \
-                                         OR_OP) _name(int8_or, int8_t, OR_OP)  \
-                          _name(int16_or, int16_t,                             \
-                                OR_OP) _name(int32_or, int32_t, OR_OP)         \
-                              _name(int64_or, int64_t,                         \
-                                    OR_OP) _name(uint8_or, uint8_t, OR_OP)     \
-                                  _name(uint16_or, uint16_t, OR_OP)            \
-                                      _name(uint32_or, uint32_t, OR_OP)        \
-                                          _name(uint64_or, uint64_t, OR_OP)    \
-                                              _name(size_or, size_t, OR_OP)    \
-                                                                               \
-      /* XOR operation */                                                      \
-      _name(char_xor, char, XOR_OP) _name(schar_xor, signed char, XOR_OP)      \
-          _name(short_xor, short, XOR_OP) _name(int_xor, int, XOR_OP) _name(   \
-              long_xor, long, XOR_OP) _name(longlong_xor, long long, XOR_OP)   \
-              _name(ptrdiff_xor, ptrdiff_t,                                    \
-                    XOR_OP) _name(uchar_xor, unsigned char, XOR_OP)            \
-                  _name(ushort_xor, unsigned short,                            \
-                        XOR_OP) _name(uint_xor, unsigned int, XOR_OP)          \
-                      _name(ulong_xor, unsigned long, XOR_OP) _name(           \
-                          ulonglong_xor, unsigned long long,                   \
-                          XOR_OP) _name(int8_xor, int8_t, XOR_OP)              \
-                          _name(int16_xor, int16_t,                            \
-                                XOR_OP) _name(int32_xor, int32_t, XOR_OP)      \
-                              _name(int64_xor, int64_t,                        \
-                                    XOR_OP) _name(uint8_xor, uint8_t, XOR_OP)  \
-                                  _name(uint16_xor, uint16_t, XOR_OP)          \
-                                      _name(uint32_xor, uint32_t, XOR_OP)      \
-                                          _name(uint64_xor, uint64_t, XOR_OP)  \
-                                              _name(size_xor, size_t, XOR_OP)  \
-                                                                               \
-      /* MAX operation */                                                      \
-      _name(char_max, char, MAX_OP) _name(schar_max, signed char, MAX_OP)      \
-          _name(short_max, short, MAX_OP) _name(int_max, int, MAX_OP) _name(   \
-              long_max, long, MAX_OP) _name(longlong_max, long long, MAX_OP)   \
-              _name(ptrdiff_max, ptrdiff_t,                                    \
-                    MAX_OP) _name(uchar_max, unsigned char, MAX_OP)            \
-                  _name(ushort_max, unsigned short,                            \
-                        MAX_OP) _name(uint_max, unsigned int, MAX_OP)          \
-                      _name(ulong_max, unsigned long, MAX_OP) _name(           \
-                          ulonglong_max, unsigned long long,                   \
-                          MAX_OP) _name(int8_max, int8_t, MAX_OP)              \
-                          _name(int16_max, int16_t,                            \
-                                MAX_OP) _name(int32_max, int32_t, MAX_OP)      \
-                              _name(int64_max, int64_t, MAX_OP) _name(         \
-                                  uint8_max, uint8_t,                          \
-                                  MAX_OP) _name(uint16_max, uint16_t, MAX_OP)  \
-                                  _name(uint32_max, uint32_t, MAX_OP)          \
-                                      _name(uint64_max, uint64_t, MAX_OP)      \
-                                          _name(size_max, size_t, MAX_OP)      \
-                                              _name(float_max, float, MAX_OP)  \
-                                                  _name(double_max, double,    \
-                                                        MAX_OP)                \
-                                                      _name(longdouble_max,    \
-                                                            long double,       \
-                                                            MAX_OP)            \
-                                                                               \
-      /* MIN operation */                                                      \
-      _name(char_min, char, MIN_OP) _name(schar_min, signed char, MIN_OP)      \
-          _name(short_min, short, MIN_OP) _name(int_min, int, MIN_OP) _name(   \
-              long_min, long, MIN_OP) _name(longlong_min, long long, MIN_OP)   \
-              _name(ptrdiff_min, ptrdiff_t,                                    \
-                    MIN_OP) _name(uchar_min, unsigned char, MIN_OP)            \
-                  _name(ushort_min, unsigned short,                            \
-                        MIN_OP) _name(uint_min, unsigned int, MIN_OP)          \
-                      _name(ulong_min, unsigned long, MIN_OP) _name(           \
-                          ulonglong_min, unsigned long long,                   \
-                          MIN_OP) _name(int8_min, int8_t, MIN_OP)              \
-                          _name(int16_min, int16_t,                            \
-                                MIN_OP) _name(int32_min, int32_t, MIN_OP)      \
-                              _name(int64_min, int64_t, MIN_OP) _name(         \
-                                  uint8_min, uint8_t,                          \
-                                  MIN_OP) _name(uint16_min, uint16_t, MIN_OP)  \
-                                  _name(uint32_min, uint32_t, MIN_OP)          \
-                                      _name(uint64_min, uint64_t, MIN_OP)      \
-                                          _name(size_min, size_t, MIN_OP)      \
-                                              _name(float_min, float, MIN_OP)  \
-                                                  _name(double_min, double,    \
-                                                        MIN_OP)                \
-                                                      _name(longdouble_min,    \
-                                                            long double,       \
-                                                            MIN_OP)            \
-                                                                               \
-      /* SUM operation */                                                      \
-      _name(char_sum, char, SUM_OP) _name(schar_sum, signed char, SUM_OP)      \
-          _name(short_sum, short, SUM_OP) _name(int_sum, int, SUM_OP) _name(   \
-              long_sum, long, SUM_OP) _name(longlong_sum, long long, SUM_OP)   \
-              _name(ptrdiff_sum, ptrdiff_t,                                    \
-                    SUM_OP) _name(uchar_sum, unsigned char, SUM_OP)            \
-                  _name(ushort_sum, unsigned short,                            \
-                        SUM_OP) _name(uint_sum, unsigned int, SUM_OP)          \
-                      _name(ulong_sum, unsigned long, SUM_OP) _name(           \
-                          ulonglong_sum, unsigned long long,                   \
-                          SUM_OP) _name(int8_sum, int8_t, SUM_OP)              \
-                          _name(int16_sum, int16_t,                            \
-                                SUM_OP) _name(int32_sum, int32_t, SUM_OP)      \
-                              _name(int64_sum, int64_t, SUM_OP) _name(         \
-                                  uint8_sum, uint8_t,                          \
-                                  SUM_OP) _name(uint16_sum, uint16_t, SUM_OP)  \
-                                  _name(uint32_sum, uint32_t, SUM_OP) _name(   \
-                                      uint64_sum,                              \
-                                      uint64_t,                                \
-                                      SUM_OP) _name(size_sum, size_t, SUM_OP)  \
-                                      _name(float_sum, float, SUM_OP)          \
-                                          _name(double_sum, double, SUM_OP)    \
-                                              _name(longdouble_sum,            \
-                                                    long double, SUM_OP)       \
-                                                  _name(complexf_sum,          \
-                                                        float _Complex,        \
-                                                        SUM_OP)                \
-                                                      _name(complexd_sum,      \
-                                                            double _Complex,   \
-                                                            SUM_OP)            \
-                                                                               \
-      /* PROD operation */                                                     \
-      _name(char_prod, char, PROD_OP) _name(                                   \
-          schar_prod, signed char, PROD_OP) _name(short_prod, short, PROD_OP)  \
-          _name(int_prod, int, PROD_OP) _name(long_prod, long, PROD_OP) _name( \
-              longlong_prod,                                                   \
-              long long, PROD_OP) _name(ptrdiff_prod, ptrdiff_t,               \
-                                        PROD_OP) _name(uchar_prod,             \
-                                                       unsigned char, PROD_OP) \
-              _name(ushort_prod, unsigned short, PROD_OP) _name(               \
-                  uint_prod, unsigned int,                                     \
-                  PROD_OP) _name(ulong_prod, unsigned long, PROD_OP)           \
-                  _name(ulonglong_prod, unsigned long long, PROD_OP) _name(    \
-                      int8_prod, int8_t,                                       \
-                      PROD_OP) _name(int16_prod, int16_t, PROD_OP)             \
-                      _name(int32_prod, int32_t,                               \
-                            PROD_OP) _name(int64_prod, int64_t, PROD_OP)       \
-                          _name(uint8_prod, uint8_t,                           \
-                                PROD_OP) _name(uint16_prod, uint16_t, PROD_OP) \
-                              _name(uint32_prod, uint32_t, PROD_OP) _name(     \
-                                  uint64_prod, uint64_t,                       \
-                                  PROD_OP) _name(size_prod, size_t, PROD_OP)   \
-                                  _name(float_prod, float, PROD_OP)            \
-                                      _name(double_prod, double, PROD_OP)      \
-                                          _name(longdouble_prod, long double,  \
-                                                PROD_OP) _name(complexf_prod,  \
-                                                               float _Complex, \
-                                                               PROD_OP)        \
-                                              _name(complexd_prod,             \
-                                                    double _Complex, PROD_OP)
+/**
+ * @brief Macro to define reduction operations for all supported types
+ *
+ * This macro expands to define reduction operations for all combinations of:
+ * - Data types (char, int, float, etc.)
+ * - Operations (AND, OR, XOR, MAX, MIN, SUM, PROD)
+ * - Algorithms (linear, binomial, recursive doubling, Rabenseifner)
+ *
+ * @param _name The name of the reduction helper function to define
+ */
 
-#ifndef CMAKE
-SHCOLL_REDUCE_DEFINE(REDUCE_HELPER_LOCAL)
-SHCOLL_REDUCE_DEFINE(REDUCE_HELPER_LINEAR)
-SHCOLL_REDUCE_DEFINE(REDUCE_HELPER_BINOMIAL)
-SHCOLL_REDUCE_DEFINE(REDUCE_HELPER_REC_DBL)
-SHCOLL_REDUCE_DEFINE(REDUCE_HELPER_RABENSEIFNER)
-SHCOLL_REDUCE_DEFINE(REDUCE_HELPER_RABENSEIFNER2)
-#else
-REDUCE_HELPER_LOCAL(int_sum, int, SUM_OP)
-REDUCE_HELPER_LINEAR(int_sum, int, SUM_OP)
-REDUCE_HELPER_BINOMIAL(int_sum, int, SUM_OP)
-REDUCE_HELPER_REC_DBL(int_sum, int, SUM_OP)
-REDUCE_HELPER_RABENSEIFNER(int_sum, int, SUM_OP)
-REDUCE_HELPER_RABENSEIFNER2(int_sum, int, SUM_OP)
-#endif
+/* @formatter: off */
+// clang-format off
+#define SHCOLL_TO_ALL_DEFINE(_name)                                           \
+  /* AND operation */                                                         \
+  _name(char_and, char, AND_OP)                                               \
+  _name(schar_and, signed char, AND_OP)                                       \
+  _name(short_and, short, AND_OP)                                             \
+  _name(int_and, int, AND_OP)                                                 \
+  _name(long_and, long, AND_OP)                                               \
+  _name(longlong_and, long long, AND_OP)                                      \
+  _name(ptrdiff_and, ptrdiff_t, AND_OP)                                       \
+  _name(uchar_and, unsigned char, AND_OP)                                     \
+  _name(ushort_and, unsigned short, AND_OP)                                   \
+  _name(uint_and, unsigned int, AND_OP)                                       \
+  _name(ulong_and, unsigned long, AND_OP)                                     \
+  _name(ulonglong_and, unsigned long long, AND_OP)                            \
+  _name(int8_and, int8_t, AND_OP)                                             \
+  _name(int16_and, int16_t, AND_OP)                                           \
+  _name(int32_and, int32_t, AND_OP)                                           \
+  _name(int64_and, int64_t, AND_OP)                                           \
+  _name(uint8_and, uint8_t, AND_OP)                                           \
+  _name(uint16_and, uint16_t, AND_OP)                                         \
+  _name(uint32_and, uint32_t, AND_OP)                                         \
+  _name(uint64_and, uint64_t, AND_OP)                                         \
+  _name(size_and, size_t, AND_OP)                                             \
+                                                                              \
+  /* OR operation */                                                          \
+  _name(char_or, char, OR_OP)                                                 \
+  _name(schar_or, signed char, OR_OP)                                         \
+  _name(short_or, short, OR_OP)                                               \
+  _name(int_or, int, OR_OP)                                                   \
+  _name(long_or, long, OR_OP)                                                 \
+  _name(longlong_or, long long, OR_OP)                                        \
+  _name(ptrdiff_or, ptrdiff_t, OR_OP)                                         \
+  _name(uchar_or, unsigned char, OR_OP)                                       \
+  _name(ushort_or, unsigned short, OR_OP)                                     \
+  _name(uint_or, unsigned int, OR_OP)                                         \
+  _name(ulong_or, unsigned long, OR_OP)                                       \
+  _name(ulonglong_or, unsigned long long, OR_OP)                              \
+  _name(int8_or, int8_t, OR_OP)                                               \
+  _name(int16_or, int16_t, OR_OP)                                             \
+  _name(int32_or, int32_t, OR_OP)                                             \
+  _name(int64_or, int64_t, OR_OP)                                             \
+  _name(uint8_or, uint8_t, OR_OP)                                             \
+  _name(uint16_or, uint16_t, OR_OP)                                           \
+  _name(uint32_or, uint32_t, OR_OP)                                           \
+  _name(uint64_or, uint64_t, OR_OP)                                           \
+  _name(size_or, size_t, OR_OP)                                               \
+                                                                              \
+  /* XOR operation */                                                         \
+  _name(char_xor, char, XOR_OP)                                               \
+  _name(schar_xor, signed char, XOR_OP)                                       \
+  _name(short_xor, short, XOR_OP)                                             \
+  _name(int_xor, int, XOR_OP)                                                 \
+  _name(long_xor, long, XOR_OP)                                               \
+  _name(longlong_xor, long long, XOR_OP)                                      \
+  _name(ptrdiff_xor, ptrdiff_t, XOR_OP)                                       \
+  _name(uchar_xor, unsigned char, XOR_OP)                                     \
+  _name(ushort_xor, unsigned short, XOR_OP)                                   \
+  _name(uint_xor, unsigned int, XOR_OP)                                       \
+  _name(ulong_xor, unsigned long, XOR_OP)                                     \
+  _name(ulonglong_xor, unsigned long long, XOR_OP)                            \
+  _name(int8_xor, int8_t, XOR_OP)                                             \
+  _name(int16_xor, int16_t, XOR_OP)                                           \
+  _name(int32_xor, int32_t, XOR_OP)                                           \
+  _name(int64_xor, int64_t, XOR_OP)                                           \
+  _name(uint8_xor, uint8_t, XOR_OP)                                           \
+  _name(uint16_xor, uint16_t, XOR_OP)                                         \
+  _name(uint32_xor, uint32_t, XOR_OP)                                         \
+  _name(uint64_xor, uint64_t, XOR_OP)                                         \
+  _name(size_xor, size_t, XOR_OP)                                             \
+                                                                              \
+  /* MAX operation */                                                         \
+  _name(char_max, char, MAX_OP)                                               \
+  _name(schar_max, signed char, MAX_OP)                                       \
+  _name(short_max, short, MAX_OP)                                             \
+  _name(int_max, int, MAX_OP)                                                 \
+  _name(long_max, long, MAX_OP)                                               \
+  _name(longlong_max, long long, MAX_OP)                                      \
+  _name(ptrdiff_max, ptrdiff_t, MAX_OP)                                       \
+  _name(uchar_max, unsigned char, MAX_OP)                                     \
+  _name(ushort_max, unsigned short, MAX_OP)                                   \
+  _name(uint_max, unsigned int, MAX_OP)                                       \
+  _name(ulong_max, unsigned long, MAX_OP)                                     \
+  _name(ulonglong_max, unsigned long long, MAX_OP)                            \
+  _name(int8_max, int8_t, MAX_OP)                                             \
+  _name(int16_max, int16_t, MAX_OP)                                           \
+  _name(int32_max, int32_t, MAX_OP)                                           \
+  _name(int64_max, int64_t, MAX_OP)                                           \
+  _name(uint8_max, uint8_t, MAX_OP)                                           \
+  _name(uint16_max, uint16_t, MAX_OP)                                         \
+  _name(uint32_max, uint32_t, MAX_OP)                                         \
+  _name(uint64_max, uint64_t, MAX_OP)                                         \
+  _name(size_max, size_t, MAX_OP)                                             \
+  _name(float_max, float, MAX_OP)                                             \
+  _name(double_max, double, MAX_OP)                                           \
+  _name(longdouble_max, long double, MAX_OP)                                  \
+                                                                              \
+  /* MIN operation */                                                         \
+  _name(char_min, char, MIN_OP)                                               \
+  _name(schar_min, signed char, MIN_OP)                                       \
+  _name(short_min, short, MIN_OP)                                             \
+  _name(int_min, int, MIN_OP)                                                 \
+  _name(long_min, long, MIN_OP)                                               \
+  _name(longlong_min, long long, MIN_OP)                                      \
+  _name(ptrdiff_min, ptrdiff_t, MIN_OP)                                       \
+  _name(uchar_min, unsigned char, MIN_OP)                                     \
+  _name(ushort_min, unsigned short, MIN_OP)                                   \
+  _name(uint_min, unsigned int, MIN_OP)                                       \
+  _name(ulong_min, unsigned long, MIN_OP)                                     \
+  _name(ulonglong_min, unsigned long long, MIN_OP)                            \
+  _name(int8_min, int8_t, MIN_OP)                                             \
+  _name(int16_min, int16_t, MIN_OP)                                           \
+  _name(int32_min, int32_t, MIN_OP)                                           \
+  _name(int64_min, int64_t, MIN_OP)                                           \
+  _name(uint8_min, uint8_t, MIN_OP)                                           \
+  _name(uint16_min, uint16_t, MIN_OP)                                         \
+  _name(uint32_min, uint32_t, MIN_OP)                                         \
+  _name(uint64_min, uint64_t, MIN_OP)                                         \
+  _name(size_min, size_t, MIN_OP)                                             \
+  _name(float_min, float, MIN_OP)                                             \
+  _name(double_min, double, MIN_OP)                                           \
+  _name(longdouble_min, long double, MIN_OP)                                  \
+                                                                              \
+  /* SUM operation */                                                         \
+  _name(char_sum, char, SUM_OP)                                               \
+  _name(schar_sum, signed char, SUM_OP)                                       \
+  _name(short_sum, short, SUM_OP)                                             \
+  _name(int_sum, int, SUM_OP)                                                 \
+  _name(long_sum, long, SUM_OP)                                               \
+  _name(longlong_sum, long long, SUM_OP)                                      \
+  _name(ptrdiff_sum, ptrdiff_t, SUM_OP)                                       \
+  _name(uchar_sum, unsigned char, SUM_OP)                                     \
+  _name(ushort_sum, unsigned short, SUM_OP)                                   \
+  _name(uint_sum, unsigned int, SUM_OP)                                       \
+  _name(ulong_sum, unsigned long, SUM_OP)                                     \
+  _name(ulonglong_sum, unsigned long long, SUM_OP)                            \
+  _name(int8_sum, int8_t, SUM_OP)                                             \
+  _name(int16_sum, int16_t, SUM_OP)                                           \
+  _name(int32_sum, int32_t, SUM_OP)                                           \
+  _name(int64_sum, int64_t, SUM_OP)                                           \
+  _name(uint8_sum, uint8_t, SUM_OP)                                           \
+  _name(uint16_sum, uint16_t, SUM_OP)                                         \
+  _name(uint32_sum, uint32_t, SUM_OP)                                         \
+  _name(uint64_sum, uint64_t, SUM_OP)                                         \
+  _name(size_sum, size_t, SUM_OP)                                             \
+  _name(float_sum, float, SUM_OP)                                             \
+  _name(double_sum, double, SUM_OP)                                           \
+  _name(longdouble_sum, long double, SUM_OP)                                  \
+  _name(complexf_sum, float _Complex, SUM_OP)                                 \
+  _name(complexd_sum, double _Complex, SUM_OP)                                \
+  /* PROD operation */                                                      \
+  _name(char_prod, char, PROD_OP)                                           \
+  _name(schar_prod, signed char, PROD_OP)                                   \
+  _name(short_prod, short, PROD_OP)                                         \
+  _name(int_prod, int, PROD_OP)                                             \
+  _name(long_prod, long, PROD_OP)                                           \
+  _name(longlong_prod, long long, PROD_OP)                                  \
+  _name(ptrdiff_prod, ptrdiff_t, PROD_OP)                                   \
+  _name(uchar_prod, unsigned char, PROD_OP)                                 \
+  _name(ushort_prod, unsigned short, PROD_OP)                               \
+  _name(uint_prod, unsigned int, PROD_OP)                                   \
+  _name(ulong_prod, unsigned long, PROD_OP)                                 \
+  _name(ulonglong_prod, unsigned long long, PROD_OP)                        \
+  _name(int8_prod, int8_t, PROD_OP)                                         \
+  _name(int16_prod, int16_t, PROD_OP)                                       \
+  _name(int32_prod, int32_t, PROD_OP)                                       \
+  _name(int64_prod, int64_t, PROD_OP)                                       \
+  _name(uint8_prod, uint8_t, PROD_OP)                                       \
+  _name(uint16_prod, uint16_t, PROD_OP)                                     \
+  _name(uint32_prod, uint32_t, PROD_OP)                                     \
+  _name(uint64_prod, uint64_t, PROD_OP)                                     \
+  _name(size_prod, size_t, PROD_OP)                                         \
+  _name(float_prod, float, PROD_OP)                                         \
+  _name(double_prod, double, PROD_OP)                                       \
+  _name(longdouble_prod, long double, PROD_OP)                              \
+  _name(complexf_prod, float _Complex, PROD_OP)                             \
+  _name(complexd_prod, double _Complex, PROD_OP)
+// clang-format on
+
+/* Generate all implementations for all types and operations */
+SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_LOCAL)
+SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_LINEAR)
+SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_BINOMIAL)
+SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_REC_DBL)
+SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_RABENSEIFNER)
+SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_RABENSEIFNER2)
 
 /* @formatter:on */
 // clang-format on
+
+/*
+ * @brief Macro to define the reduction operation wrapper function
+ *
+ * @param _typename_op Combined type and operation name (e.g. char_and)
+ * @param _type       Actual C type (e.g. char)
+ * @param _algo  Algorithm suffix (e.g. linear)
+ */
+#define SHCOLL_TO_ALL_DEFINITION(_typename_op, _type, _algo)                   \
+  void shcoll_##_typename_op##_to_all_##_algo(                                 \
+      _type *dest, const _type *source, int nreduce, int PE_start,             \
+      int logPE_stride, int PE_size, _type *pWrk, long *pSync) {               \
+    /* dispatch into the helper routine */                                     \
+    reduce_helper_##_typename_op##_##_algo(                                    \
+        dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync);  \
+  }
+
+/*
+ * @brief Improved wrapper macros for each reduction algorithm
+ */
+#define TO_ALL_WRAPPER(_name, _type, _op, _algo)                               \
+  SHCOLL_TO_ALL_DEFINITION(_name, _type, _algo)
+
+/* Group by operation type, similar to SHIM_REDUCE approach */
+#define TO_ALL_WRAPPER_BITWISE(_algo)                                          \
+  /* AND operation */                                                          \
+  TO_ALL_WRAPPER(char_and, char, AND_OP, _algo)                                \
+  TO_ALL_WRAPPER(schar_and, signed char, AND_OP, _algo)                        \
+  TO_ALL_WRAPPER(short_and, short, AND_OP, _algo)                              \
+  TO_ALL_WRAPPER(int_and, int, AND_OP, _algo)                                  \
+  TO_ALL_WRAPPER(long_and, long, AND_OP, _algo)                                \
+  TO_ALL_WRAPPER(longlong_and, long long, AND_OP, _algo)                       \
+  TO_ALL_WRAPPER(ptrdiff_and, ptrdiff_t, AND_OP, _algo)                        \
+  TO_ALL_WRAPPER(uchar_and, unsigned char, AND_OP, _algo)                      \
+  TO_ALL_WRAPPER(ushort_and, unsigned short, AND_OP, _algo)                    \
+  TO_ALL_WRAPPER(uint_and, unsigned int, AND_OP, _algo)                        \
+  TO_ALL_WRAPPER(ulong_and, unsigned long, AND_OP, _algo)                      \
+  TO_ALL_WRAPPER(ulonglong_and, unsigned long long, AND_OP, _algo)             \
+  TO_ALL_WRAPPER(int8_and, int8_t, AND_OP, _algo)                              \
+  TO_ALL_WRAPPER(int16_and, int16_t, AND_OP, _algo)                            \
+  TO_ALL_WRAPPER(int32_and, int32_t, AND_OP, _algo)                            \
+  TO_ALL_WRAPPER(int64_and, int64_t, AND_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint8_and, uint8_t, AND_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint16_and, uint16_t, AND_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint32_and, uint32_t, AND_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint64_and, uint64_t, AND_OP, _algo)                          \
+  TO_ALL_WRAPPER(size_and, size_t, AND_OP, _algo)                              \
+  /* OR operation */                                                           \
+  TO_ALL_WRAPPER(char_or, char, OR_OP, _algo)                                  \
+  TO_ALL_WRAPPER(schar_or, signed char, OR_OP, _algo)                          \
+  TO_ALL_WRAPPER(short_or, short, OR_OP, _algo)                                \
+  TO_ALL_WRAPPER(int_or, int, OR_OP, _algo)                                    \
+  TO_ALL_WRAPPER(long_or, long, OR_OP, _algo)                                  \
+  TO_ALL_WRAPPER(longlong_or, long long, OR_OP, _algo)                         \
+  TO_ALL_WRAPPER(ptrdiff_or, ptrdiff_t, OR_OP, _algo)                          \
+  TO_ALL_WRAPPER(uchar_or, unsigned char, OR_OP, _algo)                        \
+  TO_ALL_WRAPPER(ushort_or, unsigned short, OR_OP, _algo)                      \
+  TO_ALL_WRAPPER(uint_or, unsigned int, OR_OP, _algo)                          \
+  TO_ALL_WRAPPER(ulong_or, unsigned long, OR_OP, _algo)                        \
+  TO_ALL_WRAPPER(ulonglong_or, unsigned long long, OR_OP, _algo)               \
+  TO_ALL_WRAPPER(int8_or, int8_t, OR_OP, _algo)                                \
+  TO_ALL_WRAPPER(int16_or, int16_t, OR_OP, _algo)                              \
+  TO_ALL_WRAPPER(int32_or, int32_t, OR_OP, _algo)                              \
+  TO_ALL_WRAPPER(int64_or, int64_t, OR_OP, _algo)                              \
+  TO_ALL_WRAPPER(uint8_or, uint8_t, OR_OP, _algo)                              \
+  TO_ALL_WRAPPER(uint16_or, uint16_t, OR_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint32_or, uint32_t, OR_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint64_or, uint64_t, OR_OP, _algo)                            \
+  TO_ALL_WRAPPER(size_or, size_t, OR_OP, _algo)                                \
+  /* XOR operation */                                                          \
+  TO_ALL_WRAPPER(char_xor, char, XOR_OP, _algo)                                \
+  TO_ALL_WRAPPER(schar_xor, signed char, XOR_OP, _algo)                        \
+  TO_ALL_WRAPPER(short_xor, short, XOR_OP, _algo)                              \
+  TO_ALL_WRAPPER(int_xor, int, XOR_OP, _algo)                                  \
+  TO_ALL_WRAPPER(long_xor, long, XOR_OP, _algo)                                \
+  TO_ALL_WRAPPER(longlong_xor, long long, XOR_OP, _algo)                       \
+  TO_ALL_WRAPPER(ptrdiff_xor, ptrdiff_t, XOR_OP, _algo)                        \
+  TO_ALL_WRAPPER(uchar_xor, unsigned char, XOR_OP, _algo)                      \
+  TO_ALL_WRAPPER(ushort_xor, unsigned short, XOR_OP, _algo)                    \
+  TO_ALL_WRAPPER(uint_xor, unsigned int, XOR_OP, _algo)                        \
+  TO_ALL_WRAPPER(ulong_xor, unsigned long, XOR_OP, _algo)                      \
+  TO_ALL_WRAPPER(ulonglong_xor, unsigned long long, XOR_OP, _algo)             \
+  TO_ALL_WRAPPER(int8_xor, int8_t, XOR_OP, _algo)                              \
+  TO_ALL_WRAPPER(int16_xor, int16_t, XOR_OP, _algo)                            \
+  TO_ALL_WRAPPER(int32_xor, int32_t, XOR_OP, _algo)                            \
+  TO_ALL_WRAPPER(int64_xor, int64_t, XOR_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint8_xor, uint8_t, XOR_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint16_xor, uint16_t, XOR_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint32_xor, uint32_t, XOR_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint64_xor, uint64_t, XOR_OP, _algo)                          \
+  TO_ALL_WRAPPER(size_xor, size_t, XOR_OP, _algo)
+
+#define TO_ALL_WRAPPER_MINMAX(_algo)                                           \
+  /* MAX operation */                                                          \
+  TO_ALL_WRAPPER(char_max, char, MAX_OP, _algo)                                \
+  TO_ALL_WRAPPER(schar_max, signed char, MAX_OP, _algo)                        \
+  TO_ALL_WRAPPER(short_max, short, MAX_OP, _algo)                              \
+  TO_ALL_WRAPPER(int_max, int, MAX_OP, _algo)                                  \
+  TO_ALL_WRAPPER(long_max, long, MAX_OP, _algo)                                \
+  TO_ALL_WRAPPER(longlong_max, long long, MAX_OP, _algo)                       \
+  TO_ALL_WRAPPER(ptrdiff_max, ptrdiff_t, MAX_OP, _algo)                        \
+  TO_ALL_WRAPPER(uchar_max, unsigned char, MAX_OP, _algo)                      \
+  TO_ALL_WRAPPER(ushort_max, unsigned short, MAX_OP, _algo)                    \
+  TO_ALL_WRAPPER(uint_max, unsigned int, MAX_OP, _algo)                        \
+  TO_ALL_WRAPPER(ulong_max, unsigned long, MAX_OP, _algo)                      \
+  TO_ALL_WRAPPER(ulonglong_max, unsigned long long, MAX_OP, _algo)             \
+  TO_ALL_WRAPPER(int8_max, int8_t, MAX_OP, _algo)                              \
+  TO_ALL_WRAPPER(int16_max, int16_t, MAX_OP, _algo)                            \
+  TO_ALL_WRAPPER(int32_max, int32_t, MAX_OP, _algo)                            \
+  TO_ALL_WRAPPER(int64_max, int64_t, MAX_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint8_max, uint8_t, MAX_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint16_max, uint16_t, MAX_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint32_max, uint32_t, MAX_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint64_max, uint64_t, MAX_OP, _algo)                          \
+  TO_ALL_WRAPPER(size_max, size_t, MAX_OP, _algo)                              \
+  TO_ALL_WRAPPER(float_max, float, MAX_OP, _algo)                              \
+  TO_ALL_WRAPPER(double_max, double, MAX_OP, _algo)                            \
+  TO_ALL_WRAPPER(longdouble_max, long double, MAX_OP, _algo)                   \
+  /* MIN operation */                                                          \
+  TO_ALL_WRAPPER(char_min, char, MIN_OP, _algo)                                \
+  TO_ALL_WRAPPER(schar_min, signed char, MIN_OP, _algo)                        \
+  TO_ALL_WRAPPER(short_min, short, MIN_OP, _algo)                              \
+  TO_ALL_WRAPPER(int_min, int, MIN_OP, _algo)                                  \
+  TO_ALL_WRAPPER(long_min, long, MIN_OP, _algo)                                \
+  TO_ALL_WRAPPER(longlong_min, long long, MIN_OP, _algo)                       \
+  TO_ALL_WRAPPER(ptrdiff_min, ptrdiff_t, MIN_OP, _algo)                        \
+  TO_ALL_WRAPPER(uchar_min, unsigned char, MIN_OP, _algo)                      \
+  TO_ALL_WRAPPER(ushort_min, unsigned short, MIN_OP, _algo)                    \
+  TO_ALL_WRAPPER(uint_min, unsigned int, MIN_OP, _algo)                        \
+  TO_ALL_WRAPPER(ulong_min, unsigned long, MIN_OP, _algo)                      \
+  TO_ALL_WRAPPER(ulonglong_min, unsigned long long, MIN_OP, _algo)             \
+  TO_ALL_WRAPPER(int8_min, int8_t, MIN_OP, _algo)                              \
+  TO_ALL_WRAPPER(int16_min, int16_t, MIN_OP, _algo)                            \
+  TO_ALL_WRAPPER(int32_min, int32_t, MIN_OP, _algo)                            \
+  TO_ALL_WRAPPER(int64_min, int64_t, MIN_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint8_min, uint8_t, MIN_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint16_min, uint16_t, MIN_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint32_min, uint32_t, MIN_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint64_min, uint64_t, MIN_OP, _algo)                          \
+  TO_ALL_WRAPPER(size_min, size_t, MIN_OP, _algo)                              \
+  TO_ALL_WRAPPER(float_min, float, MIN_OP, _algo)                              \
+  TO_ALL_WRAPPER(double_min, double, MIN_OP, _algo)                            \
+  TO_ALL_WRAPPER(longdouble_min, long double, MIN_OP, _algo)
+
+#define TO_ALL_WRAPPER_ARITH(_algo)                                            \
+  /* SUM operation */                                                          \
+  TO_ALL_WRAPPER(char_sum, char, SUM_OP, _algo)                                \
+  TO_ALL_WRAPPER(schar_sum, signed char, SUM_OP, _algo)                        \
+  TO_ALL_WRAPPER(short_sum, short, SUM_OP, _algo)                              \
+  TO_ALL_WRAPPER(int_sum, int, SUM_OP, _algo)                                  \
+  TO_ALL_WRAPPER(long_sum, long, SUM_OP, _algo)                                \
+  TO_ALL_WRAPPER(longlong_sum, long long, SUM_OP, _algo)                       \
+  TO_ALL_WRAPPER(ptrdiff_sum, ptrdiff_t, SUM_OP, _algo)                        \
+  TO_ALL_WRAPPER(uchar_sum, unsigned char, SUM_OP, _algo)                      \
+  TO_ALL_WRAPPER(ushort_sum, unsigned short, SUM_OP, _algo)                    \
+  TO_ALL_WRAPPER(uint_sum, unsigned int, SUM_OP, _algo)                        \
+  TO_ALL_WRAPPER(ulong_sum, unsigned long, SUM_OP, _algo)                      \
+  TO_ALL_WRAPPER(ulonglong_sum, unsigned long long, SUM_OP, _algo)             \
+  TO_ALL_WRAPPER(int8_sum, int8_t, SUM_OP, _algo)                              \
+  TO_ALL_WRAPPER(int16_sum, int16_t, SUM_OP, _algo)                            \
+  TO_ALL_WRAPPER(int32_sum, int32_t, SUM_OP, _algo)                            \
+  TO_ALL_WRAPPER(int64_sum, int64_t, SUM_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint8_sum, uint8_t, SUM_OP, _algo)                            \
+  TO_ALL_WRAPPER(uint16_sum, uint16_t, SUM_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint32_sum, uint32_t, SUM_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint64_sum, uint64_t, SUM_OP, _algo)                          \
+  TO_ALL_WRAPPER(size_sum, size_t, SUM_OP, _algo)                              \
+  TO_ALL_WRAPPER(float_sum, float, SUM_OP, _algo)                              \
+  TO_ALL_WRAPPER(double_sum, double, SUM_OP, _algo)                            \
+  TO_ALL_WRAPPER(longdouble_sum, long double, SUM_OP, _algo)                   \
+  TO_ALL_WRAPPER(complexf_sum, float _Complex, SUM_OP, _algo)                  \
+  TO_ALL_WRAPPER(complexd_sum, double _Complex, SUM_OP, _algo)                 \
+  /* PROD operation */                                                         \
+  TO_ALL_WRAPPER(char_prod, char, PROD_OP, _algo)                              \
+  TO_ALL_WRAPPER(schar_prod, signed char, PROD_OP, _algo)                      \
+  TO_ALL_WRAPPER(short_prod, short, PROD_OP, _algo)                            \
+  TO_ALL_WRAPPER(int_prod, int, PROD_OP, _algo)                                \
+  TO_ALL_WRAPPER(long_prod, long, PROD_OP, _algo)                              \
+  TO_ALL_WRAPPER(longlong_prod, long long, PROD_OP, _algo)                     \
+  TO_ALL_WRAPPER(ptrdiff_prod, ptrdiff_t, PROD_OP, _algo)                      \
+  TO_ALL_WRAPPER(uchar_prod, unsigned char, PROD_OP, _algo)                    \
+  TO_ALL_WRAPPER(ushort_prod, unsigned short, PROD_OP, _algo)                  \
+  TO_ALL_WRAPPER(uint_prod, unsigned int, PROD_OP, _algo)                      \
+  TO_ALL_WRAPPER(ulong_prod, unsigned long, PROD_OP, _algo)                    \
+  TO_ALL_WRAPPER(ulonglong_prod, unsigned long long, PROD_OP, _algo)           \
+  TO_ALL_WRAPPER(int8_prod, int8_t, PROD_OP, _algo)                            \
+  TO_ALL_WRAPPER(int16_prod, int16_t, PROD_OP, _algo)                          \
+  TO_ALL_WRAPPER(int32_prod, int32_t, PROD_OP, _algo)                          \
+  TO_ALL_WRAPPER(int64_prod, int64_t, PROD_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint8_prod, uint8_t, PROD_OP, _algo)                          \
+  TO_ALL_WRAPPER(uint16_prod, uint16_t, PROD_OP, _algo)                        \
+  TO_ALL_WRAPPER(uint32_prod, uint32_t, PROD_OP, _algo)                        \
+  TO_ALL_WRAPPER(uint64_prod, uint64_t, PROD_OP, _algo)                        \
+  TO_ALL_WRAPPER(size_prod, size_t, PROD_OP, _algo)                            \
+  TO_ALL_WRAPPER(float_prod, float, PROD_OP, _algo)                            \
+  TO_ALL_WRAPPER(double_prod, double, PROD_OP, _algo)                          \
+  TO_ALL_WRAPPER(longdouble_prod, long double, PROD_OP, _algo)                 \
+  TO_ALL_WRAPPER(complexf_prod, float _Complex, PROD_OP, _algo)                \
+  TO_ALL_WRAPPER(complexd_prod, double _Complex, PROD_OP, _algo)
+
+/* Combine all operation types into one macro */
+#define TO_ALL_WRAPPER_ALL(_algo)                                              \
+  TO_ALL_WRAPPER_BITWISE(_algo)                                                \
+  TO_ALL_WRAPPER_MINMAX(_algo)                                                 \
+  TO_ALL_WRAPPER_ARITH(_algo)
+
+/* generate wrappers for all types and ops for each algorithm */
+TO_ALL_WRAPPER_ALL(linear)
+TO_ALL_WRAPPER_ALL(binomial)
+TO_ALL_WRAPPER_ALL(rec_dbl)
+TO_ALL_WRAPPER_ALL(rabenseifner)
+TO_ALL_WRAPPER_ALL(rabenseifner2)
+
+/*
+ * @brief Macro to define team-based reduction operations
+ *
+ * @param _typename Type name (e.g. int_sum)
+ * @param _type Actual type (e.g. int)
+ * @param _op Operation (e.g. sum)
+ * @param _algo Algorithm name (e.g. linear)
+ */
+#define SHCOLL_REDUCE_DEFINITION(_typename, _type, _op, _algo)                 \
+  int shcoll_##_typename##_##_op##_reduce_##_algo(                             \
+      shmem_team_t team, _type *dest, const _type *source, size_t nreduce) {   \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
+    int PE_start = team_h->start;                                              \
+    int PE_size = team_h->nranks;                                              \
+    int stride = team_h->stride;                                               \
+    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
+    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
+                                                                               \
+    long *pSync = shmem_malloc(SHCOLL_REDUCE_SYNC_SIZE * sizeof(long));        \
+    if (!pSync)                                                                \
+      return -1;                                                               \
+    for (int i = 0; i < SHCOLL_REDUCE_SYNC_SIZE; i++)                          \
+      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    _type *pWrk =                                                              \
+        shmem_malloc(SHCOLL_REDUCE_MIN_WRKDATA_SIZE * sizeof(_type));          \
+    if (!pWrk) {                                                               \
+      shmem_free(pSync);                                                       \
+      return -1;                                                               \
+    }                                                                          \
+                                                                               \
+    shmem_team_sync(team);                                                     \
+                                                                               \
+    /* call the type-specific to_all implementation */                         \
+    shcoll_##_typename##_##_op##_to_all_##_algo(                               \
+        dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync);  \
+                                                                               \
+    shmem_team_sync(team);                                                     \
+    shmem_free(pWrk);                                                          \
+    shmem_free(pSync);                                                         \
+    return 0;                                                                  \
+  }
+
+#define SHIM_REDUCE_DECLARE(_typename, _type, _op, _algo)                      \
+  SHCOLL_REDUCE_DEFINITION(_typename, _type, _op, _algo)
+
+/*
+ * @brief Macros to define reduction operations for different data types
+ */
+
+/* Bitwise reduction operations (AND, OR, XOR) */
+#define SHIM_REDUCE_BITWISE_TYPES(_op, _algo)                                  \
+  SHIM_REDUCE_DECLARE(uchar, unsigned char, _op, _algo)                        \
+  SHIM_REDUCE_DECLARE(ushort, unsigned short, _op, _algo)                      \
+  SHIM_REDUCE_DECLARE(uint, unsigned int, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(ulong, unsigned long, _op, _algo)                        \
+  SHIM_REDUCE_DECLARE(ulonglong, unsigned long long, _op, _algo)               \
+  SHIM_REDUCE_DECLARE(int8, int8_t, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(int16, int16_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(int32, int32_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(int64, int64_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(uint8, uint8_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(uint16, uint16_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(uint32, uint32_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(uint64, uint64_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(size, size_t, _op, _algo)
+
+/* Min/Max reduction operations */
+#define SHIM_REDUCE_MINMAX_TYPES(_op, _algo)                                   \
+  SHIM_REDUCE_DECLARE(char, char, _op, _algo)                                  \
+  SHIM_REDUCE_DECLARE(schar, signed char, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(short, short, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(int, int, _op, _algo)                                    \
+  SHIM_REDUCE_DECLARE(long, long, _op, _algo)                                  \
+  SHIM_REDUCE_DECLARE(longlong, long long, _op, _algo)                         \
+  SHIM_REDUCE_DECLARE(ptrdiff, ptrdiff_t, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(uchar, unsigned char, _op, _algo)                        \
+  SHIM_REDUCE_DECLARE(ushort, unsigned short, _op, _algo)                      \
+  SHIM_REDUCE_DECLARE(uint, unsigned int, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(ulong, unsigned long, _op, _algo)                        \
+  SHIM_REDUCE_DECLARE(ulonglong, unsigned long long, _op, _algo)               \
+  SHIM_REDUCE_DECLARE(int8, int8_t, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(int16, int16_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(int32, int32_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(int64, int64_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(uint8, uint8_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(uint16, uint16_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(uint32, uint32_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(uint64, uint64_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(size, size_t, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(float, float, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(double, double, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(longdouble, long double, _op, _algo)
+
+/* Arithmetic reduction operations (SUM, PROD) */
+#define SHIM_REDUCE_ARITH_TYPES(_op, _algo)                                    \
+  SHIM_REDUCE_DECLARE(char, char, _op, _algo)                                  \
+  SHIM_REDUCE_DECLARE(schar, signed char, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(short, short, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(int, int, _op, _algo)                                    \
+  SHIM_REDUCE_DECLARE(long, long, _op, _algo)                                  \
+  SHIM_REDUCE_DECLARE(longlong, long long, _op, _algo)                         \
+  SHIM_REDUCE_DECLARE(ptrdiff, ptrdiff_t, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(uchar, unsigned char, _op, _algo)                        \
+  SHIM_REDUCE_DECLARE(ushort, unsigned short, _op, _algo)                      \
+  SHIM_REDUCE_DECLARE(uint, unsigned int, _op, _algo)                          \
+  SHIM_REDUCE_DECLARE(ulong, unsigned long, _op, _algo)                        \
+  SHIM_REDUCE_DECLARE(ulonglong, unsigned long long, _op, _algo)               \
+  SHIM_REDUCE_DECLARE(int8, int8_t, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(int16, int16_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(int32, int32_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(int64, int64_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(uint8, uint8_t, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(uint16, uint16_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(uint32, uint32_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(uint64, uint64_t, _op, _algo)                            \
+  SHIM_REDUCE_DECLARE(size, size_t, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(float, float, _op, _algo)                                \
+  SHIM_REDUCE_DECLARE(double, double, _op, _algo)                              \
+  SHIM_REDUCE_DECLARE(longdouble, long double, _op, _algo)                     \
+  SHIM_REDUCE_DECLARE(complexf, float _Complex, _op, _algo)                    \
+  SHIM_REDUCE_DECLARE(complexd, double _Complex, _op, _algo)
+
+/*
+ * @brief Grouping macros for each algorithm
+ */
+#define SHIM_REDUCE_BITWISE_ALL(_algo)                                         \
+  SHIM_REDUCE_BITWISE_TYPES(or, _algo)                                         \
+  SHIM_REDUCE_BITWISE_TYPES(xor, _algo)                                        \
+  SHIM_REDUCE_BITWISE_TYPES(and, _algo)
+
+#define SHIM_REDUCE_MINMAX_ALL(_algo)                                          \
+  SHIM_REDUCE_MINMAX_TYPES(min, _algo)                                         \
+  SHIM_REDUCE_MINMAX_TYPES(max, _algo)
+
+#define SHIM_REDUCE_ARITH_ALL(_algo)                                           \
+  SHIM_REDUCE_ARITH_TYPES(sum, _algo)                                          \
+  SHIM_REDUCE_ARITH_TYPES(prod, _algo)
+
+#define SHIM_REDUCE_ALL(_algo)                                                 \
+  SHIM_REDUCE_BITWISE_ALL(_algo)                                               \
+  SHIM_REDUCE_MINMAX_ALL(_algo)                                                \
+  SHIM_REDUCE_ARITH_ALL(_algo)
+
+/* Instantiate all shmem_*_reduce wrappers */
+SHIM_REDUCE_ALL(linear)
+SHIM_REDUCE_ALL(binomial)
+SHIM_REDUCE_ALL(rec_dbl)
+SHIM_REDUCE_ALL(rabenseifner)
+SHIM_REDUCE_ALL(rabenseifner2)

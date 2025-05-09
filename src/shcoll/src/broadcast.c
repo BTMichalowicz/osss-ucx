@@ -632,6 +632,8 @@ DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
     /* Ensure broadcast completion */                                          \
     shmem_team_sync(team);                                                     \
                                                                                \
+    /* TODO: Reset psync buffer */                                             \
+                                                                               \
     return 0;                                                                  \
   }
 

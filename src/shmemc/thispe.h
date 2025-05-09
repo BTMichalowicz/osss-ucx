@@ -49,7 +49,23 @@ typedef struct collectives {
   char *alltoalls_mem;
   char *alltoalls_size;
 
-  char *reductions;
+  /* Individual reduction operations */
+  char *and_to_all;
+  char *or_to_all;
+  char *xor_to_all;
+  char *max_to_all;
+  char *min_to_all;
+  char *sum_to_all;
+  char *prod_to_all;
+
+  /* Individual team-based reduction operations */
+  char *and_reduce;
+  char *or_reduce;
+  char *xor_reduce;
+  char *max_reduce;
+  char *min_reduce;
+  char *sum_reduce;
+  char *prod_reduce;
 
   char *barrier;
 } shmemc_coll_t;

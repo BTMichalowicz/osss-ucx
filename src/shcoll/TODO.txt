@@ -1,3 +1,4 @@
+- Finish shcoll reduce implementation
 - Work reductions into table registration and shcoll library.
   They are currently in their own shim which is not ideal.
 
