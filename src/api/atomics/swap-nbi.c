@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file swap-nbi.c
+ * @brief Implementation of SHMEM non-blocking atomic swap operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -46,6 +51,17 @@
 #define shmem_ctx_ptrdiff_atomic_swap_nbi pshmem_ctx_ptrdiff_atomic_swap_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to define non-blocking atomic swap operations for different
+ * types
+ *
+ * These routines perform a non-blocking atomic swap operation. The operation
+ * atomically sets the value of a remote variable and returns its previous
+ * value. The operation is performed without protecting the mutex.
+ *
+ * @param _name The type name suffix for the function
+ * @param _type The actual C type for the operation
+ */
 #define SHMEM_CTX_TYPE_SWAP_NBI(_name, _type)                                  \
   void shmem_ctx_##_name##_atomic_swap_nbi(                                    \
       shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe) {     \
@@ -71,6 +87,13 @@ SHMEM_CTX_TYPE_SWAP_NBI(uint64, uint64_t)
 SHMEM_CTX_TYPE_SWAP_NBI(size, size_t)
 SHMEM_CTX_TYPE_SWAP_NBI(ptrdiff, ptrdiff_t)
 
+/**
+ * @brief Defines the API for non-blocking atomic swap operations
+ *
+ * These macros create the public API functions for non-blocking atomic swap
+ * operations for different types. Each function performs a swap operation
+ * without a context.
+ */
 API_DEF_AMO2_NBI(swap, float, float)
 API_DEF_AMO2_NBI(swap, double, double)
 API_DEF_AMO2_NBI(swap, int, int)

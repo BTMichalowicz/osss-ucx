@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file fetch-xor.c
+ * @brief Implementation of SHMEM atomic fetch-and-xor operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -33,6 +38,13 @@
 #define shmem_ctx_uint64_atomic_fetch_xor pshmem_ctx_uint64_atomic_fetch_xor
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Atomic fetch-and-xor operations for different integer types
+ *
+ * These routines perform an atomic fetch-and-xor operation. An atomic
+ * fetch-and-xor performs an XOR operation between the target and value
+ * and returns the value that had previously been at the target address.
+ */
 SHMEM_CTX_TYPE_FETCH_BITWISE(xor, uint, unsigned int)
 SHMEM_CTX_TYPE_FETCH_BITWISE(xor, ulong, unsigned long)
 SHMEM_CTX_TYPE_FETCH_BITWISE(xor, ulonglong, unsigned long long)

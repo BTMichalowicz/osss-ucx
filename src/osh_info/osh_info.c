@@ -1,4 +1,13 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file osh_info.c
+ * @brief OpenSHMEM information utility
+ *
+ * This file implements a command-line utility that displays information about
+ * the OpenSHMEM implementation, including version, build environment, and
+ * enabled features.
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 /* no config.h */
 
@@ -17,6 +26,12 @@ static char *progname;
 static char *default_prefix = "# ";
 static char *default_suffix = "";
 
+/**
+ * @brief Display usage information for the program
+ *
+ * Prints help text showing command-line options and their descriptions
+ * to stderr.
+ */
 static void output_help(void) {
   fprintf(stderr, "\n");
   fprintf(stderr, "Usage: %s [options]\n\n", progname);
@@ -43,6 +58,16 @@ static struct option opts[] = {{"version", no_argument, NULL, 'V'},
                                {"suffix", required_argument, NULL, 's'},
                                {NULL, no_argument, NULL, 0}};
 
+/**
+ * @brief Main program entry point
+ *
+ * Parses command line arguments and outputs OpenSHMEM implementation
+ * information based on the requested options.
+ *
+ * @param argc Number of command line arguments
+ * @param argv Array of command line argument strings
+ * @return EXIT_SUCCESS on success, EXIT_FAILURE on error
+ */
 int main(int argc, char *argv[]) {
   FILE *out = stdout;
   int just_version = 0;

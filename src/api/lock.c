@@ -7,6 +7,15 @@
  *    Copyright (c) 2003-2005 by Quadrics Ltd.
  */
 
+/**
+ * @file lock.c
+ * @brief Implementation of OpenSHMEM distributed locking routines
+ *
+ * This file contains implementations of distributed locking operations that
+ * provide mutual exclusion across PEs. The implementation is based on the
+ * MCS lock algorithm.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
@@ -32,22 +41,40 @@ enum {
   SHMEM_LOCK_ACQUIRED
 };
 
+/**
+ * @brief Lock data structure that combines lock state and next PE
+ *
+ * This union allows the lock to be manipulated both as separate fields
+ * and as a single atomic value.
+ */
 typedef union shmem_lock {
   struct data_split {
-    int16_t locked;
-    int16_t next;
+    int16_t locked; /**< Lock state */
+    int16_t next;   /**< Next PE in lock queue */
   } d;
-  int32_t blob; /* for AMOs & owner transfer */
+  int32_t blob; /**< Combined value for atomic operations */
 } shmem_lock_t;
 
 /*
  * spread lock ownership around PEs
  */
 
+/**
+ * @brief Calculate lock owner PE based on address
+ *
+ * @param addr Address of the lock
+ * @return PE number that should own this lock
+ */
 inline static int get_owner_spread(uint64_t addr) {
   return (addr >> 3) % shmemc_n_pes();
 }
 
+/**
+ * @brief Determine the owner PE for a lock
+ *
+ * @param addr Address of the lock
+ * @return PE number that owns this lock
+ */
 inline static int lock_owner(void *addr) {
   const uint64_t la = (const uint64_t)addr;
   int owner;
@@ -76,26 +103,27 @@ inline static int lock_owner(void *addr) {
  * "cmp" contains the claim and connects the 2 phases
  */
 
-/*
+/**
+ * @brief Common atomic lock operation
  *
- * lock requests
- *
+ * @param lock Lock to operate on
+ * @param cond Expected value for compare-swap
+ * @param value New value to swap in
+ * @param cmp Result of operation
  */
-
-/*
- * common lock action
- */
-
 inline static void try_lock_action(shmem_lock_t *lock, int cond, int value,
                                    shmem_lock_t *cmp) {
   cmp->blob = shmem_int_atomic_compare_swap(&(lock->blob), cond, value,
                                             lock_owner(lock));
 }
 
-/*
- * attempt to get set/clear a lock
+/**
+ * @brief Attempt to request a lock
+ *
+ * @param lock Lock to request
+ * @param me Current PE
+ * @param cmp Operation result
  */
-
 inline static void try_request_lock(shmem_lock_t *lock, int me,
                                     shmem_lock_t *cmp) {
   const shmem_lock_t tmp = {.d.locked = SHMEM_LOCK_ACQUIRED, .d.next = me};
@@ -103,6 +131,13 @@ inline static void try_request_lock(shmem_lock_t *lock, int me,
   try_lock_action(lock, SHMEM_LOCK_RESET, tmp.blob, cmp);
 }
 
+/**
+ * @brief Attempt to clear a lock
+ *
+ * @param lock Lock to clear
+ * @param me Current PE
+ * @param cmp Operation result
+ */
 inline static void try_clear_lock(shmem_lock_t *lock, int me,
                                   shmem_lock_t *cmp) {
   const shmem_lock_t tmp = {.d.locked = SHMEM_LOCK_ACQUIRED, .d.next = me};
@@ -110,10 +145,13 @@ inline static void try_clear_lock(shmem_lock_t *lock, int me,
   try_lock_action(lock, tmp.blob, SHMEM_LOCK_RESET, cmp);
 }
 
-/*
- * request phase for each routine
+/**
+ * @brief Request phase for set_lock operation
+ *
+ * @param lock Lock to set
+ * @param me Current PE
+ * @param cmp Operation result
  */
-
 inline static void set_lock_request(shmem_lock_t *lock, int me,
                                     shmem_lock_t *cmp) {
   /* push my claim into the owner */
@@ -122,12 +160,27 @@ inline static void set_lock_request(shmem_lock_t *lock, int me,
   } while (cmp->blob != SHMEM_LOCK_RESET);
 }
 
+/**
+ * @brief Request phase for test_lock operation
+ *
+ * @param lock Lock to test
+ * @param me Current PE
+ * @param cmp Operation result
+ */
 inline static void test_lock_request(shmem_lock_t *lock, int me,
                                      shmem_lock_t *cmp) {
   /* if owner is unset, grab the lock */
   try_request_lock(lock, me, cmp);
 }
 
+/**
+ * @brief Request phase for clear_lock operation
+ *
+ * @param node Local lock data
+ * @param lock Lock to clear
+ * @param me Current PE
+ * @param cmp Operation result
+ */
 inline static void clear_lock_request(shmem_lock_t *node, shmem_lock_t *lock,
                                       int me, shmem_lock_t *cmp) {
   if (node->d.next == SHMEM_LOCK_FREE) {
@@ -135,10 +188,13 @@ inline static void clear_lock_request(shmem_lock_t *node, shmem_lock_t *lock,
   }
 }
 
-/*
- * lock execution
+/**
+ * @brief Execute phase for set_lock operation
+ *
+ * @param node Local lock data
+ * @param me Current PE
+ * @param cmp Operation result
  */
-
 inline static void set_lock_execute(shmem_lock_t *node, int me,
                                     shmem_lock_t *cmp) {
   /* tail */
@@ -157,6 +213,14 @@ inline static void set_lock_execute(shmem_lock_t *node, int me,
   }
 }
 
+/**
+ * @brief Execute phase for test_lock operation
+ *
+ * @param node Local lock data
+ * @param me Current PE
+ * @param cmp Operation result
+ * @return 0 on success, 1 if lock not acquired
+ */
 inline static int test_lock_execute(shmem_lock_t *node, int me,
                                     shmem_lock_t *cmp) {
   if (cmp->blob == SHMEM_LOCK_RESET) {
@@ -169,6 +233,13 @@ inline static int test_lock_execute(shmem_lock_t *node, int me,
   }
 }
 
+/**
+ * @brief Execute phase for clear_lock operation
+ *
+ * @param node Local lock data
+ * @param me Current PE
+ * @param cmp Operation result
+ */
 inline static void clear_lock_execute(shmem_lock_t *node, int me,
                                       shmem_lock_t *cmp) {
   /* any more chainers? */
@@ -186,10 +257,13 @@ inline static void clear_lock_execute(shmem_lock_t *node, int me,
   shmem_short_p(&(node->d.locked), SHMEM_LOCK_RESET, node->d.next);
 }
 
-/*
- * internal blocking calls
+/**
+ * @brief Internal blocking set_lock implementation
+ *
+ * @param node Local lock data
+ * @param lock Lock to set
+ * @param me Current PE
  */
-
 inline static void set_lock(shmem_lock_t *node, shmem_lock_t *lock, int me) {
   shmem_lock_t t;
 
@@ -197,6 +271,13 @@ inline static void set_lock(shmem_lock_t *node, shmem_lock_t *lock, int me) {
   set_lock_execute(node, me, &t);
 }
 
+/**
+ * @brief Internal blocking clear_lock implementation
+ *
+ * @param node Local lock data
+ * @param lock Lock to clear
+ * @param me Current PE
+ */
 inline static void clear_lock(shmem_lock_t *node, shmem_lock_t *lock, int me) {
   shmem_lock_t t;
 
@@ -207,6 +288,14 @@ inline static void clear_lock(shmem_lock_t *node, shmem_lock_t *lock, int me) {
   clear_lock_execute(node, me, &t);
 }
 
+/**
+ * @brief Internal blocking test_lock implementation
+ *
+ * @param node Local lock data
+ * @param lock Lock to test
+ * @param me Current PE
+ * @return 0 on success, non-zero if lock not acquired
+ */
 inline static int test_lock(shmem_lock_t *node, shmem_lock_t *lock, int me) {
   shmem_lock_t t;
 
@@ -237,6 +326,14 @@ inline static int test_lock(shmem_lock_t *node, shmem_lock_t *lock, int me) {
   shmem_lock_t *node = base + 1;                                               \
   shmem_lock_t *lock = base + 0
 
+/**
+ * @brief Set (acquire) a distributed lock
+ *
+ * @param lp Pointer to the lock
+ *
+ * Blocks until the lock is acquired. Multiple PEs calling this routine
+ * will be queued in order of arrival.
+ */
 void shmem_set_lock(long *lp) {
   UNPACK();
 
@@ -249,6 +346,14 @@ void shmem_set_lock(long *lp) {
   SHMEMT_MUTEX_NOPROTECT(set_lock(node, lock, shmemc_my_pe()));
 }
 
+/**
+ * @brief Release a distributed lock
+ *
+ * @param lp Pointer to the lock
+ *
+ * Releases a lock previously acquired by shmem_set_lock. If any other PEs
+ * are waiting for the lock, the first in line will acquire it.
+ */
 void shmem_clear_lock(long *lp) {
   UNPACK();
 
@@ -261,6 +366,15 @@ void shmem_clear_lock(long *lp) {
   SHMEMT_MUTEX_NOPROTECT(clear_lock(node, lock, shmemc_my_pe()));
 }
 
+/**
+ * @brief Attempt to acquire a distributed lock
+ *
+ * @param lp Pointer to the lock
+ * @return 0 if lock acquired, non-zero otherwise
+ *
+ * Non-blocking attempt to acquire a lock. Returns immediately if lock
+ * cannot be acquired.
+ */
 int shmem_test_lock(long *lp) {
   int ret;
   UNPACK();

@@ -1,4 +1,13 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file asr.c
+ * @brief Address Space Randomization (ASR) checking functionality
+ *
+ * This file implements checks for ASR/ASLR mismatch between requested and
+ * actual settings. Currently Linux-specific implementation. See
+ * https://wiki.freebsd.org/ASLR for FreeBSD information.
+ *
+ * @copyright See LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -18,11 +27,28 @@
  *   (see https://wiki.freebsd.org/ASLR)
  */
 
+/** Name of kernel randomization control variable */
 #define RAND_VARIABLE "randomize_va_space"
+
+/** Full path to kernel randomization control file */
 #define RAND_FILE "/proc/sys/kernel/" RAND_VARIABLE
 
+/** Special value to query personality without changing it */
 #define PERSONALITY_QUERY 0xffffffff
 
+/**
+ * @brief Check for mismatch between requested ASR settings and system state
+ *
+ * Tests if ASR/ASLR is enabled on the system when aligned addresses were
+ * requested. Only the leader process performs this check.
+ *
+ * The check involves:
+ * 1. Querying process personality flags for ADDR_NO_RANDOMIZE
+ * 2. Reading the kernel's randomize_va_space setting
+ * 3. Warning if randomization appears to be enabled
+ *
+ * @return void
+ */
 void shmemu_test_asr_mismatch(void) {
   if (proc.leader) {
     int p;

@@ -1,5 +1,13 @@
 /* For license: see LICENSE file at top-level */
 
+/**
+ * @file init.c
+ * @brief Implementation of OpenSHMEM initialization and finalization routines
+ *
+ * This file contains implementations of routines to initialize and finalize
+ * the OpenSHMEM library, including thread initialization and cleanup.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
@@ -36,6 +44,13 @@
  * finish SHMEM portion of program, release resources
  */
 
+/**
+ * @brief Helper function to finalize the OpenSHMEM library
+ *
+ * This internal function handles the cleanup of OpenSHMEM resources,
+ * including thread management, communications, collectives, and other
+ * subsystems.
+ */
 static void finalize_helper(void) {
   threadwrap_thread_t this;
 
@@ -71,6 +86,17 @@ static void finalize_helper(void) {
   proc.status = SHMEMC_PE_SHUTDOWN;
 }
 
+/**
+ * @brief Helper function to initialize the OpenSHMEM library with threading
+ * support
+ *
+ * @param requested The requested threading level
+ * @param provided Pointer to store the provided threading level
+ * @return 0 on success, non-zero on failure
+ *
+ * This internal function handles the initialization of OpenSHMEM resources,
+ * including communications, thread management, and other subsystems.
+ */
 inline static int init_thread_helper(int requested, int *provided) {
   int s;
 
@@ -156,18 +182,48 @@ inline static int init_thread_helper(int requested, int *provided) {
  * initialize/finalize SHMEM portion of program with threading model
  */
 
+/**
+ * @brief Finalize the OpenSHMEM library
+ *
+ * This routine releases all resources used by the OpenSHMEM library.
+ * It must be the last OpenSHMEM routine called in a program.
+ */
 void shmem_finalize(void) { finalize_helper(); }
 
+/**
+ * @brief Initialize the OpenSHMEM library with threading support
+ *
+ * @param requested The requested threading level
+ * @param provided Pointer to store the provided threading level
+ * @return 0 on success, non-zero on failure
+ *
+ * Initialize the OpenSHMEM library with a specified threading level.
+ */
 int shmem_init_thread(int requested, int *provided) {
   return init_thread_helper(requested, provided);
 }
 
+/**
+ * @brief Initialize the OpenSHMEM library
+ *
+ * Initialize the OpenSHMEM library with single threading level.
+ */
 void shmem_init(void) { (void)init_thread_helper(SHMEM_THREAD_SINGLE, NULL); }
 
 #ifdef PR470
 
+/**
+ * @brief Check if OpenSHMEM library is initialized
+ *
+ * @return Non-zero if initialized, 0 otherwise
+ */
 int shmem_initialized(void) { return proc.refcount > 0; }
 
+/**
+ * @brief Check if OpenSHMEM library is finalized
+ *
+ * @return Non-zero if finalized, 0 otherwise
+ */
 int shmem_finalized(void) { return proc.refcount < 1; }
 
 #endif /* PR470 */

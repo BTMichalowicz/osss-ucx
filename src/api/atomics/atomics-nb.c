@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file atomics-nb.c
+ * @brief Implementation of SHMEM non-blocking atomic operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -17,6 +22,13 @@
  * -- context-free
  */
 
+/**
+ * @brief Macro to define non-blocking atomic operations with const target
+ *
+ * @param _op Operation name
+ * @param _name Type name string
+ * @param _type Data type
+ */
 #define API_DEF_CONST_AMO1_NBI(_op, _name, _type)                              \
   void shmem_##_name##_atomic_##_op##_nbi(_type *fetch, const _type *target,   \
                                           int pe) {                            \
@@ -24,6 +36,13 @@
                                            pe);                                \
   }
 
+/**
+ * @brief Macro to define non-blocking atomic operations
+ *
+ * @param _op Operation name
+ * @param _name Type name string
+ * @param _type Data type
+ */
 #define API_DEF_AMO1_NBI(_op, _name, _type)                                    \
   void shmem_##_name##_atomic_##_op##_nbi(_type *fetch, _type *target,         \
                                           int pe) {                            \
@@ -31,6 +50,13 @@
                                            pe);                                \
   }
 
+/**
+ * @brief Macro to define non-blocking atomic operations with value parameter
+ *
+ * @param _op Operation name
+ * @param _name Type name string
+ * @param _type Data type
+ */
 #define API_DEF_AMO2_NBI(_op, _name, _type)                                    \
   void shmem_##_name##_atomic_##_op##_nbi(_type *fetch, _type *target,         \
                                           _type value, int pe) {               \
@@ -448,7 +474,17 @@ API_DEF_AMO2_NBI(fetch_and, uint64, uint64_t)
 /*
  * fetch-bitwise NBI
  */
-
+/**
+ * @brief Macro to define non-blocking atomic fetch-and-bitwise operations
+ *
+ * @param _opname The bitwise operation name (xor, or, and)
+ * @param _name Type name string
+ * @param _type Data type
+ *
+ * Defines a function that atomically performs a bitwise operation on a remote
+ * variable and returns the old value in a non-blocking manner. The operation is
+ * performed without protecting the mutex.
+ */
 #define SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(_opname, _name, _type)                \
   void shmem_ctx_##_name##_atomic_fetch_##_opname##_nbi(                       \
       shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe) {     \

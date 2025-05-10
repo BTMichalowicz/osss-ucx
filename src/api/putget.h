@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file putget.h
+ * @brief OpenSHMEM put/get operation declarations and definitions
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifndef _SHMEM_PUTGET_H
 #define _SHMEM_PUTGET_H 1
@@ -7,6 +12,11 @@
 #include "shmemc.h"
 #include "shmem_mutex.h"
 
+/**
+ * @brief Macro to define a typed put operation with a context
+ * @param _name Type name
+ * @param _type C type
+ */
 #define SHMEM_CTX_TYPED_PUT(_name, _type)                                      \
   void shmem_ctx_##_name##_put(shmem_ctx_t ctx, _type *dest, const _type *src, \
                                size_t nelems, int pe) {                        \
@@ -22,6 +32,11 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put(ctx, dest, src, nb, pe));            \
   }
 
+/**
+ * @brief Macro to define a typed get operation with a context
+ * @param _name Type name
+ * @param _type C type
+ */
 #define SHMEM_CTX_TYPED_GET(_name, _type)                                      \
   void shmem_ctx_##_name##_get(shmem_ctx_t ctx, _type *dest, const _type *src, \
                                size_t nelems, int pe) {                        \
@@ -37,6 +52,10 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get(ctx, dest, src, nb, pe));            \
   }
 
+/**
+ * @brief Macro to define a sized put operation with a context
+ * @param _size Size in bits
+ */
 #define SHMEM_CTX_SIZED_PUT(_size)                                             \
   void shmem_ctx_put##_size(shmem_ctx_t ctx, void *dest, const void *src,      \
                             size_t nelems, int pe) {                           \
@@ -52,6 +71,10 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put(ctx, dest, src, nb, pe));            \
   }
 
+/**
+ * @brief Macro to define a sized get operation with a context
+ * @param _size Size in bits
+ */
 #define SHMEM_CTX_SIZED_GET(_size)                                             \
   void shmem_ctx_get##_size(shmem_ctx_t ctx, void *dest, const void *src,      \
                             size_t nelems, int pe) {                           \
@@ -67,6 +90,9 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get(ctx, dest, src, nb, pe));            \
   }
 
+/**
+ * @brief Macro to define a memory put operation with a context
+ */
 #define SHMEM_CTX_PUTMEM()                                                     \
   void shmem_ctx_putmem(shmem_ctx_t ctx, void *dest, const void *src,          \
                         size_t nelems, int pe) {                               \
@@ -80,6 +106,9 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put(ctx, dest, src, nelems, pe));        \
   }
 
+/**
+ * @brief Macro to define a memory get operation with a context
+ */
 #define SHMEM_CTX_GETMEM()                                                     \
   void shmem_ctx_getmem(shmem_ctx_t ctx, void *dest, const void *src,          \
                         size_t nelems, int pe) {                               \
@@ -93,6 +122,11 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get(ctx, dest, src, nelems, pe));        \
   }
 
+/**
+ * @brief Macro to define a typed strided put operation with a context
+ * @param _name Type name
+ * @param _type C type
+ */
 #define SHMEM_CTX_TYPED_IPUT(_name, _type)                                     \
   void shmem_ctx_##_name##_iput(shmem_ctx_t ctx, _type *target,                \
                                 const _type *source, ptrdiff_t tst,            \
@@ -117,6 +151,11 @@
     }                                                                          \
   }
 
+/**
+ * @brief Macro to define a typed strided get operation with a context
+ * @param _name Type name
+ * @param _type C type
+ */
 #define SHMEM_CTX_TYPED_IGET(_name, _type)                                     \
   void shmem_ctx_##_name##_iget(shmem_ctx_t ctx, _type *target,                \
                                 const _type *source, ptrdiff_t tst,            \
@@ -141,6 +180,10 @@
     }                                                                          \
   }
 
+/**
+ * @brief Macro to define a sized strided put operation with a context
+ * @param _size Size in bits
+ */
 #define SHMEM_CTX_SIZED_IPUT(_size)                                            \
   void shmem_ctx_iput##_size(shmem_ctx_t ctx, void *target,                    \
                              const void *source, ptrdiff_t tst, ptrdiff_t sst, \
@@ -168,6 +211,10 @@
     }                                                                          \
   }
 
+/**
+ * @brief Macro to define a sized strided get operation with a context
+ * @param _size Size in bits
+ */
 #define SHMEM_CTX_SIZED_IGET(_size)                                            \
   void shmem_ctx_iget##_size(shmem_ctx_t ctx, void *target,                    \
                              const void *source, ptrdiff_t tst, ptrdiff_t sst, \
@@ -195,6 +242,11 @@
     }                                                                          \
   }
 
+/**
+ * @brief Macro to define a typed non-blocking put operation with a context
+ * @param _name Type name
+ * @param _type C type
+ */
 #define SHMEM_CTX_TYPED_PUT_NBI(_name, _type)                                  \
   void shmem_ctx_##_name##_put_nbi(shmem_ctx_t ctx, _type *dest,               \
                                    const _type *src, size_t nelems, int pe) {  \
@@ -210,6 +262,11 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put_nbi(ctx, dest, src, nb, pe));        \
   }
 
+/**
+ * @brief Macro to define a typed non-blocking get operation with a context
+ * @param _name Type name
+ * @param _type C type
+ */
 #define SHMEM_CTX_TYPED_GET_NBI(_name, _type)                                  \
   void shmem_ctx_##_name##_get_nbi(shmem_ctx_t ctx, _type *dest,               \
                                    const _type *src, size_t nelems, int pe) {  \
@@ -225,6 +282,10 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get_nbi(ctx, dest, src, nb, pe));        \
   }
 
+/**
+ * @brief Macro to define a sized non-blocking put operation with a context
+ * @param _size Size in bits
+ */
 #define SHMEM_CTX_SIZED_PUT_NBI(_size)                                         \
   void shmem_ctx_put##_size##_nbi(shmem_ctx_t ctx, void *dest,                 \
                                   const void *src, size_t nelems, int pe) {    \
@@ -240,6 +301,10 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put_nbi(ctx, dest, src, nb, pe));        \
   }
 
+/**
+ * @brief Macro to define a sized non-blocking get operation with a context
+ * @param _size Size in bits
+ */
 #define SHMEM_CTX_SIZED_GET_NBI(_size)                                         \
   void shmem_ctx_get##_size##_nbi(shmem_ctx_t ctx, void *dest,                 \
                                   const void *src, size_t nelems, int pe) {    \
@@ -255,6 +320,9 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get_nbi(ctx, dest, src, nb, pe));        \
   }
 
+/**
+ * @brief Macro to define a memory non-blocking put operation with a context
+ */
 #define SHMEM_CTX_PUTMEM_NBI()                                                 \
   void shmem_ctx_putmem_nbi(shmem_ctx_t ctx, void *dest, const void *src,      \
                             size_t nelems, int pe) {                           \
@@ -268,6 +336,10 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put_nbi(ctx, dest, src, nelems, pe));    \
   }
 
+/**
+ * @brief Macro to define a memory non-blocking get operation with a context
+ * @param _op Operation type
+ */
 #define SHMEM_CTX_GETMEM_NBI(_op)                                              \
   void shmem_ctx_getmem_nbi(shmem_ctx_t ctx, void *dest, const void *src,      \
                             size_t nelems, int pe) {                           \
@@ -281,6 +353,11 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get_nbi(ctx, dest, src, nelems, pe));    \
   }
 
+/**
+ * @brief Macro to define a typed put operation with a context for single values
+ * @param _name Type name
+ * @param _type C type
+ */
 #define SHMEM_CTX_TYPED_P(_name, _type)                                        \
   void shmem_ctx_##_name##_p(shmem_ctx_t ctx, _type *addr, _type val,          \
                              int pe) {                                         \
@@ -294,6 +371,11 @@
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put(ctx, addr, &val, sizeof(val), pe));  \
   }
 
+/**
+ * @brief Macro to define a typed get operation with a context for single values
+ * @param _name Type name
+ * @param _type C type
+ */
 #define SHMEM_CTX_TYPED_G(_name, _type)                                        \
   _type shmem_ctx_##_name##_g(shmem_ctx_t ctx, const _type *addr, int pe) {    \
     _type val;                                                                 \
@@ -313,6 +395,11 @@
  * operating on implicit default context
  */
 
+/**
+ * @brief Macro to declare typed put operations
+ * @param _name Type name
+ * @param _type C type
+ */
 #define API_DECL_TYPED_PUT(_name, _type)                                       \
   void shmem_##_name##_put(_type *dest, const _type *src, size_t nelems,       \
                            int pe) {                                           \
@@ -340,6 +427,11 @@
                              pe);                                              \
   }
 
+/**
+ * @brief Macro to declare typed get operations
+ * @param _name Type name
+ * @param _type C type
+ */
 #define API_DECL_TYPED_GET(_name, _type)                                       \
   void shmem_##_name##_get(_type *dest, const _type *src, size_t nelems,       \
                            int pe) {                                           \
@@ -367,6 +459,10 @@
                              pe);                                              \
   }
 
+/**
+ * @brief Macro to declare sized put operations
+ * @param _size Size in bits
+ */
 #define API_DECL_SIZED_PUT(_size)                                              \
   void shmem_put##_size(void *dest, const void *src, size_t nelems, int pe) {  \
     SHMEMU_CHECK_INIT();                                                       \
@@ -392,6 +488,10 @@
     shmem_ctx_iput##_size(SHMEM_CTX_DEFAULT, dest, src, tst, sst, nelems, pe); \
   }
 
+/**
+ * @brief Macro to declare sized get operations
+ * @param _size Size in bits
+ */
 #define API_DECL_SIZED_GET(_size)                                              \
   void shmem_get##_size(void *dest, const void *src, size_t nelems, int pe) {  \
     SHMEMU_CHECK_INIT();                                                       \
@@ -417,6 +517,9 @@
     shmem_ctx_iget##_size(SHMEM_CTX_DEFAULT, dest, src, tst, sst, nelems, pe); \
   }
 
+/**
+ * @brief Macro to declare memory put operations
+ */
 #define API_DECL_PUTMEM()                                                      \
   void shmem_putmem(void *dest, const void *src, size_t nelems, int pe) {      \
     SHMEMU_CHECK_INIT();                                                       \
@@ -433,6 +536,9 @@
     shmem_ctx_putmem_nbi(SHMEM_CTX_DEFAULT, dest, src, nelems, pe);            \
   }
 
+/**
+ * @brief Macro to declare memory get operations
+ */
 #define API_DECL_GETMEM()                                                      \
   void shmem_getmem(void *dest, const void *src, size_t nelems, int pe) {      \
     SHMEMU_CHECK_INIT();                                                       \
@@ -449,6 +555,11 @@
     shmem_ctx_getmem_nbi(SHMEM_CTX_DEFAULT, dest, src, nelems, pe);            \
   }
 
+/**
+ * @brief Macro to declare typed put operations
+ * @param _name Type name
+ * @param _type C type
+ */
 #define API_DECL_TYPED_P(_name, _type)                                         \
   void shmem_##_name##_p(_type *dest, _type src, int pe) {                     \
     SHMEMU_CHECK_INIT();                                                       \
@@ -458,6 +569,11 @@
     shmem_ctx_##_name##_put(SHMEM_CTX_DEFAULT, dest, &src, 1, pe);             \
   }
 
+/**
+ * @brief Macro to declare typed get operations
+ * @param _name Type name
+ * @param _type C type
+ */
 #define API_DECL_TYPED_G(_name, _type)                                         \
   _type shmem_##_name##_g(const _type *src, int pe) {                          \
     _type val;                                                                 \

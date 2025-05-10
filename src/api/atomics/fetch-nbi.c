@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file fetch-nbi.c
+ * @brief Implementation of SHMEM non-blocking atomic fetch operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -55,6 +60,18 @@
  * NB currently using blocking as first hack
  */
 
+/**
+ * @brief Macro to define non-blocking atomic fetch operations
+ *
+ * @param _name Type name string
+ * @param _type Data type
+ *
+ * Defines a function that performs a non-blocking atomic fetch operation.
+ * The operation retrieves the value of a remote variable without blocking.
+ * The operation is performed without protecting the mutex.
+ *
+ * Note: Currently implemented using blocking operations as a first hack.
+ */
 #define SHMEM_CTX_TYPE_FETCH_NBI(_name, _type)                                 \
   void shmem_ctx_##_name##_atomic_fetch_nbi(shmem_ctx_t ctx, _type *fetch,     \
                                             const _type *target, int pe) {     \
@@ -77,6 +94,12 @@ SHMEM_CTX_TYPE_FETCH_NBI(uint64, uint64_t)
 SHMEM_CTX_TYPE_FETCH_NBI(size, size_t)
 SHMEM_CTX_TYPE_FETCH_NBI(ptrdiff, ptrdiff_t)
 
+/**
+ * @brief Default context non-blocking atomic fetch operations
+ *
+ * These operations perform the same functionality as the context-based
+ * operations above but use the default SHMEM context.
+ */
 API_DEF_CONST_AMO1_NBI(fetch, float, float)
 API_DEF_CONST_AMO1_NBI(fetch, double, double)
 API_DEF_CONST_AMO1_NBI(fetch, int, int)

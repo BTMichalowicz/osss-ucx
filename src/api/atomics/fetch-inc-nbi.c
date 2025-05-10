@@ -1,4 +1,10 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file fetch-inc-nbi.c
+ * @brief Implementation of SHMEM non-blocking atomic fetch-and-increment
+ * operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -45,6 +51,16 @@
 #define shmem_ptrdiff_atomic_fetch_inc_nbi pshmem_ptrdiff_atomic_fetch_inc_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to define non-blocking atomic fetch-and-increment operations
+ *
+ * @param _name Type name string
+ * @param _type Data type
+ *
+ * Defines a function that atomically increments a remote variable by 1 and
+ * returns the old value in a non-blocking manner. The operation is performed
+ * without protecting the mutex.
+ */
 #define SHMEM_CTX_TYPE_FINC_NBI(_name, _type)                                  \
   void shmem_ctx_##_name##_atomic_fetch_inc_nbi(shmem_ctx_t ctx, _type *fetch, \
                                                 _type *target, int pe) {       \

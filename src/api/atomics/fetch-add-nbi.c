@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file fetch-add-nbi.c
+ * @brief Implementation of SHMEM non-blocking atomic fetch-and-add operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -45,6 +50,16 @@
 #define shmem_ptrdiff_atomic_fetch_add_nbi pshmem_ptrdiff_atomic_fetch_add_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to define non-blocking atomic fetch-and-add operations
+ *
+ * @param _name Type name string
+ * @param _type Data type
+ *
+ * Defines a function that atomically adds a value to a remote variable and
+ * returns the old value in a non-blocking manner. The operation is performed
+ * without protecting the mutex.
+ */
 #define SHMEM_CTX_TYPE_FADD_NBI(_name, _type)                                  \
   void shmem_ctx_##_name##_atomic_fetch_add_nbi(                               \
       shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe) {     \

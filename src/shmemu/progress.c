@@ -1,14 +1,23 @@
-/* For license: see LICENSE file at top-level */
-
-/*
- * This code only gets activated if UCX's emulation mode is being
+/**
+ * @file progress.c
+ * @brief Progress thread implementation for OpenSHMEM
+ *
+ * This file implements a background progress thread for handling communication
+ * operations when using UCX's emulation mode. The progress thread is only
+ * activated when:
+ * - Running on legacy hardware or without direct transport-supported RDMA/AMO
+ * - Explicitly enabled by the user
+ *
+ * @note This code only gets activated if UCX's emulation mode is being
  * used: where we're running on legacy hardware, or where we don't
  * have direct transport-supported RDMA and AMO.
  *
- * Further, this is only enabled if asked for by the end-user.
+ * @note Further, this is only enabled if asked for by the end-user.
  *
- * Hope in the future to fine-tune this if UCX can tell us whether its
- * enmulation mode is being used.
+ * @note Hope in the future to fine-tune this if UCX can tell us whether its
+ * emulation mode is being used.
+ *
+ * @copyright See LICENSE file at top-level
  */
 
 #ifdef HAVE_CONFIG_H
@@ -32,32 +41,30 @@
 #endif /* _POSIX_C_SOURCE */
 #include <time.h>
 
-/*
- * new thread for progress-o-matic
- */
-
+/** Thread handle for progress thread */
 static threadwrap_thread_t thr;
 
-/*
- * for refractory back-off (nanoseconds)
- *
- * N.B. mutable in case we want to look at adaptive polling
+/**
+ * Delay between progress calls in nanoseconds
+ * @note mutable in case we want to look at adaptive polling
  */
-
 static long delay_ns;
 
-/*
- * polling sentinel
- */
-
+/** Flag to control progress thread execution */
 static volatile bool done = false;
 
-/*
- * Does comms. service until told not to
- */
-
+/** Nanoseconds per second constant */
 static const long billion = 1e9;
 
+/**
+ * @brief Progress thread main function
+ *
+ * Continuously calls communication progress function with configurable delay
+ * until signaled to stop.
+ *
+ * @param args Thread arguments (unused)
+ * @return NULL
+ */
 static void *start_progress(void *args) {
   NO_WARN_UNUSED(args);
 
@@ -73,8 +80,13 @@ static void *start_progress(void *args) {
   return NULL;
 }
 
-/*
- * return 1 if progress required, 0 otherwise
+/**
+ * @brief Check if progress thread should be enabled for this PE
+ *
+ * Parses environment configuration to determine if progress thread
+ * should run on this PE.
+ *
+ * @return 1 if progress required, 0 otherwise
  */
 static int check_if_progress_required(void) {
   int *res = NULL;
@@ -128,10 +140,11 @@ out:
   return ret;
 }
 
-/*
- * start the servicer
+/**
+ * @brief Initialize progress thread
+ *
+ * Checks if progress thread is required and starts it if needed.
  */
-
 void shmemu_progress_init(void) {
   proc.progress_thread = check_if_progress_required();
 
@@ -149,10 +162,11 @@ void shmemu_progress_init(void) {
   }
 }
 
-/*
- * stop the servicer
+/**
+ * @brief Finalize progress thread
+ *
+ * Signals progress thread to stop and waits for it to terminate.
  */
-
 void shmemu_progress_finalize(void) {
   if (proc.progress_thread) {
     int s;
@@ -165,8 +179,11 @@ void shmemu_progress_finalize(void) {
   }
 }
 
-/*
- * allow changing the delay
+/**
+ * @brief Set progress thread delay
+ *
+ * Updates the delay between progress calls.
+ *
+ * @param newdelay New delay value in nanoseconds
  */
-
 void shmemu_progress_set_delay(long newdelay) { delay_ns = newdelay; }

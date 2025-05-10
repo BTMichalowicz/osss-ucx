@@ -40,6 +40,26 @@
 #define shmem_ptrdiff_test_all_vector pshmem_ptrdiff_test_all_vector
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Generic test macro for different data types that tests if all elements
+ * in a vector meet specified comparison criteria
+ *
+ * @param _opname Base name of the operation (e.g. short, int, etc)
+ * @param _type C data type for the operation
+ * @param _size Size in bits (16, 32, or 64)
+ *
+ * Tests if all elements in a vector meet specified comparison criteria. The
+ * function returns immediately without blocking.
+ *
+ * @param ivars Array of variables to be tested
+ * @param nelems Number of elements in the array
+ * @param status Array indicating which elements to test (1=test, 0=skip)
+ * @param cmp Comparison operator (SHMEM_CMP_EQ, NE, GT, LE, LT, GE)
+ * @param cmp_values Array of values to compare against
+ *
+ * @return Returns 1 if all selected comparisons evaluate to true, 0 if any
+ * evaluate to false
+ */
 #define SHMEM_TYPE_TEST_ALL_VECTOR(_opname, _type, _size)                      \
   int shmem_##_opname##_test_all_vector(_type *ivars, size_t nelems,           \
                                         const int *status, int cmp,            \

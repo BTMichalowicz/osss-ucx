@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file inc.c
+ * @brief Implementation of SHMEM atomic increment operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -36,6 +41,16 @@
 #define shmem_ctx_ptrdiff_atomic_inc pshmem_ctx_ptrdiff_atomic_inc
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Implements atomic increment operations for different integer types
+ *
+ * These macros define atomic increment operations that atomically increment
+ * a remote variable by 1. The operations are performed without protecting
+ * the mutex.
+ *
+ * @param _name The type name suffix for the function
+ * @param _type The actual C type for the operation
+ */
 #define SHMEM_CTX_TYPE_INC(_name, _type)                                       \
   void shmem_ctx_##_name##_atomic_inc(shmem_ctx_t ctx, _type *target,          \
                                       int pe) {                                \
@@ -58,6 +73,13 @@ SHMEM_CTX_TYPE_INC(uint64, uint64_t)
 SHMEM_CTX_TYPE_INC(size, size_t)
 SHMEM_CTX_TYPE_INC(ptrdiff, ptrdiff_t)
 
+/**
+ * @brief Defines the API for atomic increment operations
+ *
+ * These macros create the public API functions for atomic increment operations
+ * for different integer types. Each function performs an increment operation
+ * without a context.
+ */
 API_DEF_VOID_AMO1(inc, int, int)
 API_DEF_VOID_AMO1(inc, long, long)
 API_DEF_VOID_AMO1(inc, longlong, long long)

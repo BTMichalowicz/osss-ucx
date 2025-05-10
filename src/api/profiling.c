@@ -9,15 +9,31 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-/*
- * stub for the profiling (PSHMEM) interface
+/**
+ * @file profiling.c
+ * @brief Implementation of OpenSHMEM profiling interface
  *
- * See OpenSHMEM 1.5 spec, p. 141.  Appears to be typo re. level 2,
+ * This file contains the stub implementation for the profiling (PSHMEM)
+ * interface. See OpenSHMEM 1.5 spec, p. 141. Appears to be typo re. level 2,
  * assume last entry is > 2 instead of >= 2.
  */
 
+/** @brief Default profiling level */
 static int profiling_level = 1; /* default */
 
+/**
+ * @brief Controls the level of profiling feedback
+ *
+ * @param level The profiling level to set:
+ *             - <= 0: Profiling disabled
+ *             - 1: Default profiling enabled
+ *             - 2: Profile buffers flushed
+ *             - > 2: Profile library defined effects and additional arguments
+ * @param ... Variable arguments (implementation defined)
+ *
+ * This routine provides a user-callable interface to control the level of
+ * profiling feedback and any implementation-specific profiling features.
+ */
 void shmem_pcontrol(const int level, ...) {
   char *msg;
 

@@ -1,4 +1,15 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file init.c
+ * @brief Initialization and finalization routines for the OpenSHMEM
+ * communications layer
+ *
+ * This file provides the core initialization and cleanup functionality for the
+ * OpenSHMEM communications layer (shmemc). It handles setting up and tearing
+ * down all required resources including node names, PMI client, heaps, UCX
+ * transport, contexts, and teams.
+ *
+ * @copyright See LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -12,6 +23,18 @@
 #include "heaps.h"
 #include "env.h"
 
+/**
+ * @brief Initialize the OpenSHMEM communications layer
+ *
+ * This function performs the complete initialization sequence:
+ * - Sets up node name identification
+ * - Initializes PMI client for process management
+ * - Processes environment variables and user settings
+ * - Sets up symmetric heaps
+ * - Initializes UCX transport layer
+ * - Creates default context and teams
+ * - Exchanges worker and heap information between PEs
+ */
 void shmemc_init(void) {
   shmemc_nodename_init();
 
@@ -48,6 +71,18 @@ void shmemc_init(void) {
   shmemc_pmi_barrier_all(false);
 }
 
+/**
+ * @brief Clean up and finalize the OpenSHMEM communications layer
+ *
+ * This function performs the complete cleanup sequence in reverse order:
+ * - Finalizes teams
+ * - Destroys default context
+ * - Cleans up UCX resources
+ * - Frees symmetric heaps
+ * - Cleans up environment settings
+ * - Finalizes PMI client
+ * - Frees node name resources
+ */
 void shmemc_finalize(void) {
   shmemc_teams_finalize();
 

@@ -2,6 +2,20 @@
  * @file teams.c
  * @brief Implementation of OpenSHMEM teams functionality
  * @license See LICENSE file at top-level
+ *
+ * This file implements the OpenSHMEM teams API, which allows grouping of PEs
+ * into teams for collective operations and team-based communication. The
+ * implementation includes:
+ *
+ * - Team creation and management functions
+ * - Team translation and mapping between global and team-relative PE numbers
+ * - Team synchronization primitives
+ * - Support for team contexts and team-based communication
+ * - Built-in teams like SHMEM_TEAM_WORLD and SHMEM_TEAM_SHARED
+ *
+ * The teams implementation uses hash tables to maintain mappings between
+ * team-relative and global PE numbers, and supports hierarchical team
+ * structures through parent-child relationships.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -17,22 +31,36 @@
 
 #include <stdlib.h>
 
-/** Default teams */
-shmemc_team_t shmemc_team_world;
-shmemc_team_t shmemc_team_shared;
+/**
+ * @brief Default teams that are always available
+ * @{
+ */
+shmemc_team_t shmemc_team_world;  /**< World team containing all PEs */
+shmemc_team_t shmemc_team_shared; /**< Team of PEs on same node */
+/** @} */
 
-/** Global team representing all PEs */
+/**
+ * @brief Global team handle representing all PEs
+ */
 shmemc_team_h world = &shmemc_team_world;
 
-/** Global team representing PEs on same node */
+/**
+ * @brief Global team handle representing PEs on same node
+ */
 shmemc_team_h shared = &shmemc_team_shared;
 
-/** Invalid team handle */
+/**
+ * @brief Invalid team handle used to indicate errors
+ */
 shmemc_team_h invalid = NULL;
 
 /**
  * @brief Destroy all contexts allocated to a team
- * @param th Team handle
+ *
+ * Iterates through all contexts associated with the team and tears them down,
+ * freeing associated resources.
+ *
+ * @param th Team handle whose contexts should be destroyed
  */
 static void shmemc_team_contexts_destroy(shmemc_team_h th) {
   size_t c;
@@ -45,7 +73,13 @@ static void shmemc_team_contexts_destroy(shmemc_team_h th) {
 
 /**
  * @brief Debug function to dump team info
- * @param th Team handle
+ *
+ * Prints detailed information about a team including:
+ * - Forward and reverse PE mappings
+ * - Team handle and name
+ * - Global rank, team rank and size
+ *
+ * @param th Team handle to dump info for
  */
 static void dump_team(shmemc_team_h th) {
   int key, val;
@@ -65,7 +99,11 @@ static void dump_team(shmemc_team_h th) {
 
 /**
  * @brief Initialize synchronization buffers for a team
- * @param th Team handle
+ *
+ * Allocates and initializes the pSync buffers used for team collective
+ * operations. Each buffer is initialized to SHMEM_SYNC_VALUE.
+ *
+ * @param th Team handle to initialize buffers for
  */
 static void initialize_psync_buffers(shmemc_team_h th) {
   unsigned nsync;
@@ -89,7 +127,10 @@ static void initialize_psync_buffers(shmemc_team_h th) {
 
 /**
  * @brief Free synchronization buffers for a team
- * @param th Team handle
+ *
+ * Deallocates all pSync buffers associated with the team.
+ *
+ * @param th Team handle whose buffers should be freed
  */
 static void finalize_psync_buffers(shmemc_team_h th) {
   unsigned nsync;
@@ -101,9 +142,17 @@ static void finalize_psync_buffers(shmemc_team_h th) {
 
 /**
  * @brief Initialize common team attributes
- * @param th Team handle
- * @param name Team name
- * @param cfg_nctxts Number of contexts to configure
+ *
+ * Sets up the basic attributes and data structures needed by all teams:
+ * - Parent pointer and name
+ * - Context configuration
+ * - PE mapping hash tables
+ * - Synchronization buffers
+ * - Default geometry values
+ *
+ * @param th Team handle to initialize
+ * @param name Name for the team
+ * @param cfg_nctxts Number of contexts to configure for this team
  */
 static void initialize_common_team(shmemc_team_h th, const char *name,
                                    int cfg_nctxts) {
@@ -128,6 +177,9 @@ static void initialize_common_team(shmemc_team_h th, const char *name,
 
 /**
  * @brief Initialize the world team
+ *
+ * Sets up the SHMEM_TEAM_WORLD team that contains all PEs in the job.
+ * Initializes the PE mappings based on the launch information.
  */
 static void initialize_team_world(void) {
   int i;
@@ -153,6 +205,9 @@ static void initialize_team_world(void) {
 
 /**
  * @brief Initialize the shared team
+ *
+ * Sets up the SHMEM_TEAM_SHARED team that contains PEs running on the same
+ * node. Initializes PE mappings based on the peer information from launch.
  */
 static void initialize_team_shared(void) {
   int i;
@@ -185,7 +240,12 @@ static void initialize_team_shared(void) {
 
 /**
  * @brief Clean up team resources
- * @param th Team handle
+ *
+ * Frees all resources associated with a team:
+ * - Synchronization buffers
+ * - Team contexts
+ *
+ * @param th Team handle to clean up
  */
 static void finalize_team(shmemc_team_h th) {
   finalize_psync_buffers(th);
@@ -195,6 +255,8 @@ static void finalize_team(shmemc_team_h th) {
 
 /**
  * @brief Initialize teams subsystem
+ *
+ * Sets up the default teams (WORLD and SHARED) at library initialization time.
  */
 void shmemc_teams_init(void) {
   initialize_team_world();
@@ -203,6 +265,8 @@ void shmemc_teams_init(void) {
 
 /**
  * @brief Finalize teams subsystem
+ *
+ * Cleans up all team resources when shutting down the library.
  */
 void shmemc_teams_finalize(void) {
   finalize_team(shared);
@@ -215,6 +279,9 @@ void shmemc_teams_finalize(void) {
 
 /**
  * @brief Get PE rank in team
+ *
+ * Returns the rank of the calling PE within the specified team.
+ *
  * @param th Team handle
  * @return PE rank in team
  */
@@ -222,6 +289,9 @@ int shmemc_team_my_pe(shmemc_team_h th) { return th->rank; }
 
 /**
  * @brief Get number of PEs in team
+ *
+ * Returns the total number of PEs in the specified team.
+ *
  * @param th Team handle
  * @return Number of PEs in team
  */
@@ -229,8 +299,11 @@ int shmemc_team_n_pes(shmemc_team_h th) { return th->nranks; }
 
 /**
  * @brief Get team configuration
+ *
+ * Retrieves the configuration parameters for a team based on the config mask.
+ *
  * @param th Team handle
- * @param config_mask Configuration mask
+ * @param config_mask Configuration mask specifying which parameters to retrieve
  * @param config Configuration structure to populate
  * @return 0 on success, -1 on failure
  */
@@ -251,6 +324,10 @@ int shmemc_team_get_config(shmemc_team_h th, long config_mask,
 
 /**
  * @brief Translate PE number between teams
+ *
+ * Converts a PE number from one team to the equivalent PE number in another
+ * team.
+ *
  * @param sh Source team handle
  * @param src_pe PE number in source team
  * @param dh Destination team handle
@@ -283,6 +360,10 @@ int shmemc_team_translate_pe(shmemc_team_h sh, int src_pe, shmemc_team_h dh) {
 
 /**
  * @brief Check if PE is member of strided team
+ *
+ * Determines if a PE number belongs to a strided team based on start and stride
+ * values.
+ *
  * @param parent_pe PE number in parent team
  * @param start Start PE
  * @param stride Stride between PEs
@@ -294,6 +375,10 @@ static bool is_member(int parent_pe, int start, int stride) {
 
 /**
  * @brief Split team into strided subteam
+ *
+ * Creates a new team by selecting PEs from the parent team using a strided
+ * pattern.
+ *
  * @param parh Parent team handle
  * @param start Start PE
  * @param stride Stride between PEs
@@ -345,7 +430,7 @@ int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,
       k = kh_put(map, newt->rev, up, &absent);
       kh_val(newt->rev, k) = i;
 
-      /* If this is the calling PE, set the team rank */
+      /* If this is me, set my rank in the team */
       if (up == proc.li.rank) {
         newt->rank = i;
       }
@@ -366,6 +451,10 @@ int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,
 
 /**
  * @brief Split team into 2D grid
+ *
+ * Creates two new teams representing the X and Y axes of a 2D decomposition
+ * of the parent team.
+ *
  * @param parh Parent team handle
  * @param xrange Size of x dimension
  * @param xaxis_config X-axis team configuration
@@ -586,7 +675,11 @@ cleanup:
 
 /**
  * @brief Destroy a team
- * @param th Team handle
+ *
+ * Frees all resources associated with a team. Cannot be used on predefined
+ * teams.
+ *
+ * @param th Team handle to destroy
  * @note Predefined teams cannot be destroyed
  */
 void shmemc_team_destroy(shmemc_team_h th) {
@@ -610,6 +703,9 @@ void shmemc_team_destroy(shmemc_team_h th) {
 
 /**
  * @brief Synchronize team contexts
+ *
+ * Ensures all contexts within a team have completed their operations.
+ *
  * @param th Team handle
  * @return 0 on success, -1 on failure
  */

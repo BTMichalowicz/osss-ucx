@@ -1,4 +1,22 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file shmemc.h
+ * @brief Internal OpenSHMEM communications layer interface
+ *
+ * This header defines the internal communications layer interface used by
+ * OpenSHMEM. It provides low-level routines for:
+ * - Initialization and finalization
+ * - Memory management and accessibility
+ * - Point-to-point communication (put/get)
+ * - Atomic memory operations
+ * - Synchronization (barriers, fences)
+ * - Collective operations (broadcast, collect)
+ * - Teams and contexts
+ *
+ * The interface is used internally by the OpenSHMEM implementation and should
+ * not be called directly by applications.
+ *
+ * @copyright See LICENSE file at top-level
+ */
 
 #ifndef _SHMEMC_H
 #define _SHMEMC_H 1

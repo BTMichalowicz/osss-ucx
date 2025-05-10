@@ -1,3 +1,15 @@
+/**
+ * @file barrier.c
+ * @brief Implementation of various barrier algorithms for OpenSHMEM
+ *
+ * This file contains implementations of different barrier algorithms including:
+ * - Linear barrier
+ * - Complete tree barrier
+ * - Binomial tree barrier
+ * - K-nomial tree barrier
+ * - Dissemination barrier
+ */
+
 #include "shcoll.h"
 #include "util/trees.h"
 #include "shmem.h"
@@ -5,16 +17,31 @@
 static int tree_degree_barrier = 2;
 static int knomial_tree_radix_barrier = 2;
 
+/**
+ * @brief Sets the degree (number of children) for tree-based barrier algorithms
+ * @param tree_degree The degree of the tree (must be > 0)
+ */
 void shcoll_set_tree_degree(int tree_degree) {
   tree_degree_barrier = tree_degree;
 }
 
+/**
+ * @brief Sets the radix for k-nomial tree barrier algorithms
+ * @param tree_radix The radix value for the k-nomial tree (must be > 0)
+ */
 void shcoll_set_knomial_tree_radix_barrier(int tree_radix) {
   knomial_tree_radix_barrier = tree_radix;
 }
 
-/*
- * Linear barrier implementation
+/**
+ * @brief Linear barrier implementation
+ *
+ * Uses a centralized approach where all PEs synchronize through a root PE.
+ *
+ * @param PE_start Starting PE number
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs participating in barrier
+ * @param pSync Symmetric work array
  */
 inline static void barrier_helper_linear(int PE_start, int logPE_stride,
                                          int PE_size, long *pSync) {
@@ -46,8 +73,16 @@ inline static void barrier_helper_linear(int PE_start, int logPE_stride,
   }
 }
 
-/*
- * Complete tree barrier implementation
+/**
+ * @brief Complete tree barrier implementation
+ *
+ * Uses a complete k-ary tree topology where k is specified by
+ * tree_degree_barrier.
+ *
+ * @param PE_start Starting PE number
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs participating in barrier
+ * @param pSync Symmetric work array
  */
 inline static void barrier_helper_complete_tree(int PE_start, int logPE_stride,
                                                 int PE_size, long *pSync) {
@@ -86,8 +121,15 @@ inline static void barrier_helper_complete_tree(int PE_start, int logPE_stride,
   }
 }
 
-/*
- * Binomial tree barrier implementation
+/**
+ * @brief Binomial tree barrier implementation
+ *
+ * Uses a binomial tree topology for synchronization.
+ *
+ * @param PE_start Starting PE number
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs participating in barrier
+ * @param pSync Symmetric work array
  */
 inline static void barrier_helper_binomial_tree(int PE_start, int logPE_stride,
                                                 int PE_size, long *pSync) {
@@ -126,8 +168,16 @@ inline static void barrier_helper_binomial_tree(int PE_start, int logPE_stride,
   }
 }
 
-/*
- * Knomial tree barrier implementation
+/**
+ * @brief K-nomial tree barrier implementation
+ *
+ * Uses a k-nomial tree topology where k is specified by
+ * knomial_tree_radix_barrier.
+ *
+ * @param PE_start Starting PE number
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs participating in barrier
+ * @param pSync Symmetric work array
  */
 inline static void barrier_helper_knomial_tree(int PE_start, int logPE_stride,
                                                int PE_size, long *pSync) {
@@ -166,8 +216,16 @@ inline static void barrier_helper_knomial_tree(int PE_start, int logPE_stride,
   }
 }
 
-/*
- * Dissemination barrier implementation
+/**
+ * @brief Dissemination barrier implementation
+ *
+ * Uses a dissemination pattern where each PE communicates with increasingly
+ * distant partners.
+ *
+ * @param PE_start Starting PE number
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs participating in barrier
+ * @param pSync Symmetric work array
  */
 inline static void barrier_helper_dissemination(int PE_start, int logPE_stride,
                                                 int PE_size, long *pSync) {
@@ -195,9 +253,15 @@ inline static void barrier_helper_dissemination(int PE_start, int logPE_stride,
   }
 }
 
-/*
-
-*/
+/**
+ * @brief Macro to define barrier functions for different algorithms
+ *
+ * For each algorithm, defines:
+ * - shcoll_barrier_<name>: Barrier using PE_start/logPE_stride/PE_size
+ * - shcoll_barrier_all_<name>: Global barrier using pSync array
+ *
+ * @param _name The algorithm name to create definitions for
+ */
 #define SHCOLL_BARRIER_DEFINITION(_name)                                       \
   void shcoll_barrier_##_name(int PE_start, int logPE_stride, int PE_size,     \
                               long *pSync) {                                   \

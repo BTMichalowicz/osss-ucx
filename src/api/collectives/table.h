@@ -1,9 +1,14 @@
-/* For license: see LICENSE file at top-level */
-
 /**
  * @file table.h
  * @brief Header file defining collective operation tables and registration
  * functions
+ *
+ * This file contains declarations for the collective operation tables and
+ * registration functions. It defines the structure for typed collective
+ * operations, untyped collective operations, and typed to_all collective
+ * operations.
+ *
+ * @copyright See LICENSE file at top-level
  */
 
 #ifndef _TABLE_H

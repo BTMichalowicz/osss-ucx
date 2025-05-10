@@ -15,9 +15,6 @@
 #include "thispe.h"
 #include "shmemu.h"
 #include "collectives/table.h"
-
-#include "collectives/reductions.h"
-
 #include "shmem/teams.h"
 
 /**

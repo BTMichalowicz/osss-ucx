@@ -1,4 +1,13 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file contexts.c
+ * @brief Implementation of OpenSHMEM context management
+ *
+ * This file provides the implementation for managing OpenSHMEM contexts,
+ * including creation, destruction, and reuse of contexts. It handles the
+ * freelist of reusable contexts and context attributes.
+ *
+ * @copyright See LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -14,8 +23,8 @@
 
 #include <stdlib.h>
 
-/*
- * manage free list of re-usable contexts
+/**
+ * @brief Manage free list of re-usable contexts
  */
 
 #define __size_t_free(x)
@@ -24,10 +33,10 @@ KLIST_INIT(freelist, size_t, __size_t_free)
 
 static klist_t(freelist) *fl = NULL;
 
-/*
- * Register and de-register contexts
+/**
+ * @brief Register and de-register contexts
  *
- * first call performs initialization, then reroutes to real work
+ * First call performs initialization, then reroutes to real work
  */
 
 static size_t get_usable_context_boot(shmemc_team_h th, bool *reused);
@@ -36,14 +45,23 @@ static size_t get_usable_context_run(shmemc_team_h th, bool *reused);
 static size_t (*get_usable_context)(shmemc_team_h th,
                                     bool *reused) = get_usable_context_boot;
 
-/*
- * how many more to allocate when we run out
+/**
+ * @brief Number of additional contexts to allocate when current block is full
  */
-
 static size_t spill_block;
 
+/**
+ * @brief Total number of context slots allocated
+ */
 static size_t spill_ctxt = 0;
 
+/**
+ * @brief Resize the context array block
+ *
+ * @param th Team handle
+ * @param n New size to allocate
+ * @return Pointer to resized context array
+ */
 inline static shmemc_context_h *resize_spill_block(shmemc_team_h th, size_t n) {
   shmemc_context_h *chp =
       (shmemc_context_h *)realloc(th->ctxts, n * sizeof(*(th->ctxts)));
@@ -57,10 +75,11 @@ inline static shmemc_context_h *resize_spill_block(shmemc_team_h th, size_t n) {
   return chp;
 }
 
-/*
- * allocate new context
+/**
+ * @brief Allocate a new context
+ *
+ * @return Newly allocated context handle
  */
-
 inline static shmemc_context_h alloc_freelist_slot(void) {
   shmemc_context_h ch = (shmemc_context_h)malloc(sizeof(shmemc_context_t));
 
@@ -72,6 +91,13 @@ inline static shmemc_context_h alloc_freelist_slot(void) {
   return ch;
 }
 
+/**
+ * @brief Initialize context system on first use
+ *
+ * @param th Team handle
+ * @param reused Set to true if context was reused
+ * @return Index of allocated context
+ */
 static size_t get_usable_context_boot(shmemc_team_h th, bool *reused) {
   fl = kl_init(freelist);
 
@@ -84,6 +110,13 @@ static size_t get_usable_context_boot(shmemc_team_h th, bool *reused) {
   return get_usable_context(th, reused);
 }
 
+/**
+ * @brief Get a usable context, either from freelist or by allocation
+ *
+ * @param th Team handle
+ * @param reused Set to true if context was reused
+ * @return Index of allocated context
+ */
 static size_t get_usable_context_run(shmemc_team_h th, bool *reused) {
   size_t idx;
   kliter_t(freelist) *head = kl_begin(fl);
@@ -119,16 +152,22 @@ static size_t get_usable_context_run(shmemc_team_h th, bool *reused) {
   return idx;
 }
 
-/*
- * add/remove context in PE state
+/**
+ * @brief Register a context in PE state
+ *
+ * @param ch Context handle to register
  */
-
 inline static void context_register(shmemc_context_h ch) {
   NO_WARN_UNUSED(ch);
 
   logger(LOG_CONTEXTS, "using context #%lu", ch->id);
 }
 
+/**
+ * @brief Deregister a context and add it to freelist
+ *
+ * @param ch Context handle to deregister
+ */
 inline static void context_deregister(shmemc_context_h ch) {
   /* this one is re-usable */
   *kl_pushp(freelist, fl) = ch->id;
@@ -136,18 +175,23 @@ inline static void context_deregister(shmemc_context_h ch) {
   logger(LOG_CONTEXTS, "context #%lu can be reused", ch->id);
 }
 
-/*
- * fill in context from provided options
+/**
+ * @brief Set context options from provided flags
+ *
+ * @param options Option flags
+ * @param ch Context handle to configure
  */
-
 inline static void context_set_options(long options, shmemc_context_h ch) {
   ch->attr.serialized = options & SHMEM_CTX_SERIALIZED;
   ch->attr.privat = options & SHMEM_CTX_PRIVATE;
   ch->attr.nostore = options & SHMEM_CTX_NOSTORE;
 }
 
-/*
- * allocate space for contexts in team
+/**
+ * @brief Allocate space for contexts in a team
+ *
+ * @param th Team handle
+ * @return Array of context handles or NULL if none needed
  */
 shmemc_context_h *shmemc_alloc_contexts(shmemc_team_h th) {
   if (th->nctxts > 0) {
@@ -157,10 +201,13 @@ shmemc_context_h *shmemc_alloc_contexts(shmemc_team_h th) {
   }
 }
 
-/*
- * create new context in a team
+/**
+ * @brief Create a new context in a team
  *
- * Return 0 on success, non-zero on failure
+ * @param th Team handle
+ * @param options Context option flags
+ * @param ctxp Pointer to store new context handle
+ * @return 0 on success, non-zero on failure
  */
 int shmemc_context_create(shmemc_team_h th, long options,
                           shmemc_context_h *ctxp) {
@@ -208,9 +255,13 @@ int shmemc_context_create(shmemc_team_h th, long options,
   return 0;
 }
 
-/*
- * zap existing context.  Illegal to zap default context, so I will
- * interpret that as "to be avoided" and continue
+/**
+ * @brief Destroy an existing context
+ *
+ * @param ctx Context to destroy
+ *
+ * It is illegal to destroy the default context. Attempting to do so
+ * will result in program termination.
  */
 void shmemc_context_destroy(shmem_ctx_t ctx) {
   if (ctx == SHMEM_CTX_INVALID) {
@@ -228,25 +279,32 @@ void shmemc_context_destroy(shmem_ctx_t ctx) {
   }
 }
 
-/*
- * return the id of a context (used for logging)
+/**
+ * @brief Get the ID of a context
+ *
+ * @param ctx Context handle
+ * @return Context ID number
  */
-
 size_t shmemc_context_id(shmem_ctx_t ctx) {
   const shmemc_context_h ch = (shmemc_context_h)ctx;
 
   return ch->id;
 }
 
-/*
- * the first, default, context gets a special SHMEM handle, also needs
- * address exchange through PMI, so we give it its own routine
+/**
+ * @brief Default context instance and handle
  *
- * Return 0 if successful, non-0 otherwise
+ * The first, default context gets a special SHMEM handle and needs
+ * address exchange through PMI.
  */
 shmemc_context_t shmemc_default_context;
 shmemc_context_h defcp = &shmemc_default_context;
 
+/**
+ * @brief Initialize the default context
+ *
+ * @return 0 on success, non-zero on failure
+ */
 int shmemc_context_init_default(void) {
   context_set_options(0L, defcp);
 

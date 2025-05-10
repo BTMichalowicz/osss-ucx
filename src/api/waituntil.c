@@ -1,4 +1,12 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file waituntil.c
+ * @brief Implementation of OpenSHMEM wait operations
+ *
+ * This file provides wait operations that block until a variable meets
+ * specified comparison criteria.
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -40,6 +48,18 @@
 #endif /* ENABLE_PSHMEM */
 
 /**
+ * @brief Waits until a variable meets specified comparison criteria
+ *
+ * @param _opname Base name of the operation (e.g. short, int, etc)
+ * @param _type C data type for the operation
+ * @param _size Size in bits (16, 32, or 64)
+ *
+ * Blocks until a variable meets specified comparison criteria.
+ *
+ * @param ivar Variable to be tested
+ * @param cmp Comparison operator (SHMEM_CMP_EQ, NE, GT, LE, LT, GE)
+ * @param cmp_value Value to compare against
+ *
  * wait_until with operator dispatchers, type-parameterized.
  */
 #define SHMEM_TYPE_WAIT_UNTIL(_opname, _type, _size)                           \
@@ -97,6 +117,15 @@ SHMEM_TYPE_WAIT_UNTIL(ptrdiff, ptrdiff_t, 64)
 #define shmem_signal_wait_until pshmem_signal_wait_until
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Waits until a signal variable meets specified comparison criteria
+ *
+ * @param sig_addr Signal variable to be tested
+ * @param cmp Comparison operator (SHMEM_CMP_EQ, NE, GT, LE, LT, GE)
+ * @param cmp_value Value to compare against
+ *
+ * @return Value of sig_addr after comparison is satisfied
+ */
 uint64_t shmem_signal_wait_until(uint64_t *sig_addr, int cmp,
                                  uint64_t cmp_value) {
   shmem_uint64_wait_until(sig_addr, cmp, cmp_value);

@@ -1,3 +1,20 @@
+/**
+ * @file sync.c
+ * @brief Implementation of various synchronization algorithms for OpenSHMEM
+ *
+ * This file contains implementations of different synchronization algorithms
+ * including:
+ * - Linear synchronization
+ * - Complete tree synchronization
+ * - Binomial tree synchronization
+ * - K-nomial tree synchronization
+ * - Dissemination synchronization
+ *
+ * Each algorithm has two variants:
+ * 1. A team-based implementation using shmem_team_t
+ * 2. A traditional implementation using PE_start/logPE_stride/PE_size
+ */
+
 #include "shcoll.h"
 #include "util/trees.h"
 #include "shmem.h"
@@ -7,10 +24,19 @@
 static int tree_degree_barrier = 2;
 static int knomial_tree_radix_barrier = 2;
 
+/**
+ * @brief Sets the degree (number of children) for tree-based synchronization
+ * algorithms
+ * @param tree_degree The degree of the tree (must be > 0)
+ */
 void shcoll_set_tree_degree(int tree_degree) {
   tree_degree_barrier = tree_degree;
 }
 
+/**
+ * @brief Sets the radix for k-nomial tree synchronization
+ * @param tree_radix The radix value for the k-nomial tree (must be > 0)
+ */
 void shcoll_set_knomial_tree_radix_barrier(int tree_radix) {
   knomial_tree_radix_barrier = tree_radix;
 }
@@ -20,8 +46,15 @@ void shcoll_set_knomial_tree_radix_barrier(int tree_radix) {
 //
 
 ////////////////////////////////////////////////////////////////////////////////////
-/*
- * Linear sync implementation
+/**
+ * @brief Linear synchronization implementation
+ *
+ * Uses a centralized approach where all PEs synchronize through a root PE.
+ *
+ * @param PE_start Starting PE number
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs participating in synchronization
+ * @param pSync Symmetric work array
  */
 inline static void sync_helper_linear(int PE_start, int logPE_stride,
                                       int PE_size, long *pSync) {
@@ -53,8 +86,13 @@ inline static void sync_helper_linear(int PE_start, int logPE_stride,
   }
 }
 
-/*
- * Linear sync implementation using team-based logic
+/**
+ * @brief Linear synchronization implementation using team-based logic
+ *
+ * Team-based version of linear synchronization where PE 0 acts as root.
+ *
+ * @param team OpenSHMEM team
+ * @return 0 on success, non-zero on failure
  */
 inline static int sync_team_helper_linear(shmem_team_t team) {
   const int me = shmem_team_my_pe(team);
@@ -79,8 +117,15 @@ inline static int sync_team_helper_linear(shmem_team_t team) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-/*
- * Complete tree sync implementation
+/**
+ * @brief Complete tree synchronization implementation
+ *
+ * Uses a complete k-ary tree topology where k is set by tree_degree_barrier.
+ *
+ * @param PE_start Starting PE number
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs participating in synchronization
+ * @param pSync Symmetric work array
  */
 inline static void sync_helper_complete_tree(int PE_start, int logPE_stride,
                                              int PE_size, long *pSync) {
@@ -119,8 +164,13 @@ inline static void sync_helper_complete_tree(int PE_start, int logPE_stride,
   }
 }
 
-/*
- * Complete tree sync implementation using team-based logic
+/**
+ * @brief Complete tree synchronization implementation using team-based logic
+ *
+ * Team-based version of complete tree synchronization.
+ *
+ * @param team OpenSHMEM team
+ * @return 0 on success, non-zero on failure
  */
 inline static int sync_team_helper_complete_tree(shmem_team_t team) {
   const int me = shmem_team_my_pe(team);
@@ -158,8 +208,15 @@ inline static int sync_team_helper_complete_tree(shmem_team_t team) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-/*
- * Binomial tree sync implementation
+/**
+ * @brief Binomial tree synchronization implementation
+ *
+ * Uses a binomial tree topology for synchronization.
+ *
+ * @param PE_start Starting PE number
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs participating in synchronization
+ * @param pSync Symmetric work array
  */
 inline static void sync_helper_binomial_tree(int PE_start, int logPE_stride,
                                              int PE_size, long *pSync) {
@@ -198,8 +255,13 @@ inline static void sync_helper_binomial_tree(int PE_start, int logPE_stride,
   }
 }
 
-/*
- * Binomial tree sync implementation using team-based logic
+/**
+ * @brief Binomial tree synchronization implementation using team-based logic
+ *
+ * Team-based version of binomial tree synchronization.
+ *
+ * @param team OpenSHMEM team
+ * @return 0 on success, non-zero on failure
  */
 inline static int sync_team_helper_binomial_tree(shmem_team_t team) {
   const int me = shmem_team_my_pe(team);
@@ -237,8 +299,15 @@ inline static int sync_team_helper_binomial_tree(shmem_team_t team) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-/*
- * Knomial tree sync implementation
+/**
+ * @brief K-nomial tree synchronization implementation
+ *
+ * Uses a k-nomial tree topology where k is set by knomial_tree_radix_barrier.
+ *
+ * @param PE_start Starting PE number
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs participating in synchronization
+ * @param pSync Symmetric work array
  */
 inline static void sync_helper_knomial_tree(int PE_start, int logPE_stride,
                                             int PE_size, long *pSync) {
@@ -277,8 +346,13 @@ inline static void sync_helper_knomial_tree(int PE_start, int logPE_stride,
   }
 }
 
-/*
- * Knomial tree sync implementation using team-based logic
+/**
+ * @brief K-nomial tree synchronization implementation using team-based logic
+ *
+ * Team-based version of k-nomial tree synchronization.
+ *
+ * @param team OpenSHMEM team
+ * @return 0 on success, non-zero on failure
  */
 inline static int sync_team_helper_knomial_tree(shmem_team_t team) {
   const int me = shmem_team_my_pe(team);
@@ -316,8 +390,16 @@ inline static int sync_team_helper_knomial_tree(shmem_team_t team) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-/*
- * Dissemination sync implementation
+/**
+ * @brief Dissemination synchronization implementation
+ *
+ * Uses a dissemination pattern where each PE communicates with increasingly
+ * distant partners.
+ *
+ * @param PE_start Starting PE number
+ * @param logPE_stride Log (base 2) of stride between consecutive PEs
+ * @param PE_size Number of PEs participating in synchronization
+ * @param pSync Symmetric work array
  */
 inline static void sync_helper_dissemination(int PE_start, int logPE_stride,
                                              int PE_size, long *pSync) {
@@ -345,8 +427,13 @@ inline static void sync_helper_dissemination(int PE_start, int logPE_stride,
   }
 }
 
-/*
- * Dissemination sync implementation using team-based logic
+/**
+ * @brief Dissemination synchronization implementation using team-based logic
+ *
+ * Team-based version of dissemination synchronization.
+ *
+ * @param team OpenSHMEM team
+ * @return 0 on success, non-zero on failure
  */
 inline static int sync_team_helper_dissemination(shmem_team_t team) {
   const int me = shmem_team_my_pe(team);
@@ -376,6 +463,16 @@ inline static int sync_team_helper_dissemination(shmem_team_t team) {
 ////////////////////////////////////////////////////////////////////////////////////
 // FIXME: figure out how to deal with the psync array. between these two
 //        helpers
+
+/**
+ * @brief Macro to define synchronization functions for different algorithms
+ *
+ * For each algorithm, defines:
+ * - shcoll_sync_<name>: Team-based synchronization
+ * - shcoll_sync_all_<name>: Global synchronization using pSync array
+ *
+ * @param _name The algorithm name to create definitions for
+ */
 #define SHCOLL_SYNC_DEFINITION(_name)                                          \
   int shcoll_sync_##_name(shmem_team_t team) {                                 \
     int me = shmem_team_my_pe(team);                                           \

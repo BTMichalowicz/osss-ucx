@@ -1,4 +1,13 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file testany.c
+ * @brief Implementation of OpenSHMEM test operations
+ *
+ * This file provides test operations that check if any elements in an array
+ * meet specified comparison criteria. The operations are non-blocking and
+ * return immediately.
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -40,6 +49,25 @@
 #define shmem_ptrdiff_test_any pshmem_ptrdiff_test_any
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Tests if any elements in an array meet specified comparison criteria
+ *
+ * @param _opname Base name of the operation (e.g. short, int, etc)
+ * @param _type C data type for the operation
+ * @param _size Size in bits (16, 32, or 64)
+ *
+ * Tests if any elements meet specified comparison criteria. The function
+ * returns immediately without blocking.
+ *
+ * @param ivars Array of variables to be tested
+ * @param nelems Number of elements in the array
+ * @param status Array indicating which elements to test (1=test, 0=skip)
+ * @param cmp Comparison operator (SHMEM_CMP_EQ, NE, GT, LE, LT, GE)
+ * @param cmp_value Value to compare against
+ *
+ * @return Returns index of first element that evaluates to true, or -1 if none
+ * evaluate to true
+ */
 #define SHMEM_TYPE_TEST_ANY(_opname, _type, _size)                             \
   size_t shmem_##_opname##_test_any(_type *ivars, size_t nelems,               \
                                     const int *status, int cmp,                \

@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file fetch.c
+ * @brief Implementation of SHMEM atomic fetch operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -41,6 +46,16 @@
 #define shmem_ctx_ptrdiff_atomic_fetch pshmem_ctx_ptrdiff_atomic_fetch
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to define atomic fetch operations for different types
+ *
+ * @param _name Type name string
+ * @param _type Data type
+ *
+ * Defines a function that performs an atomic fetch operation.
+ * The operation retrieves the value of a remote variable atomically.
+ * The operation is performed without protecting the mutex.
+ */
 #define SHMEM_CTX_TYPE_FETCH(_name, _type)                                     \
   _type shmem_ctx_##_name##_atomic_fetch(shmem_ctx_t ctx, const _type *target, \
                                          int pe) {                             \

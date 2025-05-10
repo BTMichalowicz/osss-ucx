@@ -1,4 +1,12 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file test.c
+ * @brief Implementation of OpenSHMEM test operations
+ *
+ * This file provides test operations that check if a variable meets specified
+ * comparison criteria. The operations are non-blocking and return immediately.
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -40,6 +48,20 @@
 #define shmem_ptrdiff_test pshmem_ptrdiff_test
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Declares the shmem_test routine for testing variables against
+ * comparison criteria
+ *
+ * @param _opname Base name of the operation (e.g. short, int, etc)
+ * @param _type C data type for the operation
+ * @param _size Size in bits (16, 32, or 64)
+ *
+ * Tests if a variable meets specified comparison criteria. The function returns
+ * immediately without blocking.
+ *
+ * @return Returns 1 if the comparison evaluates to true, 0 if it evaluates to
+ * false
+ */
 #define SHMEM_TYPE_TEST(_opname, _type, _size)                                 \
   int shmem_##_opname##_test(_type *ivar, int cmp, _type cmp_value) {          \
     SHMEMT_MUTEX_NOPROTECT(switch (cmp) {                                      \
