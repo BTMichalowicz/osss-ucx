@@ -575,14 +575,9 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, sizeof(type) * nelems * PE_size, \
                                 sizeof(type) * nelems);                        \
                                                                                \
-    /* Allocate pSync from symmetric heap */                                   \
-    long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
-    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
-                                                                               \
-    /* Initialize pSync */                                                     \
-    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
+    /* Use the team's pSync buffer for collect/fcollect operations */          \
+    long *pSync = team_h->pSyncs[2];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[2]");                             \
                                                                                \
     /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
@@ -598,12 +593,9 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
     /* Ensure collection is complete */                                        \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* Reset pSync before freeing */                                           \
-    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
+    /* Reset the pSync buffer */                                               \
+    shmemc_team_reset_psync(team_h, 2);                                        \
                                                                                \
-    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 
@@ -680,14 +672,9 @@ DEFINE_SHCOLL_FCOLLECT_TYPES(neighbor_exchange)
     SHMEMU_CHECK_SYMMETRIC(source, nelems);                                    \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size, nelems);        \
                                                                                \
-    /* Allocate pSync from symmetric heap */                                   \
-    long *pSync = shmem_malloc(SHCOLL_COLLECT_SYNC_SIZE * sizeof(long));       \
-    SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
-                                                                               \
-    /* Initialize pSync */                                                     \
-    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
+    /* Use the team's pSync buffer for collect/fcollect operations */          \
+    long *pSync = team_h->pSyncs[2];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[2]");                             \
                                                                                \
     /* Ensure all PEs have initialized pSync */                                \
     shmem_team_sync(team);                                                     \
@@ -702,12 +689,9 @@ DEFINE_SHCOLL_FCOLLECT_TYPES(neighbor_exchange)
     /* Ensure collection is complete */                                        \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* Reset pSync before freeing */                                           \
-    for (int i = 0; i < SHCOLL_COLLECT_SYNC_SIZE; i++) {                       \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
+    /* Reset the pSync buffer */                                               \
+    shmemc_team_reset_psync(team_h, 2);                                        \
                                                                                \
-    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 

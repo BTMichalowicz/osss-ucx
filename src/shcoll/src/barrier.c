@@ -363,6 +363,8 @@ SHCOLL_BARRIER_SYNC_DEFINITION(dissemination)
                                                                                \
     /* Call the internal barrier helper */                                     \
     barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
+    /* Reset the pSync buffer */                                               \
+    shmemc_team_reset_psync(team_h, 0);                                        \
     return 0;                                                                  \
   }
 

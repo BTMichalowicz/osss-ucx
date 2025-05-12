@@ -43,6 +43,8 @@
 void shmemc_init(void);
 void shmemc_finalize(void);
 
+int shmemc_team_reset_psync(shmemc_team_h th, unsigned psync_idx);
+
 void shmemc_globalexit_init(void);
 void shmemc_globalexit_finalize(void);
 void shmemc_global_exit(int status);

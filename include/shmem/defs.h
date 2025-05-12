@@ -68,7 +68,7 @@ enum shmem_cmp_constants {
 #define SHMEM_BARRIER_SYNC_SIZE 2
 #define SHMEM_REDUCE_SYNC_SIZE 128
 #define SHMEM_REDUCE_MIN_WRKDATA_SIZE 64
-#define SHMEM_COLLECT_SYNC_SIZE 64
+#define SHMEM_COLLECT_SYNC_SIZE 128  /* Needs to be at least 66 for bruck algorithm */
 #define SHMEM_ALLTOALL_SYNC_SIZE 64
 #define SHMEM_ALLTOALLS_SYNC_SIZE 64
 /*

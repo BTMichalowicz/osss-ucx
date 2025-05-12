@@ -309,8 +309,8 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
                                                                                \
     /* Get team parameters */                                                  \
     const int PE_size = team_h->nranks;                                        \
-    const int PE_start = team_h->start; /* Use stored start */                 \
-    const int stride = team_h->stride;  /* Use stored stride */                \
+    const int PE_start = team_h->start;         /* Use stored start */         \
+    const int stride = team_h->stride;          /* Use stored stride */        \
     SHMEMU_CHECK_TEAM_STRIDE(stride, __func__); /* Check stride if DEBUG */    \
     /* Calculate log2 stride, assuming stride is valid */                      \
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
@@ -325,8 +325,8 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
                                 sizeof(_type) * nelems * PE_size);             \
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
-    long *pSync = team_h->pSyncs[1];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[1]"); /* Use check macro */       \
+    long *pSync = team_h->pSyncs[3];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[3]"); /* Use check macro */       \
                                                                                \
     /* Ensure pSync is initialized (potentially redundant but safe) */         \
     shmem_team_sync(team);                                                     \
@@ -338,26 +338,26 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
     /* Ensure alltoall completion across the team */                           \
     shmem_team_sync(team);                                                     \
                                                                                \
+    /* Reset the pSync buffer */                                               \
+    shmemc_team_reset_psync(team_h, 3);                                        \
+                                                                               \
     /* No need to free or reset the team's pSync buffer */                     \
     return 0;                                                                  \
   }
 
-/**
- * @brief Helper macro to define alltoall implementations for all types
- *
- * @param _algo Algorithm name
- */
+// @formatter:off
+
 #define DEFINE_SHCOLL_ALLTOALL_TYPES(_algo)                                    \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, float, float)                         \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, double, double)                       \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, long double, longdouble)              \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned char, uchar)                 \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, char, char)                           \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, signed char, schar)                   \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, short, short)                         \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, int, int)                             \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, long, long)                           \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, long long, longlong)                  \
-  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned char, uchar)                 \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned short, ushort)               \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned int, uint)                   \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned long, ulong)                 \
@@ -372,8 +372,6 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, uint64_t, uint64)                     \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, size_t, size)                         \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
-
-// @formatter:off
 
 DEFINE_SHCOLL_ALLTOALL_TYPES(shift_exchange_barrier)
 DEFINE_SHCOLL_ALLTOALL_TYPES(shift_exchange_counter)
@@ -424,9 +422,8 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
                                 nelems *PE_size);                              \
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
-    /* Assume index 0 is for general collectives */                            \
-    long *pSync = team_h->pSyncs[1];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[1]"); /* Use check macro */       \
+    long *pSync = team_h->pSyncs[3];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[3]"); /* Use check macro */       \
                                                                                \
     /* Ensure pSync is initialized (potentially redundant but safe) */         \
     /* The team init should handle this, but let's sync before use */          \
@@ -438,6 +435,9 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
                                                                                \
     /* Ensure alltoall completion across the team */                           \
     shmem_team_sync(team);                                                     \
+                                                                               \
+    /* Reset the pSync buffer */                                               \
+    shmemc_team_reset_psync(team_h, 3);                                        \
                                                                                \
     /* No need to free or reset the team's pSync buffer */                     \
     return 0;                                                                  \

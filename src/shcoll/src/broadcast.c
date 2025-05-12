@@ -552,6 +552,9 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
     /* Ensure broadcast completion */                                          \
     shmem_team_sync(team);                                                     \
                                                                                \
+    /* Reset the pSync buffer */                                               \
+    shmemc_team_reset_psync(team_h, 1);                                        \
+                                                                               \
     return 0;                                                                  \
   }
 
@@ -632,8 +635,8 @@ DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
     /* Ensure broadcast completion */                                          \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* TODO: Reset psync buffer */                                             \
-                                                                               \
+    /* Reset psync buffer */                                                   \
+    shmemc_team_reset_psync(team_h, 1);                                        \
     return 0;                                                                  \
   }
 

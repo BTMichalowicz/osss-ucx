@@ -108,21 +108,85 @@ static void dump_team(shmemc_team_h th) {
 static void initialize_psync_buffers(shmemc_team_h th) {
   unsigned nsync;
 
+  /* 
+   * Use appropriate sync sizes for different collective operations:
+   * pSyncs[0]: For team sync/barrier (SHMEM_BARRIER_SYNC_SIZE)
+   * pSyncs[1]: For broadcast operations (SHMEM_BCAST_SYNC_SIZE)
+   * pSyncs[2]: For collect/fcollect operations (SHMEM_COLLECT_SYNC_SIZE)
+   * pSyncs[3]: For alltoall/alltoalls operations (SHMEM_ALLTOALL_SYNC_SIZE)
+   * pSyncs[4]: For reduction operations (SHMEM_REDUCE_SYNC_SIZE)
+   */
+  const size_t sync_sizes[SHMEMC_NUM_PSYNCS] = {
+    SHMEM_BARRIER_SYNC_SIZE,    /* pSyncs[0] for team sync/barrier */
+    SHMEM_BCAST_SYNC_SIZE,      /* pSyncs[1] for broadcast operations */
+    SHMEM_COLLECT_SYNC_SIZE,    /* pSyncs[2] for collect/fcollect operations */
+    SHMEM_ALLTOALL_SYNC_SIZE,   /* pSyncs[3] for alltoall/alltoalls operations */
+    SHMEM_REDUCE_SYNC_SIZE      /* pSyncs[4] for reduction operations */
+  };
+
   for (nsync = 0; nsync < SHMEMC_NUM_PSYNCS; ++nsync) {
     unsigned i;
 
-    const size_t nbytes = SHMEM_BARRIER_SYNC_SIZE * sizeof(*(th->pSyncs));
+    const size_t nbytes = sync_sizes[nsync] * sizeof(*(th->pSyncs));
     th->pSyncs[nsync] = (long *)shmema_malloc(nbytes);
 
     shmemu_assert(th->pSyncs[nsync] != NULL,
-                  MODULE ": can't allocate sync memory "
-                         "#%u in %s team (%p)",
-                  nsync, th->parent == NULL ? th->name : "created", th);
+                 MODULE ": can't allocate sync memory "
+                        "#%u in %s team (%p)",
+                 nsync, th->parent == NULL ? th->name : "created", th);
 
-    for (i = 0; i < SHMEM_BARRIER_SYNC_SIZE; ++i) {
+    for (i = 0; i < sync_sizes[nsync]; ++i) {
       th->pSyncs[nsync][i] = SHMEM_SYNC_VALUE;
     }
   }
+
+}
+
+/**
+ * @brief Reset a team's pSync buffer to SHMEM_SYNC_VALUE
+ *
+ * Resets all elements of the specified pSync buffer to SHMEM_SYNC_VALUE.
+ * This should be called after using a pSync buffer for a collective operation
+ * to ensure it's ready for reuse.
+ *
+ * @param th Team handle
+ * @param psync_idx Index of the pSync buffer to reset (0-4)
+ * @return 0 on success, -1 on failure
+ */
+int shmemc_team_reset_psync(shmemc_team_h th, unsigned psync_idx) {
+  /* Validate parameters */
+  if (th == NULL) {
+    shmemu_warn("shmemc_team_reset_psync: Invalid team handle (NULL)");
+    return -1;
+  }
+  
+  if (psync_idx >= SHMEMC_NUM_PSYNCS) {
+    shmemu_warn("shmemc_team_reset_psync: Invalid pSync index %u (max %u)",
+                psync_idx, SHMEMC_NUM_PSYNCS - 1);
+    return -1;
+  }
+  
+  if (th->pSyncs[psync_idx] == NULL) {
+    shmemu_warn("shmemc_team_reset_psync: pSync buffer at index %u is NULL", 
+                psync_idx);
+    return -1;
+  }
+  
+  /* Get the appropriate size for this pSync buffer */
+  const size_t sync_sizes[SHMEMC_NUM_PSYNCS] = {
+    SHMEM_BARRIER_SYNC_SIZE,    /* pSyncs[0] for team sync/barrier */
+    SHMEM_BCAST_SYNC_SIZE,      /* pSyncs[1] for broadcast operations */
+    SHMEM_COLLECT_SYNC_SIZE,    /* pSyncs[2] for collect/fcollect operations */
+    SHMEM_ALLTOALL_SYNC_SIZE,   /* pSyncs[3] for alltoall/alltoalls operations */
+    SHMEM_REDUCE_SYNC_SIZE      /* pSyncs[4] for reduction operations */
+  };
+  
+  /* Reset all elements to SHMEM_SYNC_VALUE */
+  for (size_t i = 0; i < sync_sizes[psync_idx]; i++) {
+    th->pSyncs[psync_idx][i] = SHMEM_SYNC_VALUE;
+  }
+  
+  return 0;
 }
 
 /**

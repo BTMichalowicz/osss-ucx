@@ -1208,15 +1208,14 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
     SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
                                                                                \
-    long *pSync = shmem_malloc(SHCOLL_REDUCE_SYNC_SIZE * sizeof(long));        \
-    if (!pSync)                                                                \
-      return -1;                                                               \
-    for (int i = 0; i < SHCOLL_REDUCE_SYNC_SIZE; i++)                          \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
+    /* Use the team's pSync buffer for reduction operations */                 \
+    long *pSync = team_h->pSyncs[4];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[4]");                             \
+                                                                               \
+    /* Allocate work buffer */                                                 \
     _type *pWrk =                                                              \
         shmem_malloc(SHCOLL_REDUCE_MIN_WRKDATA_SIZE * sizeof(_type));          \
     if (!pWrk) {                                                               \
-      shmem_free(pSync);                                                       \
       return -1;                                                               \
     }                                                                          \
                                                                                \
@@ -1227,8 +1226,8 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
         dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync);  \
                                                                                \
     shmem_team_sync(team);                                                     \
+    shmemc_team_reset_psync(team_h, 4);                                         \
     shmem_free(pWrk);                                                          \
-    shmem_free(pSync);                                                         \
     return 0;                                                                  \
   }
 
