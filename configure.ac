@@ -5,10 +5,11 @@
 
 m4_define([pkg_name],       [osss-ucx])
 m4_define([pkg_major],      [1])
-m4_define([pkg_minor],      [0])
+m4_define([pkg_minor],      [5])
 m4_define([pkg_patch],      [0])
 m4_define([pkg_version],    [pkg_major.pkg_minor.pkg_patch])
-m4_define([pkg_bugreport],  [anthony.curtis@stonybrook.edu])
+# m4_define([pkg_bugreport],  [anthony.curtis@stonybrook.edu])
+m4_define([pkg_bugreport],  [michael.beebe@ttu.edu])
 m4_define([pkg_url],        [https://github.com/openshmem-org/osss-ucx.git])
 
 m4_define([spec_major_version],     [1])
