@@ -33,11 +33,11 @@ $oshcc --version
 #                          TESTS
 ################################################################
 
-# # # --- Hello world ---
-# echo $hline ; echo "  Running Hello World test" ; echo $hline
-# $oshcc hello_world.c -o ./bin/hello_world
-# $oshrun $flags -np 2 ./bin/hello_world
-# echo
+# # --- Hello world ---
+echo $hline ; echo "  Running Hello World test" ; echo $hline
+$oshcc hello_world.c -o ./bin/hello_world
+$oshrun $flags -np 8 ./bin/hello_world
+echo
 
 # # --- shmem_put ---
 # echo $hline ; echo "  Running shmem_put test" ; echo $hline
@@ -111,14 +111,14 @@ $oshcc --version
 # $oshrun $flags -np 4 ./bin/test_reduce
 # echo
 
-## --- shmem_sync ---
-#echo $hline ; echo "  Running shmem_sync test" ; echo $hline
-#$oshcc test_sync.c -o ./bin/test_sync
-#$oshrun $flags -np 4 ./bin/test_sync
-#echo
+# # --- shmem_sync ---
+# echo $hline ; echo "  Running shmem_sync test" ; echo $hline
+# $oshcc test_sync.c -o ./bin/test_sync
+# $oshrun $flags -np 4 ./bin/test_sync
+# echo
 
-## --- shmem_alltoall sanity check test ---
-echo $hline ; echo "  Running shmem_alltoall sanity check test" ; echo $hline
-$oshcc test_broken_alltoall.c -o ./bin/test_broken_alltoall
-$oshrun $flags -np 4 ./bin/test_broken_alltoall
-echo
+# # --- shmem_alltoall sanity check test ---
+# echo $hline ; echo "  Running shmem_alltoall sanity check test" ; echo $hline
+# $oshcc test_broken_alltoall.c -o ./bin/test_broken_alltoall
+# $oshrun $flags -np 4 ./bin/test_broken_alltoall
+# echo
