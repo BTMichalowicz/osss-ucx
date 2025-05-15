@@ -1,19 +1,6 @@
-- Table registration for reductions and tpyed colls
-
-- All collectives
-  - Check the logger string formats in shcoll-shim.c
-  - Add a checker to make sure sure src and dest data are on the
-    symmetric heap?
-
 - Update include/pshmem.h with all the new routines
 
-- Anything need to be dome with shmemx?
+- MAKE SURE NO ROUTINES ARE MISSING ANY TYPES
 
-- All new routines. Should we be checking whether shmem_init has been called
-  in everything? i.e., something like this:
+- Anything need to be done with shmemx?
 
-    SHMEMU_CHECK_INIT();
-    SHMEMU_CHECK_PE_ARG_RANGE(pe, 8);
-    SHMEMU_CHECK_SYMMETRIC(dest, 2);
-    SHMEMU_CHECK_SYMMETRIC(src 5);
- 

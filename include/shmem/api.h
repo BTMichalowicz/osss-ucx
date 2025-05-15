@@ -357,14 +357,11 @@ void shmem_pcontrol(const int level, ...);
 
 ////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUTGET(_opname, _typename, _type)                         \
-  /* see \ref shmem_ctx_long_##_opname() */                                    \
   void shmem_ctx_##_typename##_##_opname(                                      \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems, int pe);  \
-  /* see \ref shmem_ctx_long_i##_opname() */                                   \
   void shmem_ctx_##_typename##_i##_opname(                                     \
       shmem_ctx_t ctx, _type *dest, const _type *src, ptrdiff_t tst,           \
       ptrdiff_t sst, size_t nelems, int pe);                                   \
-  /* see \ref shmem_ctx_long_##_opname##_nbi() */                              \
   void shmem_ctx_##_typename##_##_opname##_nbi(                                \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems, int pe);
 
@@ -484,14 +481,11 @@ API_DECL_PUTGET(get, ptrdiff, ptrdiff_t)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUTGET_SIZE(_opname, _size)                               \
-  /* see \ref shmem_ctx_long_##_opname() */                                    \
   void shmem_ctx_##_opname##_size(shmem_ctx_t ctx, void *dest,                 \
                                   const void *src, size_t nelems, int pe);     \
-  /* see \ref shmem_ctx_long_i##_opname() */                                   \
   void shmem_ctx_i##_opname##_size(shmem_ctx_t ctx, void *dest,                \
                                    const void *src, ptrdiff_t tst,             \
                                    ptrdiff_t sst, size_t nelems, int pe);      \
-  /* see \ref shmem_ctx_long_##_opname() */                                    \
   void shmem_ctx_##_opname##_size##_nbi(                                       \
       shmem_ctx_t ctx, void *dest, const void *src, size_t nelems, int pe);
 
@@ -534,10 +528,8 @@ API_DECL_PUTGET_SIZE(get, 128)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUTGET_MEM(_opname)                                       \
-  /* see \ref shmem_ctx_long_##_opname() */                                    \
   void shmem_ctx_##_opname##mem(shmem_ctx_t ctx, void *dest, const void *src,  \
                                 size_t nelems, int pe);                        \
-  /* see \ref shmem_ctx_long_##_opname() */                                    \
   void shmem_ctx_##_opname##mem##_nbi(shmem_ctx_t ctx, void *dest,             \
                                       const void *src, size_t nelems, int pe);
 
@@ -560,7 +552,6 @@ API_DECL_PUTGET_MEM(get)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define API_CTX_DECL_P(_typename, _type)                                       \
-  /* see \ref shmem_ctx_long_p() */                                            \
   void shmem_ctx_##_typename##_p(shmem_ctx_t ctx, _type *dest, _type src,      \
                                  int pe);
 
@@ -624,7 +615,6 @@ API_DECL_P(ptrdiff, ptrdiff_t)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define API_CTX_DECL_G(_typename, _type)                                       \
-  /* see \ref shmem_ctx_long_g() */                                            \
   _type shmem_ctx_##_typename##_g(shmem_ctx_t ctx, const _type *src, int pe);
 
 API_CTX_DECL_G(float, float)
@@ -811,11 +801,9 @@ API_DECL_PUT_SIGNAL_NBI(ptrdiff, ptrdiff_t);
 
 ////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUT_SIGNAL_SIZE(_size)                                    \
-  /* see \ref shmem_ctx_long_put_signal() */                                   \
   void shmem_ctx_put##_size##_signal(                                          \
       shmem_ctx_t ctx, void *dest, const void *src, size_t nelems,             \
       uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);                \
-  /* see \ref shmem_ctx_long_put_signal_nbi() */                               \
   void shmem_ctx_put##_size##_signal_nbi(                                      \
       shmem_ctx_t ctx, void *dest, const void *src, size_t nelems,             \
       uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
@@ -843,11 +831,9 @@ API_DECL_CTX_PUTMEM_SIGNAL()
 
 ////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_PUT_SIGNAL_SIZE(_size)                                        \
-  /* see \ref shmem_long_put_signal() */                                       \
   void shmem_put##_size##_signal(void *dest, const void *src, size_t nelems,   \
                                  uint64_t *sig_addr, uint64_t signal,          \
                                  int sig_op, int pe);                          \
-  /* see \ref shmem_long_put_signal_nbi() */                                   \
   void shmem_put##_size##_signal_nbi(void *dest, const void *src,              \
                                      size_t nelems, uint64_t *sig_addr,        \
                                      uint64_t signal, int sig_op, int pe);
@@ -1366,12 +1352,12 @@ void *shmem_malloc_with_hints(size_t size, long hints) _WUR;
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, longdouble, long double);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, schar, signed char);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, char, char);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, short, short) _DEPRECATED;
+API_DECL_TEST_AND_WAIT_UNTIL(test, int, short, short); //  _DEPRECATED;
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, int, int);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, long, long);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, longlong, long long);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, uchar, unsigned char);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, ushort, unsigned short) _DEPRECATED;
+API_DECL_TEST_AND_WAIT_UNTIL(test, int, ushort, unsigned short); // _DEPRECATED;
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, uint, unsigned int);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, ulong, unsigned long);
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, ulonglong, unsigned long long);
@@ -1405,13 +1391,12 @@ API_DECL_TEST_AND_WAIT_UNTIL(test, int, ptrdiff, ptrdiff_t);
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, longdouble, long double);
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, schar, signed char);
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, char, char);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, short, short) _DEPRECATED;
+API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, short, short); // _DEPRECATED;
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, int, int);
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, long, long);
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, longlong, long long);
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, uchar, unsigned char);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ushort, unsigned short)
-_DEPRECATED;
+API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ushort, unsigned short); // _DEPRECATED;
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, uint, unsigned int);
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ulong, unsigned long);
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ulonglong, unsigned long long);
@@ -1712,7 +1697,6 @@ API_DECL_WAIT_UNTIL_SOME_VECTOR(ptrdiff, ptrdiff_t);
  *
  */
 #define API_DECL_WAIT(_typename, _type)                                        \
-  /* see \ref shmem_##_typename##_wait() */                                    \
   void shmem_##_typename##_##wait(_type *ivar, _type cmp_value)                \
       _DEPRECATED_BY(                                                          \
           shmem_##_typename##_wait_until with compare operator SHMEM_CMP_NE,   \
@@ -1758,10 +1742,8 @@ API_DECL_WAIT(ptrdiff, ptrdiff_t)
  *
  */
 #define API_CTX_DECL_SWAP(_typename, _type)                                    \
-  /* see \ref shmem_ctx_long_atomic_swap() */                                  \
   _type shmem_ctx_##_typename##_atomic_swap(shmem_ctx_t ctx, _type *target,    \
                                             _type value, int pe) _WUR;         \
-  /* see \ref shmem_long_atomic_swap() */                                      \
   _type shmem_##_typename##_atomic_swap(_type *target, _type value, int pe);
 
 API_CTX_DECL_SWAP(float, float)
@@ -1784,10 +1766,8 @@ API_CTX_DECL_SWAP(ptrdiff, ptrdiff_t)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define API_CTX_DECL_SWAP_NBI(_typename, _type)                                \
-  /* see \ref shmem_ctx_long_atomic_swap_nbi() */                              \
   void shmem_ctx_##_typename##_atomic_swap_nbi(                                \
       shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe);      \
-  /* see \ref shmem_long_atomic_swap_nbi() */                                  \
   void shmem_##_typename##_atomic_swap_nbi(_type *fetch, _type *target,        \
                                            _type value, int pe);
 
@@ -1845,10 +1825,8 @@ double shmem_double_swap(double *target, double value, int pe)
  *
  */
 #define API_CTX_DECL_CSWAP(_typename, _type)                                   \
-  /* see \ref shmem_ctx_long_atomic_compare_swap() */                          \
   _type shmem_ctx_##_typename##_atomic_compare_swap(                           \
       shmem_ctx_t ctx, _type *target, _type cond, _type value, int pe) _WUR;   \
-  /* see \ref shmem_long_atomic_compare_swap() */                              \
   _type shmem_##_typename##_atomic_compare_swap(_type *target, _type cond,     \
                                                 _type value, int pe);
 
@@ -1870,11 +1848,9 @@ API_CTX_DECL_CSWAP(ptrdiff, ptrdiff_t)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define API_CTX_DECL_CSWAP_NBI(_typename, _type)                               \
-  /* see \ref shmem_ctx_long_atomic_compare_swap_nbi() */                      \
   void shmem_ctx_##_typename##_atomic_compare_swap_nbi(                        \
       shmem_ctx_t ctx, _type *fetch, _type *target, _type cond, _type value,   \
       int pe);                                                                 \
-  /* see \ref shmem_long_atomic_compare_swap_nbi() */                          \
   void shmem_##_typename##_atomic_compare_swap_nbi(                            \
       _type *target, _type *fetch, _type cond, _type value, int pe);
 
@@ -1924,51 +1900,29 @@ long long shmem_longlong_cswap(long long *target, long long cond,
  */
 
 SHMEM_DECL_AMO2(fetch_add, long, long)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, int, int)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, longlong, long long)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, uint, unsigned int)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, ulong, unsigned long)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, int32, int32_t)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, int64, int64_t)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, uint32, uint32_t)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, uint64, uint64_t)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, size, size_t)
-/* see \ref shmem_long_atomic_fetch_add() */
 SHMEM_DECL_AMO2(fetch_add, ptrdiff, ptrdiff_t)
 
 SHMEM_DECL_AMO2_NBI(fetch_add, long, long)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, int, int)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, longlong, long long)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, uint, unsigned int)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, ulong, unsigned long)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, int32, int32_t)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, int64, int64_t)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, uint32, uint32_t)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, uint64, uint64_t)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, size, size_t)
-/* see \ref shmem_long_atomic_fetch_add_nbi() */
 SHMEM_DECL_AMO2_NBI(fetch_add, ptrdiff, ptrdiff_t)
 
 long shmem_long_fadd(long *target, long value, int pe)
@@ -1998,51 +1952,29 @@ long long shmem_longlong_fadd(long long *target, long long value, int pe)
  *
  */
 SHMEM_DECL_AMO1(fetch_inc, long, long)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, int, int)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, longlong, long long)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, uint, unsigned int)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, ulong, unsigned long)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, int32, int32_t)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, int64, int64_t)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, uint32, uint32_t)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, uint64, uint64_t)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, size, size_t)
-/* see \ref shmem_long_atomic_fetch_inc() */
 SHMEM_DECL_AMO1(fetch_inc, ptrdiff, ptrdiff_t)
 
 SHMEM_DECL_AMO1_NBI(fetch_inc, long, long)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, int, int)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, longlong, long long)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, uint, unsigned int)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, ulong, unsigned long)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, int32, int32_t)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, int64, int64_t)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, uint32, uint32_t)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, uint64, uint64_t)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, size, size_t)
-/* see \ref shmem_long_atomic_fetch_inc_nbi() */
 SHMEM_DECL_AMO1_NBI(fetch_inc, ptrdiff, ptrdiff_t)
 
 long shmem_long_finc(long *target, int pe)
@@ -2072,27 +2004,16 @@ long long shmem_longlong_finc(long long *target, int pe)
  *
  */
 SHMEM_DECL_VOID_AMO2(add, long, long)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, int, int)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, longlong, long long)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, uint, unsigned int)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, ulong, unsigned long)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, int32, int32_t)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, int64, int64_t)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, uint32, uint32_t)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, uint64, uint64_t)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, size, size_t)
-/* see \ref shmem_long_atomic_add() */
 SHMEM_DECL_VOID_AMO2(add, ptrdiff, ptrdiff_t)
 
 void shmem_long_add(long *target, long value, int pe)
@@ -2142,17 +2063,11 @@ void shmem_longlong_add(long long *target, long long value, int pe)
  *
  */
 SHMEM_DECL_VOID_AMO2(or, ulong, unsigned long)
-/* see \ref shmem_ulong_atomic_or() */
 SHMEM_DECL_VOID_AMO2(or, uint, unsigned int)
-/* see \ref shmem_ulong_atomic_or() */
 SHMEM_DECL_VOID_AMO2(or, ulonglong, unsigned long long)
-/* see \ref shmem_ulong_atomic_or() */
 SHMEM_DECL_VOID_AMO2(or, int32, int32_t)
-/* see \ref shmem_ulong_atomic_or() */
 SHMEM_DECL_VOID_AMO2(or, int64, int64_t)
-/* see \ref shmem_ulong_atomic_or() */
 SHMEM_DECL_VOID_AMO2(or, uint32, uint32_t)
-/* see \ref shmem_ulong_atomic_or() */
 SHMEM_DECL_VOID_AMO2(or, uint64, uint64_t)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2198,31 +2113,19 @@ SHMEM_DECL_VOID_AMO2(or, uint64, uint64_t)
  */
 
 SHMEM_DECL_AMO2(fetch_or, ulong, unsigned long)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2(fetch_or, uint, unsigned int)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2(fetch_or, ulonglong, unsigned long long)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2(fetch_or, int32, int32_t)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2(fetch_or, int64, int64_t)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2(fetch_or, uint32, uint32_t)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2(fetch_or, uint64, uint64_t)
 
 SHMEM_DECL_AMO2_NBI(fetch_or, ulong, unsigned long)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2_NBI(fetch_or, uint, unsigned int)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2_NBI(fetch_or, ulonglong, unsigned long long)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2_NBI(fetch_or, int32, int32_t)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2_NBI(fetch_or, int64, int64_t)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2_NBI(fetch_or, uint32, uint32_t)
-/* see \ref shmem_ulong_atomic_fetch_or() */
 SHMEM_DECL_AMO2_NBI(fetch_or, uint64, uint64_t)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2266,31 +2169,19 @@ SHMEM_DECL_AMO2_NBI(fetch_or, uint64, uint64_t)
  */
 
 SHMEM_DECL_VOID_AMO2(and, ulong, unsigned long)
-/* see \ref shmem_ulong_atomic_and() */
 SHMEM_DECL_VOID_AMO2(and, uint, unsigned int)
-/* see \ref shmem_ulong_atomic_and() */
 SHMEM_DECL_VOID_AMO2(and, ulonglong, unsigned long long)
-/* see \ref shmem_ulong_atomic_and() */
 SHMEM_DECL_VOID_AMO2(and, int32, int32_t)
-/* see \ref shmem_ulong_atomic_and() */
 SHMEM_DECL_VOID_AMO2(and, int64, int64_t)
-/* see \ref shmem_ulong_atomic_and() */
 SHMEM_DECL_VOID_AMO2(and, uint32, uint32_t)
-/* see \ref shmem_ulong_atomic_and() */
 SHMEM_DECL_VOID_AMO2(and, uint64, uint64_t)
 
 SHMEM_DECL_AMO2_NBI(fetch_and, ulong, unsigned long)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, uint, unsigned int)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, ulonglong, unsigned long long)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, int32, int32_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, int64, int64_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, uint32, uint32_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2336,31 +2227,19 @@ SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
  */
 
 SHMEM_DECL_AMO2(fetch_and, ulong, unsigned long)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2(fetch_and, uint, unsigned int)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2(fetch_and, ulonglong, unsigned long long)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2(fetch_and, int32, int32_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2(fetch_and, int64, int64_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2(fetch_and, uint32, uint32_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2(fetch_and, uint64, uint64_t)
 
 SHMEM_DECL_AMO2_NBI(fetch_and, ulong, unsigned long)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, uint, unsigned int)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, ulonglong, unsigned long long)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, int32, int32_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, int64, int64_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, uint32, uint32_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2404,31 +2283,19 @@ SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
  */
 
 SHMEM_DECL_VOID_AMO2(xor, ulong, unsigned long)
-/* see \ref shmem_ulong_atomic_xor() */
 SHMEM_DECL_VOID_AMO2(xor, uint, unsigned int)
-/* see \ref shmem_ulong_atomic_xor() */
 SHMEM_DECL_VOID_AMO2(xor, ulonglong, unsigned long long)
-/* see \ref shmem_ulong_atomic_xor() */
 SHMEM_DECL_VOID_AMO2(xor, int32, int32_t)
-/* see \ref shmem_ulong_atomic_xor() */
 SHMEM_DECL_VOID_AMO2(xor, int64, int64_t)
-/* see \ref shmem_ulong_atomic_xor() */
 SHMEM_DECL_VOID_AMO2(xor, uint32, uint32_t)
-/* see \ref shmem_ulong_atomic_xor() */
 SHMEM_DECL_VOID_AMO2(xor, uint64, uint64_t)
 
 SHMEM_DECL_AMO2_NBI(fetch_xor, ulong, unsigned long)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_xor, uint, unsigned int)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_xor, ulonglong, unsigned long long)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_xor, int32, int32_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_xor, int64, int64_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_xor, uint32, uint32_t)
-/* see \ref shmem_ulong_atomic_fetch_and() */
 SHMEM_DECL_AMO2_NBI(fetch_xor, uint64, uint64_t)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2474,29 +2341,17 @@ SHMEM_DECL_AMO2_NBI(fetch_xor, uint64, uint64_t)
  *
  */
 
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, int, int)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, long, long)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, longlong, long long)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, uint, unsigned int)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, ulong, unsigned long)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, ulonglong, unsigned long long)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, int32, int32_t)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, int64, int64_t)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, uint32, uint32_t)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, uint64, uint64_t)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, size, size_t)
-/* see \ref shmem_ulong_atomic_fetch_xor() */
 SHMEM_DECL_AMO2(fetch_xor, ptrdiff, ptrdiff_t)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2518,28 +2373,19 @@ SHMEM_DECL_AMO2(fetch_xor, ptrdiff, ptrdiff_t)
  * None.
  *
  */
+SHMEM_DECL_VOID_AMO1(inc, float, float)
+SHMEM_DECL_VOID_AMO1(inc, double, double)
 SHMEM_DECL_VOID_AMO1(inc, long, long)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, int, int)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, longlong, long long)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, uint, unsigned int)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, ulong, unsigned long)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, int32, int32_t)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, int64, int64_t)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, uint32, uint32_t)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, uint64, uint64_t)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, size, size_t)
-/* see \ref shmem_long_atomic_inc() */
 SHMEM_DECL_VOID_AMO1(inc, ptrdiff, ptrdiff_t)
 
 void shmem_long_inc(long *target, int pe)
@@ -2586,59 +2432,33 @@ void shmem_longlong_inc(long long *target, int pe)
  *
  */
 SHMEM_DECL_CONST_AMO1(fetch, long, long)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, int, int)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, float, float)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, double, double)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, longlong, long long)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, uint, unsigned int)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, ulong, unsigned long)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, int32, int32_t)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, int64, int64_t)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, uint32, uint32_t)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, uint64, uint64_t)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, size, size_t)
-/* see \ref shmem_long_atomic_fetch() */
 SHMEM_DECL_CONST_AMO1(fetch, ptrdiff, ptrdiff_t)
 
 SHMEM_DECL_CONST_AMO1_NBI(fetch, long, long)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, int, int)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, float, float)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, double, double)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, longlong, long long)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, uint, unsigned int)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, ulong, unsigned long)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, int32, int32_t)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, int64, int64_t)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, uint32, uint32_t)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, uint64, uint64_t)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, size, size_t)
-/* see \ref shmem_long_atomic_fetch_nbi() */
 SHMEM_DECL_CONST_AMO1_NBI(fetch, ptrdiff, ptrdiff_t)
 
 int shmem_int_fetch(const int *dest, int pe)
@@ -2694,31 +2514,18 @@ double shmem_double_fetch(const double *dest, int pe)
  *
  */
 SHMEM_DECL_VOID_AMO2(set, long, long)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, int, int)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, float, float)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, double, double)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, longlong, long long)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, uint, unsigned int)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, ulong, unsigned long)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, ulonglong, unsigned long long)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, int32, int32_t)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, int64, int64_t)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, uint32, uint32_t)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, uint64, uint64_t)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, size, size_t)
-/* see \ref shmem_long_atomic_set() */
 SHMEM_DECL_VOID_AMO2(set, ptrdiff, ptrdiff_t)
 
 void shmem_int_set(int *dest, int value, int pe)
@@ -3350,7 +3157,6 @@ int shmem_collectmem(shmem_team_t team, void *dest, const void *source,
  * @param pSync        Symmetric work array
  */
 #define API_COLLECT_SIZE(_opname, _size)                                       \
-  /* see \ref shmem_##_opname##64() */                                         \
   void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
                               int PE_start, int logPE_stride, int PE_size,     \
                               long *pSync)                                     \
@@ -3424,7 +3230,6 @@ int shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
  * @param pSync        Symmetric work array
  */
 #define API_FCOLLECT_SIZE(_opname, _size)                                      \
-  /* see \ref shmem_##_opname##64() */                                         \
   void shmem_##_opname##_size(void *target, const void *source, size_t nelems, \
                               int PE_start, int logPE_stride, int PE_size,     \
                               long *pSync)                                     \
@@ -3586,7 +3391,6 @@ int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
  * @param pSync        Symmetric work array of size SHMEM_ALLTOALL_SYNC_SIZE
  */
 #define API_ALLTOALLS_SIZE(_size)                                              \
-  /* see \ref shmem_alltoalls64() */                                           \
   void shmem_alltoalls##_size(void *target, const void *source, ptrdiff_t dst, \
                               ptrdiff_t sst, size_t nelems, int PE_start,      \
                               int logPE_stride, int PE_size, long *pSync)      \

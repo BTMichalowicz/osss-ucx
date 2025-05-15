@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ -f Makefile ]; then
+  make clean
+fi
+
 # Remove the 'build' directory
 echo "Cleaning build directory..."
 rm -rf build
