@@ -23,6 +23,7 @@
 #include <assert.h>
 
 #include <stdio.h>
+#include <math.h>
 
 /**
  * @brief Calculate edge color for color pairwise exchange algorithm
@@ -241,6 +242,19 @@ ALLTOALL_HELPER_SIGNAL_DEFINITION(color_pairwise_exchange, COLOR_PEER,
   void shcoll_alltoall##_size##_##_algo(                                       \
       void *dest, const void *source, size_t nelems, int PE_start,             \
       int logPE_stride, int PE_size, long *pSync) {                            \
+    /* Sanity checks */                                                        \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_POSITIVE(PE_size, "PE_size");                                 \
+    SHMEMU_CHECK_NON_NEGATIVE(PE_start, "PE_start");                           \
+    SHMEMU_CHECK_NON_NEGATIVE(logPE_stride, "logPE_stride");                   \
+    SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
+    SHMEMU_CHECK_SYMMETRIC(dest, (_size) / (CHAR_BIT) * nelems * PE_size);     \
+    SHMEMU_CHECK_SYMMETRIC(source, (_size) / (CHAR_BIT) * nelems * PE_size);   \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);   \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
+                                (_size) / (CHAR_BIT) * nelems * PE_size,       \
+                                (_size) / (CHAR_BIT) * nelems * PE_size);      \
+    /* Perform alltoall */                                                     \
     alltoall_helper_##_algo(dest, source, (_size) / (CHAR_BIT) * nelems,       \
                             PE_start, logPE_stride, PE_size, pSync);           \
   }
@@ -286,57 +300,64 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
 #define SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, _type, _typename)               \
   int shcoll_##_typename##_alltoall_##_algo(                                   \
       shmem_team_t team, _type *dest, const _type *source, size_t nelems) {    \
+    /* Check initialization */                                                 \
+    SHMEMU_CHECK_INIT();                                                       \
+                                                                               \
+    /* Check team validity and cast to internal handle */                      \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
+                                                                               \
     /* Get team parameters */                                                  \
-    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
-    const int logPE_stride = 0;                                                \
-    const int PE_size = shmem_team_n_pes(team);                                \
+    const int PE_size = team_h->nranks;                                        \
+    const int PE_start = team_h->start;         /* Use stored start */         \
+    const int stride = team_h->stride;          /* Use stored stride */        \
+    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__); /* Check stride if DEBUG */    \
+    /* Calculate log2 stride, assuming stride is valid */                      \
+    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
                                                                                \
-    /* Allocate pSync from symmetric heap */                                   \
-    long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
-    if (!pSync)                                                                \
-      return -1;                                                               \
+    /* Check buffer symmetry */                                                \
+    SHMEMU_CHECK_SYMMETRIC(dest, sizeof(_type) * nelems * PE_size);            \
+    SHMEMU_CHECK_SYMMETRIC(source, sizeof(_type) * nelems * PE_size);          \
                                                                                \
-    /* Initialize pSync */                                                     \
-    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
+    /* Check for overlap between source and destination */                     \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
+                                sizeof(_type) * nelems * PE_size,              \
+                                sizeof(_type) * nelems * PE_size);             \
                                                                                \
-    /* Ensure all PEs have initialized pSync */                                \
+    /* Use the pre-allocated pSync buffer from the team structure */           \
+    long *pSync = team_h->pSyncs[3];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[3]"); /* Use check macro */       \
+                                                                               \
+    /* Ensure pSync is initialized (potentially redundant but safe) */         \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* Perform alltoall */                                                     \
+    /* Perform alltoall using the team's pSync */                              \
     alltoall_helper_##_algo(dest, source, nelems * sizeof(_type), PE_start,    \
                             logPE_stride, PE_size, pSync);                     \
                                                                                \
-    /* Ensure alltoall completion */                                           \
+    /* Ensure alltoall completion across the team */                           \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* Reset pSync before freeing */                                           \
-    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
-    shmem_team_sync(team);                                                     \
+    /* Reset the pSync buffer */                                               \
+    shmemc_team_reset_psync(team_h, 3);                                        \
                                                                                \
-    shmem_free(pSync);                                                         \
+    /* No need to free or reset the team's pSync buffer */                     \
     return 0;                                                                  \
   }
 
-/**
- * @brief Helper macro to define alltoall implementations for all types
- *
- * @param _algo Algorithm name
- */
+// @formatter:off
+
 #define DEFINE_SHCOLL_ALLTOALL_TYPES(_algo)                                    \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, float, float)                         \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, double, double)                       \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, long double, longdouble)              \
+  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned char, uchar)                 \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, char, char)                           \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, signed char, schar)                   \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, short, short)                         \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, int, int)                             \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, long, long)                           \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, long long, longlong)                  \
-  SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned char, uchar)                 \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned short, ushort)               \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned int, uint)                   \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, unsigned long, ulong)                 \
@@ -351,8 +372,6 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, uint64_t, uint64)                     \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, size_t, size)                         \
   SHCOLL_ALLTOALL_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
-
-// @formatter:off
 
 DEFINE_SHCOLL_ALLTOALL_TYPES(shift_exchange_barrier)
 DEFINE_SHCOLL_ALLTOALL_TYPES(shift_exchange_counter)
@@ -374,38 +393,53 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
 #define SHCOLL_ALLTOALLMEM_DEFINITION(_algo)                                   \
   int shcoll_alltoallmem_##_algo(shmem_team_t team, void *dest,                \
                                  const void *source, size_t nelems) {          \
+    /* Check initialization */                                                 \
+    SHMEMU_CHECK_INIT();                                                       \
+                                                                               \
+    /* Check team validity and cast to internal handle */                      \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
+                                                                               \
+    /* Check for NULL pointers */                                              \
+    SHMEMU_CHECK_NULL(dest, "dest");                                           \
+    SHMEMU_CHECK_NULL(source, "source");                                       \
+                                                                               \
     /* Get team parameters */                                                  \
-    const int PE_start = 0; /* Teams use 0-based contiguous numbering */       \
-    const int logPE_stride = 0;                                                \
-    const int PE_size = shmem_team_n_pes(team);                                \
+    const int PE_size = team_h->nranks;                                        \
+    const int PE_start = team_h->start;         /* Use stored start */         \
+    const int stride = team_h->stride;          /* Use stored stride */        \
+    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__); /* Check stride if DEBUG */    \
+    /* Calculate log2 stride, assuming stride is valid (checked above if       \
+     * DEBUG) */                                                               \
+    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
                                                                                \
-    /* Allocate pSync from symmetric heap */                                   \
-    long *pSync = shmem_malloc(SHCOLL_ALLTOALL_SYNC_SIZE * sizeof(long));      \
-    if (!pSync)                                                                \
-      return -1;                                                               \
+    /* Check buffer symmetry */                                                \
+    SHMEMU_CHECK_SYMMETRIC(dest, nelems *PE_size);                             \
+    SHMEMU_CHECK_SYMMETRIC(source, nelems *PE_size);                           \
                                                                                \
-    /* Initialize pSync */                                                     \
-    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
+    /* Check for overlap between source and destination */                     \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size,                 \
+                                nelems *PE_size);                              \
                                                                                \
-    /* Ensure all PEs have initialized pSync */                                \
+    /* Use the pre-allocated pSync buffer from the team structure */           \
+    long *pSync = team_h->pSyncs[3];                                           \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[3]"); /* Use check macro */       \
+                                                                               \
+    /* Ensure pSync is initialized (potentially redundant but safe) */         \
+    /* The team init should handle this, but let's sync before use */          \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* Perform alltoall */                                                     \
+    /* Perform alltoall using the team's pSync */                              \
     alltoall_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,      \
                             PE_size, pSync);                                   \
                                                                                \
-    /* Ensure alltoall completion */                                           \
+    /* Ensure alltoall completion across the team */                           \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* Reset pSync before freeing */                                           \
-    for (int i = 0; i < SHCOLL_ALLTOALL_SYNC_SIZE; i++) {                      \
-      pSync[i] = SHCOLL_SYNC_VALUE;                                            \
-    }                                                                          \
-    shmem_team_sync(team);                                                     \
+    /* Reset the pSync buffer */                                               \
+    shmemc_team_reset_psync(team_h, 3);                                        \
                                                                                \
-    shmem_free(pSync);                                                         \
+    /* No need to free or reset the team's pSync buffer */                     \
     return 0;                                                                  \
   }
 

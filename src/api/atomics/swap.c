@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file swap.c
+ * @brief Implementation of SHMEM atomic swap operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -40,6 +45,16 @@
 #define shmem_ctx_ptrdiff_atomic_swap pshmem_ctx_ptrdiff_atomic_swap
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Atomic swap operations for different types
+ *
+ * These routines perform an atomic swap operation. An atomic swap writes
+ * the value to the target address on the specified PE and returns the
+ * previous contents of the target as an atomic operation.
+ *
+ * @param _name The type name suffix for the function
+ * @param _type The actual C type for the operation
+ */
 #define SHMEM_CTX_TYPE_SWAP(_name, _type)                                      \
   _type shmem_ctx_##_name##_atomic_swap(shmem_ctx_t ctx, _type *target,        \
                                         _type value, int pe) {                 \
@@ -68,6 +83,13 @@ SHMEM_CTX_TYPE_SWAP(uint64, uint64_t)
 SHMEM_CTX_TYPE_SWAP(size, size_t)
 SHMEM_CTX_TYPE_SWAP(ptrdiff, ptrdiff_t)
 
+/**
+ * @brief Defines the API for atomic swap operations
+ *
+ * These macros create the public API functions for atomic swap operations
+ * for different types. Each function performs a swap operation without a
+ * context.
+ */
 API_DEF_AMO2(swap, float, float)
 API_DEF_AMO2(swap, double, double)
 API_DEF_AMO2(swap, int, int)

@@ -1,4 +1,22 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file shmemc.h
+ * @brief Internal OpenSHMEM communications layer interface
+ *
+ * This header defines the internal communications layer interface used by
+ * OpenSHMEM. It provides low-level routines for:
+ * - Initialization and finalization
+ * - Memory management and accessibility
+ * - Point-to-point communication (put/get)
+ * - Atomic memory operations
+ * - Synchronization (barriers, fences)
+ * - Collective operations (broadcast, collect)
+ * - Teams and contexts
+ *
+ * The interface is used internally by the OpenSHMEM implementation and should
+ * not be called directly by applications.
+ *
+ * @copyright See LICENSE file at top-level
+ */
 
 #ifndef _SHMEMC_H
 #define _SHMEMC_H 1
@@ -24,6 +42,8 @@
 
 void shmemc_init(void);
 void shmemc_finalize(void);
+
+int shmemc_team_reset_psync(shmemc_team_h th, unsigned psync_idx);
 
 void shmemc_globalexit_init(void);
 void shmemc_globalexit_finalize(void);
@@ -101,8 +121,8 @@ void shmemc_teams_finalize(void);
 
 int shmemc_team_my_pe(shmemc_team_h th);
 int shmemc_team_n_pes(shmemc_team_h th);
-
-int shmemc_team_get_config(shmemc_team_h th, shmem_team_config_t *config);
+int shmemc_team_get_config(shmemc_team_h th, long config_mask,
+                           shmem_team_config_t *config);
 int shmemc_team_translate_pe(shmemc_team_h sh, int src_pe, shmemc_team_h dh);
 
 int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,

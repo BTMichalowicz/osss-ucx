@@ -1,10 +1,6 @@
-- Table registration for reductions and tpyed colls
-
-- All collectives
-  - Check the logger string formats in shcoll-shim.c
-  - Add a checker to make sure sure src and dest data are on the
-    symmetric heap?
-
 - Update include/pshmem.h with all the new routines
 
-- Do we need to deal with extensions for additional types for the collectives?
+- MAKE SURE NO ROUTINES ARE MISSING ANY TYPES
+
+- Anything need to be done with shmemx?
+

@@ -1,4 +1,10 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file cswap-nbi.c
+ * @brief Implementation of SHMEM non-blocking atomic compare-and-swap
+ * operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -53,6 +59,17 @@
   pshmem_ptrdiff_atomic_compare_swap_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to define non-blocking atomic compare-and-swap operations with
+ * contexts
+ *
+ * @param _name Type name string
+ * @param _type Data type
+ *
+ * Defines a function that atomically compares a value with a remote variable
+ * and swaps it with a new value if they match. The operation is performed in a
+ * non-blocking manner using the specified context.
+ */
 #define SHMEM_CTX_TYPE_CSWAP_NBI(_name, _type)                                 \
   void shmem_ctx_##_name##_atomic_compare_swap_nbi(                            \
       shmem_ctx_t ctx, _type *fetch, _type *target, _type cond, _type value,   \
@@ -77,6 +94,14 @@ SHMEM_CTX_TYPE_CSWAP_NBI(uint64, uint64_t)
 SHMEM_CTX_TYPE_CSWAP_NBI(size, size_t)
 SHMEM_CTX_TYPE_CSWAP_NBI(ptrdiff, ptrdiff_t)
 
+/**
+ * @brief Define non-blocking atomic compare-and-swap operations without
+ * contexts
+ *
+ * Implements non-blocking atomic compare-and-swap operations for various
+ * integer types using the default context. These operations atomically compare
+ * a value with a remote variable and swap it with a new value if they match.
+ */
 API_DEF_AMO3_NBI(compare_swap, int, int)
 API_DEF_AMO3_NBI(compare_swap, long, long)
 API_DEF_AMO3_NBI(compare_swap, longlong, long long)

@@ -6,6 +6,7 @@
 #define SHMEM_SUCCESS 0
 
 #include <shcoll/common.h>
+#include <shmemc.h>
 /* #include <shcoll/compat.h> */
 
 #include <shcoll/alltoall.h>
@@ -15,5 +16,6 @@
 #include <shcoll/collect.h>
 #include <shcoll/fcollect.h>
 #include <shcoll/reduce.h>
+#include <shcoll/psync_pool.h>
 
 #endif /* ! _SHCOLL_H */

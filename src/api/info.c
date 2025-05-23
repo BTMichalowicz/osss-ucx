@@ -1,5 +1,13 @@
 /* For license: see LICENSE file at top-level */
 
+/**
+ * @file info.c
+ * @brief Implementation of OpenSHMEM information output routines
+ *
+ * This file contains implementations of routines that output information about
+ * the OpenSHMEM library configuration, build environment, and features.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
@@ -19,6 +27,15 @@ static const int tag_width = 28;
 #define UNKNOWN "unknown"
 #define INTERNAL_ERROR "not found [shouldn't happen]"
 
+/**
+ * @brief Helper function to output formatted information
+ *
+ * @param strm Output stream to write to
+ * @param prefix String to prepend to output
+ * @param suffix String to append to output
+ * @param tag Label for the information being output
+ * @param val Value to output
+ */
 inline static void output(FILE *strm, const char *prefix, const char *suffix,
                           const char *tag, const char *val) {
   if (tag != NULL) {
@@ -33,6 +50,13 @@ inline static void output(FILE *strm, const char *prefix, const char *suffix,
   }
 }
 
+/**
+ * @brief Output OpenSHMEM specification version information
+ *
+ * @param strm Output stream to write to
+ * @param prefix String to prepend to output
+ * @param suffix String to append to output
+ */
 void info_output_spec_version(FILE *strm, const char *prefix,
                               const char *suffix) {
 #if defined(SHMEM_MAJOR_VERSION) && defined(SHMEM_MINOR_VERSION)
@@ -45,6 +69,13 @@ void info_output_spec_version(FILE *strm, const char *prefix,
   output(strm, prefix, suffix, "OpenSHMEM Specification", buf);
 }
 
+/**
+ * @brief Output OpenSHMEM package name information
+ *
+ * @param strm Output stream to write to
+ * @param prefix String to prepend to output
+ * @param suffix String to append to output
+ */
 void info_output_package_name(FILE *strm, const char *prefix,
                               const char *suffix) {
   output(strm, prefix, suffix, "OpenSHMEM Package name",
@@ -56,6 +87,13 @@ void info_output_package_name(FILE *strm, const char *prefix,
   );
 }
 
+/**
+ * @brief Output OpenSHMEM package contact information
+ *
+ * @param strm Output stream to write to
+ * @param prefix String to prepend to output
+ * @param suffix String to append to output
+ */
 void info_output_package_contact(FILE *strm, const char *prefix,
                                  const char *suffix) {
   output(strm, prefix, suffix, "OpenSHMEM Package URL",
@@ -75,6 +113,14 @@ void info_output_package_contact(FILE *strm, const char *prefix,
   );
 }
 
+/**
+ * @brief Output OpenSHMEM package version information
+ *
+ * @param strm Output stream to write to
+ * @param prefix String to prepend to output
+ * @param suffix String to append to output
+ * @param terse If non-zero, output version without label
+ */
 void info_output_package_version(FILE *strm, const char *prefix,
                                  const char *suffix, int terse) {
   output(strm, prefix, suffix, terse ? NULL : "OpenSHMEM Package version",
@@ -86,6 +132,13 @@ void info_output_package_version(FILE *strm, const char *prefix,
   );
 }
 
+/**
+ * @brief Output build environment information
+ *
+ * @param strm Output stream to write to
+ * @param prefix String to prepend to output
+ * @param suffix String to append to output
+ */
 void info_output_build_env(FILE *strm, const char *prefix, const char *suffix) {
   int s;
   char host[BUFMAX];
@@ -118,6 +171,13 @@ void info_output_build_env(FILE *strm, const char *prefix, const char *suffix) {
   output(strm, prefix, suffix, "Execution host", (s == 0) ? host : UNKNOWN);
 }
 
+/**
+ * @brief Output OpenSHMEM feature configuration information
+ *
+ * @param strm Output stream to write to
+ * @param prefix String to prepend to output
+ * @param suffix String to append to output
+ */
 void info_output_features(FILE *strm, const char *prefix, const char *suffix) {
   output(strm, prefix, suffix, "Static libraries",
 #ifdef ENABLE_STATIC
@@ -197,6 +257,13 @@ void info_output_features(FILE *strm, const char *prefix, const char *suffix) {
 #endif /* SHMEM_DEFAULT_HEAP_SIZE */
 }
 
+/**
+ * @brief Output OpenSHMEM communications layer information
+ *
+ * @param strm Output stream to write to
+ * @param prefix String to prepend to output
+ * @param suffix String to append to output
+ */
 void info_output_comms(FILE *strm, const char *prefix, const char *suffix) {
   output(strm, prefix, suffix, "UCX Build Version",
 #ifdef HAVE_UCX

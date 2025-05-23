@@ -1,4 +1,12 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file waitsome.c
+ * @brief Implementation of OpenSHMEM wait operations
+ *
+ * This file provides wait operations that block until some elements in an array
+ * meet specified comparison criteria.
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -39,6 +47,27 @@
 #define shmem_ptrdiff_wait_until_some pshmem_ptrdiff_wait_until_some
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Waits until some elements in an array meet specified comparison
+ * criteria
+ *
+ * @param _opname Base name of the operation (e.g. short, int, etc)
+ * @param _type C data type for the operation
+ * @param _size Size in bits (16, 32, or 64)
+ *
+ * Blocks until some elements in an array meet specified comparison criteria.
+ * Returns the number of elements that satisfied the criteria and stores their
+ * indices.
+ *
+ * @param ivars Array of variables to be tested
+ * @param nelems Number of elements in the array
+ * @param idxs Array to store indices of elements that satisfied criteria
+ * @param status Array indicating which elements to test (1=test, 0=skip)
+ * @param cmp Comparison operator (SHMEM_CMP_EQ, NE, GT, LE, LT, GE)
+ * @param cmp_value Value to compare against
+ *
+ * @return Number of elements that satisfied the criteria, or -1 on error
+ */
 #define SHMEM_TYPE_WAIT_UNTIL_SOME(_opname, _type, _size)                      \
   size_t shmem_##_opname##_wait_until_some(_type *ivars, size_t nelems,        \
                                            size_t *idxs, const int *status,    \

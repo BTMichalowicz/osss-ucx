@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file fetch-and-nbi.c
+ * @brief Implementation of SHMEM non-blocking atomic fetch-and-and operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -33,6 +38,16 @@
 #define shmem_uint64_atomic_fetch_and_nbi pshmem_uint64_atomic_fetch_and_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Non-blocking atomic fetch-and-and operations for different integer
+ * types
+ *
+ * These operations perform a non-blocking atomic fetch-and-and on a remote PE.
+ * The operations fetch the old value of the target and perform a bitwise AND
+ * with the provided value, storing the result back to the target location.
+ * The old value is returned asynchronously.
+ */
+
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, uint, unsigned int)
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, ulong, unsigned long)
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, ulonglong, unsigned long long)
@@ -40,6 +55,13 @@ SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, int32, int32_t)
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, int64, int64_t)
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, uint32, uint32_t)
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, uint64, uint64_t)
+
+/**
+ * @brief Default context non-blocking atomic fetch-and-and operations
+ *
+ * These operations perform the same functionality as the context-based
+ * operations above but use the default SHMEM context.
+ */
 
 API_DEF_AMO2_NBI(fetch_and, uint, unsigned int)
 API_DEF_AMO2_NBI(fetch_and, ulong, unsigned long)

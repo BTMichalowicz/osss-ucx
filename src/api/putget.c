@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file putget.c
+ * @brief Implementation of SHMEM put/get operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -59,6 +64,9 @@
 #define shmem_ctx_ptrdiff_put pshmem_ctx_ptrdiff_put
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Typed put operations for different data types
+ */
 SHMEM_CTX_TYPED_PUT(float, float)
 SHMEM_CTX_TYPED_PUT(double, double)
 SHMEM_CTX_TYPED_PUT(longdouble, long double)
@@ -97,6 +105,9 @@ SHMEM_CTX_TYPED_PUT(ptrdiff, ptrdiff_t)
 #define shmem_ctx_put128 pshmem_ctx_put128
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Size-specific put operations
+ */
 SHMEM_CTX_SIZED_PUT(8)
 SHMEM_CTX_SIZED_PUT(16)
 SHMEM_CTX_SIZED_PUT(32)
@@ -108,6 +119,9 @@ SHMEM_CTX_SIZED_PUT(128)
 #define shmem_ctx_putmem pshmem_ctx_putmem
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Memory put operation
+ */
 SHMEM_CTX_PUTMEM()
 
 #ifdef ENABLE_PSHMEM
@@ -161,6 +175,9 @@ SHMEM_CTX_PUTMEM()
 #define shmem_ctx_ptrdiff_p pshmem_ctx_ptrdiff_p
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Typed put operations for single values
+ */
 SHMEM_CTX_TYPED_P(float, float)
 SHMEM_CTX_TYPED_P(double, double)
 SHMEM_CTX_TYPED_P(longdouble, long double)
@@ -186,7 +203,9 @@ SHMEM_CTX_TYPED_P(uint64, uint64_t)
 SHMEM_CTX_TYPED_P(size, size_t)
 SHMEM_CTX_TYPED_P(ptrdiff, ptrdiff_t)
 
-/*
+/**
+ * @brief Implementation of strided put operations
+ * 
  * TODO: this is just layered over shmem_put/get linearly for now.
  * Looking for better iov method in UCX
  */
@@ -242,6 +261,9 @@ SHMEM_CTX_TYPED_P(ptrdiff, ptrdiff_t)
 #define shmem_ctx_ptrdiff_iput pshmem_ctx_ptrdiff_iput
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Typed strided put operations
+ */
 SHMEM_CTX_TYPED_IPUT(float, float)
 SHMEM_CTX_TYPED_IPUT(double, double)
 SHMEM_CTX_TYPED_IPUT(longdouble, long double)
@@ -280,6 +302,9 @@ SHMEM_CTX_TYPED_IPUT(ptrdiff, ptrdiff_t)
 #define shmem_ctx_iput128 pshmem_ctx_iput128
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Size-specific strided put operations
+ */
 SHMEM_CTX_SIZED_IPUT(8)
 SHMEM_CTX_SIZED_IPUT(16)
 SHMEM_CTX_SIZED_IPUT(32)
@@ -337,6 +362,9 @@ SHMEM_CTX_SIZED_IPUT(128)
 #define shmem_ctx_ptrdiff_put_nbi pshmem_ctx_ptrdiff_put_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Non-blocking typed put operations
+ */
 SHMEM_CTX_TYPED_PUT_NBI(float, float)
 SHMEM_CTX_TYPED_PUT_NBI(double, double)
 SHMEM_CTX_TYPED_PUT_NBI(longdouble, long double)
@@ -375,6 +403,9 @@ SHMEM_CTX_TYPED_PUT_NBI(ptrdiff, ptrdiff_t)
 #define shmem_ctx_put128_nbi pshmem_ctx_put128_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Non-blocking sized put operations
+ */
 SHMEM_CTX_SIZED_PUT_NBI(8)
 SHMEM_CTX_SIZED_PUT_NBI(16)
 SHMEM_CTX_SIZED_PUT_NBI(32)
@@ -386,6 +417,9 @@ SHMEM_CTX_SIZED_PUT_NBI(128)
 #define shmem_ctx_putmem_nbi pshmem_ctx_putmem_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Non-blocking memory put operation
+ */
 SHMEM_CTX_PUTMEM_NBI()
 
 #ifdef ENABLE_PSHMEM
@@ -539,6 +573,9 @@ SHMEM_CTX_PUTMEM_NBI()
 #define shmem_ptrdiff_put_nbi pshmem_ptrdiff_put_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Typed put operations
+ */
 API_DECL_TYPED_PUT(float, float)
 API_DECL_TYPED_PUT(double, double)
 API_DECL_TYPED_PUT(longdouble, long double)
@@ -599,6 +636,9 @@ API_DECL_TYPED_PUT(ptrdiff, ptrdiff_t)
 #define shmem_put128_nbi pshmem_put128_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Sized put operations
+ */
 API_DECL_SIZED_PUT(8)
 API_DECL_SIZED_PUT(16)
 API_DECL_SIZED_PUT(32)
@@ -612,6 +652,9 @@ API_DECL_SIZED_PUT(128)
 #define shmem_putmem_nbi pshmem_putmem_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Memory put operation
+ */
 API_DECL_PUTMEM()
 
 #ifdef ENABLE_PSHMEM
@@ -665,6 +708,9 @@ API_DECL_PUTMEM()
 #define shmem_ptrdiff_p pshmem_ptrdiff_p
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Typed put operations for single values
+ */
 API_DECL_TYPED_P(float, float)
 API_DECL_TYPED_P(double, double)
 API_DECL_TYPED_P(longdouble, long double)
@@ -690,8 +736,8 @@ API_DECL_TYPED_P(uint64, uint64_t)
 API_DECL_TYPED_P(size, size_t)
 API_DECL_TYPED_P(ptrdiff, ptrdiff_t)
 
-/*
- * -- get --------------------------------------------------------------
+/**
+ * @brief Get operations
  */
 
 #ifdef ENABLE_PSHMEM
@@ -745,6 +791,9 @@ API_DECL_TYPED_P(ptrdiff, ptrdiff_t)
 #define shmem_ctx_ptrdiff_get pshmem_ctx_ptrdiff_get
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Typed get operations
+ */
 SHMEM_CTX_TYPED_GET(float, float)
 SHMEM_CTX_TYPED_GET(double, double)
 SHMEM_CTX_TYPED_GET(longdouble, long double)

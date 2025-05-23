@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file set.c
+ * @brief Implementation of SHMEM atomic set operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -8,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_int_atomic_set = pshmem_ctx_int_atomic_set
 #define shmem_ctx_int_atomic_set pshmem_ctx_int_atomic_set
@@ -39,6 +45,16 @@
 #define shmem_ctx_ptrdiff_atomic_set pshmem_ctx_ptrdiff_atomic_set
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to define atomic set operations for different types
+ *
+ * @param _name Type name string
+ * @param _type Data type
+ *
+ * Defines a function that performs an atomic set operation.
+ * The operation atomically sets the value of a remote variable.
+ * The operation is performed without protecting the mutex.
+ */
 #define SHMEM_CTX_TYPE_SET(_name, _type)                                       \
   void shmem_ctx_##_name##_atomic_set(shmem_ctx_t ctx, _type *target,          \
                                       _type value, int pe) {                   \
@@ -61,6 +77,13 @@ SHMEM_CTX_TYPE_SET(uint64, uint64_t)
 SHMEM_CTX_TYPE_SET(size, size_t)
 SHMEM_CTX_TYPE_SET(ptrdiff, ptrdiff_t)
 
+/**
+ * @brief Defines the API for atomic set operations
+ *
+ * These macros create the public API functions for atomic set operations
+ * for different types. Each function performs a set operation without a
+ * context.
+ */
 API_DEF_VOID_AMO2(set, float, float)
 API_DEF_VOID_AMO2(set, double, double)
 API_DEF_VOID_AMO2(set, int, int)

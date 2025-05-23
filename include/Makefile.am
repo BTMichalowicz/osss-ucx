@@ -8,6 +8,8 @@ SHMEM_HDRS             =  \
 				shmem/depr.h \
 				shmem/generics.h \
 				shmem/teams.h \
+				shmem/api_types.h \
+				shmem/generic_types.h \
 				shmem.h
 
 #

@@ -18,6 +18,7 @@
 #define _SHCOLL_ALLTOALL_H 1
 
 #include <shmem/teams.h>
+#include "shmemu.h"
 
 /**
  * @brief Macro to declare type-specific alltoall implementation

@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file cswap.c
+ * @brief Implementation of SHMEM atomic compare-and-swap operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -41,6 +46,16 @@
 #define shmem_ptrdiff_atomic_compare_swap pshmem_ptrdiff_atomic_compare_swap
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to define atomic compare-and-swap operations
+ *
+ * @param _name Type name string
+ * @param _type Data type
+ *
+ * Defines a function that atomically compares a value with a condition and
+ * swaps it with a new value if they match. The operation is performed without
+ * protecting the mutex.
+ */
 #define SHMEM_CTX_TYPE_CSWAP(_name, _type)                                     \
   _type shmem_ctx_##_name##_atomic_compare_swap(                               \
       shmem_ctx_t ctx, _type *target, _type cond, _type value, int pe) {       \

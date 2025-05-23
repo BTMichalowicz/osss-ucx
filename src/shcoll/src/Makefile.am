@@ -6,7 +6,8 @@ SOURCES = alltoall.c \
 				broadcast.c \
 				collect.c \
 				fcollect.c \
-				reduce.c
+				reduce.c \
+				psync_pool.c
 
 SOURCES += util/bithacks.c \
 				util/broadcast-size.c \
@@ -21,6 +22,9 @@ FIND_SHMEM_H = -I$(top_srcdir)/include \
 # BUILD_CFLAGS            = -w
 BUILD_CFLAGS            =
 BUILD_CFLAGS           += -I.. $(FIND_SHMEM_H)
+BUILD_CFLAGS           += -I$(top_srcdir)/src/shmemu \
+                         -I$(top_srcdir)/src/shmemc \
+                         -I$(top_srcdir)/src/shmemt
 
 lib_LTLIBRARIES         = libshcoll.la
 libshcoll_la_SOURCES    = $(SOURCES)
@@ -34,6 +38,7 @@ nobase_include_HEADERS  = shcoll.h \
 				shcoll/collect.h \
 				shcoll/common.h \
 				shcoll/fcollect.h \
-				shcoll/reduce.h
+				shcoll/reduce.h \
+				shcoll/psync_pool.h
 
 EXTRA_DIST              = shcoll/compat.h

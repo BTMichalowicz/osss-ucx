@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file and.c
+ * @brief Implementation of SHMEM atomic AND operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -26,6 +31,13 @@
 #define shmem_ctx_uint64_atomic_and pshmem_ctx_uint64_atomic_and
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Define atomic AND operations for different integer types using
+ * contexts
+ *
+ * Implements atomic bitwise AND operations for unsigned integers, long,
+ * long long and fixed-width integer types
+ */
 SHMEM_CTX_TYPE_BITWISE(and, uint, unsigned int)
 SHMEM_CTX_TYPE_BITWISE(and, ulong, unsigned long)
 SHMEM_CTX_TYPE_BITWISE(and, ulonglong, unsigned long long)
@@ -34,6 +46,12 @@ SHMEM_CTX_TYPE_BITWISE(and, int64, int64_t)
 SHMEM_CTX_TYPE_BITWISE(and, uint32, uint32_t)
 SHMEM_CTX_TYPE_BITWISE(and, uint64, uint64_t)
 
+/**
+ * @brief Define non-context atomic AND operations for different integer types
+ *
+ * Implements atomic bitwise AND operations without contexts for unsigned
+ * integers, long, long long and fixed-width integer types
+ */
 API_DEF_VOID_AMO2(and, uint, unsigned int)
 API_DEF_VOID_AMO2(and, ulong, unsigned long)
 API_DEF_VOID_AMO2(and, ulonglong, unsigned long long)

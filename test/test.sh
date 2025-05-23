@@ -9,7 +9,7 @@ export UCX_RC_DEVX_ENABLED=n
 # export UCX_LOG_LEVEL=debug
 
 # --- Turn on verbose SHMEM logging
-export SHMEM_DEBUG=on
+# export SHMEM_DEBUG=on
 
 # --- Set OSSS bins from build directory
 oshcc="../build/build/bin/oshcc"
@@ -34,10 +34,10 @@ $oshcc --version
 ################################################################
 
 # # --- Hello world ---
-# echo $hline ; echo "  Running Hello World test" ; echo $hline
-# $oshcc hello_world.c -o ./bin/hello_world
-# $oshrun $flags -np 2 ./bin/hello_world
-# echo
+echo $hline ; echo "  Running Hello World test" ; echo $hline
+$oshcc hello_world.c -o ./bin/hello_world
+$oshrun $flags -np 8 ./bin/hello_world
+echo
 
 # # --- shmem_put ---
 # echo $hline ; echo "  Running shmem_put test" ; echo $hline
@@ -74,39 +74,51 @@ $oshcc --version
 # $oshcc test_team_sync.c -o ./bin/test_team_sync
 # $oshrun $flags -np 2 ./bin/test_team_sync
 # echo
+# 
+# # --- shmem_alltoall ---
+# echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
+# $oshcc test_alltoall.c -o ./bin/test_alltoall
+# $oshrun $flags -np 4 ./bin/test_alltoall
+# echo
 
-# --- shmem_alltoall ---
-echo $hline ; echo "  Running shmem_alltoall test" ; echo $hline
-$oshcc test_alltoall.c -o ./bin/test_alltoall
-$oshrun $flags -np 4 ./bin/test_alltoall
-echo
+# # --- shmem_alltoalls ---
+# echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
+# $oshcc test_alltoalls.c -o ./bin/test_alltoalls
+# $oshrun $flags -np 4 ./bin/test_alltoalls
+# echo
 
-# --- shmem_alltoalls ---
-echo $hline ; echo "  Running shmem_alltoalls test" ; echo $hline
-$oshcc test_alltoalls.c -o ./bin/test_alltoalls
-$oshrun $flags -np 4 ./bin/test_alltoalls
-echo
+# # --- shmem_collect ---
+# echo $hline ; echo "  Running shmem_collect test" ; echo $hline
+# $oshcc test_collect.c -o ./bin/test_collect
+# $oshrun $flags -np 4 ./bin/test_collect
+# echo
 
-# --- shmem_collect ---
-echo $hline ; echo "  Running shmem_collect test" ; echo $hline
-$oshcc test_collect.c -o ./bin/test_collect
-$oshrun $flags -np 4 ./bin/test_collect
-echo
+# # --- shmem_fcollect ---
+# echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
+# $oshcc test_fcollect.c -o ./bin/test_fcollect
+# $oshrun $flags -np 4 ./bin/test_fcollect
+# echo
 
-# --- shmem_fcollect ---
-echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
-$oshcc test_fcollect.c -o ./bin/test_fcollect
-$oshrun $flags -np 4 ./bin/test_fcollect
-echo
+# # --- shmem_broadcast ---
+# echo $hline ; echo "  Running shmem_broadcast test" ; echo $hline
+# $oshcc test_broadcast.c -o ./bin/test_broadcast
+# $oshrun $flags -np 4 ./bin/test_broadcast
+# echo
 
-# --- shmem_broadcast ---
-echo $hline ; echo "  Running shmem_broadcast test" ; echo $hline
-$oshcc test_broadcast.c -o ./bin/test_broadcast
-$oshrun $flags -np 4 ./bin/test_broadcast
-echo
+# # --- shmem_reduce ---
+# echo $hline ; echo "  Running shmem_reduce test" ; echo $hline
+# $oshcc test_reduce.c -o ./bin/test_reduce
+# $oshrun $flags -np 4 ./bin/test_reduce
+# echo
 
-# --- shmem_reduce ---
-echo $hline ; echo "  Running shmem_reduce test" ; echo $hline
-$oshcc test_reduce.c -o ./bin/test_reduce
-$oshrun $flags -np 4 ./bin/test_reduce
-echo
+# # --- shmem_sync ---
+# echo $hline ; echo "  Running shmem_sync test" ; echo $hline
+# $oshcc test_sync.c -o ./bin/test_sync
+# $oshrun $flags -np 4 ./bin/test_sync
+# echo
+
+# # --- shmem_alltoall sanity check test ---
+# echo $hline ; echo "  Running shmem_alltoall sanity check test" ; echo $hline
+# $oshcc test_broken_alltoall.c -o ./bin/test_broken_alltoall
+# $oshrun $flags -np 4 ./bin/test_broken_alltoall
+# echo

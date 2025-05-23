@@ -19,7 +19,7 @@
 #include "module.h"
 
 #include <stdio.h>
-#include <stdlib.h> /* getenv */
+#include <stdlib.h> 
 #include <ctype.h>
 #include <string.h>
 #include <strings.h>
@@ -143,6 +143,7 @@ void shmemc_env_init(void) {
   proc.env.coll.barrier = NULL;
   proc.env.coll.barrier_all = NULL;
   proc.env.coll.sync = NULL;
+  proc.env.coll.team_sync = NULL;
   proc.env.coll.sync_all = NULL;
 
   proc.env.coll.broadcast_type = NULL;
@@ -165,16 +166,37 @@ void shmemc_env_init(void) {
   proc.env.coll.alltoalls_mem = NULL;
   proc.env.coll.alltoalls_size = NULL;
 
-  proc.env.coll.reductions = NULL;
+  /* Initialize all reduction variables to NULL */
+  proc.env.coll.and_to_all = NULL;
+  proc.env.coll.or_to_all = NULL;
+  proc.env.coll.xor_to_all = NULL;
+  proc.env.coll.max_to_all = NULL;
+  proc.env.coll.min_to_all = NULL;
+  proc.env.coll.sum_to_all = NULL;
+  proc.env.coll.prod_to_all = NULL;
+
+  proc.env.coll.and_reduce = NULL;
+  proc.env.coll.or_reduce = NULL;
+  proc.env.coll.xor_reduce = NULL;
+  proc.env.coll.max_reduce = NULL;
+  proc.env.coll.min_reduce = NULL;
+  proc.env.coll.sum_reduce = NULL;
+  proc.env.coll.prod_reduce = NULL;
 
   /* Initialize from environment variables with defaults */
   CHECK_ENV(e, BARRIER_ALGO);
   proc.env.coll.barrier = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BARRIER);
+
   CHECK_ENV(e, BARRIER_ALL_ALGO);
   proc.env.coll.barrier_all =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BARRIER_ALL);
+
   CHECK_ENV(e, SYNC_ALGO);
   proc.env.coll.sync = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC);
+
+  CHECK_ENV(e, TEAM_SYNC_ALGO);
+  proc.env.coll.team_sync = strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC);
+
   CHECK_ENV(e, SYNC_ALL_ALGO);
   proc.env.coll.sync_all =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SYNC_ALL);
@@ -231,10 +253,63 @@ void shmemc_env_init(void) {
   proc.env.coll.broadcast_size =
       strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_BROADCAST);
 
-  /* TODO currently ignored */
-  CHECK_ENV(e, REDUCE_ALGO);
-  proc.env.coll.reductions =
-      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_REDUCTIONS);
+  /* Check for individual reduction algorithms or use defaults */
+  CHECK_ENV(e, AND_TO_ALL_ALGO);
+  proc.env.coll.and_to_all =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_AND_TO_ALL);
+
+  CHECK_ENV(e, OR_TO_ALL_ALGO);
+  proc.env.coll.or_to_all =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_OR_TO_ALL);
+
+  CHECK_ENV(e, XOR_TO_ALL_ALGO);
+  proc.env.coll.xor_to_all =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_XOR_TO_ALL);
+
+  CHECK_ENV(e, MAX_TO_ALL_ALGO);
+  proc.env.coll.max_to_all =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_MAX_TO_ALL);
+
+  CHECK_ENV(e, MIN_TO_ALL_ALGO);
+  proc.env.coll.min_to_all =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_MIN_TO_ALL);
+
+  CHECK_ENV(e, SUM_TO_ALL_ALGO);
+  proc.env.coll.sum_to_all =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SUM_TO_ALL);
+
+  CHECK_ENV(e, PROD_TO_ALL_ALGO);
+  proc.env.coll.prod_to_all =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_PROD_TO_ALL);
+
+  /* Check for team-based reduction algorithms or use defaults */
+  CHECK_ENV(e, AND_REDUCE_ALGO);
+  proc.env.coll.and_reduce =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_AND_REDUCE);
+
+  CHECK_ENV(e, OR_REDUCE_ALGO);
+  proc.env.coll.or_reduce =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_OR_REDUCE);
+
+  CHECK_ENV(e, XOR_REDUCE_ALGO);
+  proc.env.coll.xor_reduce =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_XOR_REDUCE);
+
+  CHECK_ENV(e, MAX_REDUCE_ALGO);
+  proc.env.coll.max_reduce =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_MAX_REDUCE);
+
+  CHECK_ENV(e, MIN_REDUCE_ALGO);
+  proc.env.coll.min_reduce =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_MIN_REDUCE);
+
+  CHECK_ENV(e, SUM_REDUCE_ALGO);
+  proc.env.coll.sum_reduce =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_SUM_REDUCE);
+
+  CHECK_ENV(e, PROD_REDUCE_ALGO);
+  proc.env.coll.prod_reduce =
+      strdup((e != NULL) ? e : COLLECTIVES_DEFAULT_PROD_REDUCE);
 
   proc.env.progress_threads = NULL;
 
@@ -288,8 +363,6 @@ void shmemc_env_finalize(void) {
   free(proc.env.heap_spec);
 
   /* Free all collective algorithm strings */
-  free(proc.env.coll.reductions);
-
   free(proc.env.coll.alltoalls_size);
   free(proc.env.coll.alltoalls_type);
   free(proc.env.coll.alltoalls_mem);
@@ -312,10 +385,28 @@ void shmemc_env_finalize(void) {
 
   free(proc.env.coll.sync_all);
   free(proc.env.coll.sync);
+  free(proc.env.coll.team_sync);
   free(proc.env.coll.barrier_all);
   free(proc.env.coll.barrier);
 
   free(proc.env.progress_threads);
+
+  /* Free reduction operation fields */
+  free(proc.env.coll.and_to_all);
+  free(proc.env.coll.or_to_all);
+  free(proc.env.coll.xor_to_all);
+  free(proc.env.coll.max_to_all);
+  free(proc.env.coll.min_to_all);
+  free(proc.env.coll.sum_to_all);
+  free(proc.env.coll.prod_to_all);
+
+  free(proc.env.coll.and_reduce);
+  free(proc.env.coll.or_reduce);
+  free(proc.env.coll.xor_reduce);
+  free(proc.env.coll.max_reduce);
+  free(proc.env.coll.min_reduce);
+  free(proc.env.coll.sum_reduce);
+  free(proc.env.coll.prod_reduce);
 }
 
 /**
@@ -413,6 +504,7 @@ void shmemc_print_env_vars(FILE *stream, const char *prefix) {
   DESCRIBE_COLLECTIVE(barrier, BARRIER);
   DESCRIBE_COLLECTIVE(barrier_all, BARRIER_ALL);
   DESCRIBE_COLLECTIVE(sync, SYNC);
+  DESCRIBE_COLLECTIVE(team_sync, TEAM_SYNC);
   DESCRIBE_COLLECTIVE(sync_all, SYNC_ALL);
 
   DESCRIBE_COLLECTIVE(broadcast_type, BROADCAST_TYPE);
@@ -433,7 +525,23 @@ void shmemc_print_env_vars(FILE *stream, const char *prefix) {
   DESCRIBE_COLLECTIVE(alltoall_size, ALLTOALL_SIZE);
   DESCRIBE_COLLECTIVE(alltoalls_size, ALLTOALLS_SIZE);
 
-  DESCRIBE_COLLECTIVE(reductions, REDUCE);
+  /* Reduction operations */
+  DESCRIBE_COLLECTIVE(and_to_all, AND_TO_ALL);
+  DESCRIBE_COLLECTIVE(or_to_all, OR_TO_ALL);
+  DESCRIBE_COLLECTIVE(xor_to_all, XOR_TO_ALL);
+  DESCRIBE_COLLECTIVE(max_to_all, MAX_TO_ALL);
+  DESCRIBE_COLLECTIVE(min_to_all, MIN_TO_ALL);
+  DESCRIBE_COLLECTIVE(sum_to_all, SUM_TO_ALL);
+  DESCRIBE_COLLECTIVE(prod_to_all, PROD_TO_ALL);
+
+  /* Team-based reduction operations */
+  DESCRIBE_COLLECTIVE(and_reduce, AND_REDUCE);
+  DESCRIBE_COLLECTIVE(or_reduce, OR_REDUCE);
+  DESCRIBE_COLLECTIVE(xor_reduce, XOR_REDUCE);
+  DESCRIBE_COLLECTIVE(max_reduce, MAX_REDUCE);
+  DESCRIBE_COLLECTIVE(min_reduce, MIN_REDUCE);
+  DESCRIBE_COLLECTIVE(sum_reduce, SUM_REDUCE);
+  DESCRIBE_COLLECTIVE(prod_reduce, PROD_REDUCE);
 
   fprintf(stream, "%s%-*s %-*s %s\n", prefix, var_width,
           "SHMEM_PROGRESS_THREADS", val_width,

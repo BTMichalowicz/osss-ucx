@@ -1,4 +1,16 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file logger.c
+ * @brief Logging functionality for OpenSHMEM
+ *
+ * This file implements a configurable logging system for OpenSHMEM that
+ * supports:
+ * - Multiple logging destinations (file or stderr)
+ * - Selective event filtering
+ * - Timestamped messages with PE/process info
+ * - Dynamic log file naming with format specifiers
+ *
+ * @copyright See LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -24,27 +36,32 @@
 #include <ctype.h>
 #include <math.h>
 
+/** File handle for log output */
 static FILE *log_stream = NULL;
 
-/*
- * output formatting
+/**
+ * Output formatting widths
  */
-static int pe_width;
-static int stamp_width;
+static int pe_width;    /**< Width for PE number display */
+static int stamp_width; /**< Width for timestamp display */
 
-/*
- * cache process ID
- */
+/** Cached process ID */
 static pid_t mypid;
 
-/*
- * keep track of trace events
+/**
+ * Event tracking hash table
  */
-
 KHASH_MAP_INIT_STR(events_hash, bool)
 
+/** Hash table to track enabled logging events */
 static khash_t(events_hash) * events;
 
+/**
+ * @brief Set the enabled state for a logging event
+ *
+ * @param name Name of the logging event
+ * @param state True to enable, false to disable
+ */
 static void event_set(shmemu_log_t name, bool state) {
   khiter_t k;
   int ret;
@@ -53,12 +70,23 @@ static void event_set(shmemu_log_t name, bool state) {
   kh_value(events, k) = state;
 }
 
+/**
+ * @brief Check if a logging event is enabled
+ *
+ * @param name Name of the logging event
+ * @return true if event is enabled, false otherwise
+ */
 static bool event_enabled(shmemu_log_t name) {
   const khiter_t k = kh_get(events_hash, events, name);
 
   return (k != kh_end(events)) ? kh_value(events, k) : false;
 }
 
+/**
+ * @brief Convert string to uppercase in-place
+ *
+ * @param str String to convert
+ */
 static void upperize(char *str) {
   char *q;
 
@@ -67,6 +95,11 @@ static void upperize(char *str) {
   }
 }
 
+/**
+ * @brief Parse logging events from environment variable
+ *
+ * Parses comma/semicolon separated list of events to enable
+ */
 static void parse_log_events(void) {
   const char *delims = ",:;";
   char *cp = proc.env.logging_events;
@@ -86,7 +119,8 @@ static void parse_log_events(void) {
   }
 }
 
-/*
+/**
+ * Format specifiers for log file names:
  * %p - process ID
  * %h - host name
  * %n - my rank/PE
@@ -102,6 +136,13 @@ static void parse_log_events(void) {
     }                                                                          \
   } while (0)
 
+/**
+ * @brief Parse log file name template and substitute format specifiers
+ *
+ * @param name Buffer to store generated filename
+ * @param len Length of name buffer
+ * @param template Template string containing format specifiers
+ */
 static void parse_logfile_name(char *name, size_t len, const char *template) {
   const char format_character = '%';
   char *p = (char *)template;
@@ -141,6 +182,12 @@ static void parse_logfile_name(char *name, size_t len, const char *template) {
   *lp = '\0';
 }
 
+/**
+ * @brief Initialize the logging system
+ *
+ * Sets up log file, formatting parameters, and default event states.
+ * Parses environment variables to configure logging behavior.
+ */
 void shmemu_logger_init(void) {
   mypid = getpid();
 
@@ -189,6 +236,11 @@ void shmemu_logger_init(void) {
   }
 }
 
+/**
+ * @brief Clean up the logging system
+ *
+ * Closes log file and frees event tracking resources
+ */
 void shmemu_logger_finalize(void) {
   if (proc.env.logging) {
     fclose(log_stream);
@@ -197,12 +249,24 @@ void shmemu_logger_finalize(void) {
   }
 }
 
+/** Buffer sizes for log message formatting */
 #define TRACE_MSG_BUF_SIZE_1 256
 #define TRACE_MSG_BUF_SIZE_2 (TRACE_MSG_BUF_SIZE_1 * 2)
 
+/** Temporary buffers for message formatting */
 static char tmp1[TRACE_MSG_BUF_SIZE_1];
 static char tmp2[TRACE_MSG_BUF_SIZE_2];
 
+/**
+ * @brief Log a message if the event type is enabled
+ *
+ * Formats and outputs a log message with timestamp, PE info, and event type
+ * if the specified event type is enabled.
+ *
+ * @param evt Event type for this message
+ * @param fmt Printf-style format string
+ * @param ... Variable arguments for format string
+ */
 void shmemu_logger(shmemu_log_t evt, const char *fmt, ...) {
   if (proc.env.logging) {
 

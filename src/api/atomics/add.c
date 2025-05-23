@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file add.c
+ * @brief Implementation of SHMEM atomic add operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -36,6 +41,14 @@
 #define shmem_ctx_ptrdiff_atomic_add pshmem_ctx_ptrdiff_atomic_add
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Macro to define atomic add operations for different types
+ *
+ * @param _name Type name string
+ * @param _type Data type
+ *
+ * Defines a function that atomically adds a value to a remote variable
+ */
 #define SHMEM_CTX_TYPE_ADD(_name, _type)                                       \
   void shmem_ctx_##_name##_atomic_add(shmem_ctx_t ctx, _type *target,          \
                                       _type value, int pe) {                   \
@@ -43,6 +56,7 @@
         shmemc_ctx_add(ctx, target, &value, sizeof(value), pe));               \
   }
 
+/* Define atomic add operations for different types */
 SHMEM_CTX_TYPE_ADD(int, int)
 SHMEM_CTX_TYPE_ADD(long, long)
 SHMEM_CTX_TYPE_ADD(longlong, long long)
@@ -56,6 +70,7 @@ SHMEM_CTX_TYPE_ADD(uint64, uint64_t)
 SHMEM_CTX_TYPE_ADD(size, size_t)
 SHMEM_CTX_TYPE_ADD(ptrdiff, ptrdiff_t)
 
+/* Define non-context atomic add operations */
 API_DEF_VOID_AMO2(add, int, int)
 API_DEF_VOID_AMO2(add, long, long)
 API_DEF_VOID_AMO2(add, longlong, long long)

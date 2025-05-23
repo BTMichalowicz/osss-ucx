@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file pe.h
+ * @brief Header file containing UCX-specific PE and context management
+ * structures
+ * @license See LICENSE file at top-level
+ */
 
 #ifndef _UCP_PE_H
 #define _UCP_PE_H 1
@@ -16,8 +21,8 @@
 #include <sys/types.h>
 #include <ucp/api/ucp.h>
 
-/*
- * exchanged at start-up
+/**
+ * @brief Information exchanged between PEs at startup
  */
 typedef struct worker_info {
   ucp_address_t *addr; /**< worker address */
@@ -25,28 +30,36 @@ typedef struct worker_info {
   size_t len;          /**< size of worker */
 } worker_info_t;
 
-/*
- * Encapsulate what UCX needs for remote access to a memory region
+/**
+ * @brief Encapsulates remote key data needed for memory region access
  */
 typedef struct mem_opaque_rkey {
   void *data;
 } mem_opaque_rkey_t;
 
+/**
+ * @brief Collection of remote keys for memory region access across PEs
+ */
 typedef struct mem_opaque {
   mem_opaque_rkey_t *rkeys; /* per PE */
 } mem_opaque_t;
 
+/**
+ * @brief Memory access information for a single PE
+ */
 typedef struct mem_access {
   ucp_rkey_h rkey; /* remote key for this heap */
 } mem_access_t;
 
+/**
+ * @brief Collection of memory access information across all PEs
+ */
 typedef struct mem_region_access {
   mem_access_t *rinfo; /* nranks remote access info */
 } mem_region_access_t;
 
-/*
- * each PE has a number of memory regions, which need the following
- * info:
+/**
+ * @brief Information about a memory region/heap on a PE
  */
 typedef struct mem_info {
   size_t id;     /* number of this heap */
@@ -56,52 +69,58 @@ typedef struct mem_info {
   ucp_mem_h mh;  /* memory handle */
 } mem_info_t;
 
-/*
- * for PE exchange
+/**
+ * @brief Collection of memory region information for PE exchange
  */
 typedef struct mem_region {
   mem_info_t *minfo; /**< nranks mem info */
 } mem_region_t;
 
-/*
- * *Internal* OpenSMHEM context management handle
- *
- * NB difference between UCX context, and OpenSHMEM context.  Each
- * OpenSHMEM context requires...
+/**
+ * @brief Internal OpenSHMEM context management handle
+ * @note There is a difference between UCX context and OpenSHMEM context
  */
-
 typedef struct shmemc_context *shmemc_context_h;
 
-/*
- * PEs belong to teams
+/**
+ * @brief Handle for team management
  */
 typedef struct shmemc_team *shmemc_team_h;
 
 KHASH_MAP_INIT_INT(map, int)
 
+/**
+ * @brief Structure representing a team of PEs
+ */
 typedef struct shmemc_team {
-  int rank;
-  int nranks; /**< identity */
+  const char *name; /**< if predef, who we are (else NULL) */
 
-  khash_t(map) * fwd;
-  khash_t(map) * rev; /**< forward and reverse PE number maps */
+  /* Team geometry */
+  int rank;   /* my rank in this team */
+  int nranks; /* number of PEs in team */
+  int start;  /* starting PE in the parent team's context (usually world) */
+  int stride; /* stride between PEs in the parent team's context */
 
-  shmem_team_config_t cfg; /**< team configuration */
+  /* handle -> attributes */
+  shmem_team_config_t cfg;
+
+  /* PE mapping */
+  khash_t(map) * fwd; /**< Map: team rank -> global PE */
+  khash_t(map) * rev; /**< Map: global PE -> team rank */
 
   shmemc_context_h *ctxts; /**< array of contexts in this team */
   size_t nctxts;           /**< how many contexts allocated */
 
-  const char *name;     /**< if predef, who we are (else NULL) */
   shmemc_team_h parent; /**< parent team we split from,
                            NULL if predef */
 
   /* now need to add pSync arrays for collectives */
-#define SHMEMC_NUM_PSYNCS 2
-  long *pSyncs[SHMEMC_NUM_PSYNCS];
+#define SHMEMC_NUM_PSYNCS 5  /* For barrier/sync, broadcast, collect/fcollect, alltoall/alltoalls, reductions */
+long *pSyncs[SHMEMC_NUM_PSYNCS];
 } shmemc_team_t;
 
-/*
- * context attributes, see OpenSMHEM 1.4 spec, sec. 9.4.1, pp. 30-31
+/**
+ * @brief Context attributes as defined in OpenSHMEM 1.4 spec, sec. 9.4.1
  */
 typedef struct shmemc_context_attr {
   bool serialized;
@@ -109,6 +128,9 @@ typedef struct shmemc_context_attr {
   bool nostore;
 } shmemc_context_attr_t;
 
+/**
+ * @brief Structure representing an OpenSHMEM context
+ */
 typedef struct shmemc_context {
   ucp_worker_h w;                     /* for separate context progress */
   ucp_ep_h *eps;                      /* endpoints */
@@ -128,8 +150,8 @@ typedef struct shmemc_context {
    */
 } shmemc_context_t;
 
-/*
- * this comms-layer needs to know...
+/**
+ * @brief Communication layer information structure
  */
 typedef struct comms_info {
   ucp_context_h ucx_ctxt;        /* local communication context */
@@ -147,6 +169,9 @@ typedef struct comms_info {
   mem_opaque_t *orks; /* opaque rkeys (nregions * PEs) */
 } comms_info_t;
 
+/**
+ * @brief Thread descriptor structure
+ */
 typedef struct thread_desc {
   ucs_thread_mode_t ucx_tl; /**< UCX thread level */
   int osh_tl;               /**< corresponding OpenSHMEM thread level */

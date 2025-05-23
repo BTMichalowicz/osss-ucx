@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file fetch-add.c
+ * @brief Implementation of SHMEM atomic fetch-and-add operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -49,6 +54,16 @@
  * fetch-and-add
  */
 
+/**
+ * @brief Macro to define atomic fetch-and-add operations with contexts
+ *
+ * @param _name Type name string
+ * @param _type Data type
+ *
+ * Defines a function that atomically adds a value to a remote variable and
+ * returns the previous value. The operation is performed using the specified
+ * context.
+ */
 #define SHMEM_CTX_TYPE_FADD(_name, _type)                                      \
   _type shmem_ctx_##_name##_atomic_fetch_add(shmem_ctx_t ctx, _type *target,   \
                                              _type value, int pe) {            \

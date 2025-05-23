@@ -1,4 +1,9 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file fetch-xor-nbi.c
+ * @brief Implementation of SHMEM non-blocking atomic fetch-and-xor operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -33,6 +38,13 @@
 #define shmem_uint64_atomic_fetch_xor_nbi pshmem_uint64_atomic_fetch_xor_nbi
 #endif /* ENABLE_PSHMEM */
 
+/**
+ * @brief Non-blocking atomic fetch-and-xor operations with contexts
+ *
+ * The fetch-and-xor routines perform an atomic bitwise XOR operation
+ * on a remote data object and return the previous value in a non-blocking
+ * manner.
+ */
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, uint, unsigned int)
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, ulong, unsigned long)
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, ulonglong, unsigned long long)
@@ -41,6 +53,13 @@ SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, int64, int64_t)
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, uint32, uint32_t)
 SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, uint64, uint64_t)
 
+/**
+ * @brief Non-blocking atomic fetch-and-xor operations without contexts
+ *
+ * These routines perform an atomic bitwise XOR operation on a remote data
+ * object and return the previous value in a non-blocking manner, using the
+ * default context.
+ */
 API_DEF_AMO2_NBI(fetch_xor, uint, unsigned int)
 API_DEF_AMO2_NBI(fetch_xor, ulong, unsigned long)
 API_DEF_AMO2_NBI(fetch_xor, ulonglong, unsigned long long)
