@@ -205,7 +205,7 @@ SHMEM_CTX_TYPED_P(ptrdiff, ptrdiff_t)
 
 /**
  * @brief Implementation of strided put operations
- * 
+ *
  * TODO: this is just layered over shmem_put/get linearly for now.
  * Looking for better iov method in UCX
  */

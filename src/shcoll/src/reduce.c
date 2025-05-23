@@ -1226,7 +1226,7 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
         dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync);  \
                                                                                \
     shmem_team_sync(team);                                                     \
-    shmemc_team_reset_psync(team_h, 4);                                         \
+    shmemc_team_reset_psync(team_h, 4);                                        \
     shmem_free(pWrk);                                                          \
     return 0;                                                                  \
   }

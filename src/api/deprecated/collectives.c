@@ -16,7 +16,7 @@
  * ---------------------------------------------------------------------
  *
  * Deprecations as of 1.5.
- * 
+ *
  * This is not currently used. The deprecations for all collectives are
  * handled in include/shmem/api.h
  */

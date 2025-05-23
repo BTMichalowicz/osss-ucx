@@ -1,5 +1,14 @@
 #!/bin/bash
 
+#
+# This script needs to be run from the project root directory.
+# Example:
+#   cd /path/to/osss-ucx
+#   ./scripts/CLEAN.sh
+#
+# This script will clean the build directory, run autogen, configure, and compile the project.
+#
+
 if [ -f Makefile ]; then
   make clean
 fi
@@ -40,4 +49,4 @@ rm -rf m4
 # Remove any other temporary files or directories as needed
 # Add additional clean-up commands here if necessary
 
-echo "Build cleaned."
+echo "Build cleaned." 

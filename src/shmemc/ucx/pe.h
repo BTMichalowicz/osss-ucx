@@ -115,8 +115,10 @@ typedef struct shmemc_team {
                            NULL if predef */
 
   /* now need to add pSync arrays for collectives */
-#define SHMEMC_NUM_PSYNCS 5  /* For barrier/sync, broadcast, collect/fcollect, alltoall/alltoalls, reductions */
-long *pSyncs[SHMEMC_NUM_PSYNCS];
+#define SHMEMC_NUM_PSYNCS                                                      \
+  5 /* For barrier/sync, broadcast, collect/fcollect, alltoall/alltoalls,      \
+       reductions */
+  long *pSyncs[SHMEMC_NUM_PSYNCS];
 } shmemc_team_t;
 
 /**

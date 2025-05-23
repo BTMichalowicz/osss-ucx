@@ -1,5 +1,15 @@
 #!/bin/bash
 
+#
+# This script needs to be run from the project root directory.
+#
+# Example:
+#   cd /path/to/osss-ucx
+#   ./scripts/BUILD.sh
+#
+# This script will clean the build directory, run autogen, configure, and compile the project.
+#
+
 HLINE="--------------------------------------------"
 pwd=$(pwd)
 
@@ -7,7 +17,7 @@ pwd=$(pwd)
 echo $HLINE
 echo "            CLEANING BUILD"
 echo $HLINE
-./CLEAN.sh
+./scripts/CLEAN.sh
 echo ; echo
 
 # --- Run autogen and configure
@@ -41,5 +51,4 @@ export SHMEM_LAUNCHER="$OMPI_BIN/mpirun"
 echo $HLINE
 echo "            COMPILING"
 echo $HLINE
-make -j $(( $(nproc) - 1 )) install
-
+make -j $(( $(nproc) - 1 )) install 

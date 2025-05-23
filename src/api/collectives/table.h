@@ -43,7 +43,8 @@ typedef struct unsized_op {
 /** Function pointer type for typed collective operations */
 typedef int (*typed_coll_fn_t)();
 
-/** Function pointer type for to_all typed collective operations (void return) */
+/** Function pointer type for to_all typed collective operations (void return)
+ */
 typedef void (*typed_to_all_fn_t)();
 
 /**

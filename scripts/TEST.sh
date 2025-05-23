@@ -1,5 +1,14 @@
 #!/bin/bash
 
+#
+# This script needs to be run from the project root directory.
+# Example:
+#   cd /path/to/osss-ucx
+#   ./scripts/TEST.sh
+#
+# This script will run the tests for the specified version.
+#
+
 # --- Check if the test is provided and valid
 TEST="$1"
 if [ $# -eq 1 ]; then
@@ -83,4 +92,4 @@ elif [ "$TEST" == "shmembench_1.4" ]; then
   test_shmembench_1_4
 elif [ "$TEST" == "shmembench_1.5" ]; then
   test_shmembench_1_5
-fi
+fi 

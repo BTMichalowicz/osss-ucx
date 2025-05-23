@@ -4,10 +4,9 @@
  */
 
 /**
-  * NOTE: THIS IS NOT CURRENTLY IN USE
-  * TODO: WORK THIS INTO A FUTURE RELEASE
+ * NOTE: THIS IS NOT CURRENTLY IN USE
+ * TODO: WORK THIS INTO A FUTURE RELEASE
  */
-
 
 #include "shcoll.h"
 #include "shmemu.h"
