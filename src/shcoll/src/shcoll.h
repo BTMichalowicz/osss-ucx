@@ -16,6 +16,5 @@
 #include <shcoll/collect.h>
 #include <shcoll/fcollect.h>
 #include <shcoll/reduce.h>
-#include <shcoll/psync_pool.h>
 
 #endif /* ! _SHCOLL_H */

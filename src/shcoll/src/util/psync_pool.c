@@ -8,7 +8,8 @@
  * TODO: WORK THIS INTO A FUTURE RELEASE
  */
 
-#include "shcoll.h"
+#include "psync_pool.h"
+#include "../shcoll.h"
 #include "shmemu.h"
 #include "shmemc.h"
 #include "state.h"

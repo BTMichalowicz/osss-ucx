@@ -17,7 +17,7 @@ pwd=$(pwd)
 echo $HLINE
 echo "            CLEANING BUILD"
 echo $HLINE
-./scripts/CLEAN.sh
+./scripts/clean.sh
 echo ; echo
 
 # --- Run autogen and configure
