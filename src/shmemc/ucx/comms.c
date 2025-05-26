@@ -755,10 +755,11 @@ void shmemc_ctx_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
   get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
   ep = lookup_ucp_ep(ch, pe);
-
+  /* Encrypt */
   s = ucp_put_nbi(ep, src, nbytes, r_dest, r_key);
   shmemu_assert(s == UCS_OK || s == UCS_INPROGRESS,
                 MODULE ": non-blocking put failed");
+  /* TODO: Decryption in shmem_quiet */
 }
 
 void shmemc_ctx_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,

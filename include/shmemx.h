@@ -304,6 +304,22 @@ int shmemx_query_interoperability(int property);
 
 /** @} */
 
+
+/**
+ * @brief Encrypt single-pe-put/get buffers on the user side before sending them
+ * across the network or through intra-node shared memory. Uses GCM
+ * (galois_counter mode)
+ * @param src_pe PE of source
+ * @param dst_pe PE of dst
+ * @param src address of src buffer
+ * @param enc_src address of encrypted src buffer
+ * @param key encryption key 
+ * @param shmem_ctx OSHMEM ctx -- modified to contain ciphertext ctx
+ * @return length of ciphertext
+ */
+
+int shmemx_encrypt_single_buffer(int src_pe, int dst_pe, void **src, void **enc_src, unsigned char *nonce, unsigned char *key,  shmemc_ctx_t *shmem_ctx);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
