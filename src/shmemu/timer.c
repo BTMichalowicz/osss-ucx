@@ -16,7 +16,7 @@
 #include <sys/time.h>
 
 /** Timestamp of program start used as epoch reference */
-static double epoch;
+static double epoch = 0.0;
 
 /**
  * @brief Get current time with microsecond precision
