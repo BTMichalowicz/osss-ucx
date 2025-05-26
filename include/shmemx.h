@@ -305,6 +305,8 @@ int shmemx_query_interoperability(int property);
 /** @} */
 
 
+/* BEGINNING SHMEM ENCRYPTION ADDITIONS: BTM */
+#if ENABLE_SHMEM_ENCRYPTION
 /**
  * @brief Encrypt single-pe-put/get buffers on the user side before sending them
  * across the network or through intra-node shared memory. Uses GCM
@@ -320,6 +322,10 @@ int shmemx_query_interoperability(int property);
 
 int shmemx_encrypt_single_buffer(int src_pe, int dst_pe, void **src, void **enc_src, unsigned char *nonce, unsigned char *key,  shmemc_ctx_t *shmem_ctx);
 
+
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
+/* ENDING SHMEM ENCRYPTION ADDITIONS: BTM */
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

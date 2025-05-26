@@ -59,6 +59,27 @@ AM_CONDITIONAL([ENABLE_PSHMEM], [test "x$enable_pshmem" = "xyes"])
 AS_IF([test "x$enable_pshmem" != "xyes"], [enable_pshmem=no])
 
 #
+# encryption API: disabled by default
+#
+AC_ARG_ENABLE([encryption],
+    AS_HELP_STRING([--enable-encryption],
+            [Enable encryption/decryption -- requires experimental api to be turned on, @<:@default=no@:>@]))
+
+AS_IF([test "x$enable_experimental" = "xyes"],
+    [AS_IF([test "x$enable_encryption" = "xyes"],
+        [AC_DEFINE([ENABLE_ENCRYPTION], [1], [Enable encrypted communication])
+        AC_SUBST([ENABLE_ENCRYPTION], [1])],
+        [AC_SUBST([ENABLE_ENCRYPTION], [0])]
+        )
+    AM_CONDITIONAL([ENABLE_ENCRYPTION], [test "x$enable_encryption" = "xyes"])
+
+    AS_IF([test "x$enable_encryption" != "xyes"], [enable_encryption=no])
+
+    ],
+    [AC_SUBST([ENABLE_ENCRYPTION], [0])]
+    )
+
+#
 # addresses are aligned everywhere: disabled by default
 #
 AC_ARG_ENABLE([aligned-addresses],
