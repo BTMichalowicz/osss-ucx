@@ -145,6 +145,8 @@ typedef struct shmemc_context {
 
   shmemc_team_h team; /* team we belong to */
 
+  uint32_t encryption_key; /* Done for creating the encryption stuff */
+
   /*
    * possibly other things
    */
