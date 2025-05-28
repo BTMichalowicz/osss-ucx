@@ -145,7 +145,13 @@ typedef struct shmemc_context {
 
   shmemc_team_h team; /* team we belong to */
 
+
+#if ENABLE_SHMEM_ENCRYPTION
   uint32_t encryption_key; /* Done for creating the encryption stuff */
+  unsigned char* initialization_vector; /* TODO on a per-rank setup? */
+  EVP_CIPHER_CTX *cipher_ctx; /* NULL at start */
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 
   /*
    * possibly other things

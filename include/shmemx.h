@@ -307,6 +307,34 @@ int shmemx_query_interoperability(int property);
 
 /* BEGINNING SHMEM ENCRYPTION ADDITIONS: BTM */
 #if ENABLE_SHMEM_ENCRYPTION
+
+
+/* Constant items */
+#define MAX_MSG_SIZE 2<<24 /*16 MB */
+#define OFFSET 400
+#define GCM_KEY_SIZE 32
+
+
+
+/**
+ * @brief Initializes contexts for encryption based out of shmemc_ctx items
+ * @return void return type, or crash
+ */
+
+/*void shmemx_sec_init(void);*/
+/* Don't think we need this? */
+
+
+typedef struct shmem_secure_attr {
+    size_t plaintext_size;
+    size_t encrypted_size;
+    void *plaintext_buf;
+    void *encrypted_buf;
+    
+}
+
+    
+
 /**
  * @brief Encrypt single-pe-put/get buffers on the user side before sending them
  * across the network or through intra-node shared memory. Uses GCM
@@ -320,7 +348,10 @@ int shmemx_query_interoperability(int property);
  * @return length of ciphertext
  */
 
-int shmemx_encrypt_single_buffer(int src_pe, int dst_pe, void **src, void **enc_src, unsigned char *nonce, unsigned char *key,  shmemc_ctx_t *shmem_ctx);
+
+int shmemx_encrypt_single_buffer(int src_pe, int dst_pe, void **src, void **enc_src, size_t plaintext_size, unsigned char *nonce, unsigned char *key,  shmemc_ctx_t *shmem_ctx);
+
+int shmemx_decrypt_single_buffer(int src_pe, int dst_pe, void **src, void **enc_src, unsigned char *nonce, unsigned char *key,  shmemc_ctx_t *shmem_ctx);
 
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
