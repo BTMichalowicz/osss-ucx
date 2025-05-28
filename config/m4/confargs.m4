@@ -67,16 +67,19 @@ AC_ARG_ENABLE([encryption],
 
 AS_IF([test "x$enable_experimental" = "xyes"],
     [AS_IF([test "x$enable_encryption" = "xyes"],
-        [AC_DEFINE([ENABLE_ENCRYPTION], [1], [Enable encrypted communication])
-        AC_SUBST([ENABLE_ENCRYPTION], [1])],
-        [AC_SUBST([ENABLE_ENCRYPTION], [0])]
+        [
+            AC_DEFINE([ENABLE_SHMEM_ENCRYPTION], [1], [Enable encrypted communication])
+            AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [1])
+            LDFLAGS="-lssl -lcrypto $LDFLAGS"
+        ],
+        [AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [0])]
         )
-    AM_CONDITIONAL([ENABLE_ENCRYPTION], [test "x$enable_encryption" = "xyes"])
+    AM_CONDITIONAL([ENABLE_SHMEM_ENCRYPTION], [test "x$enable_encryption" = "xyes"])
 
     AS_IF([test "x$enable_encryption" != "xyes"], [enable_encryption=no])
 
     ],
-    [AC_SUBST([ENABLE_ENCRYPTION], [0])]
+    [AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [0])]
     )
 
 #
