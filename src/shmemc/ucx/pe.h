@@ -147,9 +147,8 @@ typedef struct shmemc_context {
 
 
 #if ENABLE_SHMEM_ENCRYPTION
-  uint32_t encryption_key; /* Done for creating the encryption stuff */
-  unsigned char* initialization_vector; /* TODO on a per-rank setup? */
-  EVP_CIPHER_CTX *cipher_ctx; /* NULL at start */
+  EVP_CIPHER_CTX *enc_ctx; /* NULL at start */
+  EVP_CIPHER_CTX *dec_ctx; /* Also NULL at the start */
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 
 

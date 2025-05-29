@@ -313,15 +313,15 @@ int shmemx_query_interoperability(int property);
 #define MAX_MSG_SIZE 2<<24 /*16 MB */
 #define OFFSET 400
 #define GCM_KEY_SIZE 32
-
-
+#define AES_TAG_LEN 16
+#define AES_RAND_BYTES 12
 
 /**
- * @brief Initializes contexts for encryption based out of shmemc_ctx items
+ * @brief Initializes the default contexts for encryption based on the default ctx
  * @return void return type, or crash
  */
 
-/*void shmemx_sec_init(void);*/
+void shmemx_sec_init(void);
 /* Don't think we need this? */
 
 
@@ -349,9 +349,9 @@ typedef struct shmem_secure_attr {
  */
 
 
-int shmemx_encrypt_single_buffer(int src_pe, int dst_pe, void **src, void **enc_src, size_t plaintext_size, unsigned char *nonce, unsigned char *key,  shmemc_ctx_t *shmem_ctx);
+int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, shmemc_context_h shmem_ctx, size_t *cipher_len);
 
-int shmemx_decrypt_single_buffer(int src_pe, int dst_pe, void **src, void **enc_src, unsigned char *nonce, unsigned char *key,  shmemc_ctx_t *shmem_ctx);
+int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *rbuf, unsigned long long dest, size_t bytes, shmemc_context_h shmem_ctx, size_t *cipher_len);
 
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */

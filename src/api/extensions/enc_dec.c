@@ -12,7 +12,7 @@
 #include "shmemu.h"
 
 const unsigned char gcm_key[GCM_KEY_SIZE] = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','a','b','c','d','e','f'};
-unsigned char send_ciphertext[MAX_MSG_SIZE+OFFSET];
+unsigned char send_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 
 
 
@@ -21,36 +21,73 @@ static inline void handleErrors(char *message){
     shmemu_fatal("shmem_enc_dec: %s\n", message);
 }
 
-int shmemx_encrypt_single_buffer(int src_pe, int dst_pe, void **src, void **enc_src,
-        size_t plaintext_size, unsigned char *nonce, unsigned char *key,
-        shmemc_context_t *shmem_ctx){
-
-    int res = 0;
-    //unisigned char *initVector = (unsigned char*)"0"; 
-    /*TODO: BEST WAY TO DO THIS FOR CONSISTENT VECTORS -- place it in the struct for each time??? */
-
-    if (shmem_ctx->cipher_ctx == NULL){
-        if (!(shmem_ctx->cipher_ctx = EVP_CIPHER_CTX_new())){
+void shmemx_sec_init(){
+    if (defcp->enc_ctx == NULL){
+        if (!(shmem_ctx->enc_ctx = EVP_CIPHER_CTX_new())){
             handleErrors("cipher failed to be created");
+        }
+        /* Begin using AES_256_gcm */
+        res = EVP_EncryptInit_ex2(shmem_ctx->enc_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+        if (res != 1){
+            handleErrors("failed to begin encryption portion");
+        }
+
+        res = EVP_CIPHER_CTX_ctrl(shmem_ctx->enc_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+        if (res != 1){
+            handleErrors("Failed to set up the Initialization Vector Length");
         }
     }
 
-    shmem_ctx->nonceCounter++;
+    if (defcp->dec_ctx == NULL){
+        if (!(shmem_ctx->dec_ctx = EVP_CIPHER_CTX_new())){
+            handleErrors("cipher failed to be created");
+        }
+        /* Begin using AES_256_gcm */
+        res = EVP_DencryptInit_ex2(shmem_ctx->dec_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+        if (res != 1){
+            handleErrors("failed to begin Decryption portion");
+        }
 
-
-    /* Begin using AES_256_gcm */
-    res = EVP_EncryptInit_ex(shmem_ctx->cipher_ctx, EVP_aes_256_gcm(), NULL, NULL, send_ciphertext+0);
-    if (res != 1){
-        handleErrors("failed to begin encryption portion\n");
+        res = EVP_CIPHER_CTX_ctrl(shmem_ctx->dec_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+        if (res != 1){
+            handleErrors("Failed to set up the Initialization Vector Length");
+        }
     }
+    return;
+}
+
+int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, 
+        const void *sbuf, unsigned long long dest, size_t bytes,
+        shmemc_context_h shmem_ctx, size_t *cipher_len){
+
+    int const_bytes = AES_RAND_BYTES;
+
+    RAND_bytes(cipherbuf+src, const_bytes  /* Why 12?? */);
+    EVP_EncryptInit_ex2(shmem_ctx->enc_ctx, NULL, NULL, NULL, cipherbuf+src);
+
+    EVP_EncryptUpdate(shmem_ctx->enc_ctx,cipherbuf+src+const_bytes,cipher_len, sbuf+dest, bytes);
+
+    EVP_EncryptFinal_ex2(shmem_ctx->enc_ctx, cipherbuf+const_bytes+src+(*cipher_len), cipher_len);
+
+    EVP_CIPHER_CTX_ctrl(shmem_ctx->ctx_enc, EVL_CTRL_GCM_GET_TAG, AES_TAG_LEN, cipherbuf+const_bytes+src+bytes);
+
+    return res;
+}
+
+int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, 
+        const void *rbuf, unsigned long long dest, size_t bytes, 
+        shmemc_context_h shmem_ctx, size_t  *cipher_len){
 
 
-
-    EVP_CIPHER_CTX_free(shmem_ctx->cipher_ctx);
-    shmem_ctx->cipher_ctx = NULL;
-
+    EVP_DecryptInit_ex2(shmem_ctx->dec_ctx, NULL, NULL, NULL, cipherbuf+src);
+    EVP_DecryptUpdate(shmem_ctx->dec_ctx, rbuf+dest, cipher_len, cipherbuf+src+AES_RAND_BYTES, (bytes-AES_RAND_BYTES));
+    EVP_CIPHER_CTX_ctrl(shmem_ctx->dec_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, (rbuf+dest+(*cipher_len)));
+    if (!(EVP_DecryptFinal_ex2(shmem_ctx->dec_ctx, (rbuf+dest+(*cipher_len)), cipher_len) > 0)){
+        handleErrors("Decryption Tag Verification Failed\n");
+    }
     return 0;
 }
+
     
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
