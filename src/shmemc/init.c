@@ -53,8 +53,6 @@ void shmemc_init(void) {
 
   shmemc_teams_init();
 
-  shmemc_enc_init();
-
   /* now heap registered... */
 
   /* publish worker info, everyone has it and exchanges */
