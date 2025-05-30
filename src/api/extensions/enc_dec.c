@@ -23,32 +23,32 @@ static inline void handleErrors(char *message){
 
 void shmemx_sec_init(){
     if (defcp->enc_ctx == NULL){
-        if (!(shmem_ctx->enc_ctx = EVP_CIPHER_CTX_new())){
+        if (!(defcp->enc_ctx = EVP_CIPHER_CTX_new())){
             handleErrors("cipher failed to be created");
         }
         /* Begin using AES_256_gcm */
-        res = EVP_EncryptInit_ex2(shmem_ctx->enc_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+        res = EVP_EncryptInit_ex2(defcp->enc_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
         if (res != 1){
             handleErrors("failed to begin encryption portion");
         }
 
-        res = EVP_CIPHER_CTX_ctrl(shmem_ctx->enc_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+        res = EVP_CIPHER_CTX_ctrl(defcp->enc_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
         if (res != 1){
             handleErrors("Failed to set up the Initialization Vector Length");
         }
     }
 
     if (defcp->dec_ctx == NULL){
-        if (!(shmem_ctx->dec_ctx = EVP_CIPHER_CTX_new())){
+        if (!(defcp->dec_ctx = EVP_CIPHER_CTX_new())){
             handleErrors("cipher failed to be created");
         }
         /* Begin using AES_256_gcm */
-        res = EVP_DencryptInit_ex2(shmem_ctx->dec_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+        res = EVP_DencryptInit_ex2(defcp->dec_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
         if (res != 1){
             handleErrors("failed to begin Decryption portion");
         }
 
-        res = EVP_CIPHER_CTX_ctrl(shmem_ctx->dec_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+        res = EVP_CIPHER_CTX_ctrl(defcp->dec_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
         if (res != 1){
             handleErrors("Failed to set up the Initialization Vector Length");
         }

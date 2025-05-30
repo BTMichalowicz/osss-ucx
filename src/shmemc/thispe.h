@@ -21,8 +21,6 @@
 #include "shmem_enc.h"
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 
-#endif /* ENABLE_SHMEM_ENCRYPTION */
-
 #include "boolean.h"
 #include "threading.h"
 

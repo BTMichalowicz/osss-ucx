@@ -23,6 +23,11 @@
 
 #include <stdlib.h>
 
+#if ENABLE_SHMEM_ENCRYPTION
+#include "shmemx.h"
+#include "shmem_enc.h"
+#endif
+
 /**
  * @brief Manage free list of re-usable contexts
  */
@@ -189,6 +194,8 @@ inline static void context_set_options(long options, shmemc_context_h ch) {
 #if ENABLE_SHMEM_ENCRYPTION
   ch->enc_cxt = NULL;
   ch->dec_ctx = NULL;
+
+  shmemx_sec_init();
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 }
 
