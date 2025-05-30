@@ -84,6 +84,9 @@ AS_IF([test "x$enable_experimental" = "xyes"],
     [AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [0])]
     )
 
+AS_IF([test "x$enable_encryption" != "xyes"], [enable_encryption=no])
+
+
 #
 # addresses are aligned everywhere: disabled by default
 #
