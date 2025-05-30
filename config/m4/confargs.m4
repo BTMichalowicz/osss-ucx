@@ -37,7 +37,9 @@ AC_ARG_ENABLE([experimental],
 AS_IF([test "x$enable_experimental" = "xyes"],
 	[AC_DEFINE([ENABLE_EXPERIMENTAL], [1], [Enable non-standard extensions])
 	AC_SUBST([ENABLE_EXPERIMENTAL], [1])],
-	[AC_SUBST([ENABLE_EXPERIMENTAL], [0])]
+	[AC_SUBST([ENABLE_EXPERIMENTAL], [0])
+     AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [0])
+    ]
 	)
 AM_CONDITIONAL([ENABLE_EXPERIMENTAL], [test "x$enable_experimental" = "xyes"])
 
