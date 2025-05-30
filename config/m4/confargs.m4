@@ -76,14 +76,12 @@ AS_IF([test "x$enable_experimental" = "xyes"],
         ],
         [AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [0])]
         )
-    AM_CONDITIONAL([ENABLE_SHMEM_ENCRYPTION], [test "x$enable_encryption" = "xyes"])
-
-    AS_IF([test "x$enable_encryption" != "xyes"], [enable_encryption=no])
-
+ 
     ],
     [AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [0])]
     )
 
+AM_CONDITIONAL([ENABLE_SHMEM_ENCRYPTION], [test "x$enable_encryption" = "xyes"])
 AS_IF([test "x$enable_encryption" != "xyes"], [enable_encryption=no])
 
 
