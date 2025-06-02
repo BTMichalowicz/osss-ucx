@@ -275,8 +275,6 @@ inline static void barrier_sync_helper_dissemination(int PE_start,
  * - sync_all: Global barrier without memory ordering
  *
  * @param _algo Algorithm name to generate functions for
- *
- * TODO: Double check sanity checks
  */
 #define SHCOLL_BARRIER_SYNC_DEFINITION(_algo)                                  \
   void shcoll_barrier_##_algo(int PE_start, int logPE_stride, int PE_size,     \
@@ -358,13 +356,13 @@ SHCOLL_BARRIER_SYNC_DEFINITION(dissemination)
     const int PE_size = team_h->nranks;                                        \
                                                                                \
     /* Use the team's pre-allocated pSync */                                   \
-    long *pSync = team_h->pSyncs[0];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[0]");                             \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_BARRIER);         \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[BARRIER]");                       \
                                                                                \
     /* Call the internal barrier helper */                                     \
     barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
     /* Reset the pSync buffer */                                               \
-    shmemc_team_reset_psync(team_h, 0);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_BARRIER);                     \
     return 0;                                                                  \
   }
 

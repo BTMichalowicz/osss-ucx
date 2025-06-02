@@ -347,11 +347,8 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
                                 total_extent_bytes);                            \
                                                                                 \
     /* Allocate pSync from symmetric heap */                                    \
-    long *pSync = team_h->pSyncs[3];                                            \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[3]");                              \
-                                                                                \
-    /* Ensure pSync is initialized and previous ops are complete */             \
-    shmem_team_sync(team); /* Barrier before starting */                        \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL);         \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[ALLTOALL]");                       \
                                                                                 \
     /* Call the appropriate size-specific helper */ /* Determine size and call  \
                                                      * the correct              \
@@ -405,11 +402,9 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
       shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);     \
     }                                                                           \
                                                                                 \
-    /* Ensure completion across the team */                                     \
-    shmem_team_sync(team); /* Barrier after finishing */                        \
     /* Reset the pSync buffer */                                                \
-    shmemc_team_reset_psync(team_h, 3);                                         \
-    return SHMEM_SUCCESS;                                                       \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_ALLTOALL);                     \
+    return 0;                                                                   \
   }
 
 /**
@@ -497,11 +492,8 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
                                 nelems *element_size_bytes *PE_size);          \
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
-    long *pSync = team_h->pSyncs[3];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[3]");                             \
-                                                                               \
-    /* Ensure pSync is initialized (potentially redundant but safe) */         \
-    shmem_team_sync(team); /* Barrier before starting */                       \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL);        \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[ALLTOALL]");                      \
                                                                                \
     /* Calculate log2 stride, assuming stride is valid */                      \
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
@@ -522,12 +514,10 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
                                 logPE_stride, PE_size, pSync);                 \
     }                                                                          \
                                                                                \
-    /* Final barrier to ensure completion */                                   \
-    shmem_team_sync(team); /* Barrier after finishing */                       \
     /* Reset the pSync buffer */                                               \
-    shmemc_team_reset_psync(team_h, 3);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_ALLTOALL);                    \
                                                                                \
-    return SHMEM_SUCCESS;                                                      \
+    return 0;                                                                  \
   }
 
 /* Define the actual functions */

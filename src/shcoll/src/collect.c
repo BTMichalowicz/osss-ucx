@@ -643,8 +643,6 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
 
 /**
  * @brief Macro to define collect functions for different data types
- *
- * TODO: need a better way of handling the pSync allocation
  */
 #define SHCOLL_COLLECT_TYPE_DEFINITION(_algo, _type, _typename)                \
   int shcoll_##_typename##_collect_##_algo(                                    \
@@ -671,11 +669,8 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
                                 sizeof(_type) * nelems);                       \
                                                                                \
     /* Allocate pSync from symmetric heap */                                   \
-    long *pSync = team_h->pSyncs[2];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team->pSyncs[2]");                               \
-                                                                               \
-    /* Ensure all PEs have initialized pSync */                                \
-    shmem_team_sync(team);                                                     \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT);         \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[COLLECT]");                       \
                                                                                \
     /* Zero out destination buffer */                                          \
     memset(dest, 0, sizeof(_type) * nelems * PE_size);                         \
@@ -685,11 +680,8 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
                            sizeof(_type) * nelems, /* total bytes per PE */    \
                            PE_start, logPE_stride, PE_size, pSync);            \
                                                                                \
-    /* Ensure collection is complete */                                        \
-    shmem_team_sync(team);                                                     \
-                                                                               \
     /* Reset the pSync buffer */                                               \
-    shmemc_team_reset_psync(team_h, 2);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_COLLECT);                     \
                                                                                \
     return 0;                                                                  \
   }
@@ -736,8 +728,6 @@ DEFINE_SHCOLL_COLLECT_TYPES(simple)
 
 /**
  * @brief Macro to declare collectmem implementations for different algorithms
- *
- * TODO: need a better way of handling the pSync allocation
  */
 #define SHCOLL_COLLECTMEM_DEFINITION(_algo)                                    \
   int shcoll_collectmem_##_algo(shmem_team_t team, void *dest,                 \
@@ -762,11 +752,8 @@ DEFINE_SHCOLL_COLLECT_TYPES(simple)
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size, nelems);        \
                                                                                \
     /* Allocate pSync from symmetric heap */                                   \
-    long *pSync = team_h->pSyncs[2];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team->pSyncs[2]");                               \
-                                                                               \
-    /* Ensure all PEs have initialized pSync */                                \
-    shmem_team_sync(team);                                                     \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT);         \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[COLLECT]");                       \
                                                                                \
     /* Zero out destination buffer */                                          \
     memset(dest, 0, nelems *PE_size);                                          \
@@ -775,11 +762,8 @@ DEFINE_SHCOLL_COLLECT_TYPES(simple)
     collect_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,       \
                            PE_size, pSync);                                    \
                                                                                \
-    /* Ensure collection is complete */                                        \
-    shmem_team_sync(team);                                                     \
-                                                                               \
     /* Reset the pSync buffer */                                               \
-    shmemc_team_reset_psync(team_h, 2);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_COLLECT);                     \
                                                                                \
     return 0;                                                                  \
   }

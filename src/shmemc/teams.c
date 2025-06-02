@@ -206,6 +206,38 @@ static void finalize_psync_buffers(shmemc_team_h th) {
 }
 
 /**
+ * @brief Get the appropriate pSync buffer for a collective operation
+ *
+ * Returns a pointer to the pSync buffer associated with the specified
+ * collective operation type for the given team.
+ *
+ * @param th Team handle
+ * @param psync_type Type of collective operation (SHMEMC_PSYNC_*)
+ * @return Pointer to pSync buffer, or NULL if invalid
+ */
+long *shmemc_team_get_psync(shmemc_team_h th, int psync_type) {
+  /* Validate parameters */
+  if (th == NULL) {
+    shmemu_warn("shmemc_team_get_psync: Invalid team handle (NULL)");
+    return NULL;
+  }
+
+  if (psync_type < 0 || psync_type >= SHMEMC_NUM_PSYNCS) {
+    shmemu_warn("shmemc_team_get_psync: Invalid pSync type %d (valid range: 0-%d)",
+                psync_type, SHMEMC_NUM_PSYNCS - 1);
+    return NULL;
+  }
+
+  if (th->pSyncs[psync_type] == NULL) {
+    shmemu_warn("shmemc_team_get_psync: pSync buffer for type %d is NULL",
+                psync_type);
+    return NULL;
+  }
+
+  return th->pSyncs[psync_type];
+}
+
+/**
  * @brief Initialize common team attributes
  *
  * Sets up the basic attributes and data structures needed by all teams:

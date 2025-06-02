@@ -576,25 +576,23 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
                                 sizeof(type) * nelems);                        \
                                                                                \
     /* Use the team's pSync buffer for collect/fcollect operations */          \
-    long *pSync = team_h->pSyncs[2];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[2]");                             \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT);         \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[COLLECT]");                       \
                                                                                \
     /* Ensure all PEs have initialized pSync */                                \
-    shmem_team_sync(team);                                                     \
+    /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
+    /* TODO: need a better way of handling the pSync allocation */             \
+    shmem_team_sync(team_h);                                                   \
                                                                                \
     /* Zero out destination buffer */                                          \
     memset(dest, 0, sizeof(type) * nelems * PE_size);                          \
                                                                                \
     /* Perform fcollect */                                                     \
-    fcollect_helper_##_algo(dest, source,                                      \
-                            sizeof(type) * nelems, /* total bytes per PE */    \
-                            PE_start, logPE_stride, PE_size, pSync);           \
-                                                                               \
-    /* Ensure collection is complete */                                        \
-    shmem_team_sync(team);                                                     \
+    fcollect_helper_##_algo(dest, source, sizeof(type) * nelems, PE_start,     \
+                            logPE_stride, PE_size, pSync);                     \
                                                                                \
     /* Reset the pSync buffer */                                               \
-    shmemc_team_reset_psync(team_h, 2);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_COLLECT);                     \
                                                                                \
     return 0;                                                                  \
   }
@@ -673,11 +671,13 @@ DEFINE_SHCOLL_FCOLLECT_TYPES(neighbor_exchange)
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size, nelems);        \
                                                                                \
     /* Use the team's pSync buffer for collect/fcollect operations */          \
-    long *pSync = team_h->pSyncs[2];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[2]");                             \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT);         \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[COLLECT]");                       \
                                                                                \
     /* Ensure all PEs have initialized pSync */                                \
-    shmem_team_sync(team);                                                     \
+    /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
+    /* TODO: need a better way of handling the pSync allocation */             \
+    shmem_team_sync(team_h);                                                   \
                                                                                \
     /* Zero out destination buffer */                                          \
     memset(dest, 0, nelems *PE_size);                                          \
@@ -686,11 +686,8 @@ DEFINE_SHCOLL_FCOLLECT_TYPES(neighbor_exchange)
     fcollect_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,      \
                             PE_size, pSync);                                   \
                                                                                \
-    /* Ensure collection is complete */                                        \
-    shmem_team_sync(team);                                                     \
-                                                                               \
     /* Reset the pSync buffer */                                               \
-    shmemc_team_reset_psync(team_h, 2);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_COLLECT);                     \
                                                                                \
     return 0;                                                                  \
   }

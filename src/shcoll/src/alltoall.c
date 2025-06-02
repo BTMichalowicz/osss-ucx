@@ -325,21 +325,15 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
                                 sizeof(_type) * nelems * PE_size);             \
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
-    long *pSync = team_h->pSyncs[3];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[3]"); /* Use check macro */       \
-                                                                               \
-    /* Ensure pSync is initialized (potentially redundant but safe) */         \
-    shmem_team_sync(team);                                                     \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL);        \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[ALLTOALL]");                      \
                                                                                \
     /* Perform alltoall using the team's pSync */                              \
     alltoall_helper_##_algo(dest, source, nelems * sizeof(_type), PE_start,    \
                             logPE_stride, PE_size, pSync);                     \
                                                                                \
-    /* Ensure alltoall completion across the team */                           \
-    shmem_team_sync(team);                                                     \
-                                                                               \
     /* Reset the pSync buffer */                                               \
-    shmemc_team_reset_psync(team_h, 3);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_ALLTOALL);                    \
                                                                                \
     /* No need to free or reset the team's pSync buffer */                     \
     return 0;                                                                  \
@@ -422,22 +416,15 @@ DEFINE_SHCOLL_ALLTOALL_TYPES(color_pairwise_exchange_signal)
                                 nelems *PE_size);                              \
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
-    long *pSync = team_h->pSyncs[3];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[3]"); /* Use check macro */       \
-                                                                               \
-    /* Ensure pSync is initialized (potentially redundant but safe) */         \
-    /* The team init should handle this, but let's sync before use */          \
-    shmem_team_sync(team);                                                     \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL);        \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[ALLTOALL]");                      \
                                                                                \
     /* Perform alltoall using the team's pSync */                              \
     alltoall_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,      \
                             PE_size, pSync);                                   \
                                                                                \
-    /* Ensure alltoall completion across the team */                           \
-    shmem_team_sync(team);                                                     \
-                                                                               \
     /* Reset the pSync buffer */                                               \
-    shmemc_team_reset_psync(team_h, 3);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_ALLTOALL);                    \
                                                                                \
     /* No need to free or reset the team's pSync buffer */                     \
     return 0;                                                                  \

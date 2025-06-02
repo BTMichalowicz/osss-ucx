@@ -740,18 +740,6 @@
 
 /**
 
-  XXX: should i just add the additional types used in the team-based reductions
-  or write separate subroutines?
-
- */
-/**
- * @file reduce.c
- * @brief Collective reduction operations for OpenSHMEM
- *
- * This file implements various reduction operations (AND, OR, XOR, MAX, MIN,
- * SUM, PROD) across multiple processing elements (PEs) using different
- * algorithms.
- */
 
 /**
  * @brief Macro to define reduction operations for all supported types
@@ -1209,8 +1197,8 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
                                                                                \
     /* Use the team's pSync buffer for reduction operations */                 \
-    long *pSync = team_h->pSyncs[4];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[4]");                             \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_REDUCE);          \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[REDUCE]");                        \
                                                                                \
     /* Allocate work buffer */                                                 \
     _type *pWrk =                                                              \
@@ -1219,14 +1207,11 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
       return -1;                                                               \
     }                                                                          \
                                                                                \
-    shmem_team_sync(team);                                                     \
-                                                                               \
     /* call the type-specific to_all implementation */                         \
     shcoll_##_typename##_##_op##_to_all_##_algo(                               \
         dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync);  \
                                                                                \
-    shmem_team_sync(team);                                                     \
-    shmemc_team_reset_psync(team_h, 4);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_REDUCE);                      \
     shmem_free(pWrk);                                                          \
     return 0;                                                                  \
   }
