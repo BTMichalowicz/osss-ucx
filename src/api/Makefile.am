@@ -140,6 +140,11 @@ MY_SOURCES            += \
 			extensions/wtime.c \
 			extensions/interop.c
 
+if ENABLE_SHMEM_ENCRYPTION
+MY_SOURCES			  +=	\
+			extensions/enc_dec.c
+endif # ENABLE_SHMEM_ENCRYPTION
+
 all_cppflags          += -I$(srcdir)/extensions
 
 endif # experimental

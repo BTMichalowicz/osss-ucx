@@ -10,13 +10,19 @@
 #include "shmem_enc.h"
 #include "shmemx.h"
 #include "shmemu.h"
+#include <string.h>
 
 const unsigned char gcm_key[GCM_KEY_SIZE] = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','a','b','c','d','e','f'};
-unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+/* unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char recv_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 unsigned char nbi_put_ciphertext[NON_BLOCKING_OP_COUNT][NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
+unsigned long long nbput_count = 0;*/
 
-unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+
+/*unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char recv_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 unsigned char nbi_get_ciphertext[NON_BLOCKING_OP_COUNT][NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
+unsigned long long nbget_count = 0;*/
 
 
 
@@ -61,14 +67,13 @@ void shmemx_sec_init(){
     return;
 }
 
-int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, 
+int shmemx_encrypt_single_buffer(unsigned char *cipherbuf unsigned long long src, 
         const void *sbuf, unsigned long long dest, size_t bytes,
         shmem_ctx_t shmem_ctx, size_t *cipher_len){
 
-
     int const_bytes = AES_RAND_BYTES;
-
-    RAND_bytes(cipherbuf+src, const_bytes  /* Why 12?? */);
+    int res = 0;
+    RAND_bytes(cipherbuf+src, const_bytes);
     EVP_EncryptInit_ex2(shmem_ctx->enc_ctx, NULL, NULL, NULL, cipherbuf+src);
 
     EVP_EncryptUpdate(shmem_ctx->enc_ctx,cipherbuf+src+const_bytes,cipher_len, sbuf+dest, bytes);
@@ -92,7 +97,5 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
     }
     return 0;
 }
-
-    
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */

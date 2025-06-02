@@ -310,11 +310,12 @@ int shmemx_query_interoperability(int property);
 
 
 /* Constant items */
-#define MAX_MSG_SIZE 2<<22 /*4 MB */
+#define MAX_MSG_SIZE 2<<27 /* 128 MB */
 #define OFFSET 400
+#define COLL_OFFSET 4000
 #define GCM_KEY_SIZE 32
 #define AES_TAG_LEN 16
-#define AES_RAND_BYTES 12
+#define AES_RAND_BYTES 16
 #define NON_BLOCKING_OP_COUNT 8192
 
 /**
@@ -351,9 +352,14 @@ typedef struct shmem_secure_attr {
  */
 
 
-int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, shmem_ctx_t shmem_ctx, size_t *cipher_len);
+#define GET_NAME "shmemc_ctx_get"
+#define PUT_NAME "shmemc_ctx_put"
+#define NB_GET_NAME "shmemc_ctx_get_nbi"
+#define NB_PUT_NAME "shmemc_ctx_put_nbi"
 
-int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *rbuf, unsigned long long dest, size_t bytes, shmem_ctx_t shmem_ctx, size_t *cipher_len);
+int shmemx_encrypt_single_buffer(/*unsigned char *cipherbuf,*/ unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, shmem_ctx_t shmem_ctx, size_t *cipher_len, const char* funcname);
+
+int shmemx_decrypt_single_buffer(/*unsigned char *cipherbuf,*/ unsigned long long src, const void *rbuf, unsigned long long dest, size_t bytes, shmem_ctx_t shmem_ctx, size_t *cipher_len, const char* funcname);
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 

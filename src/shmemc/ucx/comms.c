@@ -18,6 +18,22 @@
 #include <string.h>
 
 #include <ucp/api/ucp.h>
+#if ENABLE_SHMEM_ENCRYPTION
+#include "shmemx.h"
+#include "shmem_enc.h"
+
+unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char recv_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char nbi_put_ciphertext[NON_BLOCKING_OP_COUNT][NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
+unsigned long long nbput_count = 0;
+
+unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char recv_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char nbi_get_ciphertext[NON_BLOCKING_OP_COUNT][NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
+unsigned long long nbget_count = 0;
+
+
+#endif /* ENABLE_SHMEM_ENCRYPTION */
 
 /*
  * -- helpers ----------------------------------------------------------------
@@ -129,7 +145,14 @@ inline static uint64_t translate_address(uint64_t local_addr, int pe) {
 inline static void get_remote_key_and_addr(shmemc_context_h ch,
                                            uint64_t local_addr, int pe,
                                            ucp_rkey_h *rkey_p,
-                                           uint64_t *raddr_p) {
+         
+#include "mpiimpl.h"
+/* Added by Abu Naser */
+#if ( BORINGSSL_LIB)
+unsigned char alltoall_ciphertext_sendbuf[268435456+4000]; // 268435456 = 4MB * 64
+unsigned char alltoall_ciphertext_recvbuf[268435456+4000]; // 268435456 = 4MB * 64
+#elif ( OPENSSL_LIB)
+u                                  uint64_t *raddr_p) {
   const long r = lookup_region(local_addr);
 
   shmemu_assert(r >= 0, MODULE ": can't find memory region for %p",
@@ -756,7 +779,16 @@ void shmemc_ctx_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
   get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
   ep = lookup_ucp_ep(ch, pe);
   /* Encrypt */
+
+#if ENABLE_SHMEM_ENCRYPTION
+  size_t cipherlen = 0;
+  int res = shmemx_encrypt_single_buffer(&(nbi_put_ciphertext[nbput_count][0]),0,
+          src, 0, nbytes, ctx, &cipherlen);
+  s = ucp_put_nbi(ep, &(nbi_put_ciphertext[nbput_count++][0]),
+              cipherlen, r_dest, r_key);
+#else
   s = ucp_put_nbi(ep, src, nbytes, r_dest, r_key);
+#endif /* ENABLE_SHMEM_ENCRYPTION */
   shmemu_assert(s == UCS_OK || s == UCS_INPROGRESS,
                 MODULE ": non-blocking put failed");
   /* TODO: Decryption in shmem_quiet */
