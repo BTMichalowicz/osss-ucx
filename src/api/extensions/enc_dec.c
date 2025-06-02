@@ -12,7 +12,12 @@
 #include "shmemu.h"
 
 const unsigned char gcm_key[GCM_KEY_SIZE] = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','a','b','c','d','e','f'};
-unsigned char send_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char nbi_put_ciphertext[NON_BLOCKING_OP_COUNT][NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
+
+unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char nbi_get_ciphertext[NON_BLOCKING_OP_COUNT][NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
+
 
 
 
