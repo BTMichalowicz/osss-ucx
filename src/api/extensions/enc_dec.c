@@ -60,6 +60,7 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
         const void *sbuf, unsigned long long dest, size_t bytes,
         shmem_ctx_t shmem_ctx, size_t *cipher_len){
 
+
     int const_bytes = AES_RAND_BYTES;
 
     RAND_bytes(cipherbuf+src, const_bytes  /* Why 12?? */);
@@ -77,7 +78,6 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, 
         const void *rbuf, unsigned long long dest, size_t bytes, 
         shmem_ctx_t shmem_ctx, size_t  *cipher_len){
-
 
     EVP_DecryptInit_ex2(shmem_ctx->dec_ctx, NULL, NULL, NULL, cipherbuf+src);
     EVP_DecryptUpdate(shmem_ctx->dec_ctx, rbuf+dest, cipher_len, cipherbuf+src+AES_RAND_BYTES, (bytes-AES_RAND_BYTES));

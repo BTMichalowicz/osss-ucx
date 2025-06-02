@@ -330,8 +330,9 @@ typedef struct shmem_secure_attr {
     size_t encrypted_size;
     void *plaintext_buf;
     void *encrypted_buf;
-    
+
 } shmem_secure_attr_t ; /* Not sure if we need this yet */
+
 
     
 
@@ -352,7 +353,6 @@ typedef struct shmem_secure_attr {
 int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, shmem_ctx_t shmem_ctx, size_t *cipher_len);
 
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *rbuf, unsigned long long dest, size_t bytes, shmem_ctx_t shmem_ctx, size_t *cipher_len);
-
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 
