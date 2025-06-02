@@ -58,7 +58,7 @@ void shmemx_sec_init(){
 
 int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, 
         const void *sbuf, unsigned long long dest, size_t bytes,
-        shmemc_context_h shmem_ctx, size_t *cipher_len){
+        shmem_ctx_t shmem_ctx, size_t *cipher_len){
 
     int const_bytes = AES_RAND_BYTES;
 
@@ -76,7 +76,7 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
 
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, 
         const void *rbuf, unsigned long long dest, size_t bytes, 
-        shmemc_context_h shmem_ctx, size_t  *cipher_len){
+        shmem_ctx_t shmem_ctx, size_t  *cipher_len){
 
 
     EVP_DecryptInit_ex2(shmem_ctx->dec_ctx, NULL, NULL, NULL, cipherbuf+src);

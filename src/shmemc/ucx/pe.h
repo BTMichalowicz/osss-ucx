@@ -21,6 +21,10 @@
 #include <sys/types.h>
 #include <ucp/api/ucp.h>
 
+#if ENABLE_SHMEM_ENCRYPTION
+#include "shmem_enc.h"
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 /**
  * @brief Information exchanged between PEs at startup
  */
