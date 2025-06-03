@@ -179,7 +179,7 @@ API_DECL_TYPED_PUT_SIGNAL(ptrdiff, ptrdiff_t)
 
 #pragma weak shmem_put8_signal = pshmem_put8_signal
 #define shmem_put8_signal pshmem_put8_signal
-#pragma weak shmemput16_signal = pshmem_put16_signal
+#pragma weak shmem_put16_signal = pshmem_put16_signal
 #define shmem_put16_signal pshmem_put16_signal
 #pragma weak shmem_put32_signal = pshmem_put32_signal
 #define shmem_put32_signal pshmem_put32_signal
@@ -378,7 +378,7 @@ API_DECL_TYPED_PUT_SIGNAL_NBI(ptrdiff, ptrdiff_t)
 
 #pragma weak shmem_put8_signal_nbi = pshmem_put8_signal_nbi
 #define shmem_put8_signal_nbi pshmem_put8_signal_nbi
-#pragma weak shmemput16_signal_nbi = pshmem_put16_signal_nbi
+#pragma weak shmem_put16_signal_nbi = pshmem_put16_signal_nbi
 #define shmem_put16_signal_nbi pshmem_put16_signal_nbi
 #pragma weak shmem_put32_signal_nbi = pshmem_put32_signal_nbi
 #define shmem_put32_signal_nbi pshmem_put32_signal_nbi

@@ -44,10 +44,10 @@ shmem_team_t SHMEM_TEAM_INVALID = NULL;
 #define shmem_team_destroy pshmem_team_destroy
 #pragma weak shmem_team_create_ctx = pshmem_team_create_ctx
 #define shmem_team_create_ctx pshmem_team_create_ctx
-#pragma weak shmem_ctx_get_team = shmem_ctx_get_team
-#define shmem_ctx_get_team shmem_ctx_get_team
-#pragma weak shmem_team_sync = pshmem_team_sync
-#define shmem_team_sync pshmem_team_sync
+#pragma weak shmem_ctx_get_team = pshmem_ctx_get_team
+#define shmem_ctx_get_team pshmem_ctx_get_team
+#pragma weak shmem_team_ptr = pshmem_team_ptr
+#define shmem_team_ptr pshmem_team_ptr
 #endif /* ENABLE_PSHMEM */
 
 /**
@@ -228,12 +228,12 @@ int shmem_ctx_get_team(shmem_ctx_t ctx, shmem_team_t *team) {
   return 0;
 }
 
-/**
- * @brief Synchronize all PEs in the team.
- *
- * @param team The team handle.
- * @return 0 on success, or -1 if the team is invalid.
- */
+// /**
+//  * @brief Synchronize all PEs in the team.
+//  *
+//  * @param team The team handle.
+//  * @return 0 on success, or -1 if the team is invalid.
+//  */
 // int shmem_team_sync(shmem_team_t team) {
 //   if (team == SHMEM_TEAM_INVALID || team == NULL) {
 //     return -1;

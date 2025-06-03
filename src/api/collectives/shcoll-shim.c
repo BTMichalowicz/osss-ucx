@@ -1095,7 +1095,9 @@ SHIM_TO_ALL_MINMAX_TYPES(min)
   SHMEM_TYPENAME_OP_TO_ALL(float, float, _op)                                  \
   SHMEM_TYPENAME_OP_TO_ALL(longdouble, long double, _op)                       \
   SHMEM_TYPENAME_OP_TO_ALL(size_t, size_t, _op)                                \
-  SHMEM_TYPENAME_OP_TO_ALL(ptrdiff_t, ptrdiff_t, _op)
+  SHMEM_TYPENAME_OP_TO_ALL(ptrdiff_t, ptrdiff_t, _op)                          \
+  SHMEM_TYPENAME_OP_TO_ALL(complexd, COMPLEXIFY(double), _op)                  \
+  SHMEM_TYPENAME_OP_TO_ALL(complexf, COMPLEXIFY(float), _op)
 
 SHIM_TO_ALL_ARITH_TYPES(sum)
 SHIM_TO_ALL_ARITH_TYPES(prod)
@@ -1553,10 +1555,10 @@ void shmem_sync_all(void) {
  * @{
  */
 
-#ifdef ENABLE_PSHMEM
-#pragma weak shmem_sync = pshmem_sync
-#define shmem_sync pshmem_sync
-#endif /* ENABLE_PSHMEM */
+// #ifdef ENABLE_PSHMEM
+// #pragma weak shmem_sync_deprecated = pshmem_sync_deprecated
+// #define shmem_sync_deprecated pshmem_sync_deprecated
+// #endif /* ENABLE_PSHMEM */
 
 /**
  * @brief Synchronizes a subset of PEs

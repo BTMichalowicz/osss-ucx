@@ -3512,6 +3512,7 @@ void shmem_ctx_destroy(shmem_ctx_t ctx);
    - If one argument is provided, it expands to _SHMEM_SYNC_1(team)
    - If four arguments are provided, it expands to _SHMEM_SYNC_4(...)
 */
+
 #define shmem_sync(...)                                                        \
   _GET_5TH_ARG(__VA_ARGS__, _SHMEM_SYNC_4, _SHMEM_SYNC_4, _SHMEM_SYNC_4,       \
                _SHMEM_SYNC_1)                                                  \
