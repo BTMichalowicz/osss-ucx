@@ -42,7 +42,7 @@ echo
 # --- shmem_init_thread ---
 echo $hline ; echo "  Running shmem_init_thread test" ; echo $hline
 $oshcc test_init_thread.c -o ./bin/test_init_thread
-$oshrun $flags -np 2 ./bin/test_init_thread
+$oshrun $flags -np 4 ./bin/test_init_thread
 echo
 
 # # --- shmem_put ---
