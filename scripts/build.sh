@@ -33,20 +33,18 @@ echo ; echo
 echo $HLINE
 echo "            CONFIGURING"
 echo $HLINE
-PREFIX="$(pwd)/build"
+PREFIX="$(pwd)/install"
 # PREFIX=$OSSS_DIR
 
-#export SHMEM_LAUNCHER="$OMPI_BIN/mpiexec"
-export SHMEM_LAUNCHER="$OMPI_BIN/mpirun"
+export SHMEM_LAUNCHER="$OMPI_BIN/mpiexec"
+#export SHMEM_LAUNCHER="$OMPI_BIN/mpirun"
 #export SHMEM_LAUNCHER="$MPICH_BIN/mpirun"
 
 ../configure              \
   --prefix=$PREFIX        \
   --with-pmix=$PMIX_DIR   \
   --with-ucx=$UCX_DIR     \
-  --with-heap-size=1M     \
-  --enable-debug          \
-  --enable-pshmem
+  --with-heap-size=1G
 
 # ---  Compile
 echo $HLINE

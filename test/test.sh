@@ -12,8 +12,8 @@ export UCX_RC_DEVX_ENABLED=n
 # export SHMEM_DEBUG=on
 
 # --- Set OSSS bins from build directory
-oshcc="../build/build/bin/oshcc"
-oshrun="../build/build/bin/oshrun"
+oshcc="../build/install/bin/oshcc"
+oshrun="../build/install/bin/oshrun"
 
 # --- Clean bin directory
 rm -rf bin
@@ -34,16 +34,16 @@ $oshcc --version
 ################################################################
 
 # # --- Hello world ---
-echo $hline ; echo "  Running Hello World test" ; echo $hline
-$oshcc hello_world.c -o ./bin/hello_world
-$oshrun $flags -np 8 ./bin/hello_world
-echo
+# echo $hline ; echo "  Running Hello World test" ; echo $hline
+# $oshcc hello_world.c -o ./bin/hello_world
+# $oshrun $flags -np 8 ./bin/hello_world
+# echo
 
-# --- shmem_init_thread ---
-echo $hline ; echo "  Running shmem_init_thread test" ; echo $hline
-$oshcc test_init_thread.c -o ./bin/test_init_thread
-$oshrun $flags -np 4 ./bin/test_init_thread
-echo
+# # --- shmem_init_thread ---
+# echo $hline ; echo "  Running shmem_init_thread test" ; echo $hline
+# $oshcc test_init_thread.c -o ./bin/test_init_thread
+# $oshrun $flags -np 4 ./bin/test_init_thread
+# echo
 
 # # --- shmem_put ---
 # echo $hline ; echo "  Running shmem_put test" ; echo $hline
@@ -128,3 +128,23 @@ echo
 # $oshcc test_broken_alltoall.c -o ./bin/test_broken_alltoall
 # $oshrun $flags -np 4 ./bin/test_broken_alltoall
 # echo
+
+# # --- cannon's algorithm ---
+# echo $hline ; echo "  Running cannon's algorithm test" ; echo $hline
+# $oshcc canon_algorithm.c -o ./bin/canon_algorithm
+# $oshrun $flags -np 4 ./bin/canon_algorithm
+# echo
+
+# --- bfs ---
+echo $hline ; echo "  Running bfs test" ; echo $hline
+$oshcc bfs.c -o ./bin/bfs
+$oshrun $flags -np 4 ./bin/bfs
+echo
+
+# # --- simple ---
+# echo $hline ; echo "  Running simple test" ; echo $hline
+# $oshcc simple.c -o ./bin/simple
+# $oshrun $flags -np 4 ./bin/simple
+# echo
+
+
