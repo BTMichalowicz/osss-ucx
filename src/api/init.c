@@ -26,6 +26,7 @@
 #include "allocator/xmemalloc.h"
 #ifdef ENABLE_SHMEM_ENCRYPTION
 #include "shmem_enc.h"
+#include "shmemx.h"
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 #endif /* ENABLE_EXPERIMENTAL */
 
@@ -72,7 +73,7 @@ static void finalize_helper(void) {
   }
 
   /* implicit barrier on finalize */
-  shmemc_barrier_all();
+  shmem_barrier_all();
 
   shmemu_progress_finalize();
 
