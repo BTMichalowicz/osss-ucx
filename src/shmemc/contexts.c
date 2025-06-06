@@ -190,12 +190,7 @@ inline static void context_set_options(long options, shmemc_context_h ch) {
   ch->attr.serialized = options & SHMEM_CTX_SERIALIZED;
   ch->attr.privat = options & SHMEM_CTX_PRIVATE;
   ch->attr.nostore = options & SHMEM_CTX_NOSTORE;
-  
-#if ENABLE_SHMEM_ENCRYPTION
-  ch->enc_ctx = NULL;
-  ch->dec_ctx = NULL;
-  shmemx_sec_init();
-#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 }
 
 /**

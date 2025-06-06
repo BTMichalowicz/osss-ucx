@@ -24,6 +24,9 @@
 
 #ifdef ENABLE_EXPERIMENTAL
 #include "allocator/xmemalloc.h"
+#ifdef ENABLE_SHMEM_ENCRYPTION
+#include "shmem_enc.h"
+#endif /* ENABLE_SHMEM_ENCRYPTION */
 #endif /* ENABLE_EXPERIMENTAL */
 
 #include <stdio.h>
@@ -69,7 +72,7 @@ static void finalize_helper(void) {
   }
 
   /* implicit barrier on finalize */
-  shmem_barrier_all();
+  shmemc_barrier_all();
 
   shmemu_progress_finalize();
 
@@ -108,6 +111,12 @@ inline static int init_thread_helper(int requested, int *provided) {
   /* set up comms, read environment */
   shmemc_init();
   /* utiltiies */
+  
+#if ENABLE_SHMEM_ENCRYPTION
+  //ch->enc_ctx = NULL;
+  //ch->dec_ctx = NULL;
+  shmemx_sec_init();
+#endif /* ENABLE_SHMEM_ENCRYPTION */
   shmemt_init();
   shmemu_init();
   collectives_init();
