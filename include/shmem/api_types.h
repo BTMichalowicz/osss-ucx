@@ -13,6 +13,15 @@
 #include <stdint.h>
 #include <complex.h>
 
+/**
+
+  FIXME: Do active-set reductions use Table 9 or table 11?
+
+ */
+
+
+
+
 /*
  * Standard RMA types (Table 5)
  *
@@ -307,5 +316,27 @@
   X(long double, longdouble)                                                   \
   X(double _Complex, complexd)                                                 \
   X(float _Complex, complexf)
+
+/*
+ * Deprecated point-to-point synchronization types (Table 12)
+ *
+ * Used by:
+ * - shmem_wait()
+ */
+#define SHMEM_DEPR_PT2PT_SYNC_TYPE_TABLE(X)                                    \
+  X(short, short)                                                              \
+  X(int, int)                                                                  \
+  X(long, long)                                                                \
+  X(long long, longlong)                                                       \
+  X(unsigned short, ushort)                                                    \
+  X(unsigned int, uint)                                                        \
+  X(unsigned long, ulong)                                                      \
+  X(unsigned long long, ulonglong)                                             \
+  X(int32_t, int32)                                                            \
+  X(int64_t, int64)                                                            \
+  X(uint32_t, uint32)                                                          \
+  X(uint64_t, uint64)                                                          \
+  X(size_t, size)                                                              \
+  X(ptrdiff_t, ptrdiff)
 
 #endif /* _SHMEM_API_TYPES_H */

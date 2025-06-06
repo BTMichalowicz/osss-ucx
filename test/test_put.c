@@ -1,10 +1,12 @@
-#include "../build/build/include/shmem.h"
+#include "../build/install/include/shmem.h"
 #include <stdio.h>
+#include <inttypes.h>
+
+
+
 
 int main(void) {
     int my_pe, npes;
-    long src[10];
-    static long dest[10];  /* static ensures symmetric memory allocation */
 
     /* Initialize OpenSHMEM */
     shmem_init();
@@ -21,34 +23,49 @@ int main(void) {
         return 1;
     }
 
-    /* Initialize the source array on PE 0 */
-    if (my_pe == 0) {
-        for (int i = 0; i < 10; i++) {
-            src[i] = i + 1;
-        }
-        printf("PE %d: Source data initialized.\n", my_pe);
-    }
+    // Macro for testing put for each type
+    #define TEST_PUT(TYPE, TYPENAME, FMT) \
+        TYPE *src_##TYPENAME = shmem_malloc(10 * sizeof(TYPE)); \
+        TYPE *dest_##TYPENAME = shmem_malloc(10 * sizeof(TYPE)); \
+        for (int i = 0; i < 10; i++) src_##TYPENAME[i] = (TYPE)(i + 1); \
+        shmem_barrier_all(); \
+        if (my_pe == 0) shmem_##TYPENAME##_put(dest_##TYPENAME, src_##TYPENAME, 10, 1); \
+        shmem_barrier_all(); \
+        if (my_pe == 1) { \
+            printf("PE %d: " #TYPENAME " received: ", my_pe); \
+            for (int i = 0; i < 10; i++) printf(FMT " ", dest_##TYPENAME[i]); \
+            printf("\n"); \
+        } \
+        shmem_free(src_##TYPENAME); \
+        shmem_free(dest_##TYPENAME);
 
-    /* Synchronize all PEs */
-    shmem_barrier_all();
+    // Test all types in SHMEM_STANDARD_RMA_TYPE_TABLE
+    TEST_PUT(float, float, "%f");
+    TEST_PUT(double, double, "%lf");
+    TEST_PUT(long double, longdouble, "%Lf");
+    TEST_PUT(char, char, "%d");
+    TEST_PUT(signed char, schar, "%d");
+    TEST_PUT(short, short, "%d");
+    TEST_PUT(int, int, "%d");
+    TEST_PUT(long, long, "%ld");
+    TEST_PUT(long long, longlong, "%lld");
+    TEST_PUT(unsigned char, uchar, "%u");
+    TEST_PUT(unsigned short, ushort, "%u");
+    TEST_PUT(unsigned int, uint, "%u");
+    TEST_PUT(unsigned long, ulong, "%lu");
+    TEST_PUT(unsigned long long, ulonglong, "%llu");
+    TEST_PUT(int8_t, int8, "%" PRId8);
+    TEST_PUT(int16_t, int16, "%" PRId16);
+    TEST_PUT(int32_t, int32, "%" PRId32);
+    TEST_PUT(int64_t, int64, "%" PRId64);
+    TEST_PUT(uint8_t, uint8, "%" PRIu8);
+    TEST_PUT(uint16_t, uint16, "%" PRIu16);
+    TEST_PUT(uint32_t, uint32, "%" PRIu32);
+    TEST_PUT(uint64_t, uint64, "%" PRIu64);
+    TEST_PUT(size_t, size, "%zu");
+    TEST_PUT(ptrdiff_t, ptrdiff, "%td");
 
-    /* PE 0 performs a put to PE 1 */
-    if (my_pe == 0) {
-        shmem_long_put(dest, src, 10, 1);  /* Put 10 elements into PE 1's dest array */
-        printf("PE %d: shmem_long_put completed.\n", my_pe);
-    }
-
-    /* Synchronize all PEs again */
-    shmem_barrier_all();
-
-    /* PE 1 prints the received data */
-    if (my_pe == 1) {
-        printf("PE %d: Received data: ", my_pe);
-        for (int i = 0; i < 10; i++) {
-            printf("%ld ", dest[i]);
-        }
-        printf("\n");
-    }
+    #undef TEST_PUT
 
     /* Finalize OpenSHMEM */
     shmem_finalize();

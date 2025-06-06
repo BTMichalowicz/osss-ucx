@@ -45,11 +45,11 @@ $oshcc --version
 # $oshrun $flags -np 4 ./bin/test_init_thread
 # echo
 
-# # --- shmem_put ---
-# echo $hline ; echo "  Running shmem_put test" ; echo $hline
-# $oshcc test_put.c -o ./bin/test_put
-# $oshrun $flags -np 2 ./bin/test_put
-# echo
+# --- shmem_put ---
+echo $hline ; echo "  Running shmem_put test" ; echo $hline
+$oshcc test_put.c -o ./bin/test_put
+$oshrun $flags -np 2 ./bin/test_put
+echo
 
 # # --- shmem_info ---
 # echo $hline ; echo "  Running shmem_info test" ; echo $hline
@@ -135,16 +135,16 @@ $oshcc --version
 # $oshrun $flags -np 4 ./bin/canon_algorithm
 # echo
 
-# --- bfs ---
-echo $hline ; echo "  Running bfs test" ; echo $hline
-$oshcc bfs.c -o ./bin/bfs
-$oshrun $flags -np 4 ./bin/bfs
-echo
-
-# # --- simple ---
-# echo $hline ; echo "  Running simple test" ; echo $hline
-# $oshcc simple.c -o ./bin/simple
-# $oshrun $flags -np 4 ./bin/simple
+# # --- bfs ---
+# echo $hline ; echo "  Running bfs test" ; echo $hline
+# $oshcc bfs.c -o ./bin/bfs
+# $oshrun $flags -np 4 ./bin/bfs
 # echo
+
+# --- simple ---
+echo $hline ; echo "  Running simple test" ; echo $hline
+$oshcc simple.c -o ./bin/simple
+$oshrun $flags -np 4 ./bin/simple
+echo
 
 
