@@ -11,21 +11,21 @@
 #include "shmemx.h"
 #include "shmemu.h"
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+
+unsigned int SHMEM_ENCRYPT = 0;
 
 const unsigned char gcm_key[GCM_KEY_SIZE] = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','a','b','c','d','e','f'};
-/* unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 unsigned char recv_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 unsigned char nbi_put_ciphertext[NON_BLOCKING_OP_COUNT][NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
-unsigned long long nbput_count = 0;*/
+unsigned long long nbput_count = 0;
 
-
-/*unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
-unsigned char recv_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 unsigned char nbi_get_ciphertext[NON_BLOCKING_OP_COUNT][NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
-unsigned long long nbget_count = 0;*/
-
-
-
+unsigned long long nbget_count = 0;
 
 static inline void handleErrors(char *message){
     ERR_print_errors_fp(stderr);
@@ -33,6 +33,7 @@ static inline void handleErrors(char *message){
 }
 
 void shmemx_sec_init(){
+    char *enc_dec = NULL;
     if (defcp->enc_ctx == NULL){
         if (!(defcp->enc_ctx = EVP_CIPHER_CTX_new())){
             handleErrors("cipher failed to be created");
@@ -64,6 +65,13 @@ void shmemx_sec_init(){
             handleErrors("Failed to set up the Initialization Vector Length");
         }
     }
+
+    if ((enc_dec = getenv("SHMEM_ENABLE_ENCRYPTION")) != NULL){
+        SHMEM_ENCRYPT = atoi(enc_dec);
+        assert(SHMEM_ENCRYPT == 0 || SHMEM_ENCRYPT == 1);
+    }
+
+
     return;
 }
 
@@ -97,5 +105,91 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
     }
     return 0;
 }
+
+
+void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe){
+
+    size_t cipherlen = 0;
+    int res = shmemx_encrypt_single_buffer(
+            ((unsigned char *)&(nbi_put_ciphertext[nbput_count][0])),
+            0, src, 0. nbytes, ctx, &cipherlen);
+
+    shmemc_ctx_put_nbi(ctx, dest, 
+            ((unsigned char *)&(nbi_put_ciphertext[nbput_count++][0])),
+            cipherlen, pe);
+
+    /*TODO: SIGNAL DECRYPTION IN WAIT!! */
+}
+
+void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe){
+
+    size_t cipherlen = 0;
+    int res = shmemx_encrypt_single_buffer(
+            (blocking_put_ciphertext),
+            0, src, 0. nbytes, ctx, &cipherlen);
+
+    shmemc_ctx_put(ctx, dest, 
+            blocking_put_ciphertext,
+            cipherlen, pe);
+
+    /*TODO: SIGNAL DECRYPTION here for the blocking_put_ciphertext... but
+     * how?!?! 
+     * Look at shmem context?
+     * See address pointers and extra functions... though we'd need transport
+     * layer items there to catch messages to say
+     * "Pick this path to decrypt?" 
+     *
+     */ 
+}
+
+
+
+void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe){
+
+    size_t cipherlen = 0;
+
+    /* TODO: HOW TO GET BUFFER APPROPRIATELY FROM DEST SIDE FIXME  */
+    /* signal_dest_encrypt ();  */
+
+    int res = shmemx_encrypt_single_buffer(
+            ((unsigned char *)&(nbi_get_ciphertext[nbget_count][0])),
+            0, src, 0. nbytes, ctx, &cipherlen);
+
+    shmemc_ctx_get_nbi(ctx, dest, 
+            ((unsigned char *)&(nbi_get_ciphertext[nbget_count++][0])),
+            cipherlen, pe);
+
+    /*TODO: SIGNAL DECRYPTION IN WAIT!! */
+
+}
+
+
+void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe){
+
+    size_t cipherlen = 0;
+
+    /* TODO: HOW TO GET BUFFER APPROPRIATELY FROM DEST SIDE FIXME  */
+    /* signal_dest_encrypt ();  */
+
+//    int res = shmemx_encrypt_single_buffer(
+//            ((unsigned char *)&(nbi_put_ciphertext[nbput_count][0])),
+//            0, src, 0. nbytes, ctx, &cipherlen);
+
+    shmemc_ctx_get(ctx, 
+            (blocking_get_cipher_text),
+            src,
+            nbytes+AES_TAG_LEN+AES_RAND_BYTES,
+            , pe);
+
+    shmemx_decrypt_single_buffer(blocking_get_ciphertext, 0, dest, 0, nbytes+AES_RAND_BYTES);
+
+    
+
+}
+
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */

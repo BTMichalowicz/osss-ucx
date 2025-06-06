@@ -18,6 +18,8 @@
 #include <string.h>
 
 #include <ucp/api/ucp.h>
+
+#if 0
 #if ENABLE_SHMEM_ENCRYPTION
 #include "shmemx.h"
 #include "shmem_enc.h"
@@ -33,6 +35,7 @@ unsigned long long nbget_count = 0;
 
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
+#endif
 
 /*
  * -- helpers ----------------------------------------------------------------
@@ -770,21 +773,10 @@ void shmemc_ctx_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
   get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
   ep = lookup_ucp_ep(ch, pe);
-  /* Encrypt */
 
-#if ENABLE_SHMEM_ENCRYPTION
-  size_t cipherlen = 0;
-  int res = shmemx_encrypt_single_buffer(
-          ((unsigned char *)&(nbi_put_ciphertext[nbput_count][0])),0,
-          src, 0, nbytes, ctx, &cipherlen);
-  s = ucp_put_nbi(ep, &(nbi_put_ciphertext[nbput_count++][0]),
-              cipherlen, r_dest, r_key);
-#else
   s = ucp_put_nbi(ep, src, nbytes, r_dest, r_key);
-#endif /* ENABLE_SHMEM_ENCRYPTION */
   shmemu_assert(s == UCS_OK || s == UCS_INPROGRESS,
                 MODULE ": non-blocking put failed");
-  /* TODO: Decryption in shmem_quiet */
 }
 
 void shmemc_ctx_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,

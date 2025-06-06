@@ -363,6 +363,19 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
 
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *rbuf, unsigned long long dest, size_t bytes, shmem_ctx_t shmem_ctx, size_t *cipher_len);
 
+void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe);
+
+void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe);
+
+void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe);
+
+void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe);
+
+
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 
 /* ENDING SHMEM ENCRYPTION ADDITIONS: BTM */

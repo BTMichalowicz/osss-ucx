@@ -145,14 +145,14 @@
   X(int32_t, int32)                                                            \
   X(int64_t, int64)
 
-// #define C11_SHMEM_BITWISE_AMO_TYPE_TABLE(X)                                    \
-//   X(unsigned int, uint)                                                        \
-//   X(unsigned long, ulong)                                                      \
-//   X(unsigned long long, ulonglong)                                             \
-//   X(int32_t, int32)                                                            \
-//   X(int64_t, int64)                                                            \
-//   X(uint32_t, uint32)                                                          \
-//   X(uint64_t, uint64)
+/* #define C11_SHMEM_BITWISE_AMO_TYPE_TABLE(X)                                    \
+   X(unsigned int, uint)                                                        \
+   X(unsigned long, ulong)                                                      \
+   X(unsigned long long, ulonglong)                                             \
+   X(int32_t, int32)                                                            \
+   X(int64_t, int64)                                                            \
+   X(uint32_t, uint32)                                                          \
+   X(uint64_t, uint64) */
 /*
  * Bitwise to_all types (Table 9)
  *

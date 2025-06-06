@@ -707,11 +707,57 @@ inline static int shmemc_n_pes() { return shmemc_team_n_pes(SHMEM_TEAM_WORLD); }
 
 #define shmemc_ptr(...) shmemc_ctx_ptr(SHMEM_CTX_DEFAULT, __VA_ARGS__)
 
-#define shmemc_put(...) shmemc_ctx_put(SHMEM_CTX_DEFAULT, __VA_ARGS__)
-#define shmemc_get(...) shmemc_ctx_get(SHMEM_CTX_DEFAULT, __VA_ARGS__)
+#if ENABLE_SHMEM_ENCRYPTION
+#define shmemc_put(...) \
+    do { \
+        if (SHMEM_ENCRYPT) { \
+            shmemc_ctx_put(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
+        }else {                 \
+            shmemx_secure_put(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
+        } \
+    }while (0)
 
-#define shmemc_put_nbi(...) shmemc_ctx_put_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__)
-#define shmemc_get_nbi(...) shmemc_ctx_get_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__)
+#define shmemc_get(...) \
+    do { \
+        if (SHMEM_ENCRYPT) { \
+            shmemc_ctx_get(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
+        }else {                 \
+            shmemx_secure_get(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
+        } \
+    }while (0)
+
+#define shmemc_put_nbi(...) \
+     do { \
+        if (SHMEM_ENCRYPT) { \
+            shmemc_ctx_put_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
+        }else {                 \
+            shmemx_secure_put_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
+        } \
+    }while (0)
+
+
+#define shmemc_get_nbi(...) \
+    do { \
+        if (SHMEM_ENCRYPT) { \
+            shmemc_ctx_get_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
+        }else {                 \
+            shmemx_secure_get_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
+        } \
+    }while (0)
+
+
+#else /* ENABLE_SHMEM_ENCRYPTION */
+
+#define shmemc_put(...) \
+    shmemc_ctx_put(SHMEM_CTX_DEFAULT, __VA_ARGS__)
+#define shmemc_get(...) \
+    shmemc_ctx_get(SHMEM_CTX_DEFAULT, __VA_ARGS__)
+#define shmemc_put_nbi(...) \
+    shmemc_ctx_put_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__)
+#define shmemc_get_nbi(...) \
+    shmemc_ctx_get_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__)
+
+#endif /* ENABLE_SHMEM_ENCRYPTION */
 
 #define shmemc_set(...) shmemc_ctx_set(SHMEM_CTX_DEFAULT, __VA_ARGS__)
 #define shmemc_fetch(...) shmemc_ctx_fetch(SHMEM_CTX_DEFAULT, __VA_ARGS__)
