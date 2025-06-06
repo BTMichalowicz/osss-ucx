@@ -16,6 +16,7 @@
 #include "shmemu.h"
 #include "collectives/table.h"
 #include "shmem/teams.h"
+
 #include "shmem/api_types.h"
 
 /**
@@ -143,12 +144,36 @@ void collectives_finalize(void) { return; }
  */
 
 #ifdef ENABLE_PSHMEM
-#define DECL_PSHMEM_WEAK_ALLTOALL(_type, _typename)                            \
-  _Pragma("weak shmem_" #_typename "_alltoall = pshmem_" #_typename            \
-          "_alltoall") #define shmem_##_typename##_alltoall                    \
-      pshmem_##_typename##_alltoall
-SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_ALLTOALL)
-#undef DECL_PSHMEM_WEAK_ALLTOALL
+#pragma weak shmem_int_alltoall = pshmem_int_alltoall
+#define shmem_int_alltoall pshmem_int_alltoall
+#pragma weak shmem_long_alltoall = pshmem_long_alltoall
+#define shmem_long_alltoall pshmem_long_alltoall
+#pragma weak shmem_longlong_alltoall = pshmem_longlong_alltoall
+#define shmem_longlong_alltoall pshmem_longlong_alltoall
+#pragma weak shmem_float_alltoall = pshmem_float_alltoall
+#define shmem_float_alltoall pshmem_float_alltoall
+#pragma weak shmem_double_alltoall = pshmem_double_alltoall
+#define shmem_double_alltoall pshmem_double_alltoall
+#pragma weak shmem_longdouble_alltoall = pshmem_longdouble_alltoall
+#define shmem_longdouble_alltoall pshmem_longdouble_alltoall
+#pragma weak shmem_uint_alltoall = pshmem_uint_alltoall
+#define shmem_uint_alltoall pshmem_uint_alltoall
+#pragma weak shmem_ulong_alltoall = pshmem_ulong_alltoall
+#define shmem_ulong_alltoall pshmem_ulong_alltoall
+#pragma weak shmem_ulonglong_alltoall = pshmem_ulonglong_alltoall
+#define shmem_ulonglong_alltoall pshmem_ulonglong_alltoall
+#pragma weak shmem_int32_alltoall = pshmem_int32_alltoall
+#define shmem_int32_alltoall pshmem_int32_alltoall
+#pragma weak shmem_int64_alltoall = pshmem_int64_alltoall
+#define shmem_int64_alltoall pshmem_int64_alltoall
+#pragma weak shmem_uint32_alltoall = pshmem_uint32_alltoall
+#define shmem_uint32_alltoall pshmem_uint32_alltoall
+#pragma weak shmem_uint64_alltoall = pshmem_uint64_alltoall
+#define shmem_uint64_alltoall pshmem_uint64_alltoall
+#pragma weak shmem_size_alltoall = pshmem_size_alltoall
+#define shmem_size_alltoall pshmem_size_alltoall
+#pragma weak shmem_ptrdiff_alltoall = pshmem_ptrdiff_alltoall
+#define shmem_ptrdiff_alltoall pshmem_ptrdiff_alltoall
 #endif /* ENABLE_PSHMEM */
 
 /**
@@ -156,7 +181,6 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_ALLTOALL)
  * @param _type The C data type
  * @param _typename The type name string
  */
-
 #undef SHMEM_TYPENAME_ALLTOALL
 #define SHMEM_TYPENAME_ALLTOALL(_type, _typename)                              \
   int shmem_##_typename##_alltoall(shmem_team_t team, _type *dest,             \
@@ -170,6 +194,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_ALLTOALL)
   SHMEM_TYPENAME_ALLTOALL(_type, _typename)
 SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_ALLTOALL)
 #undef DECL_SHIM_ALLTOALL
+#undef SHMEM_TYPENAME_ALLTOALL
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_alltoallmem = pshmem_alltoallmem
@@ -249,12 +274,36 @@ void shmem_alltoall64(void *target, const void *source, size_t nelems,
  */
 
 #ifdef ENABLE_PSHMEM
-#define DECL_PSHMEM_WEAK_ALLTOALLS(_type, _typename)                           \
-  _Pragma("weak shmem_" #_typename "_alltoalls = pshmem_" #_typename           \
-          "_alltoalls") #define shmem_##_typename##_alltoalls                  \
-      pshmem_##_typename##_alltoalls
-SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_ALLTOALLS)
-#undef DECL_PSHMEM_WEAK_ALLTOALLS
+#pragma weak shmem_int_alltoalls = pshmem_int_alltoalls
+#define shmem_int_alltoalls pshmem_int_alltoalls
+#pragma weak shmem_long_alltoalls = pshmem_long_alltoalls
+#define shmem_long_alltoalls pshmem_long_alltoalls
+#pragma weak shmem_longlong_alltoalls = pshmem_longlong_alltoalls
+#define shmem_longlong_alltoalls pshmem_longlong_alltoalls
+#pragma weak shmem_float_alltoalls = pshmem_float_alltoalls
+#define shmem_float_alltoalls pshmem_float_alltoalls
+#pragma weak shmem_double_alltoalls = pshmem_double_alltoalls
+#define shmem_double_alltoalls pshmem_double_alltoalls
+#pragma weak shmem_longdouble_alltoalls = pshmem_longdouble_alltoalls
+#define shmem_longdouble_alltoalls pshmem_longdouble_alltoalls
+#pragma weak shmem_uint_alltoalls = pshmem_uint_alltoalls
+#define shmem_uint_alltoalls pshmem_uint_alltoalls
+#pragma weak shmem_ulong_alltoalls = pshmem_ulong_alltoalls
+#define shmem_ulong_alltoalls pshmem_ulong_alltoalls
+#pragma weak shmem_ulonglong_alltoalls = pshmem_ulonglong_alltoalls
+#define shmem_ulonglong_alltoalls pshmem_ulonglong_alltoalls
+#pragma weak shmem_int32_alltoalls = pshmem_int32_alltoalls
+#define shmem_int32_alltoalls pshmem_int32_alltoalls
+#pragma weak shmem_int64_alltoalls = pshmem_int64_alltoalls
+#define shmem_int64_alltoalls pshmem_int64_alltoalls
+#pragma weak shmem_uint32_alltoalls = pshmem_uint32_alltoalls
+#define shmem_uint32_alltoalls pshmem_uint32_alltoalls
+#pragma weak shmem_uint64_alltoalls = pshmem_uint64_alltoalls
+#define shmem_uint64_alltoalls pshmem_uint64_alltoalls
+#pragma weak shmem_size_alltoalls = pshmem_size_alltoalls
+#define shmem_size_alltoalls pshmem_size_alltoalls
+#pragma weak shmem_ptrdiff_alltoalls = pshmem_ptrdiff_alltoalls
+#define shmem_ptrdiff_alltoalls pshmem_ptrdiff_alltoalls
 #endif /* ENABLE_PSHMEM */
 
 /**
@@ -272,10 +321,11 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_ALLTOALLS)
                nelems);                                                        \
   }
 
-#define DECL_SHIM_ALLTOALLS(_type, _typename)                                  \
+#define DECL_SHIM_ALLTOALLS(_type, _typename)                                   \
   SHMEM_TYPENAME_ALLTOALLS(_type, _typename)
 SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_ALLTOALLS)
 #undef DECL_SHIM_ALLTOALLS
+#undef SHMEM_TYPENAME_ALLTOALLS
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_alltoallsmem = pshmem_alltoallsmem
@@ -363,12 +413,54 @@ void shmem_alltoalls64(void *target, const void *source, ptrdiff_t dst,
  */
 
 #ifdef ENABLE_PSHMEM
-#define DECL_PSHMEM_WEAK_COLLECT(_type, _typename)                             \
-  _Pragma("weak shmem_" #_typename "_collect = pshmem_" #_typename             \
-          "_collect") #define shmem_##_typename##_collect                      \
-      pshmem_##_typename##_collect
-SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_COLLECT)
-#undef DECL_PSHMEM_WEAK_COLLECT
+#pragma weak shmem_float_collect = pshmem_float_collect
+#define shmem_float_collect pshmem_float_collect
+#pragma weak shmem_double_collect = pshmem_double_collect
+#define shmem_double_collect pshmem_double_collect
+#pragma weak shmem_longdouble_collect = pshmem_longdouble_collect
+#define shmem_longdouble_collect pshmem_longdouble_collect
+#pragma weak shmem_char_collect = pshmem_char_collect
+#define shmem_char_collect pshmem_char_collect
+#pragma weak shmem_schar_collect = pshmem_schar_collect
+#define shmem_schar_collect pshmem_schar_collect
+#pragma weak shmem_short_collect = pshmem_short_collect
+#define shmem_short_collect pshmem_short_collect
+#pragma weak shmem_int_collect = pshmem_int_collect
+#define shmem_int_collect pshmem_int_collect
+#pragma weak shmem_long_collect = pshmem_long_collect
+#define shmem_long_collect pshmem_long_collect
+#pragma weak shmem_longlong_collect = pshmem_longlong_collect
+#define shmem_longlong_collect pshmem_longlong_collect
+#pragma weak shmem_uchar_collect = pshmem_uchar_collect
+#define shmem_uchar_collect pshmem_uchar_collect
+#pragma weak shmem_ushort_collect = pshmem_ushort_collect
+#define shmem_ushort_collect pshmem_ushort_collect
+#pragma weak shmem_uint_collect = pshmem_uint_collect
+#define shmem_uint_collect pshmem_uint_collect
+#pragma weak shmem_ulong_collect = pshmem_ulong_collect
+#define shmem_ulong_collect pshmem_ulong_collect
+#pragma weak shmem_ulonglong_collect = pshmem_ulonglong_collect
+#define shmem_ulonglong_collect pshmem_ulonglong_collect
+#pragma weak shmem_int8_collect = pshmem_int8_collect
+#define shmem_int8_collect pshmem_int8_collect
+#pragma weak shmem_int16_collect = pshmem_int16_collect
+#define shmem_int16_collect pshmem_int16_collect
+#pragma weak shmem_int32_collect = pshmem_int32_collect
+#define shmem_int32_collect pshmem_int32_collect
+#pragma weak shmem_int64_collect = pshmem_int64_collect
+#define shmem_int64_collect pshmem_int64_collect
+#pragma weak shmem_uint8_collect = pshmem_uint8_collect
+#define shmem_uint8_collect pshmem_uint8_collect
+#pragma weak shmem_uint16_collect = pshmem_uint16_collect
+#define shmem_uint16_collect pshmem_uint16_collect
+#pragma weak shmem_uint32_collect = pshmem_uint32_collect
+#define shmem_uint32_collect pshmem_uint32_collect
+#pragma weak shmem_uint64_collect = pshmem_uint64_collect
+#define shmem_uint64_collect pshmem_uint64_collect
+#pragma weak shmem_size_collect = pshmem_size_collect
+#define shmem_size_collect pshmem_size_collect
+#pragma weak shmem_ptrdiff_collect = pshmem_ptrdiff_collect
+#define shmem_ptrdiff_collect pshmem_ptrdiff_collect
 #endif /* ENABLE_PSHMEM */
 
 /**
@@ -388,6 +480,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_COLLECT)
   SHMEM_TYPENAME_COLLECT(_type, _typename)
 SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_COLLECT)
 #undef DECL_SHIM_COLLECT
+#undef SHMEM_TYPENAME_COLLECT
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_collectmem = pshmem_collectmem
@@ -467,12 +560,54 @@ void shmem_collect64(void *target, const void *source, size_t nelems,
  */
 
 #ifdef ENABLE_PSHMEM
-#define DECL_PSHMEM_WEAK_FCOLLECT(_type, _typename)                            \
-  _Pragma("weak shmem_" #_typename "_fcollect = pshmem_" #_typename            \
-          "_fcollect") #define shmem_##_typename##_fcollect                    \
-      pshmem_##_typename##_fcollect
-SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_FCOLLECT)
-#undef DECL_PSHMEM_WEAK_FCOLLECT
+#pragma weak shmem_float_fcollect = pshmem_float_fcollect
+#define shmem_float_fcollect pshmem_float_fcollect
+#pragma weak shmem_double_fcollect = pshmem_double_fcollect
+#define shmem_double_fcollect pshmem_double_fcollect
+#pragma weak shmem_longdouble_fcollect = pshmem_longdouble_fcollect
+#define shmem_longdouble_fcollect pshmem_longdouble_fcollect
+#pragma weak shmem_char_fcollect = pshmem_char_fcollect
+#define shmem_char_fcollect pshmem_char_fcollect
+#pragma weak shmem_schar_fcollect = pshmem_schar_fcollect
+#define shmem_schar_fcollect pshmem_schar_fcollect
+#pragma weak shmem_short_fcollect = pshmem_short_fcollect
+#define shmem_short_fcollect pshmem_short_fcollect
+#pragma weak shmem_int_fcollect = pshmem_int_fcollect
+#define shmem_int_fcollect pshmem_int_fcollect
+#pragma weak shmem_long_fcollect = pshmem_long_fcollect
+#define shmem_long_fcollect pshmem_long_fcollect
+#pragma weak shmem_longlong_fcollect = pshmem_longlong_fcollect
+#define shmem_longlong_fcollect pshmem_longlong_fcollect
+#pragma weak shmem_uchar_fcollect = pshmem_uchar_fcollect
+#define shmem_uchar_fcollect pshmem_uchar_fcollect
+#pragma weak shmem_ushort_fcollect = pshmem_ushort_fcollect
+#define shmem_ushort_fcollect pshmem_ushort_fcollect
+#pragma weak shmem_uint_fcollect = pshmem_uint_fcollect
+#define shmem_uint_fcollect pshmem_uint_fcollect
+#pragma weak shmem_ulong_fcollect = pshmem_ulong_fcollect
+#define shmem_ulong_fcollect pshmem_ulong_fcollect
+#pragma weak shmem_ulonglong_fcollect = pshmem_ulonglong_fcollect
+#define shmem_ulonglong_fcollect pshmem_ulonglong_fcollect
+#pragma weak shmem_int8_fcollect = pshmem_int8_fcollect
+#define shmem_int8_fcollect pshmem_int8_fcollect
+#pragma weak shmem_int16_fcollect = pshmem_int16_fcollect
+#define shmem_int16_fcollect pshmem_int16_fcollect
+#pragma weak shmem_int32_fcollect = pshmem_int32_fcollect
+#define shmem_int32_fcollect pshmem_int32_fcollect
+#pragma weak shmem_int64_fcollect = pshmem_int64_fcollect
+#define shmem_int64_fcollect pshmem_int64_fcollect
+#pragma weak shmem_uint8_fcollect = pshmem_uint8_fcollect
+#define shmem_uint8_fcollect pshmem_uint8_fcollect
+#pragma weak shmem_uint16_fcollect = pshmem_uint16_fcollect
+#define shmem_uint16_fcollect pshmem_uint16_fcollect
+#pragma weak shmem_uint32_fcollect = pshmem_uint32_fcollect
+#define shmem_uint32_fcollect pshmem_uint32_fcollect
+#pragma weak shmem_uint64_fcollect = pshmem_uint64_fcollect
+#define shmem_uint64_fcollect pshmem_uint64_fcollect
+#pragma weak shmem_size_fcollect = pshmem_size_fcollect
+#define shmem_size_fcollect pshmem_size_fcollect
+#pragma weak shmem_ptrdiff_fcollect = pshmem_ptrdiff_fcollect
+#define shmem_ptrdiff_fcollect pshmem_ptrdiff_fcollect
 #endif /* ENABLE_PSHMEM */
 
 /**
@@ -492,6 +627,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_FCOLLECT)
   SHMEM_TYPENAME_FCOLLECT(_type, _typename)
 SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_FCOLLECT)
 #undef DECL_SHIM_FCOLLECT
+#undef SHMEM_TYPENAME_FCOLLECT
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_fcollectmem = pshmem_fcollectmem
@@ -573,12 +709,54 @@ void shmem_fcollect64(void *target, const void *source, size_t nelems,
  */
 
 #ifdef ENABLE_PSHMEM
-#define DECL_PSHMEM_WEAK_BROADCAST(_type, _typename)                           \
-  _Pragma("weak shmem_" #_typename "_broadcast = pshmem_" #_typename           \
-          "_broadcast") #define shmem_##_typename##_broadcast                  \
-      pshmem_##_typename##_broadcast
-SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_BROADCAST)
-#undef DECL_PSHMEM_WEAK_BROADCAST
+#pragma weak shmem_float_broadcast = pshmem_float_broadcast
+#define shmem_float_broadcast pshmem_float_broadcast
+#pragma weak shmem_double_broadcast = pshmem_double_broadcast
+#define shmem_double_broadcast pshmem_double_broadcast
+#pragma weak shmem_longdouble_broadcast = pshmem_longdouble_broadcast
+#define shmem_longdouble_broadcast pshmem_longdouble_broadcast
+#pragma weak shmem_char_broadcast = pshmem_char_broadcast
+#define shmem_char_broadcast pshmem_char_broadcast
+#pragma weak shmem_schar_broadcast = pshmem_schar_broadcast
+#define shmem_schar_broadcast pshmem_schar_broadcast
+#pragma weak shmem_short_broadcast = pshmem_short_broadcast
+#define shmem_short_broadcast pshmem_short_broadcast
+#pragma weak shmem_int_broadcast = pshmem_int_broadcast
+#define shmem_int_broadcast pshmem_int_broadcast
+#pragma weak shmem_long_broadcast = pshmem_long_broadcast
+#define shmem_long_broadcast pshmem_long_broadcast
+#pragma weak shmem_longlong_broadcast = pshmem_longlong_broadcast
+#define shmem_longlong_broadcast pshmem_longlong_broadcast
+#pragma weak shmem_uchar_broadcast = pshmem_uchar_broadcast
+#define shmem_uchar_broadcast pshmem_uchar_broadcast
+#pragma weak shmem_ushort_broadcast = pshmem_ushort_broadcast
+#define shmem_ushort_broadcast pshmem_ushort_broadcast
+#pragma weak shmem_uint_broadcast = pshmem_uint_broadcast
+#define shmem_uint_broadcast pshmem_uint_broadcast
+#pragma weak shmem_ulong_broadcast = pshmem_ulong_broadcast
+#define shmem_ulong_broadcast pshmem_ulong_broadcast
+#pragma weak shmem_ulonglong_broadcast = pshmem_ulonglong_broadcast
+#define shmem_ulonglong_broadcast pshmem_ulonglong_broadcast
+#pragma weak shmem_int8_broadcast = pshmem_int8_broadcast
+#define shmem_int8_broadcast pshmem_int8_broadcast
+#pragma weak shmem_int16_broadcast = pshmem_int16_broadcast
+#define shmem_int16_broadcast pshmem_int16_broadcast
+#pragma weak shmem_int32_broadcast = pshmem_int32_broadcast
+#define shmem_int32_broadcast pshmem_int32_broadcast
+#pragma weak shmem_int64_broadcast = pshmem_int64_broadcast
+#define shmem_int64_broadcast pshmem_int64_broadcast
+#pragma weak shmem_uint8_broadcast = pshmem_uint8_broadcast
+#define shmem_uint8_broadcast pshmem_uint8_broadcast
+#pragma weak shmem_uint16_broadcast = pshmem_uint16_broadcast
+#define shmem_uint16_broadcast pshmem_uint16_broadcast
+#pragma weak shmem_uint32_broadcast = pshmem_uint32_broadcast
+#define shmem_uint32_broadcast pshmem_uint32_broadcast
+#pragma weak shmem_uint64_broadcast = pshmem_uint64_broadcast
+#define shmem_uint64_broadcast pshmem_uint64_broadcast
+#pragma weak shmem_size_broadcast = pshmem_size_broadcast
+#define shmem_size_broadcast pshmem_size_broadcast
+#pragma weak shmem_ptrdiff_broadcast = pshmem_ptrdiff_broadcast
+#define shmem_ptrdiff_broadcast pshmem_ptrdiff_broadcast
 #endif /* ENABLE_PSHMEM */
 
 /**
@@ -600,6 +778,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_WEAK_BROADCAST)
   SHMEM_TYPENAME_BROADCAST(_type, _typename)
 SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_BROADCAST)
 #undef DECL_SHIM_BROADCAST
+#undef SHMEM_TYPENAME_BROADCAST
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_broadcastmem = pshmem_broadcastmem
@@ -678,6 +857,558 @@ void shmem_broadcast64(void *target, const void *source, size_t nelems,
 ///////////////////////////////////////////////////////////////////////
 
 /**
+ * @brief Declares a to_all operation for a given type and operation
+ *
+ * @param _typename The type name
+ * @param _type The type
+ * @param _op The operation
+ */
+#define SHMEM_TYPENAME_OP_TO_ALL(_typename, _type, _op)                        \
+  void shmem_##_typename##_##_op##_to_all(                                     \
+      _type *dest, const _type *source, int nreduce, int PE_start,             \
+      int logPE_stride, int PE_size, _type *pWrk, long *pSync) {               \
+    logger(LOG_COLLECTIVES, "%s(%p, %p, %d, %d, %d, %d, %p, %p)", __func__,    \
+           dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk,       \
+           pSync);                                                             \
+    TO_ALL_TYPED_CALL(_op##_to_all, #_typename, dest, source, nreduce,         \
+                      PE_start, logPE_stride, PE_size, pWrk, pSync);           \
+  }
+
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_int_and_to_all = pshmem_int_and_to_all
+#define shmem_int_and_to_all pshmem_int_and_to_all
+#pragma weak shmem_long_and_to_all = pshmem_long_and_to_all
+#define shmem_long_and_to_all pshmem_long_and_to_all
+#pragma weak shmem_longlong_and_to_all = pshmem_longlong_and_to_all
+#define shmem_longlong_and_to_all pshmem_longlong_and_to_all
+#pragma weak shmem_short_and_to_all = pshmem_short_and_to_all
+#define shmem_short_and_to_all pshmem_short_and_to_all
+#pragma weak shmem_int_or_to_all = pshmem_int_or_to_all
+#define shmem_int_or_to_all pshmem_int_or_to_all
+#pragma weak shmem_long_or_to_all = pshmem_long_or_to_all
+#define shmem_long_or_to_all pshmem_long_or_to_all
+#pragma weak shmem_longlong_or_to_all = pshmem_longlong_or_to_all
+#define shmem_longlong_or_to_all pshmem_longlong_or_to_all
+#pragma weak shmem_short_or_to_all = pshmem_short_or_to_all
+#define shmem_short_or_to_all pshmem_short_or_to_all
+#pragma weak shmem_int_xor_to_all = pshmem_int_xor_to_all
+#define shmem_int_xor_to_all pshmem_int_xor_to_all
+#pragma weak shmem_long_xor_to_all = pshmem_long_xor_to_all
+#define shmem_long_xor_to_all pshmem_long_xor_to_all
+#pragma weak shmem_longlong_xor_to_all = pshmem_longlong_xor_to_all
+#define shmem_longlong_xor_to_all pshmem_longlong_xor_to_all
+#pragma weak shmem_short_xor_to_all = pshmem_short_xor_to_all
+#define shmem_short_xor_to_all pshmem_short_xor_to_all
+#endif /* ENABLE_PSHMEM */
+
+#define SHIM_TO_ALL_BITWISE_TYPES(_op)                                         \
+  SHMEM_TYPENAME_OP_TO_ALL(short, short, _op)                                  \
+  SHMEM_TYPENAME_OP_TO_ALL(int, int, _op)                                      \
+  SHMEM_TYPENAME_OP_TO_ALL(long, long, _op)                                    \
+  SHMEM_TYPENAME_OP_TO_ALL(longlong, long long, _op)
+
+SHIM_TO_ALL_BITWISE_TYPES(and)
+SHIM_TO_ALL_BITWISE_TYPES(or)
+SHIM_TO_ALL_BITWISE_TYPES(xor)
+
+#ifdef ENABLE_PSHMEM
+#pragma weak shmem_int_max_to_all = pshmem_int_max_to_all
+#define shmem_int_max_to_all pshmem_int_max_to_all
+#pragma weak shmem_long_max_to_all = pshmem_long_max_to_all
+#define shmem_long_max_to_all pshmem_long_max_to_all
+#pragma weak shmem_longlong_max_to_all = pshmem_longlong_max_to_all
+#define shmem_longlong_max_to_all pshmem_longlong_max_to_all
+#pragma weak shmem_short_max_to_all = pshmem_short_max_to_all
+#define shmem_short_max_to_all pshmem_short_max_to_all
+#pragma weak shmem_longdouble_max_to_all = pshmem_longdouble_max_to_all
+#define shmem_longdouble_max_to_all pshmem_longdouble_max_to_all
+#pragma weak shmem_float_max_to_all = pshmem_float_max_to_all
+#define shmem_float_max_to_all pshmem_float_max_to_all
+#pragma weak shmem_double_max_to_all = pshmem_double_max_to_all
+#define shmem_double_max_to_all pshmem_double_max_to_all
+#pragma weak shmem_int_min_to_all = pshmem_int_min_to_all
+#define shmem_int_min_to_all pshmem_int_min_to_all
+#pragma weak shmem_long_min_to_all = pshmem_long_min_to_all
+#define shmem_long_min_to_all pshmem_long_min_to_all
+#pragma weak shmem_longlong_min_to_all = pshmem_longlong_min_to_all
+#define shmem_longlong_min_to_all pshmem_longlong_min_to_all
+#pragma weak shmem_short_min_to_all = pshmem_short_min_to_all
+#define shmem_short_min_to_all pshmem_short_min_to_all
+#pragma weak shmem_longdouble_min_to_all = pshmem_longdouble_min_to_all
+#define shmem_longdouble_min_to_all pshmem_longdouble_min_to_all
+#pragma weak shmem_float_min_to_all = pshmem_float_min_to_all
+#define shmem_float_min_to_all pshmem_float_min_to_all
+#pragma weak shmem_double_min_to_all = pshmem_double_min_to_all
+#define shmem_double_min_to_all pshmem_double_min_to_all
+#endif /* ENABLE_PSHMEM */
+
+#define SHIM_TO_ALL_MINMAX_TYPES(_op)                                          \
+  SHMEM_TYPENAME_OP_TO_ALL(short, short, _op)                                  \
+  SHMEM_TYPENAME_OP_TO_ALL(int, int, _op)                                      \
+  SHMEM_TYPENAME_OP_TO_ALL(long, long, _op)                                    \
+  SHMEM_TYPENAME_OP_TO_ALL(longlong, long long, _op)                           \
+  SHMEM_TYPENAME_OP_TO_ALL(double, double, _op)                                \
+  SHMEM_TYPENAME_OP_TO_ALL(float, float, _op)                                  \
+  SHMEM_TYPENAME_OP_TO_ALL(longdouble, long double, _op)
+
+SHIM_TO_ALL_MINMAX_TYPES(max)
+SHIM_TO_ALL_MINMAX_TYPES(min)
+
+#ifdef ENABLE_PSHMEM
+// #pragma weak shmem_complexd_sum_to_all = pshmem_complexd_sum_to_all
+// #define shmem_complexd_sum_to_all pshmem_complexd_sum_to_all
+// #pragma weak shmem_complexf_sum_to_all = pshmem_complexf_sum_to_all
+// #define shmem_complexf_sum_to_all pshmem_complexf_sum_to_all
+#pragma weak shmem_double_sum_to_all = pshmem_double_sum_to_all
+#define shmem_double_sum_to_all pshmem_double_sum_to_all
+#pragma weak shmem_float_sum_to_all = pshmem_float_sum_to_all
+#define shmem_float_sum_to_all pshmem_float_sum_to_all
+#pragma weak shmem_int_sum_to_all = pshmem_int_sum_to_all
+#define shmem_int_sum_to_all pshmem_int_sum_to_all
+#pragma weak shmem_long_sum_to_all = pshmem_long_sum_to_all
+#define shmem_long_sum_to_all pshmem_long_sum_to_all
+#pragma weak shmem_longdouble_sum_to_all = pshmem_longdouble_sum_to_all
+#define shmem_longdouble_sum_to_all pshmem_longdouble_sum_to_all
+#pragma weak shmem_longlong_sum_to_all = pshmem_longlong_sum_to_all
+#define shmem_longlong_sum_to_all pshmem_longlong_sum_to_all
+#pragma weak shmem_short_sum_to_all = pshmem_short_sum_to_all
+#define shmem_short_sum_to_all pshmem_short_sum_to_all
+// #pragma weak shmem_complexd_prod_to_all = pshmem_complexd_prod_to_all
+// #define shmem_complexd_prod_to_all pshmem_complexd_prod_to_all
+// #pragma weak shmem_complexf_prod_to_all = pshmem_complexf_prod_to_all
+// #define shmem_complexf_prod_to_all pshmem_complexf_prod_to_all
+#pragma weak shmem_double_prod_to_all = pshmem_double_prod_to_all
+#define shmem_double_prod_to_all pshmem_double_prod_to_all
+#pragma weak shmem_float_prod_to_all = pshmem_float_prod_to_all
+#define shmem_float_prod_to_all pshmem_float_prod_to_all
+#pragma weak shmem_int_prod_to_all = pshmem_int_prod_to_all
+#define shmem_int_prod_to_all pshmem_int_prod_to_all
+#pragma weak shmem_long_prod_to_all = pshmem_long_prod_to_all
+#define shmem_long_prod_to_all pshmem_long_prod_to_all
+#pragma weak shmem_longdouble_prod_to_all = pshmem_longdouble_prod_to_all
+#define shmem_longdouble_prod_to_all pshmem_longdouble_prod_to_all
+#pragma weak shmem_longlong_prod_to_all = pshmem_longlong_prod_to_all
+#define shmem_longlong_prod_to_all pshmem_longlong_prod_to_all
+#pragma weak shmem_short_prod_to_all = pshmem_short_prod_to_all
+#define shmem_short_prod_to_all pshmem_short_prod_to_all
+#endif /* ENABLE_PSHMEM */
+
+#define SHIM_TO_ALL_ARITH_TYPES(_op)                                           \
+  SHMEM_TYPENAME_OP_TO_ALL(short, short, _op)                                  \
+  SHMEM_TYPENAME_OP_TO_ALL(int, int, _op)                                      \
+  SHMEM_TYPENAME_OP_TO_ALL(long, long, _op)                                    \
+  SHMEM_TYPENAME_OP_TO_ALL(longlong, long long, _op)                           \
+  SHMEM_TYPENAME_OP_TO_ALL(double, double, _op)                                \
+  SHMEM_TYPENAME_OP_TO_ALL(float, float, _op)                                  \
+  SHMEM_TYPENAME_OP_TO_ALL(longdouble, long double, _op)                       \
+  SHMEM_TYPENAME_OP_TO_ALL(size_t, size_t, _op)                                \
+  SHMEM_TYPENAME_OP_TO_ALL(ptrdiff_t, ptrdiff_t, _op)
+
+SHIM_TO_ALL_ARITH_TYPES(sum)
+SHIM_TO_ALL_ARITH_TYPES(prod)
+
+/**
+ * @brief Declares a reduce operation for a given type and operation
+ *
+ * @param _typename The type name
+ * @param _type The type
+ * @param _op The operation
+ */
+#define SHMEM_TYPENAME_OP_REDUCE(_typename, _type, _op)                        \
+  int shmem_##_typename##_##_op##_reduce(                                      \
+      shmem_team_t team, _type *dest, const _type *source, size_t nreduce) {   \
+    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %zu)", __func__, team, dest,       \
+           source, nreduce);                                                   \
+    TYPED_CALL(_op##_reduce, #_typename, team, dest, source, nreduce);         \
+  }
+
+#ifdef ENABLE_PSHMEM
+/* and */
+#pragma weak shmem_uchar_and_reduce = pshmem_uchar_and_reduce
+#define shmem_uchar_and_reduce pshmem_uchar_and_reduce
+#pragma weak shmem_ushort_and_reduce = pshmem_ushort_and_reduce
+#define shmem_ushort_and_reduce pshmem_ushort_and_reduce
+#pragma weak shmem_uint_and_reduce = pshmem_uint_and_reduce
+#define shmem_uint_and_reduce pshmem_uint_and_reduce
+#pragma weak shmem_ulong_and_reduce = pshmem_ulong_and_reduce
+#define shmem_ulong_and_reduce pshmem_ulong_and_reduce
+#pragma weak shmem_ulonglong_and_reduce = pshmem_ulonglong_and_reduce
+#define shmem_ulonglong_and_reduce pshmem_ulonglong_and_reduce
+#pragma weak shmem_int8_and_reduce = pshmem_int8_and_reduce
+#define shmem_int8_and_reduce pshmem_int8_and_reduce
+#pragma weak shmem_int16_and_reduce = pshmem_int16_and_reduce
+#define shmem_int16_and_reduce pshmem_int16_and_reduce
+#pragma weak shmem_int32_and_reduce = pshmem_int32_and_reduce
+#define shmem_int32_and_reduce pshmem_int32_and_reduce
+#pragma weak shmem_int64_and_reduce = pshmem_int64_and_reduce
+#define shmem_int64_and_reduce pshmem_int64_and_reduce
+#pragma weak shmem_uint8_and_reduce = pshmem_uint8_and_reduce
+#define shmem_uint8_and_reduce pshmem_uint8_and_reduce
+#pragma weak shmem_uint16_and_reduce = pshmem_uint16_and_reduce
+#define shmem_uint16_and_reduce pshmem_uint16_and_reduce
+#pragma weak shmem_uint32_and_reduce = pshmem_uint32_and_reduce
+#define shmem_uint32_and_reduce pshmem_uint32_and_reduce
+#pragma weak shmem_uint64_and_reduce = pshmem_uint64_and_reduce
+#define shmem_uint64_and_reduce pshmem_uint64_and_reduce
+/* or */
+#pragma weak shmem_uchar_or_reduce = pshmem_uchar_or_reduce
+#define shmem_uchar_or_reduce pshmem_uchar_or_reduce
+#pragma weak shmem_ushort_or_reduce = pshmem_ushort_or_reduce
+#define shmem_ushort_or_reduce pshmem_ushort_or_reduce
+#pragma weak shmem_uint_or_reduce = pshmem_uint_or_reduce
+#define shmem_uint_or_reduce pshmem_uint_or_reduce
+#pragma weak shmem_ulong_or_reduce = pshmem_ulong_or_reduce
+#define shmem_ulong_or_reduce pshmem_ulong_or_reduce
+#pragma weak shmem_ulonglong_or_reduce = pshmem_ulonglong_or_reduce
+#define shmem_ulonglong_or_reduce pshmem_ulonglong_or_reduce
+#pragma weak shmem_int8_or_reduce = pshmem_int8_or_reduce
+#define shmem_int8_or_reduce pshmem_int8_or_reduce
+#pragma weak shmem_int16_or_reduce = pshmem_int16_or_reduce
+#define shmem_int16_or_reduce pshmem_int16_or_reduce
+#pragma weak shmem_int32_or_reduce = pshmem_int32_or_reduce
+#define shmem_int32_or_reduce pshmem_int32_or_reduce
+#pragma weak shmem_int64_or_reduce = pshmem_int64_or_reduce
+#define shmem_int64_or_reduce pshmem_int64_or_reduce
+#pragma weak shmem_uint8_or_reduce = pshmem_uint8_or_reduce
+#define shmem_uint8_or_reduce pshmem_uint8_or_reduce
+#pragma weak shmem_uint16_or_reduce = pshmem_uint16_or_reduce
+#define shmem_uint16_or_reduce pshmem_uint16_or_reduce
+#pragma weak shmem_uint32_or_reduce = pshmem_uint32_or_reduce
+#define shmem_uint32_or_reduce pshmem_uint32_or_reduce
+#pragma weak shmem_uint64_or_reduce = pshmem_uint64_or_reduce
+#define shmem_uint64_or_reduce pshmem_uint64_or_reduce
+#pragma weak shmem_size_or_reduce = pshmem_size_or_reduce
+#define shmem_size_or_reduce pshmem_size_or_reduce
+/* xor */
+#pragma weak shmem_uchar_xor_reduce = pshmem_uchar_xor_reduce
+#define shmem_uchar_xor_reduce pshmem_uchar_xor_reduce
+#pragma weak shmem_ushort_xor_reduce = pshmem_ushort_xor_reduce
+#define shmem_ushort_xor_reduce pshmem_ushort_xor_reduce
+#pragma weak shmem_uint_xor_reduce = pshmem_uint_xor_reduce
+#define shmem_uint_xor_reduce pshmem_uint_xor_reduce
+#pragma weak shmem_ulong_xor_reduce = pshmem_ulong_xor_reduce
+#define shmem_ulong_xor_reduce pshmem_ulong_xor_reduce
+#pragma weak shmem_ulonglong_xor_reduce = pshmem_ulonglong_xor_reduce
+#define shmem_ulonglong_xor_reduce pshmem_ulonglong_xor_reduce
+#pragma weak shmem_int8_xor_reduce = pshmem_int8_xor_reduce
+#define shmem_int8_xor_reduce pshmem_int8_xor_reduce
+#pragma weak shmem_int16_xor_reduce = pshmem_int16_xor_reduce
+#define shmem_int16_xor_reduce pshmem_int16_xor_reduce
+#pragma weak shmem_int32_xor_reduce = pshmem_int32_xor_reduce
+#define shmem_int32_xor_reduce pshmem_int32_xor_reduce
+#pragma weak shmem_int64_xor_reduce = pshmem_int64_xor_reduce
+#define shmem_int64_xor_reduce pshmem_int64_xor_reduce
+#pragma weak shmem_uint8_xor_reduce = pshmem_uint8_xor_reduce
+#define shmem_uint8_xor_reduce pshmem_uint8_xor_reduce
+#pragma weak shmem_uint16_xor_reduce = pshmem_uint16_xor_reduce
+#define shmem_uint16_xor_reduce pshmem_uint16_xor_reduce
+#pragma weak shmem_uint32_xor_reduce = pshmem_uint32_xor_reduce
+#define shmem_uint32_xor_reduce pshmem_uint32_xor_reduce
+#pragma weak shmem_uint64_xor_reduce = pshmem_uint64_xor_reduce
+#define shmem_uint64_xor_reduce pshmem_uint64_xor_reduce
+#pragma weak shmem_size_xor_reduce = pshmem_size_xor_reduce
+#define shmem_size_xor_reduce pshmem_size_xor_reduce
+
+#endif /* ENABLE_PSHMEM */
+
+#define SHIM_REDUCE_BITWISE_TYPES(_op)                                         \
+  SHMEM_TYPENAME_OP_REDUCE(uchar, unsigned char, _op)                          \
+  SHMEM_TYPENAME_OP_REDUCE(ushort, unsigned short, _op)                        \
+  SHMEM_TYPENAME_OP_REDUCE(uint, unsigned int, _op)                            \
+  SHMEM_TYPENAME_OP_REDUCE(ulong, unsigned long, _op)                          \
+  SHMEM_TYPENAME_OP_REDUCE(ulonglong, unsigned long long, _op)                 \
+  SHMEM_TYPENAME_OP_REDUCE(int8, int8_t, _op)                                  \
+  SHMEM_TYPENAME_OP_REDUCE(int16, int16_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(int32, int32_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(int64, int64_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(uint8, uint8_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(uint16, uint16_t, _op)                              \
+  SHMEM_TYPENAME_OP_REDUCE(uint32, uint32_t, _op)                              \
+  SHMEM_TYPENAME_OP_REDUCE(uint64, uint64_t, _op)                              \
+  SHMEM_TYPENAME_OP_REDUCE(size, size_t, _op)
+
+SHIM_REDUCE_BITWISE_TYPES(and)
+SHIM_REDUCE_BITWISE_TYPES(or)
+SHIM_REDUCE_BITWISE_TYPES(xor)
+
+#ifdef ENABLE_PSHMEM
+/* max */
+#pragma weak shmem_char_max_reduce = pshmem_char_max_reduce
+#define shmem_char_max_reduce pshmem_char_max_reduce
+#pragma weak shmem_schar_max_reduce = pshmem_schar_max_reduce
+#define shmem_schar_max_reduce pshmem_schar_max_reduce
+#pragma weak shmem_short_max_reduce = pshmem_short_max_reduce
+#define shmem_short_max_reduce pshmem_short_max_reduce
+#pragma weak shmem_int_max_reduce = pshmem_int_max_reduce
+#define shmem_int_max_reduce pshmem_int_max_reduce
+#pragma weak shmem_long_max_reduce = pshmem_long_max_reduce
+#define shmem_long_max_reduce pshmem_long_max_reduce
+#pragma weak shmem_longlong_max_reduce = pshmem_longlong_max_reduce
+#define shmem_longlong_max_reduce pshmem_longlong_max_reduce
+#pragma weak shmem_ptrdiff_max_reduce = pshmem_ptrdiff_max_reduce
+#define shmem_ptrdiff_max_reduce pshmem_ptrdiff_max_reduce
+#pragma weak shmem_uchar_max_reduce = pshmem_uchar_max_reduce
+#define shmem_uchar_max_reduce pshmem_uchar_max_reduce
+#pragma weak shmem_ushort_max_reduce = pshmem_ushort_max_reduce
+#define shmem_ushort_max_reduce pshmem_ushort_max_reduce
+#pragma weak shmem_uint_max_reduce = pshmem_uint_max_reduce
+#define shmem_uint_max_reduce pshmem_uint_max_reduce
+#pragma weak shmem_ulong_max_reduce = pshmem_ulong_max_reduce
+#define shmem_ulong_max_reduce pshmem_ulong_max_reduce
+#pragma weak shmem_ulonglong_max_reduce = pshmem_ulonglong_max_reduce
+#define shmem_ulonglong_max_reduce pshmem_ulonglong_max_reduce
+#pragma weak shmem_int8_max_reduce = pshmem_int8_max_reduce
+#define shmem_int8_max_reduce pshmem_int8_max_reduce
+#pragma weak shmem_int16_max_reduce = pshmem_int16_max_reduce
+#define shmem_int16_max_reduce pshmem_int16_max_reduce
+#pragma weak shmem_int32_max_reduce = pshmem_int32_max_reduce
+#define shmem_int32_max_reduce pshmem_int32_max_reduce
+#pragma weak shmem_int64_max_reduce = pshmem_int64_max_reduce
+#define shmem_int64_max_reduce pshmem_int64_max_reduce
+#pragma weak shmem_uint8_max_reduce = pshmem_uint8_max_reduce
+#define shmem_uint8_max_reduce pshmem_uint8_max_reduce
+#pragma weak shmem_uint16_max_reduce = pshmem_uint16_max_reduce
+#define shmem_uint16_max_reduce pshmem_uint16_max_reduce
+#pragma weak shmem_uint32_max_reduce = pshmem_uint32_max_reduce
+#define shmem_uint32_max_reduce pshmem_uint32_max_reduce
+#pragma weak shmem_uint64_max_reduce = pshmem_uint64_max_reduce
+#define shmem_uint64_max_reduce pshmem_uint64_max_reduce
+#pragma weak shmem_size_max_reduce = pshmem_size_max_reduce
+#define shmem_size_max_reduce pshmem_size_max_reduce
+#pragma weak shmem_float_max_reduce = pshmem_float_max_reduce
+#define shmem_float_max_reduce pshmem_float_max_reduce
+#pragma weak shmem_double_max_reduce = pshmem_double_max_reduce
+#define shmem_double_max_reduce pshmem_double_max_reduce
+#pragma weak shmem_longdouble_max_reduce = pshmem_longdouble_max_reduce
+#define shmem_longdouble_max_reduce pshmem_longdouble_max_reduce
+/* min */
+#pragma weak shmem_char_min_reduce = pshmem_char_min_reduce
+#define shmem_char_min_reduce pshmem_char_min_reduce
+#pragma weak shmem_schar_min_reduce = pshmem_schar_min_reduce
+#define shmem_schar_min_reduce pshmem_schar_min_reduce
+#pragma weak shmem_short_min_reduce = pshmem_short_min_reduce
+#define shmem_short_min_reduce pshmem_short_min_reduce
+#pragma weak shmem_int_min_reduce = pshmem_int_min_reduce
+#define shmem_int_min_reduce pshmem_int_min_reduce
+#pragma weak shmem_long_min_reduce = pshmem_long_min_reduce
+#define shmem_long_min_reduce pshmem_long_min_reduce
+#pragma weak shmem_longlong_min_reduce = pshmem_longlong_min_reduce
+#define shmem_longlong_min_reduce pshmem_longlong_min_reduce
+#pragma weak shmem_ptrdiff_min_reduce = pshmem_ptrdiff_min_reduce
+#define shmem_ptrdiff_min_reduce pshmem_ptrdiff_min_reduce
+#pragma weak shmem_uchar_min_reduce = pshmem_uchar_min_reduce
+#define shmem_uchar_min_reduce pshmem_uchar_min_reduce
+#pragma weak shmem_ushort_min_reduce = pshmem_ushort_min_reduce
+#define shmem_ushort_min_reduce pshmem_ushort_min_reduce
+#pragma weak shmem_uint_min_reduce = pshmem_uint_min_reduce
+#define shmem_uint_min_reduce pshmem_uint_min_reduce
+#pragma weak shmem_ulong_min_reduce = pshmem_ulong_min_reduce
+#define shmem_ulong_min_reduce pshmem_ulong_min_reduce
+#pragma weak shmem_ulonglong_min_reduce = pshmem_ulonglong_min_reduce
+#define shmem_ulonglong_min_reduce pshmem_ulonglong_min_reduce
+#pragma weak shmem_int8_min_reduce = pshmem_int8_min_reduce
+#define shmem_int8_min_reduce pshmem_int8_min_reduce
+#pragma weak shmem_int16_min_reduce = pshmem_int16_min_reduce
+#define shmem_int16_min_reduce pshmem_int16_min_reduce
+#pragma weak shmem_int32_min_reduce = pshmem_int32_min_reduce
+#define shmem_int32_min_reduce pshmem_int32_min_reduce
+#pragma weak shmem_int64_min_reduce = pshmem_int64_min_reduce
+#define shmem_int64_min_reduce pshmem_int64_min_reduce
+#pragma weak shmem_uint8_min_reduce = pshmem_uint8_min_reduce
+#define shmem_uint8_min_reduce pshmem_uint8_min_reduce
+#pragma weak shmem_uint16_min_reduce = pshmem_uint16_min_reduce
+#define shmem_uint16_min_reduce pshmem_uint16_min_reduce
+#pragma weak shmem_uint32_min_reduce = pshmem_uint32_min_reduce
+#define shmem_uint32_min_reduce pshmem_uint32_min_reduce
+#pragma weak shmem_uint64_min_reduce = pshmem_uint64_min_reduce
+#define shmem_uint64_min_reduce pshmem_uint64_min_reduce
+#pragma weak shmem_size_min_reduce = pshmem_size_min_reduce
+#define shmem_size_min_reduce pshmem_size_min_reduce
+#pragma weak shmem_float_min_reduce = pshmem_float_min_reduce
+#define shmem_float_min_reduce pshmem_float_min_reduce
+#pragma weak shmem_double_min_reduce = pshmem_double_min_reduce
+#define shmem_double_min_reduce pshmem_double_min_reduce
+#pragma weak shmem_longdouble_min_reduce = pshmem_longdouble_min_reduce
+#define shmem_longdouble_min_reduce pshmem_longdouble_min_reduce
+
+#endif /* ENABLE_PSHMEM */
+
+#define SHIM_REDUCE_MINMAX_TYPES(_op)                                          \
+  SHMEM_TYPENAME_OP_REDUCE(char, char, _op)                                    \
+  SHMEM_TYPENAME_OP_REDUCE(schar, signed char, _op)                            \
+  SHMEM_TYPENAME_OP_REDUCE(short, short, _op)                                  \
+  SHMEM_TYPENAME_OP_REDUCE(int, int, _op)                                      \
+  SHMEM_TYPENAME_OP_REDUCE(long, long, _op)                                    \
+  SHMEM_TYPENAME_OP_REDUCE(longlong, long long, _op)                           \
+  SHMEM_TYPENAME_OP_REDUCE(ptrdiff, ptrdiff_t, _op)                            \
+  SHMEM_TYPENAME_OP_REDUCE(uchar, unsigned char, _op)                          \
+  SHMEM_TYPENAME_OP_REDUCE(ushort, unsigned short, _op)                        \
+  SHMEM_TYPENAME_OP_REDUCE(uint, unsigned int, _op)                            \
+  SHMEM_TYPENAME_OP_REDUCE(ulong, unsigned long, _op)                          \
+  SHMEM_TYPENAME_OP_REDUCE(ulonglong, unsigned long long, _op)                 \
+  SHMEM_TYPENAME_OP_REDUCE(int8, int8_t, _op)                                  \
+  SHMEM_TYPENAME_OP_REDUCE(int16, int16_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(int32, int32_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(int64, int64_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(uint8, uint8_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(uint16, uint16_t, _op)                              \
+  SHMEM_TYPENAME_OP_REDUCE(uint32, uint32_t, _op)                              \
+  SHMEM_TYPENAME_OP_REDUCE(uint64, uint64_t, _op)                              \
+  SHMEM_TYPENAME_OP_REDUCE(size, size_t, _op)                                  \
+  SHMEM_TYPENAME_OP_REDUCE(float, float, _op)                                  \
+  SHMEM_TYPENAME_OP_REDUCE(double, double, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(longdouble, long double, _op)
+
+SHIM_REDUCE_MINMAX_TYPES(max)
+SHIM_REDUCE_MINMAX_TYPES(min)
+
+#ifdef ENABLE_PSHMEM
+/* sum */
+#pragma weak shmem_char_sum_reduce = pshmem_char_sum_reduce
+#define shmem_char_sum_reduce pshmem_char_sum_reduce
+#pragma weak shmem_schar_sum_reduce = pshmem_schar_sum_reduce
+#define shmem_schar_sum_reduce pshmem_schar_sum_reduce
+#pragma weak shmem_short_sum_reduce = pshmem_short_sum_reduce
+#define shmem_short_sum_reduce pshmem_short_sum_reduce
+#pragma weak shmem_int_sum_reduce = pshmem_int_sum_reduce
+#define shmem_int_sum_reduce pshmem_int_sum_reduce
+#pragma weak shmem_long_sum_reduce = pshmem_long_sum_reduce
+#define shmem_long_sum_reduce pshmem_long_sum_reduce
+#pragma weak shmem_longlong_sum_reduce = pshmem_longlong_sum_reduce
+#define shmem_longlong_sum_reduce pshmem_longlong_sum_reduce
+#pragma weak shmem_ptrdiff_sum_reduce = pshmem_ptrdiff_sum_reduce
+#define shmem_ptrdiff_sum_reduce pshmem_ptrdiff_sum_reduce
+#pragma weak shmem_uchar_sum_reduce = pshmem_uchar_sum_reduce
+#define shmem_uchar_sum_reduce pshmem_uchar_sum_reduce
+#pragma weak shmem_ushort_sum_reduce = pshmem_ushort_sum_reduce
+#define shmem_ushort_sum_reduce pshmem_ushort_sum_reduce
+#pragma weak shmem_uint_sum_reduce = pshmem_uint_sum_reduce
+#define shmem_uint_sum_reduce pshmem_uint_sum_reduce
+#pragma weak shmem_ulong_sum_reduce = pshmem_ulong_sum_reduce
+#define shmem_ulong_sum_reduce pshmem_ulong_sum_reduce
+#pragma weak shmem_ulonglong_sum_reduce = pshmem_ulonglong_sum_reduce
+#define shmem_ulonglong_sum_reduce pshmem_ulonglong_sum_reduce
+#pragma weak shmem_int8_sum_reduce = pshmem_int8_sum_reduce
+#define shmem_int8_sum_reduce pshmem_int8_sum_reduce
+#pragma weak shmem_int16_sum_reduce = pshmem_int16_sum_reduce
+#define shmem_int16_sum_reduce pshmem_int16_sum_reduce
+#pragma weak shmem_int32_sum_reduce = pshmem_int32_sum_reduce
+#define shmem_int32_sum_reduce pshmem_int32_sum_reduce
+#pragma weak shmem_int64_sum_reduce = pshmem_int64_sum_reduce
+#define shmem_int64_sum_reduce pshmem_int64_sum_reduce
+#pragma weak shmem_uint8_sum_reduce = pshmem_uint8_sum_reduce
+#define shmem_uint8_sum_reduce pshmem_uint8_sum_reduce
+#pragma weak shmem_uint16_sum_reduce = pshmem_uint16_sum_reduce
+#define shmem_uint16_sum_reduce pshmem_uint16_sum_reduce
+#pragma weak shmem_uint32_sum_reduce = pshmem_uint32_sum_reduce
+#define shmem_uint32_sum_reduce pshmem_uint32_sum_reduce
+#pragma weak shmem_uint64_sum_reduce = pshmem_uint64_sum_reduce
+#define shmem_uint64_sum_reduce pshmem_uint64_sum_reduce
+#pragma weak shmem_size_sum_reduce = pshmem_size_sum_reduce
+#define shmem_size_sum_reduce pshmem_size_sum_reduce
+#pragma weak shmem_float_sum_reduce = pshmem_float_sum_reduce
+#define shmem_float_sum_reduce pshmem_float_sum_reduce
+#pragma weak shmem_double_sum_reduce = pshmem_double_sum_reduce
+#define shmem_double_sum_reduce pshmem_double_sum_reduce
+#pragma weak shmem_longdouble_sum_reduce = pshmem_longdouble_sum_reduce
+#define shmem_longdouble_sum_reduce pshmem_longdouble_sum_reduce
+#pragma weak shmem_complexd_sum_reduce = pshmem_complexd_sum_reduce
+#define shmem_complexd_sum_reduce pshmem_complexd_sum_reduce
+#pragma weak shmem_complexf_sum_reduce = pshmem_complexf_sum_reduce
+#define shmem_complexf_sum_reduce pshmem_complexf_sum_reduce
+/* prod */
+#pragma weak shmem_char_prod_reduce = pshmem_char_prod_reduce
+#define shmem_char_prod_reduce pshmem_char_prod_reduce
+#pragma weak shmem_schar_prod_reduce = pshmem_schar_prod_reduce
+#define shmem_schar_prod_reduce pshmem_schar_prod_reduce
+#pragma weak shmem_short_prod_reduce = pshmem_short_prod_reduce
+#define shmem_short_prod_reduce pshmem_short_prod_reduce
+#pragma weak shmem_int_prod_reduce = pshmem_int_prod_reduce
+#define shmem_int_prod_reduce pshmem_int_prod_reduce
+#pragma weak shmem_long_prod_reduce = pshmem_long_prod_reduce
+#define shmem_long_prod_reduce pshmem_long_prod_reduce
+#pragma weak shmem_longlong_prod_reduce = pshmem_longlong_prod_reduce
+#define shmem_longlong_prod_reduce pshmem_longlong_prod_reduce
+#pragma weak shmem_ptrdiff_prod_reduce = pshmem_ptrdiff_prod_reduce
+#define shmem_ptrdiff_prod_reduce pshmem_ptrdiff_prod_reduce
+#pragma weak shmem_uchar_prod_reduce = pshmem_uchar_prod_reduce
+#define shmem_uchar_prod_reduce pshmem_uchar_prod_reduce
+#pragma weak shmem_ushort_prod_reduce = pshmem_ushort_prod_reduce
+#define shmem_ushort_prod_reduce pshmem_ushort_prod_reduce
+#pragma weak shmem_uint_prod_reduce = pshmem_uint_prod_reduce
+#define shmem_uint_prod_reduce pshmem_uint_prod_reduce
+#pragma weak shmem_ulong_prod_reduce = pshmem_ulong_prod_reduce
+#define shmem_ulong_prod_reduce pshmem_ulong_prod_reduce
+#pragma weak shmem_ulonglong_prod_reduce = pshmem_ulonglong_prod_reduce
+#define shmem_ulonglong_prod_reduce pshmem_ulonglong_prod_reduce
+#pragma weak shmem_int8_prod_reduce = pshmem_int8_prod_reduce
+#define shmem_int8_prod_reduce pshmem_int8_prod_reduce
+#pragma weak shmem_int16_prod_reduce = pshmem_int16_prod_reduce
+#define shmem_int16_prod_reduce pshmem_int16_prod_reduce
+#pragma weak shmem_int32_prod_reduce = pshmem_int32_prod_reduce
+#define shmem_int32_prod_reduce pshmem_int32_prod_reduce
+#pragma weak shmem_int64_prod_reduce = pshmem_int64_prod_reduce
+#define shmem_int64_prod_reduce pshmem_int64_prod_reduce
+#pragma weak shmem_uint8_prod_reduce = pshmem_uint8_prod_reduce
+#define shmem_uint8_prod_reduce pshmem_uint8_prod_reduce
+#pragma weak shmem_uint16_prod_reduce = pshmem_uint16_prod_reduce
+#define shmem_uint16_prod_reduce pshmem_uint16_prod_reduce
+#pragma weak shmem_uint32_prod_reduce = pshmem_uint32_prod_reduce
+#define shmem_uint32_prod_reduce pshmem_uint32_prod_reduce
+#pragma weak shmem_uint64_prod_reduce = pshmem_uint64_prod_reduce
+#define shmem_uint64_prod_reduce pshmem_uint64_prod_reduce
+#pragma weak shmem_size_prod_reduce = pshmem_size_prod_reduce
+#define shmem_size_prod_reduce pshmem_size_prod_reduce
+#pragma weak shmem_float_prod_reduce = pshmem_float_prod_reduce
+#define shmem_float_prod_reduce pshmem_float_prod_reduce
+#pragma weak shmem_double_prod_reduce = pshmem_double_prod_reduce
+#define shmem_double_prod_reduce pshmem_double_prod_reduce
+#pragma weak shmem_longdouble_prod_reduce = pshmem_longdouble_prod_reduce
+#define shmem_longdouble_prod_reduce pshmem_longdouble_prod_reduce
+#pragma weak shmem_complexd_prod_reduce = pshmem_complexd_prod_reduce
+#define shmem_complexd_prod_reduce pshmem_complexd_prod_reduce
+#pragma weak shmem_complexf_prod_reduce = pshmem_complexf_prod_reduce
+#define shmem_complexf_prod_reduce pshmem_complexf_prod_reduce
+
+#endif /* ENABLE_PSHMEM */
+
+#define SHIM_REDUCE_ARITH_TYPES(_op)                                           \
+  SHMEM_TYPENAME_OP_REDUCE(char, char, _op)                                    \
+  SHMEM_TYPENAME_OP_REDUCE(schar, signed char, _op)                            \
+  SHMEM_TYPENAME_OP_REDUCE(short, short, _op)                                  \
+  SHMEM_TYPENAME_OP_REDUCE(int, int, _op)                                      \
+  SHMEM_TYPENAME_OP_REDUCE(long, long, _op)                                    \
+  SHMEM_TYPENAME_OP_REDUCE(longlong, long long, _op)                           \
+  SHMEM_TYPENAME_OP_REDUCE(ptrdiff, ptrdiff_t, _op)                            \
+  SHMEM_TYPENAME_OP_REDUCE(uchar, unsigned char, _op)                          \
+  SHMEM_TYPENAME_OP_REDUCE(ushort, unsigned short, _op)                        \
+  SHMEM_TYPENAME_OP_REDUCE(uint, unsigned int, _op)                            \
+  SHMEM_TYPENAME_OP_REDUCE(ulong, unsigned long, _op)                          \
+  SHMEM_TYPENAME_OP_REDUCE(ulonglong, unsigned long long, _op)                 \
+  SHMEM_TYPENAME_OP_REDUCE(int8, int8_t, _op)                                  \
+  SHMEM_TYPENAME_OP_REDUCE(int16, int16_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(int32, int32_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(int64, int64_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(uint8, uint8_t, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(uint16, uint16_t, _op)                              \
+  SHMEM_TYPENAME_OP_REDUCE(uint32, uint32_t, _op)                              \
+  SHMEM_TYPENAME_OP_REDUCE(uint64, uint64_t, _op)                              \
+  SHMEM_TYPENAME_OP_REDUCE(size, size_t, _op)                                  \
+  SHMEM_TYPENAME_OP_REDUCE(float, float, _op)                                  \
+  SHMEM_TYPENAME_OP_REDUCE(double, double, _op)                                \
+  SHMEM_TYPENAME_OP_REDUCE(longdouble, long double, _op)                       \
+  SHMEM_TYPENAME_OP_REDUCE(complexd, double _Complex, _op)                     \
+  SHMEM_TYPENAME_OP_REDUCE(complexf, float _Complex, _op)
+
+SHIM_REDUCE_ARITH_TYPES(sum)
+SHIM_REDUCE_ARITH_TYPES(prod)
+
+/** @} */
+
+/** @} */
+
+///////////////////////////////////////////////////////////////////////
+/**
  * @defgroup barrier Barrier Operations
  * @{
  */
@@ -730,8 +1461,8 @@ void shmem_sync_all(void) {
  */
 
 // #ifdef ENABLE_PSHMEM
-// #pragma weak shmem_sync_deprecated = pshmem_sync_deprecated
-// #define shmem_sync_deprecated pshmem_sync_deprecated
+// #pragma weak shmem_sync = pshmem_sync
+// #define shmem_sync pshmem_sync
 // #endif /* ENABLE_PSHMEM */
 
 /**
@@ -784,247 +1515,5 @@ int shmem_team_sync(shmem_team_t team) {
 
   colls.team_sync.f(team);
 }
-
-/** @} */
-
-/**
- * @defgroup to_all To-All Reductions
- * @{
- */
-
-#ifdef ENABLE_PSHMEM
-#define DECL_PSHMEM_WEAK_SUM_TO_ALL(_type, _typename)                          \
-  _Pragma("weak shmem_" #_typename "_sum_to_all = pshmem_" #_typename          \
-          "_sum_to_all") #define shmem_##_typename##_sum_to_all                \
-      pshmem_##_typename##_sum_to_all
-SHMEM_TOALL_ARITH_TYPE_TABLE(DECL_PSHMEM_WEAK_SUM_TO_ALL)
-#undef DECL_PSHMEM_WEAK_SUM_TO_ALL
-
-#define DECL_PSHMEM_WEAK_PROD_TO_ALL(_type, _typename)                         \
-  _Pragma("weak shmem_" #_typename "_prod_to_all = pshmem_" #_typename         \
-          "_prod_to_all") #define shmem_##_typename##_prod_to_all              \
-      pshmem_##_typename##_prod_to_all
-SHMEM_TOALL_ARITH_TYPE_TABLE(DECL_PSHMEM_WEAK_PROD_TO_ALL)
-#undef DECL_PSHMEM_WEAK_PROD_TO_ALL
-
-#define DECL_PSHMEM_WEAK_AND_TO_ALL(_type, _typename)                          \
-  _Pragma("weak shmem_" #_typename "_and_to_all = pshmem_" #_typename          \
-          "_and_to_all") #define shmem_##_typename##_and_to_all                \
-      pshmem_##_typename##_and_to_all
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_PSHMEM_WEAK_AND_TO_ALL)
-#undef DECL_PSHMEM_WEAK_AND_TO_ALL
-
-#define DECL_PSHMEM_WEAK_OR_TO_ALL(_type, _typename)                           \
-  _Pragma("weak shmem_" #_typename "_or_to_all = pshmem_" #_typename           \
-          "_or_to_all") #define shmem_##_typename##_or_to_all                  \
-      pshmem_##_typename##_or_to_all
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_PSHMEM_WEAK_OR_TO_ALL)
-#undef DECL_PSHMEM_WEAK_OR_TO_ALL
-
-#define DECL_PSHMEM_WEAK_XOR_TO_ALL(_type, _typename)                          \
-  _Pragma("weak shmem_" #_typename "_xor_to_all = pshmem_" #_typename          \
-          "_xor_to_all") #define shmem_##_typename##_xor_to_all                \
-      pshmem_##_typename##_xor_to_all
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_PSHMEM_WEAK_XOR_TO_ALL)
-#undef DECL_PSHMEM_WEAK_XOR_TO_ALL
-
-#define DECL_PSHMEM_WEAK_MAX_TO_ALL(_type, _typename)                          \
-  _Pragma("weak shmem_" #_typename "_max_to_all = pshmem_" #_typename          \
-          "_max_to_all") #define shmem_##_typename##_max_to_all                \
-      pshmem_##_typename##_max_to_all
-SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_PSHMEM_WEAK_MAX_TO_ALL)
-#undef DECL_PSHMEM_WEAK_MAX_TO_ALL
-
-#define DECL_PSHMEM_WEAK_MIN_TO_ALL(_type, _typename)                          \
-  _Pragma("weak shmem_" #_typename "_min_to_all = pshmem_" #_typename          \
-          "_min_to_all") #define shmem_##_typename##_min_to_all                \
-      pshmem_##_typename##_min_to_all
-SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_PSHMEM_WEAK_MIN_TO_ALL)
-#undef DECL_PSHMEM_WEAK_MIN_TO_ALL
-#endif /* ENABLE_PSHMEM */
-
-/**
- * @brief Macro to generate typed reduction operations with legacy "to_all"
- * naming
- * @param _type The C data type
- * @param _typename The type name string
- * @param _op The reduction operation (sum, prod, and, or, xor, max, min)
- *
- * This macro generates the legacy reduction operations that use the "to_all"
- * naming convention. These operations are deprecated in favor of the newer
- * "_reduce" operations.
- *
- * The generated functions have the following signature:
- * @code
- * void shmem_<typename>_<op>_to_all(_type *target, const _type *source, int
- * nreduce, int PE_start, int logPE_stride, int PE_size, _type *pWrk, long
- * *pSync);
- * @endcode
- *
- * @param target Symmetric destination array
- * @param source Symmetric source array
- * @param nreduce Number of elements in the reduction
- * @param PE_start First PE in the active set
- * @param logPE_stride Log2 of stride between consecutive PEs
- * @param PE_size Number of PEs in the active set
- * @param pWrk Symmetric work array
- * @param pSync Symmetric work array for synchronization
- */
-
-#define SHMEM_TYPENAME_TO_ALL(_type, _typename, _op)                           \
-  void shmem_##_typename##_##_op##_to_all(                                     \
-      _type *target, const _type *source, int nreduce, int PE_start,           \
-      int logPE_stride, int PE_size, _type *pWrk, long *pSync) {               \
-    logger(LOG_COLLECTIVES, "%s(%p, %p, %d, %d, %d, %p, %p)", __func__,        \
-           target, source, nreduce, PE_start, logPE_stride, PE_size, pWrk,     \
-           pSync);                                                             \
-    TO_ALL_TYPED_CALL(_op##_to_all, #_typename, target, source, nreduce,       \
-                      PE_start, logPE_stride, PE_size, pWrk, pSync);           \
-  }
-
-#define DECL_SHIM_SUM_TO_ALL(_type, _typename)                                 \
-  SHMEM_TYPENAME_TO_ALL(_type, _typename, sum)
-SHMEM_TOALL_ARITH_TYPE_TABLE(DECL_SHIM_SUM_TO_ALL)
-#undef DECL_SHIM_SUM_TO_ALL
-
-#define DECL_SHIM_PROD_TO_ALL(_type, _typename)                                \
-  SHMEM_TYPENAME_TO_ALL(_type, _typename, prod)
-SHMEM_TOALL_ARITH_TYPE_TABLE(DECL_SHIM_PROD_TO_ALL)
-#undef DECL_SHIM_PROD_TO_ALL
-
-#define DECL_SHIM_AND_TO_ALL(_type, _typename)                                 \
-  SHMEM_TYPENAME_TO_ALL(_type, _typename, and)
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_SHIM_AND_TO_ALL)
-#undef DECL_SHIM_AND_TO_ALL
-
-#define DECL_SHIM_OR_TO_ALL(_type, _typename)                                  \
-  SHMEM_TYPENAME_TO_ALL(_type, _typename, or)
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_SHIM_OR_TO_ALL)
-#undef DECL_SHIM_OR_TO_ALL
-
-#define DECL_SHIM_XOR_TO_ALL(_type, _typename)                                 \
-  SHMEM_TYPENAME_TO_ALL(_type, _typename, xor)
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_SHIM_XOR_TO_ALL)
-#undef DECL_SHIM_XOR_TO_ALL
-
-#define DECL_SHIM_MAX_TO_ALL(_type, _typename)                                 \
-  SHMEM_TYPENAME_TO_ALL(_type, _typename, max)
-SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_SHIM_MAX_TO_ALL)
-#undef DECL_SHIM_MAX_TO_ALL
-
-#define DECL_SHIM_MIN_TO_ALL(_type, _typename)                                 \
-  SHMEM_TYPENAME_TO_ALL(_type, _typename, min)
-SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_SHIM_MIN_TO_ALL)
-#undef DECL_SHIM_MIN_TO_ALL
-
-#undef SHMEM_TYPENAME_TO_ALL
-
-/** @} */
-
-/**
- * @defgroup reduce Team Reductions
- * @{
- */
-
-#ifdef ENABLE_PSHMEM
-#define DECL_PSHMEM_WEAK_SUM_REDUCE(_type, _typename)                          \
-  _Pragma("weak shmem_" #_typename "_sum_reduce = pshmem_" #_typename          \
-          "_sum_reduce") #define shmem_##_typename##_sum_reduce                \
-      pshmem_##_typename##_sum_reduce
-SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_PSHMEM_WEAK_SUM_REDUCE)
-#undef DECL_PSHMEM_WEAK_SUM_REDUCE
-#define DECL_PSHMEM_WEAK_PROD_REDUCE(_type, _typename)                         \
-  _Pragma("weak shmem_" #_typename "_prod_reduce = pshmem_" #_typename         \
-          "_prod_reduce") #define shmem_##_typename##_prod_reduce              \
-      pshmem_##_typename##_prod_reduce
-SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_PSHMEM_WEAK_PROD_REDUCE)
-#undef DECL_PSHMEM_WEAK_PROD_REDUCE
-#define DECL_PSHMEM_WEAK_AND_REDUCE(_type, _typename)                          \
-  _Pragma("weak shmem_" #_typename "_and_reduce = pshmem_" #_typename          \
-          "_and_reduce") #define shmem_##_typename##_and_reduce                \
-      pshmem_##_typename##_and_reduce
-SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_PSHMEM_WEAK_AND_REDUCE)
-#undef DECL_PSHMEM_WEAK_AND_REDUCE
-#define DECL_PSHMEM_WEAK_OR_REDUCE(_type, _typename)                           \
-  _Pragma("weak shmem_" #_typename "_or_reduce = pshmem_" #_typename           \
-          "_or_reduce") #define shmem_##_typename##_or_reduce                  \
-      pshmem_##_typename##_or_reduce
-SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_PSHMEM_WEAK_OR_REDUCE)
-#undef DECL_PSHMEM_WEAK_OR_REDUCE
-#define DECL_PSHMEM_WEAK_XOR_REDUCE(_type, _typename)                          \
-  _Pragma("weak shmem_" #_typename "_xor_reduce = pshmem_" #_typename          \
-          "_xor_reduce") #define shmem_##_typename##_xor_reduce                \
-      pshmem_##_typename##_xor_reduce
-SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_PSHMEM_WEAK_XOR_REDUCE)
-#undef DECL_PSHMEM_WEAK_XOR_REDUCE
-#define DECL_PSHMEM_WEAK_MAX_REDUCE(_type, _typename)                          \
-  _Pragma("weak shmem_" #_typename "_max_reduce = pshmem_" #_typename          \
-          "_max_reduce") #define shmem_##_typename##_max_reduce                \
-      pshmem_##_typename##_max_reduce
-SHMEM_REDUCE_MINMAX_TYPE_TABLE(DECL_PSHMEM_WEAK_MAX_REDUCE)
-#undef DECL_PSHMEM_WEAK_MAX_REDUCE
-#define DECL_PSHMEM_WEAK_MIN_REDUCE(_type, _typename)                          \
-  _Pragma("weak shmem_" #_typename "_min_reduce = pshmem_" #_typename          \
-          "_min_reduce") #define shmem_##_typename##_min_reduce                \
-      pshmem_##_typename##_min_reduce
-SHMEM_REDUCE_MINMAX_TYPE_TABLE(DECL_PSHMEM_WEAK_MIN_REDUCE)
-#undef DECL_PSHMEM_WEAK_MIN_REDUCE
-#endif /* ENABLE_PSHMEM */
-
-/**
- * @brief Macro to generate typed reduction operations
- * @param _type The C data type
- * @param _typename The type name string
- * @param _op The reduction operation (sum, prod, and, or, xor, max, min)
- *
- * This macro generates the function definitions for typed reduction operations.
- * It creates functions of the form shmem_<typename>_<op>_reduce() that perform
- * the specified reduction operation on the given data type.
- *
- * The generated functions take the following parameters:
- * @param team The team over which to perform the reduction
- * @param dest The destination array for the result
- * @param source The source array containing input values
- * @param nreduce Number of elements to reduce
- * @return Zero on success, non-zero on failure
- */
-
-#define SHMEM_TYPENAME_REDUCE(_type, _typename, _op)                           \
-  int shmem_##_typename##_##_op##_reduce(                                      \
-      shmem_team_t team, _type *dest, const _type *source, size_t nreduce) {   \
-    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %zu)", __func__, team, dest,       \
-           source, nreduce);                                                   \
-    TYPED_CALL(_op##_reduce, #_typename, team, dest, source, nreduce);         \
-  }
-
-#define DECL_SHIM_SUM_REDUCE(_type, _typename)                                 \
-  SHMEM_TYPENAME_REDUCE(_type, _typename, sum)
-SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_SHIM_SUM_REDUCE)
-#undef DECL_SHIM_SUM_REDUCE
-#define DECL_SHIM_PROD_REDUCE(_type, _typename)                                \
-  SHMEM_TYPENAME_REDUCE(_type, _typename, prod)
-SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_SHIM_PROD_REDUCE)
-#undef DECL_SHIM_PROD_REDUCE
-#define DECL_SHIM_AND_REDUCE(_type, _typename)                                 \
-  SHMEM_TYPENAME_REDUCE(_type, _typename, and)
-SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_SHIM_AND_REDUCE)
-#undef DECL_SHIM_AND_REDUCE
-#define DECL_SHIM_OR_REDUCE(_type, _typename)                                  \
-  SHMEM_TYPENAME_REDUCE(_type, _typename, or)
-SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_SHIM_OR_REDUCE)
-#undef DECL_SHIM_OR_REDUCE
-#define DECL_SHIM_XOR_REDUCE(_type, _typename)                                 \
-  SHMEM_TYPENAME_REDUCE(_type, _typename, xor)
-SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_SHIM_XOR_REDUCE)
-#undef DECL_SHIM_XOR_REDUCE
-#define DECL_SHIM_MAX_REDUCE(_type, _typename)                                 \
-  SHMEM_TYPENAME_REDUCE(_type, _typename, max)
-SHMEM_REDUCE_MINMAX_TYPE_TABLE(DECL_SHIM_MAX_REDUCE)
-#undef DECL_SHIM_MAX_REDUCE
-#define DECL_SHIM_MIN_REDUCE(_type, _typename)                                 \
-  SHMEM_TYPENAME_REDUCE(_type, _typename, min)
-SHMEM_REDUCE_MINMAX_TYPE_TABLE(DECL_SHIM_MIN_REDUCE)
-#undef DECL_SHIM_MIN_REDUCE
-#undef SHMEM_TYPENAME_REDUCE
 
 /** @} */

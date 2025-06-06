@@ -9,6 +9,7 @@
 #define _PSHMEM_H 1
 
 #include "shmem.h"
+#include "api_types.h"
 
 #include <stdint.h> /* uint*_t */
 
@@ -224,55 +225,15 @@ void *pshmem_team_ptr(shmem_team_t team, const void *dest, int pe) _WUR;
   void pshmem_##_name##_##_opname(_type *dest, const _type *src,               \
                                   size_t nelems, int pe);
 
-PSHMEM_DECL_PUTGET(put, float, float)
-PSHMEM_DECL_PUTGET(put, double, double)
-PSHMEM_DECL_PUTGET(put, longdouble, long double)
-PSHMEM_DECL_PUTGET(put, schar, signed char)
-PSHMEM_DECL_PUTGET(put, char, char)
-PSHMEM_DECL_PUTGET(put, short, short)
-PSHMEM_DECL_PUTGET(put, int, int)
-PSHMEM_DECL_PUTGET(put, long, long)
-PSHMEM_DECL_PUTGET(put, longlong, long long)
-PSHMEM_DECL_PUTGET(put, uchar, unsigned char)
-PSHMEM_DECL_PUTGET(put, ushort, unsigned short)
-PSHMEM_DECL_PUTGET(put, uint, unsigned int)
-PSHMEM_DECL_PUTGET(put, ulong, unsigned long)
-PSHMEM_DECL_PUTGET(put, ulonglong, unsigned long long)
-PSHMEM_DECL_PUTGET(put, int8, int8_t)
-PSHMEM_DECL_PUTGET(put, int16, int16_t)
-PSHMEM_DECL_PUTGET(put, int32, int32_t)
-PSHMEM_DECL_PUTGET(put, int64, int64_t)
-PSHMEM_DECL_PUTGET(put, uint8, uint8_t)
-PSHMEM_DECL_PUTGET(put, uint16, uint16_t)
-PSHMEM_DECL_PUTGET(put, uint32, uint32_t)
-PSHMEM_DECL_PUTGET(put, uint64, uint64_t)
-PSHMEM_DECL_PUTGET(put, size, size_t)
-PSHMEM_DECL_PUTGET(put, ptrdiff, ptrdiff_t)
+#define DECL_PSHMEM_PUT(_type, _typename)                                      \
+  PSHMEM_DECL_PUTGET(put, _typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_PUT)
+#undef DECL_PSHMEM_PUT
 
-PSHMEM_DECL_PUTGET(get, float, float)
-PSHMEM_DECL_PUTGET(get, double, double)
-PSHMEM_DECL_PUTGET(get, longdouble, long double)
-PSHMEM_DECL_PUTGET(get, schar, signed char)
-PSHMEM_DECL_PUTGET(get, char, char)
-PSHMEM_DECL_PUTGET(get, short, short)
-PSHMEM_DECL_PUTGET(get, int, int)
-PSHMEM_DECL_PUTGET(get, long, long)
-PSHMEM_DECL_PUTGET(get, longlong, long long)
-PSHMEM_DECL_PUTGET(get, uchar, unsigned char)
-PSHMEM_DECL_PUTGET(get, ushort, unsigned short)
-PSHMEM_DECL_PUTGET(get, uint, unsigned int)
-PSHMEM_DECL_PUTGET(get, ulong, unsigned long)
-PSHMEM_DECL_PUTGET(get, ulonglong, unsigned long long)
-PSHMEM_DECL_PUTGET(get, int8, int8_t)
-PSHMEM_DECL_PUTGET(get, int16, int16_t)
-PSHMEM_DECL_PUTGET(get, int32, int32_t)
-PSHMEM_DECL_PUTGET(get, int64, int64_t)
-PSHMEM_DECL_PUTGET(get, uint8, uint8_t)
-PSHMEM_DECL_PUTGET(get, uint16, uint16_t)
-PSHMEM_DECL_PUTGET(get, uint32, uint32_t)
-PSHMEM_DECL_PUTGET(get, uint64, uint64_t)
-PSHMEM_DECL_PUTGET(get, size, size_t)
-PSHMEM_DECL_PUTGET(get, ptrdiff, ptrdiff_t)
+#define DECL_PSHMEM_GET(_type, _typename)                                      \
+  PSHMEM_DECL_PUTGET(get, _typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_GET)
+#undef DECL_PSHMEM_GET
 
 #undef PSHMEM_DECL_PUTGET
 
@@ -325,30 +286,9 @@ void pshmem_getmem(void *dest, const void *src, size_t nelems, int pe);
 #define PSHMEM_DECL_P(_name, _type)                                            \
   void pshmem_##_name##_p(_type *dest, _type src, int pe);
 
-PSHMEM_DECL_P(float, float)
-PSHMEM_DECL_P(double, double)
-PSHMEM_DECL_P(longdouble, long double)
-PSHMEM_DECL_P(schar, signed char)
-PSHMEM_DECL_P(char, char)
-PSHMEM_DECL_P(short, short)
-PSHMEM_DECL_P(int, int)
-PSHMEM_DECL_P(long, long)
-PSHMEM_DECL_P(longlong, long long)
-PSHMEM_DECL_P(uchar, unsigned char)
-PSHMEM_DECL_P(ushort, unsigned short)
-PSHMEM_DECL_P(uint, unsigned int)
-PSHMEM_DECL_P(ulong, unsigned long)
-PSHMEM_DECL_P(ulonglong, unsigned long long)
-PSHMEM_DECL_P(int8, int8_t)
-PSHMEM_DECL_P(int16, int16_t)
-PSHMEM_DECL_P(int32, int32_t)
-PSHMEM_DECL_P(int64, int64_t)
-PSHMEM_DECL_P(uint8, uint8_t)
-PSHMEM_DECL_P(uint16, uint16_t)
-PSHMEM_DECL_P(uint32, uint32_t)
-PSHMEM_DECL_P(uint64, uint64_t)
-PSHMEM_DECL_P(size, size_t)
-PSHMEM_DECL_P(ptrdiff, ptrdiff_t)
+#define DECL_PSHMEM_P(_type, _typename) PSHMEM_DECL_P(_typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PSHMEM_P)
+#undef DECL_PSHMEM_P
 
 #undef PSHMEM_DECL_P
 
@@ -959,7 +899,8 @@ void pshmem_getmem_nbi(void *dest, const void *source, size_t nelems, int pe);
 void pshmem_barrier_all(void);
 void pshmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync);
 void pshmem_sync_all(void);
-// void pshmem_sync_deprecated(int PE_start, int logPE_stride, int PE_size, long *pSync);
+// void pshmem_sync_deprecated(int PE_start, int logPE_stride, int PE_size, long
+// *pSync);
 void pshmem_fence(void);
 void pshmem_quiet(void);
 
@@ -1163,7 +1104,6 @@ void pshmem_longlong_sum_to_all(long long *target, const long long *source,
 void pshmem_short_sum_to_all(short *target, const short *source, int nreduce,
                              int PE_start, int logPE_stride, int PE_size,
                              short *pWrk, long *pSync);
-
 
 void pshmem_double_prod_to_all(double *target, const double *source,
                                int nreduce, int PE_start, int logPE_stride,
@@ -2657,4 +2597,3 @@ void pshmem_ctx_double_set(shmem_ctx_t ctx, double *target, double value,
                            int pe);
 
 #endif /* _PSHMEM_H */
-

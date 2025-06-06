@@ -44,7 +44,8 @@ export SHMEM_LAUNCHER="$OMPI_BIN/mpiexec"
   --prefix=$PREFIX        \
   --with-pmix=$PMIX_DIR   \
   --with-ucx=$UCX_DIR     \
-  --with-heap-size=1G
+  --with-heap-size=1G     \
+  --enable-debug --enable-pshmem
 
 # ---  Compile
 echo $HLINE
