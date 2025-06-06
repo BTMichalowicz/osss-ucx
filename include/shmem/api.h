@@ -1327,29 +1327,32 @@ SHMEM_DEPR_PT2PT_SYNC_TYPE_TABLE(DECL_WAIT)
  * None.
  *
  */
-#define API_DECL_SWAP(_typename, _type)                                        \
-  _type shmem_ctx_##_typename##_atomic_swap(shmem_ctx_t ctx, _type *target,    \
-                                            _type value, int pe) _WUR;         \
-  _type shmem_##_typename##_atomic_swap(_type *target, _type value, int pe);
+#define API_DECL_ATOMIC_SWAP(_typename, _type)                                 \
+  _type shmem_##_typename##_atomic_swap(_type *dest, _type value, int pe)      \
+      _WUR;                                                                    \
+  _type shmem_ctx_##_typename##_atomic_swap(shmem_ctx_t ctx, _type *dest,      \
+                                            _type value, int pe) _WUR;
 
-#define DECL_SWAP(_type, _typename) API_DECL_SWAP(_typename, _type)
-SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_SWAP)
-#undef DECL_SWAP
+#define DECL_ATOMIC_SWAP(_type, _typename)                                     \
+  API_DECL_ATOMIC_SWAP(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_ATOMIC_SWAP)
+#undef DECL_ATOMIC_SWAP
 
-#undef API_DECL_SWAP
+#undef API_DECL_ATOMIC_SWAP
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_SWAP_NBI(_typename, _type)                                    \
-  void shmem_ctx_##_typename##_atomic_swap_nbi(                                \
-      shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe);      \
+#define API_DECL_ATOMIC_SWAP_NBI(_typename, _type)                             \
   void shmem_##_typename##_atomic_swap_nbi(_type *fetch, _type *target,        \
-                                           _type value, int pe);
+                                           _type value, int pe);               \
+  void shmem_ctx_##_typename##_atomic_swap_nbi(                                \
+      shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe);
 
-#define DECL_SWAP_NBI(_type, _typename) API_DECL_SWAP_NBI(_typename, _type)
-SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_SWAP_NBI)
-#undef DECL_SWAP_NBI
+#define DECL_ATOMIC_SWAP_NBI(_type, _typename)                                 \
+  API_DECL_ATOMIC_SWAP_NBI(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_ATOMIC_SWAP_NBI)
+#undef DECL_ATOMIC_SWAP_NBI
 
-#undef API_DECL_SWAP_NBI
+#undef API_DECL_ATOMIC_SWAP_NBI
 
 long shmem_long_swap(long *target, long value, int pe)
     _DEPRECATED_BY(shmem_long_atomic_swap, 1.4) _WUR;
@@ -1386,29 +1389,31 @@ double shmem_double_swap(double *target, double value, int pe)
  * None.
  *
  */
-#define API_DECL_CSWAP(_typename, _type)                                       \
+#define API_DECL_ATOMIC_COMPARE_SWAP(_typename, _type)                         \
+  _type shmem_##_typename##_atomic_compare_swap(_type *dest, _type cond,       \
+                                                _type value, int pe);          \
   _type shmem_ctx_##_typename##_atomic_compare_swap(                           \
-      shmem_ctx_t ctx, _type *target, _type cond, _type value, int pe) _WUR;   \
-  _type shmem_##_typename##_atomic_compare_swap(_type *target, _type cond,     \
-                                                _type value, int pe);
+      shmem_ctx_t ctx, _type *dest, _type cond, _type value, int pe) _WUR;
 
-#define DECL_CSWAP(_type, _typename) API_DECL_CSWAP(_typename, _type)
-SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_CSWAP)
-#undef DECL_CSWAP
+#define DECL_ATOMIC_COMPARE_SWAP(_type, _typename)                             \
+  API_DECL_ATOMIC_COMPARE_SWAP(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_COMPARE_SWAP)
+#undef DECL_ATOMIC_COMPARE_SWAP
 
-#undef API_DECL_CSWAP
+#undef API_DECL_ATOMIC_COMPARE_SWAP
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_CSWAP_NBI(_typename, _type)                                   \
-  void shmem_ctx_##_typename##_atomic_compare_swap_nbi(                        \
-      shmem_ctx_t ctx, _type *fetch, _type *target, _type cond, _type value,   \
-      int pe);                                                                 \
+#define API_DECL_ATOMIC_COMPARE_SWAP_NBI(_typename, _type)                     \
   void shmem_##_typename##_atomic_compare_swap_nbi(                            \
-      _type *target, _type *fetch, _type cond, _type value, int pe);
+      _type *fetch, _type *dest, _type cond, _type value, int pe);             \
+  void shmem_ctx_##_typename##_atomic_compare_swap_nbi(                        \
+      shmem_ctx_t ctx, _type *fetch, _type *dest, _type cond, _type value,     \
+      int pe);
 
-#define DECL_CSWAP_NBI(_type, _typename) API_DECL_CSWAP_NBI(_typename, _type)
-SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_CSWAP_NBI)
-#undef DECL_CSWAP_NBI
+#define DECL_ATOMIC_COMPARE_SWAP_NBI(_type, _typename)                         \
+  API_DECL_ATOMIC_COMPARE_SWAP_NBI(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_COMPARE_SWAP_NBI)
+#undef DECL_ATOMIC_COMPARE_SWAP_NBI
 
 long shmem_long_cswap(long *target, long cond, long value, int pe)
     _DEPRECATED_BY(shmem_long_atomic_compare_swap, 1.4) _WUR;
@@ -1440,28 +1445,32 @@ long long shmem_longlong_cswap(long long *target, long long cond,
  *
  */
 
-#define API_DECL_FETCH_ADD(_typename, _type)                                   \
-  _type shmem_##_typename##_atomic_fetch_add(_type *target, _type value,       \
-                                             int pe) _WUR;                     \
-  _type shmem_ctx_##_typename##_atomic_fetch_add(                              \
-      shmem_ctx_t ctx, _type *target, _type value, int pe) _WUR;
+#define API_DECL_ATOMIC_FETCH_ADD(_typename, _type)                            \
+  _type shmem_##_typename##_atomic_fetch_add(_type *dest, _type value, int pe) \
+      _WUR;                                                                    \
+  _type shmem_ctx_##_typename##_atomic_fetch_add(shmem_ctx_t ctx, _type *dest, \
+                                                 _type value, int pe) _WUR;
 
-#define DECL_FETCH_ADD(_type, _typename) API_DECL_FETCH_ADD(_typename, _type)
-SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_FETCH_ADD)
-#undef DECL_FETCH_ADD
-#undef API_DECL_FETCH_ADD
+#define DECL_ATOMIC_FETCH_ADD(_type, _typename)                                \
+  API_DECL_ATOMIC_FETCH_ADD(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_ADD)
+#undef DECL_ATOMIC_FETCH_ADD
+#undef API_DECL_ATOMIC_FETCH_ADD
 
-#define API_DECL_FETCH_ADD_NBI(_typename, _type)                               \
-  void shmem_##_typename##_atomic_fetch_add_nbi(_type *fetch, _type *target,   \
-                                                _type value, int pe);          \
+////////////////////////////////////////////////////////////////////////////////
+#define API_DECL_ATOMIC_FETCH_ADD_NBI(_typename, _type)                        \
+  void shmem_##_typename##_atomic_fetch_add_nbi(                               \
+      _type *fetch, const _type *dest, _type value, int pe);                   \
   void shmem_ctx_##_typename##_atomic_fetch_add_nbi(                           \
-      shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe);
+      shmem_ctx_t ctx, _type *fetch, const _type *dest, _type value, int pe);
 
-#define DECL_FETCH_ADD_NBI(_type, _typename)                                   \
-  API_DECL_FETCH_ADD_NBI(_typename, _type)
-SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_FETCH_ADD_NBI)
-#undef DECL_FETCH_ADD_NBI
-#undef API_DECL_FETCH_ADD_NBI
+#define DECL_ATOMIC_FETCH_ADD_NBI(_type, _typename)                            \
+  API_DECL_ATOMIC_FETCH_ADD_NBI(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_ADD_NBI)
+#undef DECL_ATOMIC_FETCH_ADD_NBI
+#undef API_DECL_ATOMIC_FETCH_ADD_NBI
+
+// TODO: shmem_fadd?
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1482,15 +1491,16 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_FETCH_ADD_NBI)
  * None.
  *
  */
-#define API_DECL_FETCH_INC(_typename, _type)                                   \
-  _type shmem_##_typename##_atomic_fetch_inc(_type *target, int pe) _WUR;      \
-  _type shmem_ctx_##_typename##_atomic_fetch_inc(shmem_ctx_t ctx,              \
-                                                 _type *target, int pe) _WUR;
+#define API_DECL_ATOMIC_FETCH_INC(_typename, _type)                            \
+  _type shmem_##_typename##_atomic_fetch_inc(_type *dest, int pe) _WUR;        \
+  _type shmem_ctx_##_typename##_atomic_fetch_inc(shmem_ctx_t ctx, _type *dest, \
+                                                 int pe) _WUR;
 
-#define DECL_FETCH_INC(_type, _typename) API_DECL_FETCH_INC(_typename, _type)
-SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_FETCH_INC)
-#undef DECL_FETCH_INC
-#undef API_DECL_FETCH_INC
+#define DECL_ATOMIC_FETCH_INC(_type, _typename)                                \
+  API_DECL_ATOMIC_FETCH_INC(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_INC)
+#undef DECL_ATOMIC_FETCH_INC
+#undef API_DECL_ATOMIC_FETCH_INC
 
 long shmem_long_finc(long *target, int pe)
     _DEPRECATED_BY(shmem_long_atomic_fetch_inc, 1.4) _WUR;
@@ -1499,17 +1509,17 @@ int shmem_int_finc(int *target, int pe)
 long long shmem_longlong_finc(long long *target, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_fetch_inc, 1.4) _WUR;
 
-#define API_DECL_FETCH_INC_NBI(_typename, _type)                               \
-  void shmem_##_typename##_atomic_fetch_inc_nbi(_type *fetch, _type *target,   \
+#define API_DECL_ATOMIC_FETCH_INC_NBI(_typename, _type)                        \
+  void shmem_##_typename##_atomic_fetch_inc_nbi(_type *fetch, _type *dest,     \
                                                 int pe);                       \
   void shmem_ctx_##_typename##_atomic_fetch_inc_nbi(                           \
-      shmem_ctx_t ctx, _type *fetch, _type *target, int pe);
+      shmem_ctx_t ctx, _type *fetch, _type *dest, int pe);
 
-#define DECL_FETCH_INC_NBI(_type, _typename)                                   \
-  API_DECL_FETCH_INC_NBI(_typename, _type)
-SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_FETCH_INC_NBI)
-#undef DECL_FETCH_INC_NBI
-#undef API_DECL_FETCH_INC_NBI
+#define DECL_ATOMIC_FETCH_INC_NBI(_type, _typename)                            \
+  API_DECL_ATOMIC_FETCH_INC_NBI(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_INC_NBI)
+#undef DECL_ATOMIC_FETCH_INC_NBI
+#undef API_DECL_ATOMIC_FETCH_INC_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1530,15 +1540,15 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_FETCH_INC_NBI)
  * None.
  *
  */
-#define API_DECL_ADD(_typename, _type)                                         \
-  void shmem_##_typename##_atomic_add(_type *target, _type value, int pe);     \
-  void shmem_ctx_##_typename##_atomic_add(shmem_ctx_t ctx, _type *target,      \
+#define API_DECL_ATOMIC_ADD(_typename, _type)                                  \
+  void shmem_##_typename##_atomic_add(_type *dest, _type value, int pe);       \
+  void shmem_ctx_##_typename##_atomic_add(shmem_ctx_t ctx, _type *dest,        \
                                           _type value, int pe);
 
-#define DECL_ADD(_type, _typename) API_DECL_ADD(_typename, _type)
-SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ADD)
-#undef DECL_ADD
-#undef API_DECL_ADD
+#define DECL_ATOMIC_ADD(_type, _typename) API_DECL_ATOMIC_ADD(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_ADD)
+#undef DECL_ATOMIC_ADD
+#undef API_DECL_ATOMIC_ADD
 
 void shmem_long_add(long *target, long value, int pe)
     _DEPRECATED_BY(shmem_long_atomic_add, 1.4);
@@ -1586,27 +1596,15 @@ void shmem_longlong_add(long long *target, long long value, int pe)
  * None.
  *
  */
-#define API_DECL_OR(_typename, _type)                                          \
-  void shmem_##_typename##_atomic_or(_type *target, _type value, int pe);      \
-  void shmem_ctx_##_typename##_atomic_or(shmem_ctx_t ctx, _type *target,       \
+#define API_DECL_ATOMIC_OR(_typename, _type)                                   \
+  void shmem_##_typename##_atomic_or(_type *dest, _type value, int pe);        \
+  void shmem_ctx_##_typename##_atomic_or(shmem_ctx_t ctx, _type *dest,         \
                                          _type value, int pe);
 
-#define DECL_OR(_type, _typename) API_DECL_OR(_typename, _type)
-SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_OR)
-#undef DECL_OR
-#undef API_DECL_OR
-
-// FIXME: this was not in here before. what is that?
-#define API_DECL_OR_NBI(_typename, _type)                                      \
-  void shmem_##_typename##_atomic_or_nbi(_type *fetch, _type *target,          \
-                                         _type value, int pe);                 \
-  void shmem_ctx_##_typename##_atomic_or_nbi(                                  \
-      shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe);
-
-#define DECL_OR_NBI(_type, _typename) API_DECL_OR_NBI(_typename, _type)
-SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_OR_NBI)
-#undef DECL_OR_NBI
-#undef API_DECL_OR_NBI
+#define DECL_ATOMIC_OR(_type, _typename) API_DECL_ATOMIC_OR(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_OR)
+#undef DECL_ATOMIC_OR
+#undef API_DECL_ATOMIC_OR
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1649,16 +1647,17 @@ SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_OR_NBI)
  * Value stored previously in remote location.
  *
  */
-#define API_DECL_FETCH_OR(_typename, _type)                                    \
+#define API_DECL_ATOMIC_FETCH_OR(_typename, _type)                             \
   _type shmem_##_typename##_atomic_fetch_or(_type *target, _type value,        \
                                             int pe) _WUR;                      \
   _type shmem_ctx_##_typename##_atomic_fetch_or(                               \
       shmem_ctx_t ctx, _type *target, _type value, int pe) _WUR;
 
-#define DECL_FETCH_OR(_type, _typename) API_DECL_FETCH_OR(_typename, _type)
-SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_FETCH_OR)
-#undef DECL_FETCH_OR
-#undef API_DECL_FETCH_OR
+#define DECL_ATOMIC_FETCH_OR(_type, _typename)                                 \
+  API_DECL_ATOMIC_FETCH_OR(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_OR)
+#undef DECL_ATOMIC_FETCH_OR
+#undef API_DECL_ATOMIC_FETCH_OR
 
 #define API_DECL_FETCH_OR_NBI(_typename, _type)                                \
   void shmem_##_typename##_atomic_fetch_or_nbi(_type *fetch, _type *target,    \
@@ -1712,23 +1711,15 @@ SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_FETCH_OR_NBI)
  *
  */
 
-// TODO: pick up here
+#define API_DECL_ATOMIC_AND(_typename, _type)                                  \
+  void shmem_##_typename##_atomic_and(_type *dest, _type value, int pe);       \
+  void shmem_ctx_##_typename##_atomic_and(shmem_ctx_t ctx, _type *dest,        \
+                                          _type value, int pe);
 
-SHMEM_DECL_VOID_AMO2(and, ulong, unsigned long)
-SHMEM_DECL_VOID_AMO2(and, uint, unsigned int)
-SHMEM_DECL_VOID_AMO2(and, ulonglong, unsigned long long)
-SHMEM_DECL_VOID_AMO2(and, int32, int32_t)
-SHMEM_DECL_VOID_AMO2(and, int64, int64_t)
-SHMEM_DECL_VOID_AMO2(and, uint32, uint32_t)
-SHMEM_DECL_VOID_AMO2(and, uint64, uint64_t)
-
-SHMEM_DECL_AMO2_NBI(fetch_and, ulong, unsigned long)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint, unsigned int)
-SHMEM_DECL_AMO2_NBI(fetch_and, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2_NBI(fetch_and, int32, int32_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, int64, int64_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint32, uint32_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
+#define DECL_ATOMIC_AND(_type, _typename) API_DECL_ATOMIC_AND(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_AND)
+#undef DECL_ATOMIC_AND
+#undef API_DECL_ATOMIC_AND
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1772,21 +1763,29 @@ SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
  *
  */
 
-SHMEM_DECL_AMO2(fetch_and, ulong, unsigned long)
-SHMEM_DECL_AMO2(fetch_and, uint, unsigned int)
-SHMEM_DECL_AMO2(fetch_and, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2(fetch_and, int32, int32_t)
-SHMEM_DECL_AMO2(fetch_and, int64, int64_t)
-SHMEM_DECL_AMO2(fetch_and, uint32, uint32_t)
-SHMEM_DECL_AMO2(fetch_and, uint64, uint64_t)
+#define API_DECL_ATOMIC_FETCH_AND(_typename, _type)                            \
+  _type shmem_##_typename##_atomic_fetch_and(_type *dest, _type value, int pe) \
+      _WUR;                                                                    \
+  _type shmem_ctx_##_typename##_atomic_fetch_and(shmem_ctx_t ctx, _type *dest, \
+                                                 _type value, int pe) _WUR;
 
-SHMEM_DECL_AMO2_NBI(fetch_and, ulong, unsigned long)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint, unsigned int)
-SHMEM_DECL_AMO2_NBI(fetch_and, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2_NBI(fetch_and, int32, int32_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, int64, int64_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint32, uint32_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
+#define DECL_ATOMIC_FETCH_AND(_type, _typename)                                \
+  API_DECL_ATOMIC_FETCH_AND(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_AND)
+#undef DECL_ATOMIC_FETCH_AND
+#undef API_DECL_ATOMIC_FETCH_AND
+
+#define API_DECL_FETCH_AND_NBI(_typename, _type)                               \
+  void shmem_##_typename##_atomic_fetch_and_nbi(_type *fetch, _type *dest,     \
+                                                _type value, int pe);          \
+  void shmem_ctx_##_typename##_atomic_fetch_and_nbi(                           \
+      shmem_ctx_t ctx, _type *fetch, _type *dest, _type value, int pe);
+
+#define DECL_FETCH_AND_NBI(_type, _typename)                                   \
+  API_DECL_FETCH_AND_NBI(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_FETCH_AND_NBI)
+#undef DECL_FETCH_AND_NBI
+#undef API_DECL_FETCH_AND_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1827,22 +1826,27 @@ SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
  * None.
  *
  */
+#define API_DECL_ATOMIC_XOR(_typename, _type)                                  \
+  void shmem_##_typename##_atomic_xor(_type *dest, _type value, int pe);       \
+  void shmem_ctx_##_typename##_atomic_xor(shmem_ctx_t ctx, _type *dest,        \
+                                          _type value, int pe);
 
-SHMEM_DECL_VOID_AMO2(xor, ulong, unsigned long)
-SHMEM_DECL_VOID_AMO2(xor, uint, unsigned int)
-SHMEM_DECL_VOID_AMO2(xor, ulonglong, unsigned long long)
-SHMEM_DECL_VOID_AMO2(xor, int32, int32_t)
-SHMEM_DECL_VOID_AMO2(xor, int64, int64_t)
-SHMEM_DECL_VOID_AMO2(xor, uint32, uint32_t)
-SHMEM_DECL_VOID_AMO2(xor, uint64, uint64_t)
+#define DECL_ATOMIC_XOR(_type, _typename) API_DECL_ATOMIC_XOR(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_XOR)
+#undef DECL_ATOMIC_XOR
+#undef API_DECL_ATOMIC_XOR
 
-SHMEM_DECL_AMO2_NBI(fetch_xor, ulong, unsigned long)
-SHMEM_DECL_AMO2_NBI(fetch_xor, uint, unsigned int)
-SHMEM_DECL_AMO2_NBI(fetch_xor, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2_NBI(fetch_xor, int32, int32_t)
-SHMEM_DECL_AMO2_NBI(fetch_xor, int64, int64_t)
-SHMEM_DECL_AMO2_NBI(fetch_xor, uint32, uint32_t)
-SHMEM_DECL_AMO2_NBI(fetch_xor, uint64, uint64_t)
+#define API_DECL_ATOMIC_XOR_NBI(_typename, _type)                              \
+  void shmem_##_typename##_atomic_xor_nbi(_type *fetch, _type *dest,           \
+                                          _type value, int pe);                \
+  void shmem_ctx_##_typename##_atomic_xor_nbi(                                 \
+      shmem_ctx_t ctx, _type *fetch, _type *dest, _type value, int pe);
+
+#define DECL_ATOMIC_XOR_NBI(_type, _typename)                                  \
+  API_DECL_ATOMIC_XOR_NBI(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_XOR_NBI)
+#undef DECL_ATOMIC_XOR_NBI
+#undef API_DECL_ATOMIC_XOR_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1886,19 +1890,29 @@ SHMEM_DECL_AMO2_NBI(fetch_xor, uint64, uint64_t)
  * Value stored previously in remote location.
  *
  */
+#define API_DECL_ATOMIC_FETCH_XOR(_typename, _type)                            \
+  _type shmem_##_typename##_atomic_fetch_xor(_type *dest, _type value, int pe) \
+      _WUR;                                                                    \
+  _type shmem_ctx_##_typename##_atomic_fetch_xor(shmem_ctx_t ctx, _type *dest, \
+                                                 _type value, int pe) _WUR;
 
-SHMEM_DECL_AMO2(fetch_xor, int, int)
-SHMEM_DECL_AMO2(fetch_xor, long, long)
-SHMEM_DECL_AMO2(fetch_xor, longlong, long long)
-SHMEM_DECL_AMO2(fetch_xor, uint, unsigned int)
-SHMEM_DECL_AMO2(fetch_xor, ulong, unsigned long)
-SHMEM_DECL_AMO2(fetch_xor, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2(fetch_xor, int32, int32_t)
-SHMEM_DECL_AMO2(fetch_xor, int64, int64_t)
-SHMEM_DECL_AMO2(fetch_xor, uint32, uint32_t)
-SHMEM_DECL_AMO2(fetch_xor, uint64, uint64_t)
-SHMEM_DECL_AMO2(fetch_xor, size, size_t)
-SHMEM_DECL_AMO2(fetch_xor, ptrdiff, ptrdiff_t)
+#define DECL_ATOMIC_FETCH_XOR(_type, _typename)                                \
+  API_DECL_ATOMIC_FETCH_XOR(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_XOR)
+#undef DECL_ATOMIC_FETCH_XOR
+#undef API_DECL_ATOMIC_FETCH_XOR
+
+#define API_DECL_ATOMIC_FETCH_XOR_NBI(_typename, _type)                        \
+  void shmem_##_typename##_atomic_fetch_xor_nbi(_type *fetch, _type *dest,     \
+                                                _type value, int pe);          \
+  void shmem_ctx_##_typename##_atomic_fetch_xor_nbi(                           \
+      shmem_ctx_t ctx, _type *fetch, _type *dest, _type value, int pe);
+
+#define DECL_ATOMIC_FETCH_XOR_NBI(_type, _typename)                            \
+  API_DECL_ATOMIC_FETCH_XOR_NBI(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_XOR_NBI)
+#undef DECL_ATOMIC_FETCH_XOR_NBI
+#undef API_DECL_ATOMIC_FETCH_XOR_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1919,20 +1933,14 @@ SHMEM_DECL_AMO2(fetch_xor, ptrdiff, ptrdiff_t)
  * None.
  *
  */
-SHMEM_DECL_VOID_AMO1(inc, float, float)
-SHMEM_DECL_VOID_AMO1(inc, double, double)
-SHMEM_DECL_VOID_AMO1(inc, long, long)
-SHMEM_DECL_VOID_AMO1(inc, int, int)
-SHMEM_DECL_VOID_AMO1(inc, longlong, long long)
-SHMEM_DECL_VOID_AMO1(inc, uint, unsigned int)
-SHMEM_DECL_VOID_AMO1(inc, ulong, unsigned long)
-SHMEM_DECL_VOID_AMO1(inc, ulonglong, unsigned long long)
-SHMEM_DECL_VOID_AMO1(inc, int32, int32_t)
-SHMEM_DECL_VOID_AMO1(inc, int64, int64_t)
-SHMEM_DECL_VOID_AMO1(inc, uint32, uint32_t)
-SHMEM_DECL_VOID_AMO1(inc, uint64, uint64_t)
-SHMEM_DECL_VOID_AMO1(inc, size, size_t)
-SHMEM_DECL_VOID_AMO1(inc, ptrdiff, ptrdiff_t)
+#define API_DECL_ATOMIC_INC(_typename, _type)                                  \
+  void shmem_##_typename##_atomic_inc(_type *dest, int pe);                    \
+  void shmem_ctx_##_typename##_atomic_inc(shmem_ctx_t ctx, _type *dest, int pe);
+
+#define DECL_ATOMIC_INC(_type, _typename) API_DECL_ATOMIC_INC(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_INC)
+#undef DECL_ATOMIC_INC
+#undef API_DECL_ATOMIC_INC
 
 void shmem_long_inc(long *target, int pe)
     _DEPRECATED_BY(shmem_long_atomic_inc, 1.4);
@@ -1977,46 +1985,39 @@ void shmem_longlong_inc(long long *target, int pe)
  * The value stored at address "dest" on PE pe.
  *
  */
-SHMEM_DECL_CONST_AMO1(fetch, long, long)
-SHMEM_DECL_CONST_AMO1(fetch, int, int)
-SHMEM_DECL_CONST_AMO1(fetch, float, float)
-SHMEM_DECL_CONST_AMO1(fetch, double, double)
-SHMEM_DECL_CONST_AMO1(fetch, longlong, long long)
-SHMEM_DECL_CONST_AMO1(fetch, uint, unsigned int)
-SHMEM_DECL_CONST_AMO1(fetch, ulong, unsigned long)
-SHMEM_DECL_CONST_AMO1(fetch, ulonglong, unsigned long long)
-SHMEM_DECL_CONST_AMO1(fetch, int32, int32_t)
-SHMEM_DECL_CONST_AMO1(fetch, int64, int64_t)
-SHMEM_DECL_CONST_AMO1(fetch, uint32, uint32_t)
-SHMEM_DECL_CONST_AMO1(fetch, uint64, uint64_t)
-SHMEM_DECL_CONST_AMO1(fetch, size, size_t)
-SHMEM_DECL_CONST_AMO1(fetch, ptrdiff, ptrdiff_t)
+#define API_DECL_ATOMIC_FETCH(_typename, _type)                                \
+  _type shmem_##_typename##_atomic_fetch(const _type *source, int pe) _WUR;    \
+  _type shmem_ctx_##_typename##_atomic_fetch(                                  \
+      shmem_ctx_t ctx, const _type *source, int pe) _WUR;
 
-SHMEM_DECL_CONST_AMO1_NBI(fetch, long, long)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, int, int)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, float, float)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, double, double)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, longlong, long long)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, uint, unsigned int)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, ulong, unsigned long)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, ulonglong, unsigned long long)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, int32, int32_t)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, int64, int64_t)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, uint32, uint32_t)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, uint64, uint64_t)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, size, size_t)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, ptrdiff, ptrdiff_t)
+#define DECL_ATOMIC_FETCH(_type, _typename)                                    \
+  API_DECL_ATOMIC_FETCH(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH)
+#undef DECL_ATOMIC_FETCH
+#undef API_DECL_ATOMIC_FETCH
 
-int shmem_int_fetch(const int *dest, int pe)
+int shmem_int_fetch(const int *source, int pe)
     _DEPRECATED_BY(shmem_int_atomic_fetch, 1.4) _WUR;
-long shmem_long_fetch(const long *dest, int pe)
+long shmem_long_fetch(const long *source, int pe)
     _DEPRECATED_BY(shmem_long_atomic_fetch, 1.4) _WUR;
-long long shmem_longlong_fetch(const long long *dest, int pe)
+long long shmem_longlong_fetch(const long long *source, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_fetch, 1.4) _WUR;
-float shmem_float_fetch(const float *dest, int pe)
+float shmem_float_fetch(const float *source, int pe)
     _DEPRECATED_BY(shmem_float_atomic_fetch, 1.4) _WUR;
-double shmem_double_fetch(const double *dest, int pe)
+double shmem_double_fetch(const double *source, int pe)
     _DEPRECATED_BY(shmem_double_atomic_fetch, 1.4) _WUR;
+
+#define API_DECL_ATOMIC_FETCH_NBI(_typename, _type)                            \
+  _type shmem_##_typename##_atomic_fetch_nbi(                                  \
+      _type *fetch, const _type *source, int pe) _WUR;                         \
+  _type shmem_ctx_##_typename##_atomic_fetch_nbi(                              \
+      shmem_ctx_t ctx, _type *fetch, const _type *source, int pe) _WUR;
+
+#define DECL_ATOMIC_FETCH_NBI(_type, _typename)                                \
+  API_DECL_ATOMIC_FETCH_NBI(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_NBI)
+#undef DECL_ATOMIC_FETCH_NBI
+#undef API_DECL_ATOMIC_FETCH_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2059,20 +2060,15 @@ double shmem_double_fetch(const double *dest, int pe)
  * None.
  *
  */
-SHMEM_DECL_VOID_AMO2(set, long, long)
-SHMEM_DECL_VOID_AMO2(set, int, int)
-SHMEM_DECL_VOID_AMO2(set, float, float)
-SHMEM_DECL_VOID_AMO2(set, double, double)
-SHMEM_DECL_VOID_AMO2(set, longlong, long long)
-SHMEM_DECL_VOID_AMO2(set, uint, unsigned int)
-SHMEM_DECL_VOID_AMO2(set, ulong, unsigned long)
-SHMEM_DECL_VOID_AMO2(set, ulonglong, unsigned long long)
-SHMEM_DECL_VOID_AMO2(set, int32, int32_t)
-SHMEM_DECL_VOID_AMO2(set, int64, int64_t)
-SHMEM_DECL_VOID_AMO2(set, uint32, uint32_t)
-SHMEM_DECL_VOID_AMO2(set, uint64, uint64_t)
-SHMEM_DECL_VOID_AMO2(set, size, size_t)
-SHMEM_DECL_VOID_AMO2(set, ptrdiff, ptrdiff_t)
+#define API_DECL_ATOMIC_SET(_typename, _type)                                  \
+  void shmem_##_typename##_atomic_set(_type *dest, _type value, int pe);       \
+  void shmem_ctx_##_typename##_atomic_set(shmem_ctx_t ctx, _type *dest,        \
+                                          _type value, int pe);
+
+#define DECL_ATOMIC_SET(_type, _typename) API_DECL_ATOMIC_SET(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_ATOMIC_SET)
+#undef DECL_ATOMIC_SET
+#undef API_DECL_ATOMIC_SET
 
 void shmem_int_set(int *dest, int value, int pe)
     _DEPRECATED_BY(shmem_int_atomic_set, 1.4);
@@ -2180,25 +2176,10 @@ int shmem_test_lock(long *lock) _WUR;
   int shmem_##_typename##_and_reduce(shmem_team_t team, _type *dest,           \
                                      const _type *source, size_t nreduce);
 
-API_AND_REDUCE_TYPE(unsigned char, uchar)
-API_AND_REDUCE_TYPE(unsigned short, ushort)
-API_AND_REDUCE_TYPE(unsigned int, uint)
-API_AND_REDUCE_TYPE(unsigned long, ulong)
-API_AND_REDUCE_TYPE(unsigned long long, ulonglong)
-API_AND_REDUCE_TYPE(int8_t, int8)
-API_AND_REDUCE_TYPE(int16_t, int16)
-API_AND_REDUCE_TYPE(int32_t, int32)
-API_AND_REDUCE_TYPE(int64_t, int64)
-API_AND_REDUCE_TYPE(uint8_t, uint8)
-API_AND_REDUCE_TYPE(uint16_t, uint16)
-API_AND_REDUCE_TYPE(uint32_t, uint32)
-API_AND_REDUCE_TYPE(uint64_t, uint64)
-API_AND_REDUCE_TYPE(size_t, size)
-
-// API_AND_REDUCE_TYPE(short, short)
-// API_AND_REDUCE_TYPE(int, int)
-// API_AND_REDUCE_TYPE(long, long)
-// API_AND_REDUCE_TYPE(long long, longlong)
+#define DECL_AND_REDUCE(_type, _typename) API_AND_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_AND_REDUCE)
+#undef DECL_AND_REDUCE
+#undef API_AND_REDUCE_TYPE
 
 /**
  * @brief Performs a bitwise OR reduction across a team
@@ -2222,25 +2203,10 @@ API_AND_REDUCE_TYPE(size_t, size)
   int shmem_##_typename##_or_reduce(shmem_team_t team, _type *dest,            \
                                     const _type *source, size_t nreduce);
 
-API_OR_REDUCE_TYPE(unsigned char, uchar)
-API_OR_REDUCE_TYPE(unsigned short, ushort)
-API_OR_REDUCE_TYPE(unsigned int, uint)
-API_OR_REDUCE_TYPE(unsigned long, ulong)
-API_OR_REDUCE_TYPE(unsigned long long, ulonglong)
-API_OR_REDUCE_TYPE(int8_t, int8)
-API_OR_REDUCE_TYPE(int16_t, int16)
-API_OR_REDUCE_TYPE(int32_t, int32)
-API_OR_REDUCE_TYPE(int64_t, int64)
-API_OR_REDUCE_TYPE(uint8_t, uint8)
-API_OR_REDUCE_TYPE(uint16_t, uint16)
-API_OR_REDUCE_TYPE(uint32_t, uint32)
-API_OR_REDUCE_TYPE(uint64_t, uint64)
-API_OR_REDUCE_TYPE(size_t, size)
-
-// API_OR_REDUCE_TYPE(short, short)
-// API_OR_REDUCE_TYPE(int, int)
-// API_OR_REDUCE_TYPE(long, long)
-// API_OR_REDUCE_TYPE(long long, longlong)
+#define DECL_OR_REDUCE(_type, _typename) API_OR_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_OR_REDUCE)
+#undef DECL_OR_REDUCE
+#undef API_OR_REDUCE_TYPE
 
 /**
  * @brief Performs a bitwise XOR reduction across a team
@@ -2264,25 +2230,10 @@ API_OR_REDUCE_TYPE(size_t, size)
   int shmem_##_typename##_xor_reduce(shmem_team_t team, _type *dest,           \
                                      const _type *source, size_t nreduce);
 
-API_XOR_REDUCE_TYPE(unsigned char, uchar)
-API_XOR_REDUCE_TYPE(unsigned short, ushort)
-API_XOR_REDUCE_TYPE(unsigned int, uint)
-API_XOR_REDUCE_TYPE(unsigned long, ulong)
-API_XOR_REDUCE_TYPE(unsigned long long, ulonglong)
-API_XOR_REDUCE_TYPE(int8_t, int8)
-API_XOR_REDUCE_TYPE(int16_t, int16)
-API_XOR_REDUCE_TYPE(int32_t, int32)
-API_XOR_REDUCE_TYPE(int64_t, int64)
-API_XOR_REDUCE_TYPE(uint8_t, uint8)
-API_XOR_REDUCE_TYPE(uint16_t, uint16)
-API_XOR_REDUCE_TYPE(uint32_t, uint32)
-API_XOR_REDUCE_TYPE(uint64_t, uint64)
-API_XOR_REDUCE_TYPE(size_t, size)
-
-// API_XOR_REDUCE_TYPE(short, short)
-// API_XOR_REDUCE_TYPE(int, int)
-// API_XOR_REDUCE_TYPE(long, long)
-// API_XOR_REDUCE_TYPE(long long, longlong)
+#define DECL_XOR_REDUCE(_type, _typename) API_XOR_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_XOR_REDUCE)
+#undef DECL_XOR_REDUCE
+#undef API_XOR_REDUCE_TYPE
 
 /**
  * @brief Performs a maximum value reduction across a team
@@ -2306,30 +2257,10 @@ API_XOR_REDUCE_TYPE(size_t, size)
   int shmem_##_typename##_max_reduce(shmem_team_t team, _type *dest,           \
                                      const _type *source, size_t nreduce);
 
-API_MAX_REDUCE_TYPE(char, char)
-API_MAX_REDUCE_TYPE(signed char, schar)
-API_MAX_REDUCE_TYPE(short, short)
-API_MAX_REDUCE_TYPE(int, int)
-API_MAX_REDUCE_TYPE(long, long)
-API_MAX_REDUCE_TYPE(long long, longlong)
-API_MAX_REDUCE_TYPE(ptrdiff_t, ptrdiff)
-API_MAX_REDUCE_TYPE(unsigned char, uchar)
-API_MAX_REDUCE_TYPE(unsigned short, ushort)
-API_MAX_REDUCE_TYPE(unsigned int, uint)
-API_MAX_REDUCE_TYPE(unsigned long, ulong)
-API_MAX_REDUCE_TYPE(unsigned long long, ulonglong)
-API_MAX_REDUCE_TYPE(int8_t, int8)
-API_MAX_REDUCE_TYPE(int16_t, int16)
-API_MAX_REDUCE_TYPE(int32_t, int32)
-API_MAX_REDUCE_TYPE(int64_t, int64)
-API_MAX_REDUCE_TYPE(uint8_t, uint8)
-API_MAX_REDUCE_TYPE(uint16_t, uint16)
-API_MAX_REDUCE_TYPE(uint32_t, uint32)
-API_MAX_REDUCE_TYPE(uint64_t, uint64)
-API_MAX_REDUCE_TYPE(size_t, size)
-API_MAX_REDUCE_TYPE(float, float)
-API_MAX_REDUCE_TYPE(double, double)
-API_MAX_REDUCE_TYPE(long double, longdouble)
+#define DECL_MAX_REDUCE(_type, _typename) API_MAX_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_MINMAX_TYPE_TABLE(DECL_MAX_REDUCE)
+#undef DECL_MAX_REDUCE
+#undef API_MAX_REDUCE_TYPE
 
 /**
  * @brief Performs a minimum value reduction across a team
@@ -2353,30 +2284,10 @@ API_MAX_REDUCE_TYPE(long double, longdouble)
   int shmem_##_typename##_min_reduce(shmem_team_t team, _type *dest,           \
                                      const _type *source, size_t nreduce);
 
-API_MIN_REDUCE_TYPE(char, char)
-API_MIN_REDUCE_TYPE(signed char, schar)
-API_MIN_REDUCE_TYPE(short, short)
-API_MIN_REDUCE_TYPE(int, int)
-API_MIN_REDUCE_TYPE(long, long)
-API_MIN_REDUCE_TYPE(long long, longlong)
-API_MIN_REDUCE_TYPE(ptrdiff_t, ptrdiff)
-API_MIN_REDUCE_TYPE(unsigned char, uchar)
-API_MIN_REDUCE_TYPE(unsigned short, ushort)
-API_MIN_REDUCE_TYPE(unsigned int, uint)
-API_MIN_REDUCE_TYPE(unsigned long, ulong)
-API_MIN_REDUCE_TYPE(unsigned long long, ulonglong)
-API_MIN_REDUCE_TYPE(int8_t, int8)
-API_MIN_REDUCE_TYPE(int16_t, int16)
-API_MIN_REDUCE_TYPE(int32_t, int32)
-API_MIN_REDUCE_TYPE(int64_t, int64)
-API_MIN_REDUCE_TYPE(uint8_t, uint8)
-API_MIN_REDUCE_TYPE(uint16_t, uint16)
-API_MIN_REDUCE_TYPE(uint32_t, uint32)
-API_MIN_REDUCE_TYPE(uint64_t, uint64)
-API_MIN_REDUCE_TYPE(size_t, size)
-API_MIN_REDUCE_TYPE(float, float)
-API_MIN_REDUCE_TYPE(double, double)
-API_MIN_REDUCE_TYPE(long double, longdouble)
+#define DECL_MIN_REDUCE(_type, _typename) API_MIN_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_MINMAX_TYPE_TABLE(DECL_MIN_REDUCE)
+#undef DECL_MIN_REDUCE
+#undef API_MIN_REDUCE_TYPE
 
 /**
  * @brief Performs a sum reduction across a team
@@ -2400,32 +2311,10 @@ API_MIN_REDUCE_TYPE(long double, longdouble)
   int shmem_##_typename##_sum_reduce(shmem_team_t team, _type *dest,           \
                                      const _type *source, size_t nreduce);
 
-API_SUM_REDUCE_TYPE(char, char)
-API_SUM_REDUCE_TYPE(signed char, schar)
-API_SUM_REDUCE_TYPE(short, short)
-API_SUM_REDUCE_TYPE(int, int)
-API_SUM_REDUCE_TYPE(long, long)
-API_SUM_REDUCE_TYPE(long long, longlong)
-API_SUM_REDUCE_TYPE(ptrdiff_t, ptrdiff)
-API_SUM_REDUCE_TYPE(unsigned char, uchar)
-API_SUM_REDUCE_TYPE(unsigned short, ushort)
-API_SUM_REDUCE_TYPE(unsigned int, uint)
-API_SUM_REDUCE_TYPE(unsigned long, ulong)
-API_SUM_REDUCE_TYPE(unsigned long long, ulonglong)
-API_SUM_REDUCE_TYPE(int8_t, int8)
-API_SUM_REDUCE_TYPE(int16_t, int16)
-API_SUM_REDUCE_TYPE(int32_t, int32)
-API_SUM_REDUCE_TYPE(int64_t, int64)
-API_SUM_REDUCE_TYPE(uint8_t, uint8)
-API_SUM_REDUCE_TYPE(uint16_t, uint16)
-API_SUM_REDUCE_TYPE(uint32_t, uint32)
-API_SUM_REDUCE_TYPE(uint64_t, uint64)
-API_SUM_REDUCE_TYPE(size_t, size)
-API_SUM_REDUCE_TYPE(float, float)
-API_SUM_REDUCE_TYPE(double, double)
-API_SUM_REDUCE_TYPE(long double, longdouble)
-API_SUM_REDUCE_TYPE(COMPLEXIFY(double), complexd)
-API_SUM_REDUCE_TYPE(COMPLEXIFY(float), complexf)
+#define DECL_SUM_REDUCE(_type, _typename) API_SUM_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_SUM_REDUCE)
+#undef DECL_SUM_REDUCE
+#undef API_SUM_REDUCE_TYPE
 
 /**
  * @brief Performs a product reduction across a team
@@ -2449,100 +2338,59 @@ API_SUM_REDUCE_TYPE(COMPLEXIFY(float), complexf)
   int shmem_##_typename##_prod_reduce(shmem_team_t team, _type *dest,          \
                                       const _type *source, size_t nreduce);
 
-API_PROD_REDUCE_TYPE(char, char)
-API_PROD_REDUCE_TYPE(signed char, schar)
-API_PROD_REDUCE_TYPE(short, short)
-API_PROD_REDUCE_TYPE(int, int)
-API_PROD_REDUCE_TYPE(long, long)
-API_PROD_REDUCE_TYPE(long long, longlong)
-API_PROD_REDUCE_TYPE(ptrdiff_t, ptrdiff)
-API_PROD_REDUCE_TYPE(unsigned char, uchar)
-API_PROD_REDUCE_TYPE(unsigned short, ushort)
-API_PROD_REDUCE_TYPE(unsigned int, uint)
-API_PROD_REDUCE_TYPE(unsigned long, ulong)
-API_PROD_REDUCE_TYPE(unsigned long long, ulonglong)
-API_PROD_REDUCE_TYPE(int8_t, int8)
-API_PROD_REDUCE_TYPE(int16_t, int16)
-API_PROD_REDUCE_TYPE(int32_t, int32)
-API_PROD_REDUCE_TYPE(int64_t, int64)
-API_PROD_REDUCE_TYPE(uint8_t, uint8)
-API_PROD_REDUCE_TYPE(uint16_t, uint16)
-API_PROD_REDUCE_TYPE(uint32_t, uint32)
-API_PROD_REDUCE_TYPE(uint64_t, uint64)
-API_PROD_REDUCE_TYPE(size_t, size)
-API_PROD_REDUCE_TYPE(float, float)
-API_PROD_REDUCE_TYPE(double, double)
-API_PROD_REDUCE_TYPE(long double, longdouble)
-API_PROD_REDUCE_TYPE(COMPLEXIFY(double), complexd)
-API_PROD_REDUCE_TYPE(COMPLEXIFY(float), complexf)
+#define DECL_PROD_REDUCE(_type, _typename)                                     \
+  API_PROD_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_PROD_REDUCE)
+#undef DECL_PROD_REDUCE
+#undef API_PROD_REDUCE_TYPE
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Macro to declare legacy reduction operations (deprecated)
  */
-#define SHMEM_REDUCE_TO_ALL_DECL(_type, _typename, _op)                        \
+#define API_TO_ALL_TYPE(_type, _typename, _op)                                 \
   void shmem_##_typename##_##_op##_to_all(                                     \
       _type *target, const _type *source, int nreduce, int PE_start,           \
       int logPE_stride, int PE_size, _type *pWrk, long *pSync)                 \
-      _DEPRECATED_BY(shmem_##_typename##_##_op##_reduce, 1.5)
+      _DEPRECATED_BY(shmem_##_typename##_##_op##_reduce, 1.5);
 
 /* Declare SUM reductions */
-SHMEM_REDUCE_TO_ALL_DECL(long, long, sum);
-SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(double), complexd, sum);
-SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(float), complexf, sum);
-SHMEM_REDUCE_TO_ALL_DECL(double, double, sum);
-SHMEM_REDUCE_TO_ALL_DECL(float, float, sum);
-SHMEM_REDUCE_TO_ALL_DECL(int, int, sum);
-SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, sum);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, sum);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, sum);
+#define DECL_SUM_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, sum)
+SHMEM_TOALL_ARITH_TYPE_TABLE(DECL_SUM_TO_ALL)
+#undef DECL_SUM_TO_ALL
 
 /* Declare PROD reductions */
-SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(double), complexd, prod);
-SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(float), complexf, prod);
-SHMEM_REDUCE_TO_ALL_DECL(double, double, prod);
-SHMEM_REDUCE_TO_ALL_DECL(float, float, prod);
-SHMEM_REDUCE_TO_ALL_DECL(int, int, prod);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, prod);
-SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, prod);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, prod);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, prod);
+#define DECL_PROD_TO_ALL(_type, _typename)                                     \
+  API_TO_ALL_TYPE(_type, _typename, prod)
+SHMEM_TOALL_ARITH_TYPE_TABLE(DECL_PROD_TO_ALL)
+#undef DECL_PROD_TO_ALL
 
 /* Declare AND reductions */
-SHMEM_REDUCE_TO_ALL_DECL(int, int, and);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, and);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, and);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, and);
+#define DECL_AND_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, and)
+SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_AND_TO_ALL)
+#undef DECL_AND_TO_ALL
 
 /* Declare OR reductions */
-SHMEM_REDUCE_TO_ALL_DECL(int, int, or);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, or);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, or);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, or);
+#define DECL_OR_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, or)
+SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_OR_TO_ALL)
+#undef DECL_OR_TO_ALL
 
 /* Declare XOR reductions */
-SHMEM_REDUCE_TO_ALL_DECL(int, int, xor);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, xor);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, xor);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, xor);
+#define DECL_XOR_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, xor)
+SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_XOR_TO_ALL)
+#undef DECL_XOR_TO_ALL
 
 /* Declare MAX reductions */
-SHMEM_REDUCE_TO_ALL_DECL(int, int, max);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, max);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, max);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, max);
-SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, max);
-SHMEM_REDUCE_TO_ALL_DECL(float, float, max);
-SHMEM_REDUCE_TO_ALL_DECL(double, double, max);
+#define DECL_MAX_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, max)
+SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_MAX_TO_ALL)
+#undef DECL_MAX_TO_ALL
 
 /* Declare MIN reductions */
-SHMEM_REDUCE_TO_ALL_DECL(int, int, min);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, min);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, min);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, min);
-SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, min);
-SHMEM_REDUCE_TO_ALL_DECL(float, float, min);
-SHMEM_REDUCE_TO_ALL_DECL(double, double, min);
+#define DECL_MIN_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, min)
+SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_MIN_TO_ALL)
+#undef DECL_MIN_TO_ALL
+
+#undef API_TO_ALL_TYPE
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2563,30 +2411,10 @@ SHMEM_REDUCE_TO_ALL_DECL(double, double, min);
                                     const _type *source, size_t nelems,        \
                                     int PE_root);
 
-API_BROADCAST_TYPE(float, float)
-API_BROADCAST_TYPE(double, double)
-API_BROADCAST_TYPE(long double, longdouble)
-API_BROADCAST_TYPE(char, char)
-API_BROADCAST_TYPE(signed char, schar)
-API_BROADCAST_TYPE(short, short)
-API_BROADCAST_TYPE(int, int)
-API_BROADCAST_TYPE(long, long)
-API_BROADCAST_TYPE(long long, longlong)
-API_BROADCAST_TYPE(unsigned char, uchar)
-API_BROADCAST_TYPE(unsigned short, ushort)
-API_BROADCAST_TYPE(unsigned int, uint)
-API_BROADCAST_TYPE(unsigned long, ulong)
-API_BROADCAST_TYPE(unsigned long long, ulonglong)
-API_BROADCAST_TYPE(int8_t, int8)
-API_BROADCAST_TYPE(int16_t, int16)
-API_BROADCAST_TYPE(int32_t, int32)
-API_BROADCAST_TYPE(int64_t, int64)
-API_BROADCAST_TYPE(uint8_t, uint8)
-API_BROADCAST_TYPE(uint16_t, uint16)
-API_BROADCAST_TYPE(uint32_t, uint32)
-API_BROADCAST_TYPE(uint64_t, uint64)
-API_BROADCAST_TYPE(size_t, size)
-API_BROADCAST_TYPE(ptrdiff_t, ptrdiff)
+#define DECL_BROADCAST(_type, _typename) API_BROADCAST_TYPE(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_BROADCAST)
+#undef DECL_BROADCAST
+#undef API_BROADCAST_TYPE
 
 /**
  * Generic memory broadcast routine
@@ -2653,30 +2481,10 @@ API_BROADCAST_SIZE(64)
   int shmem_##_typename##_collect(shmem_team_t team, _type *dest,              \
                                   const _type *source, size_t nelems);
 
-API_COLLECT_TYPE(float, float)
-API_COLLECT_TYPE(double, double)
-API_COLLECT_TYPE(long double, longdouble)
-API_COLLECT_TYPE(char, char)
-API_COLLECT_TYPE(signed char, schar)
-API_COLLECT_TYPE(short, short)
-API_COLLECT_TYPE(int, int)
-API_COLLECT_TYPE(long, long)
-API_COLLECT_TYPE(long long, longlong)
-API_COLLECT_TYPE(unsigned char, uchar)
-API_COLLECT_TYPE(unsigned short, ushort)
-API_COLLECT_TYPE(unsigned int, uint)
-API_COLLECT_TYPE(unsigned long, ulong)
-API_COLLECT_TYPE(unsigned long long, ulonglong)
-API_COLLECT_TYPE(int8_t, int8)
-API_COLLECT_TYPE(int16_t, int16)
-API_COLLECT_TYPE(int32_t, int32)
-API_COLLECT_TYPE(int64_t, int64)
-API_COLLECT_TYPE(uint8_t, uint8)
-API_COLLECT_TYPE(uint16_t, uint16)
-API_COLLECT_TYPE(uint32_t, uint32)
-API_COLLECT_TYPE(uint64_t, uint64)
-API_COLLECT_TYPE(size_t, size)
-API_COLLECT_TYPE(ptrdiff_t, ptrdiff)
+#define DECL_COLLECT(_type, _typename) API_COLLECT_TYPE(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_COLLECT)
+#undef DECL_COLLECT
+#undef API_COLLECT_TYPE
 
 /**
  * @brief Generic memory collect routine
@@ -2726,30 +2534,10 @@ API_COLLECT_SIZE(collect, 64)
   int shmem_##_typename##_fcollect(shmem_team_t team, _type *dest,             \
                                    const _type *source, size_t nelems);
 
-API_FCOLLECT_TYPE(float, float)
-API_FCOLLECT_TYPE(double, double)
-API_FCOLLECT_TYPE(long double, longdouble)
-API_FCOLLECT_TYPE(char, char)
-API_FCOLLECT_TYPE(signed char, schar)
-API_FCOLLECT_TYPE(short, short)
-API_FCOLLECT_TYPE(int, int)
-API_FCOLLECT_TYPE(long, long)
-API_FCOLLECT_TYPE(long long, longlong)
-API_FCOLLECT_TYPE(unsigned char, uchar)
-API_FCOLLECT_TYPE(unsigned short, ushort)
-API_FCOLLECT_TYPE(unsigned int, uint)
-API_FCOLLECT_TYPE(unsigned long, ulong)
-API_FCOLLECT_TYPE(unsigned long long, ulonglong)
-API_FCOLLECT_TYPE(int8_t, int8)
-API_FCOLLECT_TYPE(int16_t, int16)
-API_FCOLLECT_TYPE(int32_t, int32)
-API_FCOLLECT_TYPE(int64_t, int64)
-API_FCOLLECT_TYPE(uint8_t, uint8)
-API_FCOLLECT_TYPE(uint16_t, uint16)
-API_FCOLLECT_TYPE(uint32_t, uint32)
-API_FCOLLECT_TYPE(uint64_t, uint64)
-API_FCOLLECT_TYPE(size_t, size)
-API_FCOLLECT_TYPE(ptrdiff_t, ptrdiff)
+#define DECL_FCOLLECT(_type, _typename) API_FCOLLECT_TYPE(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_FCOLLECT)
+#undef DECL_FCOLLECT
+#undef API_FCOLLECT_TYPE
 
 /**
  * @brief Generic memory fcollect routine
@@ -2810,30 +2598,10 @@ API_FCOLLECT_SIZE(fcollect, 64)
   int shmem_##_typename##_alltoall(shmem_team_t team, _type *dest,             \
                                    const _type *source, size_t nelems);
 
-API_ALLTOALL_TYPE(float, float)
-API_ALLTOALL_TYPE(double, double)
-API_ALLTOALL_TYPE(long double, longdouble)
-API_ALLTOALL_TYPE(char, char)
-API_ALLTOALL_TYPE(signed char, schar)
-API_ALLTOALL_TYPE(short, short)
-API_ALLTOALL_TYPE(int, int)
-API_ALLTOALL_TYPE(long, long)
-API_ALLTOALL_TYPE(long long, longlong)
-API_ALLTOALL_TYPE(unsigned char, uchar)
-API_ALLTOALL_TYPE(unsigned short, ushort)
-API_ALLTOALL_TYPE(unsigned int, uint)
-API_ALLTOALL_TYPE(unsigned long, ulong)
-API_ALLTOALL_TYPE(unsigned long long, ulonglong)
-API_ALLTOALL_TYPE(int8_t, int8)
-API_ALLTOALL_TYPE(int16_t, int16)
-API_ALLTOALL_TYPE(int32_t, int32)
-API_ALLTOALL_TYPE(int64_t, int64)
-API_ALLTOALL_TYPE(uint8_t, uint8)
-API_ALLTOALL_TYPE(uint16_t, uint16)
-API_ALLTOALL_TYPE(uint32_t, uint32)
-API_ALLTOALL_TYPE(uint64_t, uint64)
-API_ALLTOALL_TYPE(size_t, size)
-API_ALLTOALL_TYPE(ptrdiff_t, ptrdiff)
+#define DECL_ALLTOALL(_type, _typename) API_ALLTOALL_TYPE(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_ALLTOALL)
+#undef DECL_ALLTOALL
+#undef API_ALLTOALL_TYPE
 
 /**
  * Generic memory alltoall routine
@@ -2884,30 +2652,10 @@ API_ALLTOALL_SIZE(64)
                                     const _type *source, ptrdiff_t dst,        \
                                     ptrdiff_t sst, size_t nelems);
 
-API_ALLTOALLS_TYPE(float, float)
-API_ALLTOALLS_TYPE(double, double)
-API_ALLTOALLS_TYPE(long double, longdouble)
-API_ALLTOALLS_TYPE(char, char)
-API_ALLTOALLS_TYPE(signed char, schar)
-API_ALLTOALLS_TYPE(short, short)
-API_ALLTOALLS_TYPE(int, int)
-API_ALLTOALLS_TYPE(long, long)
-API_ALLTOALLS_TYPE(long long, longlong)
-API_ALLTOALLS_TYPE(unsigned char, uchar)
-API_ALLTOALLS_TYPE(unsigned short, ushort)
-API_ALLTOALLS_TYPE(unsigned int, uint)
-API_ALLTOALLS_TYPE(unsigned long, ulong)
-API_ALLTOALLS_TYPE(unsigned long long, ulonglong)
-API_ALLTOALLS_TYPE(int8_t, int8)
-API_ALLTOALLS_TYPE(int16_t, int16)
-API_ALLTOALLS_TYPE(int32_t, int32)
-API_ALLTOALLS_TYPE(int64_t, int64)
-API_ALLTOALLS_TYPE(uint8_t, uint8)
-API_ALLTOALLS_TYPE(uint16_t, uint16)
-API_ALLTOALLS_TYPE(uint32_t, uint32)
-API_ALLTOALLS_TYPE(uint64_t, uint64)
-API_ALLTOALLS_TYPE(size_t, size)
-API_ALLTOALLS_TYPE(ptrdiff_t, ptrdiff)
+#define DECL_ALLTOALLS(_type, _typename) API_ALLTOALLS_TYPE(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_ALLTOALLS)
+#undef DECL_ALLTOALLS
+#undef API_ALLTOALLS_TYPE
 
 /**
  * @brief Generic memory alltoall routine (deprecated)

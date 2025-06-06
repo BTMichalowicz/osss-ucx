@@ -19,9 +19,6 @@
 
  */
 
-
-
-
 /*
  * Standard RMA types (Table 5)
  *
@@ -163,7 +160,7 @@
   X(uint64_t, uint64)
 
 /*
- * Bitwise to_all types (Table 9)
+ * Bitwise to_all types (Table 11)
  *
  * User by:
  * - shmem_and_to_all()
@@ -171,54 +168,39 @@
  * - shmem_xor_to_all()
  */
 #define SHMEM_TOALL_BITWISE_TYPE_TABLE(X)                                      \
-  X(unsigned char, uchar)                                                      \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
-  X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)
+  X(long long, longlong)
 
 /*
- * Minmax to_all types (Table 9)
+ * Minmax to_all types (Table 11)
  *
  * User by:
  * - shmem_min_to_all()
  * - shmem_max_to_all()
  */
 #define SHMEM_TOALL_MINMAX_TYPE_TABLE(X)                                       \
-  X(unsigned char, uchar)                                                      \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
   X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)                                             \
   X(float, float)                                                              \
   X(double, double)                                                            \
   X(long double, longdouble)
 
 /*
- * Arithmetic to_all types (Table 9)
+ * Arithmetic to_all types (Table 11)
  *
  * User by:
  * - shmem_sum_to_all()
  * - shmem_prod_to_all()
  */
 #define SHMEM_TOALL_ARITH_TYPE_TABLE(X)                                        \
-  X(unsigned char, uchar)                                                      \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
   X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)                                             \
   X(float, float)                                                              \
   X(double, double)                                                            \
   X(long double, longdouble)                                                   \

@@ -163,17 +163,25 @@
  *
  * NOTE: Only canonical C types are included below to avoid _Generic
  * duplicate/compatible type errors.
+
+  FIXME: this should be using table 11 instead of table 9
  */
 #define C11_SHMEM_TOALL_BITWISE_TYPE_TABLE(X)                                  \
-  X(unsigned char, uchar)                                                      \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
-  X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)
+  X(long long, longlong)
+
+// #define C11_SHMEM_TOALL_BITWISE_TYPE_TABLE(X)                                  \
+//   X(unsigned char, uchar)                                                      \
+//   X(short, short)                                                              \
+//   X(unsigned short, ushort)                                                    \
+//   X(int, int)                                                                  \
+//   X(unsigned int, uint)                                                        \
+//   X(long, long)                                                                \
+//   X(unsigned long, ulong)                                                      \
+//   X(long long, longlong)                                                       \
+//   X(unsigned long long, ulonglong)
 
 /*
  * Minmax to_all types (Table 9)
@@ -184,20 +192,31 @@
  *
  * NOTE: Only canonical C types are included below to avoid _Generic
  * duplicate/compatible type errors.
+
+  FIXME: this should be using table 11 instead of table 9
  */
 #define C11_SHMEM_TOALL_MINMAX_TYPE_TABLE(X)                                   \
-  X(unsigned char, uchar)                                                      \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
   X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)                                             \
   X(float, float)                                                              \
   X(double, double)                                                            \
   X(long double, longdouble)
+
+// #define C11_SHMEM_TOALL_MINMAX_TYPE_TABLE(X)                                   \
+//   X(unsigned char, uchar)                                                      \
+//   X(short, short)                                                              \
+//   X(unsigned short, ushort)                                                    \
+//   X(int, int)                                                                  \
+//   X(unsigned int, uint)                                                        \
+//   X(long, long)                                                                \
+//   X(unsigned long, ulong)                                                      \
+//   X(long long, longlong)                                                       \
+//   X(unsigned long long, ulonglong)                                             \
+//   X(float, float)                                                              \
+//   X(double, double)                                                            \
+//   X(long double, longdouble)
 
 /*
  * Arithmetic to_all types (Table 9)
@@ -208,22 +227,35 @@
  *
  * NOTE: Only canonical C types are included below to avoid _Generic
  * duplicate/compatible type errors.
+
+ FIXME: this should be using table 11 instead of table 9
  */
 #define C11_SHMEM_TOALL_ARITH_TYPE_TABLE(X)                                    \
-  X(unsigned char, uchar)                                                      \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
   X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)                                             \
   X(float, float)                                                              \
   X(double, double)                                                            \
   X(long double, longdouble)                                                   \
   X(double _Complex, complexd)                                                 \
   X(float _Complex, complexf)
+
+// #define C11_SHMEM_TOALL_ARITH_TYPE_TABLE(X)                                    \
+//   X(unsigned char, uchar)                                                      \
+//   X(short, short)                                                              \
+//   X(unsigned short, ushort)                                                    \
+//   X(int, int)                                                                  \
+//   X(unsigned int, uint)                                                        \
+//   X(long, long)                                                                \
+//   X(unsigned long, ulong)                                                      \
+//   X(long long, longlong)                                                       \
+//   X(unsigned long long, ulonglong)                                             \
+//   X(float, float)                                                              \
+//   X(double, double)                                                            \
+//   X(long double, longdouble)                                                   \
+//   X(double _Complex, complexd)                                                 \
+//   X(float _Complex, complexf)
 
 /*
  * Team-based reduce bitwise operations (Table 10)

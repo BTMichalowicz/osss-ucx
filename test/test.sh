@@ -141,10 +141,14 @@ echo
 # $oshrun $flags -np 4 ./bin/bfs
 # echo
 
-# --- simple ---
-echo $hline ; echo "  Running simple test" ; echo $hline
-$oshcc simple.c -o ./bin/simple
-$oshrun $flags -np 4 ./bin/simple
+# # --- simple ---
+# echo $hline ; echo "  Running simple test" ; echo $hline
+# $oshcc simple.c -o ./bin/simple
+# $oshrun $flags -np 4 ./bin/simple
+# echo
+
+# -- to_all ---
+echo $hline ; echo "  Running to_all test" ; echo $hline
+$oshcc test_to_all.c -o ./bin/test_to_all -Wno-deprecated-declarations
+$oshrun $flags -np 4 ./bin/test_to_all
 echo
-
-
