@@ -2195,6 +2195,13 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_ADD)
 #undef DECL_ATOMIC_FETCH_ADD
 #undef API_DECL_ATOMIC_FETCH_ADD
 
+int shmem_int_fadd(int *target, int value, int pe)
+    _DEPRECATED_BY(shmem_int_atomic_fetch_add, 1.4) _WUR;
+long shmem_long_fadd(long *target, long value, int pe)
+    _DEPRECATED_BY(shmem_long_atomic_fetch_add, 1.4) _WUR;
+long long shmem_longlong_fadd(long long *target, long long value, int pe)
+    _DEPRECATED_BY(shmem_longlong_atomic_fetch_add, 1.4) _WUR;
+
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Non-blocking atomic fetch-and-add on a remote PE
@@ -2228,8 +2235,6 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_ADD)
 SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_ADD_NBI)
 #undef DECL_ATOMIC_FETCH_ADD_NBI
 #undef API_DECL_ATOMIC_FETCH_ADD_NBI
-
-// TODO: shmem_fadd?
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
