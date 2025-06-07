@@ -352,6 +352,30 @@ void shmem_info_get_vendor_version_number(int *version);
 void shmem_pcontrol(const int level, ...);
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put/get operations for typed data
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_typename_put(shmem_ctx_t ctx, type *dest, const type *src,
+ * size_t nelems, int pe); void shmem_ctx_typename_iput(shmem_ctx_t ctx, type
+ * *dest, const type *src, ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe);
+ * void shmem_ctx_typename_put_nbi(shmem_ctx_t ctx, type *dest, const type *src,
+ * size_t nelems, int pe);
+ * @endcode
+ *
+ * @param[in] ctx     The context on which to perform the operation
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ * @param[in] tst     Stride between elements in target array
+ * @param[in] sst     Stride between elements in source array
+ *
+ * @section Effect
+ * Transfers data from local array to remote PE's symmetric array
+ */
 #define API_DECL_CTX_PUTGET(_opname, _typename, _type)                         \
   void shmem_ctx_##_typename##_##_opname(                                      \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems, int pe);  \
@@ -374,6 +398,28 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_GET)
 #undef API_DECL_CTX_PUTGET
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put/get operations for typed data
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_typename_put(type *dest, const type *src, size_t nelems, int pe);
+ * void shmem_typename_iput(type *dest, const type *src, ptrdiff_t tst,
+ * ptrdiff_t sst, size_t nelems, int pe); void shmem_typename_put_nbi(type
+ * *dest, const type *src, size_t nelems, int pe);
+ * @endcode
+ *
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ * @param[in] tst     Stride between elements in target array
+ * @param[in] sst     Stride between elements in source array
+ *
+ * @section Effect
+ * Transfers data from local array to remote PE's symmetric array
+ */
 #define API_DECL_PUTGET(_opname, _typename, _type)                             \
   void shmem_##_typename##_##_opname(_type *dest, const _type *src,            \
                                      size_t nelems, int pe);                   \
@@ -394,6 +440,31 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_GET)
 #undef API_DECL_PUTGET
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put/get operations for fixed-size data
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_putX(shmem_ctx_t ctx, void *dest, const void *src, size_t
+ * nelems, int pe); void shmem_ctx_iputX(shmem_ctx_t ctx, void *dest, const void
+ * *src, ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe); void
+ * shmem_ctx_putX_nbi(shmem_ctx_t ctx, void *dest, const void *src, size_t
+ * nelems, int pe);
+ * @endcode
+ * where X is one of: 8, 16, 32, 64, 128
+ *
+ * @param[in] ctx     The context on which to perform the operation
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ * @param[in] tst     Stride between elements in target array
+ * @param[in] sst     Stride between elements in source array
+ *
+ * @section Effect
+ * Transfers fixed-size data from local array to remote PE's symmetric array
+ */
 #define API_DECL_CTX_PUTGET_SIZE(_opname, _size)                               \
   void shmem_ctx_##_opname##_size(shmem_ctx_t ctx, void *dest,                 \
                                   const void *src, size_t nelems, int pe);     \
@@ -418,6 +489,29 @@ API_DECL_CTX_PUTGET_SIZE(get, 128)
 #undef API_DECL_CTX_PUTGET_SIZE
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put/get operations for fixed-size data
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_putX(void *dest, const void *src, size_t nelems, int pe);
+ * void shmem_iputX(void *dest, const void *src, ptrdiff_t tst, ptrdiff_t sst,
+ * size_t nelems, int pe); void shmem_putX_nbi(void *dest, const void *src,
+ * size_t nelems, int pe);
+ * @endcode
+ * where X is one of: 8, 16, 32, 64, 128
+ *
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ * @param[in] tst     Stride between elements in target array
+ * @param[in] sst     Stride between elements in source array
+ *
+ * @section Effect
+ * Transfers fixed-size data from local array to remote PE's symmetric array
+ */
 #define API_DECL_PUTGET_SIZE(_opname, _size)                                   \
   void shmem_##_opname##_size(void *dest, const void *src, size_t nelems,      \
                               int pe);                                         \
@@ -441,6 +535,26 @@ API_DECL_PUTGET_SIZE(get, 128)
 #undef API_DECL_PUTGET_SIZE
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put/get operations for memory blocks
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_putmem(shmem_ctx_t ctx, void *dest, const void *src, size_t
+ * nelems, int pe); void shmem_ctx_putmem_nbi(shmem_ctx_t ctx, void *dest, const
+ * void *src, size_t nelems, int pe);
+ * @endcode
+ *
+ * @param[in] ctx     The context on which to perform the operation
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Effect
+ * Transfers memory blocks from local array to remote PE's symmetric array
+ */
 #define API_DECL_CTX_PUTGET_MEM(_opname)                                       \
   void shmem_ctx_##_opname##mem(shmem_ctx_t ctx, void *dest, const void *src,  \
                                 size_t nelems, int pe);                        \
@@ -453,6 +567,24 @@ API_DECL_CTX_PUTGET_MEM(get)
 #undef API_DECL_CTX_PUTGET_MEM
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put/get operations for memory blocks
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_putmem(void *dest, const void *src, size_t nelems, int pe);
+ * void shmem_putmem_nbi(void *dest, const void *src, size_t nelems, int pe);
+ * @endcode
+ *
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Effect
+ * Transfers memory blocks from local array to remote PE's symmetric array
+ */
 #define API_DECL_PUTGET_MEM(_opname)                                           \
   void shmem_##_opname##mem(void *dest, const void *src, size_t nelems,        \
                             int pe);                                           \
@@ -465,6 +597,24 @@ API_DECL_PUTGET_MEM(get)
 #undef API_DECL_PUTGET_MEM
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put operations for single values
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_typename_p(shmem_ctx_t ctx, type *dest, type src, int pe);
+ * @endcode
+ *
+ * @param[in] ctx     The context on which to perform the operation
+ * @param[out] dest   Symmetric destination variable on remote PE
+ * @param[in] src     Local source value
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Effect
+ * Transfers a single value from local variable to remote PE's symmetric
+ * variable
+ */
 #define API_CTX_DECL_P(_typename, _type)                                       \
   void shmem_ctx_##_typename##_p(shmem_ctx_t ctx, _type *dest, _type src,      \
                                  int pe);
@@ -476,6 +626,23 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_P)
 #undef API_CTX_DECL_P
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put operations for single values
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_typename_p(type *dest, type src, int pe);
+ * @endcode
+ *
+ * @param[out] dest   Symmetric destination variable on remote PE
+ * @param[in] src     Local source value
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Effect
+ * Transfers a single value from local variable to remote PE's symmetric
+ * variable
+ */
 #define API_DECL_P(_typename, _type)                                           \
   void shmem_##_typename##_p(_type *dest, _type src, int pe);
 
@@ -486,6 +653,25 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_P)
 #undef API_DECL_P
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based get operations for single values
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * type shmem_ctx_typename_g(shmem_ctx_t ctx, const type *src, int pe);
+ * @endcode
+ *
+ * @param[in] ctx     The context on which to perform the operation
+ * @param[in] src     Symmetric source variable on remote PE
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Return
+ * The value from the remote PE
+ *
+ * @section Effect
+ * Gets a single value from remote PE's symmetric variable
+ */
 #define API_CTX_DECL_G(_typename, _type)                                       \
   _type shmem_ctx_##_typename##_g(shmem_ctx_t ctx, const _type *src, int pe);
 
@@ -496,6 +682,24 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_G)
 #undef API_CTX_DECL_G
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context get operations for single values
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * type shmem_typename_g(const type *src, int pe);
+ * @endcode
+ *
+ * @param[in] src     Symmetric source variable on remote PE
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Return
+ * The value from the remote PE
+ *
+ * @section Effect
+ * Gets a single value from remote PE's symmetric variable
+ */
 #define API_DECL_G(_typename, _type)                                           \
   _type shmem_##_typename##_g(const _type *src, int pe);
 
@@ -506,6 +710,31 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_G)
 #undef API_DECL_G
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put operations with signal
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_typename_put_signal(shmem_ctx_t ctx, type *dest, const type
+ * *src, size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int
+ * pe); void shmem_ctx_typename_put_signal_nbi(shmem_ctx_t ctx, type *dest,
+ * const type *src, size_t nelems, uint64_t *sig_addr, uint64_t signal, int
+ * sig_op, int pe);
+ * @endcode
+ *
+ * @param[in] ctx       The context on which to perform the operation
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers data and signals completion to remote PE
+ */
 #define API_DECL_CTX_PUT_SIGNAL(_typename, _type)                              \
   void shmem_ctx_##_typename##_put_signal(                                     \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems,           \
@@ -517,6 +746,29 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_PUT_SIGNAL)
 #undef DECL_CTX_PUT_SIGNAL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based non-blocking put operations with signal
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_typename_put_signal_nbi(shmem_ctx_t ctx, type *dest, const
+ * type *src, size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op,
+ * int pe);
+ * @endcode
+ *
+ * @param[in] ctx       The context on which to perform the operation
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Initiates non-blocking transfer of data and signals completion to remote PE
+ */
 #define API_DECL_CTX_PUT_SIGNAL_NBI(_typename, _type)                          \
   void shmem_ctx_##_typename##_put_signal_nbi(                                 \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems,           \
@@ -528,6 +780,27 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_PUT_SIGNAL_NBI)
 #undef DECL_CTX_PUT_SIGNAL_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put operations with signal
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_typename_put_signal(type *dest, const type *src, size_t nelems,
+ * uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ *
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers data and signals completion to remote PE
+ */
 #define API_DECL_PUT_SIGNAL(_typename, _type)                                  \
   void shmem_##_typename##_put_signal(_type *dest, const _type *src,           \
                                       size_t nelems, uint64_t *sig_addr,       \
@@ -538,6 +811,27 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PUT_SIGNAL)
 #undef DECL_PUT_SIGNAL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context non-blocking put operations with signal
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_typename_put_signal_nbi(type *dest, const type *src, size_t
+ * nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ *
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Initiates non-blocking transfer of data and signals completion to remote PE
+ */
 #define API_DECL_PUT_SIGNAL_NBI(_typename, _type)                              \
   void shmem_##_typename##_put_signal_nbi(                                     \
       _type *dest, const _type *src, size_t nelems, uint64_t *sig_addr,        \
@@ -549,6 +843,31 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PUT_SIGNAL_NBI)
 #undef DECL_PUT_SIGNAL_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put operations with signal for fixed sizes
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_putX_signal(shmem_ctx_t ctx, void *dest, const void *src,
+ * size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe); void
+ * shmem_ctx_putX_signal_nbi(shmem_ctx_t ctx, void *dest, const void *src,
+ * size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ * where X is one of: 8, 16, 32, 64, 128
+ *
+ * @param[in] ctx       The context on which to perform the operation
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers fixed-size data and signals completion to remote PE
+ */
 #define API_DECL_CTX_PUT_SIGNAL_SIZE(_size)                                    \
   void shmem_ctx_put##_size##_signal(                                          \
       shmem_ctx_t ctx, void *dest, const void *src, size_t nelems,             \
@@ -566,6 +885,30 @@ API_DECL_CTX_PUT_SIGNAL_SIZE(128)
 #undef API_DECL_CTX_PUT_SIGNAL_SIZE
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put operations with signal for memory blocks
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_putmem_signal(shmem_ctx_t ctx, void *dest, const void *src,
+ * size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe); void
+ * shmem_ctx_putmem_signal_nbi(shmem_ctx_t ctx, void *dest, const void *src,
+ * size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ *
+ * @param[in] ctx       The context on which to perform the operation
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers memory blocks and signals completion to remote PE
+ */
 #define API_DECL_CTX_PUTMEM_SIGNAL()                                           \
   void shmem_ctx_putmem_signal(shmem_ctx_t ctx, void *dest, const void *src,   \
                                size_t nelems, uint64_t *sig_addr,              \
@@ -579,6 +922,30 @@ API_DECL_CTX_PUTMEM_SIGNAL()
 #undef API_DECL_CTX_PUTMEM_SIGNAL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put operations with signal for fixed-size data
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_putX_signal(void *dest, const void *src, size_t nelems,
+ * uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * void shmem_putX_signal_nbi(void *dest, const void *src, size_t nelems,
+ * uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ * where X is one of: 8, 16, 32, 64, 128
+ *
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers fixed-size data and signals completion to remote PE
+ */
 #define API_DECL_PUT_SIGNAL_SIZE(_size)                                        \
   void shmem_put##_size##_signal(void *dest, const void *src, size_t nelems,   \
                                  uint64_t *sig_addr, uint64_t signal,          \
@@ -596,6 +963,29 @@ API_DECL_PUT_SIGNAL_SIZE(128)
 #undef API_DECL_PUT_SIGNAL_SIZE
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put operations with signal for memory blocks
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_putmem_signal(void *dest, const void *src, size_t nelems,
+ * uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * void shmem_putmem_signal_nbi(void *dest, const void *src, size_t nelems,
+ * uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ *
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers memory blocks and signals completion to remote PE
+ */
 #define API_DECL_PUTMEM_SIGNAL()                                               \
   void shmem_putmem_signal(void *dest, const void *src, size_t nelems,         \
                            uint64_t *sig_addr, uint64_t signal, int sig_op,    \
@@ -1076,9 +1466,6 @@ void *shmem_align(size_t alignment, size_t size) _WUR;
 void *shmem_malloc_with_hints(size_t size, long hints) _WUR;
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_TEST_AND_WAIT_UNTIL(_opname, _rettype, _typename, _type)      \
-  _rettype shmem_##_typename##_##_opname(_type *ivar, int cmp, _type cmp_value);
-
 /**
  * @brief test for symmetric variable to change value
  * @page shmem_long_test
@@ -1098,6 +1485,9 @@ void *shmem_malloc_with_hints(size_t size, long hints) _WUR;
  * 1 if the comparison is true, 0 if not
  *
  */
+
+#define API_DECL_TEST_AND_WAIT_UNTIL(_opname, _rettype, _typename, _type)      \
+  _rettype shmem_##_typename##_##_opname(_type *ivar, int cmp, _type cmp_value);
 
 /* Deprecated types (short, ushort) */
 API_DECL_TEST_AND_WAIT_UNTIL(test, int, short, short); //  _DEPRECATED;
@@ -1123,6 +1513,31 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL)
 #undef API_DECL_TEST_AND_WAIT_UNTIL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if all variables in an array meet a specified condition
+ * @page shmem_long_test_all
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * int shmem_long_test_all(long *ivars, size_t nelems, const int *status, int
+ * cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars     Array of symmetric variables to be tested
+ * @param nelems    Number of elements in the ivars array
+ * @param status    Array indicating which ivars elements to monitor
+ * @param cmp       Comparison operator from shmem_cmp_constants
+ * @param cmp_value The value to compare against
+ *
+ * @section Effect
+ * Tests if all elements in ivars array meet the condition specified by the
+ * comparison operator and comparison value. Only elements with corresponding
+ * non-zero status values are tested.
+ *
+ * @section Return
+ * Returns 1 if all tested elements meet the condition, 0 otherwise.
+ */
 #define API_DECL_TEST_ALL(_typename, _type)                                    \
   int shmem_##_typename##_test_all(_type *ivars, size_t nelems,                \
                                    const int *status, int cmp,                 \
@@ -1135,6 +1550,32 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_ALL)
 #undef API_DECL_TEST_ALL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if any variable in an array meets a specified condition
+ * @page shmem_long_test_any
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_test_any(long *ivars, size_t nelems, const int *status, int
+ * cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars     Array of symmetric variables to be tested
+ * @param nelems    Number of elements in the ivars array
+ * @param status    Array indicating which ivars elements to monitor
+ * @param cmp       Comparison operator from shmem_cmp_constants
+ * @param cmp_value The value to compare against
+ *
+ * @section Effect
+ * Tests if any element in ivars array meets the condition specified by the
+ * comparison operator and comparison value. Only elements with corresponding
+ * non-zero status values are tested.
+ *
+ * @section Return
+ * Returns the index of the first element that meets the condition, or nelems if
+ * no element meets the condition.
+ */
 #define API_DECL_TEST_ANY(_typename, _type)                                    \
   size_t shmem_##_typename##_test_any(_type *ivars, size_t nelems,             \
                                       const int *status, int cmp,              \
@@ -1147,6 +1588,33 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_ANY)
 #undef API_DECL_TEST_ANY
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if some variables in an array meet a specified condition
+ * @page shmem_long_test_some
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_test_some(long *ivars, size_t nelems, size_t *indices,
+ * const int *status, int cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars     Array of symmetric variables to be tested
+ * @param nelems    Number of elements in the ivars array
+ * @param indices   Array to store indices of elements that meet the condition
+ * @param status    Array indicating which ivars elements to monitor
+ * @param cmp       Comparison operator from shmem_cmp_constants
+ * @param cmp_value The value to compare against
+ *
+ * @section Effect
+ * Tests if any elements in ivars array meet the condition specified by the
+ * comparison operator and comparison value. Only elements with corresponding
+ * non-zero status values are tested. The indices of elements that meet the
+ * condition are stored in the indices array.
+ *
+ * @section Return
+ * Returns the number of elements that meet the condition.
+ */
 #define API_DECL_TEST_SOME(_typename, _type)                                   \
   size_t shmem_##_typename##_test_some(_type *ivars, size_t nelems,            \
                                        size_t *indices, const int *status,     \
@@ -1159,6 +1627,32 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_SOME)
 #undef API_DECL_TEST_SOME
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if all variables in an array meet specified conditions using a
+ * vector of comparison values
+ * @page shmem_long_test_all_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * int shmem_long_test_all_vector(long *ivars, size_t nelems, const int *status,
+ * int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to be tested
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Tests if all elements in ivars array meet the conditions specified by the
+ * comparison operator and corresponding comparison values in cmp_values array.
+ * Only elements with corresponding non-zero status values are tested.
+ *
+ * @section Return
+ * Returns 1 if all elements meet their conditions, 0 otherwise.
+ */
 #define API_DECL_TEST_ALL_VECTOR(_typename, _type)                             \
   int shmem_##_typename##_test_all_vector(_type *ivars, size_t nelems,         \
                                           const int *status, int cmp,          \
@@ -1172,6 +1666,33 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_ALL_VECTOR)
 #undef API_DECL_TEST_ALL_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if any variable in an array meets specified conditions using a
+ * vector of comparison values
+ * @page shmem_long_test_any_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_test_any_vector(long *ivars, size_t nelems, const int
+ * *status, int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to be tested
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Tests if any element in ivars array meets the condition specified by the
+ * comparison operator and corresponding comparison value in cmp_values array.
+ * Only elements with corresponding non-zero status values are tested.
+ *
+ * @section Return
+ * Returns the index of the first element that meets its condition, or nelems if
+ * no element meets its condition.
+ */
 #define API_DECL_TEST_ANY_VECTOR(_typename, _type)                             \
   size_t shmem_##_typename##_test_any_vector(_type *ivars, size_t nelems,      \
                                              const int *status, int cmp,       \
@@ -1185,6 +1706,35 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_ANY_VECTOR)
 #undef API_DECL_TEST_ANY_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if some variables in an array meet specified conditions using a
+ * vector of comparison values
+ * @page shmem_long_test_some_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_test_some_vector(long *ivars, size_t nelems, size_t
+ * *indices, const int *status, int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to be tested
+ * @param nelems     Number of elements in the ivars array
+ * @param indices    Array to store indices of elements that meet their
+ * conditions
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Tests if elements in ivars array meet the conditions specified by the
+ * comparison operator and corresponding comparison values in cmp_values array.
+ * Only elements with corresponding non-zero status values are tested. Indices
+ * of elements that meet their conditions are stored in the indices array.
+ *
+ * @section Return
+ * Returns the number of elements that meet their conditions.
+ */
 #define API_DECL_TEST_SOME_VECTOR(_typename, _type)                            \
   size_t shmem_##_typename##_test_some_vector(                                 \
       _type *ivars, size_t nelems, size_t *indices, const int *status,         \
@@ -1198,6 +1748,31 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_SOME_VECTOR)
 #undef API_DECL_TEST_SOME_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until all variables in an array meet a specified condition
+ * @page shmem_long_wait_until_all
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_long_wait_until_all(long *ivars, size_t nelems, const int *status,
+ * int cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_value  Value to compare against each element
+ *
+ * @section Effect
+ * Waits until all elements in ivars array meet the condition specified by the
+ * comparison operator and comparison value. Only elements with corresponding
+ * non-zero status values are monitored.
+ *
+ * @section Return
+ * None.
+ */
 #define API_DECL_WAIT_UNTIL_ALL(_typename, _type)                              \
   void shmem_##_typename##_wait_until_all(_type *ivars, size_t nelems,         \
                                           const int *status, int cmp,          \
@@ -1211,6 +1786,31 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_ALL)
 #undef API_DECL_WAIT_UNTIL_ALL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until any variable in an array meets a specified condition
+ * @page shmem_long_wait_until_any
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_wait_until_any(long *ivars, size_t nelems, const int
+ * *status, int cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_value  Value to compare against each element
+ *
+ * @section Effect
+ * Waits until any element in ivars array meets the condition specified by the
+ * comparison operator and comparison value. Only elements with corresponding
+ * non-zero status values are monitored.
+ *
+ * @section Return
+ * Index of the first element that meets the condition.
+ */
 #define API_DECL_WAIT_UNTIL_ANY(_typename, _type)                              \
   size_t shmem_##_typename##_wait_until_any(_type *ivars, size_t nelems,       \
                                             const int *status, int cmp,        \
@@ -1224,6 +1824,33 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_ANY)
 #undef API_DECL_WAIT_UNTIL_ANY
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until some variables in an array meet a specified condition
+ * @page shmem_long_wait_until_some
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_wait_until_some(long *ivars, size_t nelems, size_t
+ * *indices, const int *status, int cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param indices    Array to store indices of elements that meet the condition
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_value  Value to compare against each element
+ *
+ * @section Effect
+ * Waits until at least one element in ivars array meets the condition specified
+ * by the comparison operator and comparison value. Only elements with
+ * corresponding non-zero status values are monitored. Indices of elements that
+ * meet the condition are stored in the indices array.
+ *
+ * @section Return
+ * Number of elements that meet the condition.
+ */
 #define API_DECL_WAIT_UNTIL_SOME(_typename, _type)                             \
   size_t shmem_##_typename##_wait_until_some(                                  \
       _type *ivars, size_t nelems, size_t *indices, const int *status,         \
@@ -1235,6 +1862,32 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_SOME)
 #undef DECL_WAIT_UNTIL_SOME
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until all variables in an array meet specified conditions using a
+ * vector of comparison values
+ * @page shmem_long_wait_until_all_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_long_wait_until_all_vector(long *ivars, size_t nelems, const int
+ * *status, int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Waits until all elements in ivars array meet the conditions specified by the
+ * comparison operator and corresponding comparison values in cmp_values array.
+ * Only elements with corresponding non-zero status values are monitored.
+ *
+ * @section Return
+ * None.
+ */
 #define API_DECL_WAIT_UNTIL_ALL_VECTOR(_typename, _type)                       \
   void shmem_##_typename##_wait_until_all_vector(_type *ivars, size_t nelems,  \
                                                  const int *status, int cmp,   \
@@ -1248,6 +1901,32 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_ALL_VECTOR)
 #undef API_DECL_WAIT_UNTIL_ALL_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until any variable in an array meets its condition using a vector
+ * of comparison values
+ * @page shmem_long_wait_until_any_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_wait_until_any_vector(long *ivars, size_t nelems, const int
+ * *status, int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Waits until any element in ivars array meets its condition specified by the
+ * comparison operator and corresponding comparison value in cmp_values array.
+ * Only elements with corresponding non-zero status values are monitored.
+ *
+ * @section Return
+ * Index of the first element that meets its condition.
+ */
 #define API_DECL_WAIT_UNTIL_ANY_VECTOR(_typename, _type)                       \
   size_t shmem_##_typename##_wait_until_any_vector(                            \
       _type *ivars, size_t nelems, const int *status, int cmp,                 \
@@ -1261,6 +1940,36 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_ANY_VECTOR)
 #undef API_DECL_WAIT_UNTIL_ANY_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until some variables in an array meet their conditions using a
+ * vector of comparison values
+ * @page shmem_long_wait_until_some_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_wait_until_some_vector(long *ivars, size_t nelems, size_t
+ * *indices, const int *status, int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param indices    Array to store indices of elements that meet their
+ * conditions
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Waits until at least one element in ivars array meets its condition specified
+ * by the comparison operator and corresponding comparison value in cmp_values
+ * array. Only elements with corresponding non-zero status values are monitored.
+ * Indices of elements that meet their conditions are stored in the indices
+ * array.
+ *
+ * @section Return
+ * Number of elements that meet their conditions.
+ */
 #define API_DECL_WAIT_UNTIL_SOME_VECTOR(_typename, _type)                      \
   size_t shmem_##_typename##_wait_until_some_vector(                           \
       _type *ivars, size_t nelems, size_t *indices, const int *status,         \
@@ -1403,6 +2112,36 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_COMPARE_SWAP)
 #undef API_DECL_ATOMIC_COMPARE_SWAP
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Non-blocking atomic conditional swap operation
+ * @page shmem_atomic_compare_swap_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_long_atomic_compare_swap_nbi(shmem_ctx_t ctx, long *fetch,
+ *                                            long *dest, long cond, long value,
+ *                                            int pe);
+ * @endcode
+ *
+ * @param fetch    Local address where to store the old value from the target PE
+ * @param dest     Address of the symmetric data object to be updated on the
+ * target PE
+ * @param cond     Value to be compared with the value at dest on the target PE
+ * @param value    Value to be atomically written if cond equals the value at
+ * dest
+ * @param pe       PE number of the target PE
+ *
+ * @section Effect
+ * Performs a non-blocking atomic conditional swap operation. If the value at
+ * address dest on PE pe equals cond, then value is written to address dest on
+ * PE pe. The old value at dest on PE pe is returned in fetch. The operation is
+ * non-blocking in that it may return before the operation is completed at the
+ * target PE.
+ *
+ * @section Return
+ * None.
+ */
 #define API_DECL_ATOMIC_COMPARE_SWAP_NBI(_typename, _type)                     \
   void shmem_##_typename##_atomic_compare_swap_nbi(                            \
       _type *fetch, _type *dest, _type cond, _type value, int pe);             \
@@ -1444,7 +2183,6 @@ long long shmem_longlong_cswap(long long *target, long long cond,
  * None.
  *
  */
-
 #define API_DECL_ATOMIC_FETCH_ADD(_typename, _type)                            \
   _type shmem_##_typename##_atomic_fetch_add(_type *dest, _type value, int pe) \
       _WUR;                                                                    \
@@ -1458,6 +2196,27 @@ SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_ADD)
 #undef API_DECL_ATOMIC_FETCH_ADD
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Non-blocking atomic fetch-and-add on a remote PE
+ * @page shmem_long_atomic_fetch_add_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_long_atomic_fetch_add_nbi(long *fetch, const long *dest, long
+ * value, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param dest     Address of symmetric data object on target PE
+ * @param value    Value to be atomically added
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically adds value to dest on PE pe and returns the previous contents of
+ * dest through fetch without blocking. The operation must be completed without
+ * the possibility of another process updating dest between the fetch and add.
+ */
 #define API_DECL_ATOMIC_FETCH_ADD_NBI(_typename, _type)                        \
   void shmem_##_typename##_atomic_fetch_add_nbi(                               \
       _type *fetch, const _type *dest, _type value, int pe);                   \
@@ -1509,6 +2268,33 @@ int shmem_int_finc(int *target, int pe)
 long long shmem_longlong_finc(long long *target, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_fetch_inc, 1.4) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief These routines perform a non-blocking atomic fetch-and-increment
+ * operation
+ * @page shmem_atomic_fetch_inc_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_atomic_fetch_inc_nbi(TYPE *fetch, TYPE *dest, int pe);
+ * void shmem_ctx_atomic_fetch_inc_nbi(shmem_ctx_t ctx, TYPE *fetch, TYPE *dest,
+ * int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param dest     Address of symmetric data object on target PE
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically performs a non-blocking fetch of the old value at dest on PE pe
+ * and increments dest. The old value from dest is returned in fetch. The
+ * operation must be completed without the possibility of another process
+ * updating dest between the fetch and the increment.
+ *
+ * @section Return
+ * None.
+ */
 #define API_DECL_ATOMIC_FETCH_INC_NBI(_typename, _type)                        \
   void shmem_##_typename##_atomic_fetch_inc_nbi(_type *fetch, _type *dest,     \
                                                 int pe);                       \
@@ -1659,6 +2445,30 @@ SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_OR)
 #undef DECL_ATOMIC_FETCH_OR
 #undef API_DECL_ATOMIC_FETCH_OR
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief These routines perform a non-blocking atomic fetch-or operation
+ * @page shmem_atomic_fetch_or_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_atomic_fetch_or_nbi(TYPE *fetch, TYPE *target, TYPE value, int
+ * pe); void shmem_ctx_atomic_fetch_or_nbi(shmem_ctx_t ctx, TYPE *fetch, TYPE
+ * *target, TYPE value, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param target   Address of symmetric data object on target PE
+ * @param value    Value to be combined with target
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically performs a non-blocking fetch of the old value at target on PE pe
+ * and performs a bitwise OR with value. The old value from target is returned
+ * in fetch. The operation must be completed without the possibility of another
+ * process updating target between the fetch and the OR.
+ */
 #define API_DECL_FETCH_OR_NBI(_typename, _type)                                \
   void shmem_##_typename##_atomic_fetch_or_nbi(_type *fetch, _type *target,    \
                                                _type value, int pe);           \
@@ -1775,6 +2585,33 @@ SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_AND)
 #undef DECL_ATOMIC_FETCH_AND
 #undef API_DECL_ATOMIC_FETCH_AND
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Non-blocking atomic fetch-and-and operation
+ * @page shmem_atomic_fetch_and_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_long_atomic_fetch_and_nbi(shmem_ctx_t ctx, long *fetch,
+ *                                         long *dest, long value, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address where to store the old value from the target PE
+ * @param dest     Address of the symmetric data object to be updated on the
+ * target PE
+ * @param value    Value to be atomically ANDed with the value at dest
+ * @param pe       PE number of the target PE
+ *
+ * @section Effect
+ * Performs a non-blocking atomic fetch-and-and operation. The old value at dest
+ * on PE pe is returned in fetch and atomically ANDed with value. The operation
+ * is non-blocking in that it may return before the operation is completed at
+ * the target PE.
+ *
+ * @section Return
+ * None.
+ */
 #define API_DECL_FETCH_AND_NBI(_typename, _type)                               \
   void shmem_##_typename##_atomic_fetch_and_nbi(_type *fetch, _type *dest,     \
                                                 _type value, int pe);          \
@@ -1836,6 +2673,30 @@ SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_XOR)
 #undef DECL_ATOMIC_XOR
 #undef API_DECL_ATOMIC_XOR
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief These routines perform a non-blocking atomic xor operation
+ * @page shmem_atomic_xor_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_atomic_xor_nbi(TYPE *fetch, TYPE *target, TYPE value, int pe);
+ * void shmem_ctx_atomic_xor_nbi(shmem_ctx_t ctx, TYPE *fetch, TYPE *target,
+ *                               TYPE value, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param dest     Address of symmetric data object on target PE
+ * @param value    Value to be combined with target
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically performs a non-blocking fetch of the old value at dest on PE pe
+ * and performs a bitwise XOR with value. The old value from dest is returned
+ * in fetch. The operation must be completed without the possibility of another
+ * process updating dest between the fetch and the XOR.
+ */
 #define API_DECL_ATOMIC_XOR_NBI(_typename, _type)                              \
   void shmem_##_typename##_atomic_xor_nbi(_type *fetch, _type *dest,           \
                                           _type value, int pe);                \
@@ -1902,6 +2763,30 @@ SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_XOR)
 #undef DECL_ATOMIC_FETCH_XOR
 #undef API_DECL_ATOMIC_FETCH_XOR
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief These routines perform a non-blocking atomic fetch-xor operation
+ * @page shmem_atomic_fetch_xor_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_atomic_fetch_xor_nbi(TYPE *fetch, TYPE *target, TYPE value, int
+ * pe); void shmem_ctx_atomic_fetch_xor_nbi(shmem_ctx_t ctx, TYPE *fetch, TYPE
+ * *target, TYPE value, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param dest     Address of symmetric data object on target PE
+ * @param value    Value to be combined with target
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically performs a non-blocking fetch of the old value at dest on PE pe
+ * and performs a bitwise XOR with value. The old value from dest is returned
+ * in fetch. The operation must be completed without the possibility of another
+ * process updating dest between the fetch and the XOR.
+ */
 #define API_DECL_ATOMIC_FETCH_XOR_NBI(_typename, _type)                        \
   void shmem_##_typename##_atomic_fetch_xor_nbi(_type *fetch, _type *dest,     \
                                                 _type value, int pe);          \
@@ -2007,11 +2892,36 @@ float shmem_float_fetch(const float *source, int pe)
 double shmem_double_fetch(const double *source, int pe)
     _DEPRECATED_BY(shmem_double_atomic_fetch, 1.4) _WUR;
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief These routines perform a non-blocking atomic fetch operation
+ * @page shmem_atomic_fetch_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_atomic_fetch_nbi(TYPE *fetch, const TYPE *source, int pe);
+ * void shmem_ctx_atomic_fetch_nbi(shmem_ctx_t ctx, TYPE *fetch, const TYPE
+ * *source, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param source   Address of symmetric data object on target PE
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically performs a non-blocking fetch of the value at source on PE pe. The
+ * value from source is returned in fetch. The operation must be completed
+ * without the possibility of another process updating source between the fetch.
+ *
+ * @section Return
+ * None.
+ */
 #define API_DECL_ATOMIC_FETCH_NBI(_typename, _type)                            \
-  _type shmem_##_typename##_atomic_fetch_nbi(                                  \
-      _type *fetch, const _type *source, int pe) _WUR;                         \
-  _type shmem_ctx_##_typename##_atomic_fetch_nbi(                              \
-      shmem_ctx_t ctx, _type *fetch, const _type *source, int pe) _WUR;
+  void shmem_##_typename##_atomic_fetch_nbi(_type *fetch, const _type *source, \
+                                            int pe);                           \
+  void shmem_ctx_##_typename##_atomic_fetch_nbi(shmem_ctx_t ctx, _type *fetch, \
+                                                const _type *source, int pe);
 
 #define DECL_ATOMIC_FETCH_NBI(_type, _typename)                                \
   API_DECL_ATOMIC_FETCH_NBI(_typename, _type)

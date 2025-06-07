@@ -145,16 +145,8 @@
   X(int32_t, int32)                                                            \
   X(int64_t, int64)
 
-// #define C11_SHMEM_BITWISE_AMO_TYPE_TABLE(X)                                    \
-//   X(unsigned int, uint)                                                        \
-//   X(unsigned long, ulong)                                                      \
-//   X(unsigned long long, ulonglong)                                             \
-//   X(int32_t, int32)                                                            \
-//   X(int64_t, int64)                                                            \
-//   X(uint32_t, uint32)                                                          \
-//   X(uint64_t, uint64)
 /*
- * Bitwise to_all types (Table 9)
+ * Bitwise to_all types (Table 11)
  *
  * Used by:
  * - shmem_and_to_all()
@@ -163,8 +155,6 @@
  *
  * NOTE: Only canonical C types are included below to avoid _Generic
  * duplicate/compatible type errors.
-
-  FIXME: this should be using table 11 instead of table 9
  */
 #define C11_SHMEM_TOALL_BITWISE_TYPE_TABLE(X)                                  \
   X(short, short)                                                              \
@@ -172,19 +162,8 @@
   X(long, long)                                                                \
   X(long long, longlong)
 
-// #define C11_SHMEM_TOALL_BITWISE_TYPE_TABLE(X)                                  \
-//   X(unsigned char, uchar)                                                      \
-//   X(short, short)                                                              \
-//   X(unsigned short, ushort)                                                    \
-//   X(int, int)                                                                  \
-//   X(unsigned int, uint)                                                        \
-//   X(long, long)                                                                \
-//   X(unsigned long, ulong)                                                      \
-//   X(long long, longlong)                                                       \
-//   X(unsigned long long, ulonglong)
-
 /*
- * Minmax to_all types (Table 9)
+ * Minmax to_all types (Table 11)
  *
  * Used by:
  * - shmem_min_to_all()
@@ -192,8 +171,6 @@
  *
  * NOTE: Only canonical C types are included below to avoid _Generic
  * duplicate/compatible type errors.
-
-  FIXME: this should be using table 11 instead of table 9
  */
 #define C11_SHMEM_TOALL_MINMAX_TYPE_TABLE(X)                                   \
   X(short, short)                                                              \
@@ -204,22 +181,8 @@
   X(double, double)                                                            \
   X(long double, longdouble)
 
-// #define C11_SHMEM_TOALL_MINMAX_TYPE_TABLE(X)                                   \
-//   X(unsigned char, uchar)                                                      \
-//   X(short, short)                                                              \
-//   X(unsigned short, ushort)                                                    \
-//   X(int, int)                                                                  \
-//   X(unsigned int, uint)                                                        \
-//   X(long, long)                                                                \
-//   X(unsigned long, ulong)                                                      \
-//   X(long long, longlong)                                                       \
-//   X(unsigned long long, ulonglong)                                             \
-//   X(float, float)                                                              \
-//   X(double, double)                                                            \
-//   X(long double, longdouble)
-
 /*
- * Arithmetic to_all types (Table 9)
+ * Arithmetic to_all types (Table 11)
  *
  * Used by:
  * - shmem_sum_to_all()
@@ -227,8 +190,6 @@
  *
  * NOTE: Only canonical C types are included below to avoid _Generic
  * duplicate/compatible type errors.
-
- FIXME: this should be using table 11 instead of table 9
  */
 #define C11_SHMEM_TOALL_ARITH_TYPE_TABLE(X)                                    \
   X(short, short)                                                              \
@@ -240,22 +201,6 @@
   X(long double, longdouble)                                                   \
   X(double _Complex, complexd)                                                 \
   X(float _Complex, complexf)
-
-// #define C11_SHMEM_TOALL_ARITH_TYPE_TABLE(X)                                    \
-//   X(unsigned char, uchar)                                                      \
-//   X(short, short)                                                              \
-//   X(unsigned short, ushort)                                                    \
-//   X(int, int)                                                                  \
-//   X(unsigned int, uint)                                                        \
-//   X(long, long)                                                                \
-//   X(unsigned long, ulong)                                                      \
-//   X(long long, longlong)                                                       \
-//   X(unsigned long long, ulonglong)                                             \
-//   X(float, float)                                                              \
-//   X(double, double)                                                            \
-//   X(long double, longdouble)                                                   \
-//   X(double _Complex, complexd)                                                 \
-//   X(float _Complex, complexf)
 
 /*
  * Team-based reduce bitwise operations (Table 10)
