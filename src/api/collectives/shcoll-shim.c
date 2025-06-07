@@ -904,19 +904,19 @@ void shmem_broadcast64(void *target, const void *source, size_t nelems,
 /* shmem_and_to_all */
 #define DECL_SHIM_AND_TO_ALL(_typename, _type)                                 \
   SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, and)
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_SHIM_AND_TO_ALL)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_SHIM_AND_TO_ALL)
 #undef DECL_SHIM_AND_TO_ALL
 
 /* shmem_or_to_all */
 #define DECL_SHIM_OR_TO_ALL(_typename, _type)                                  \
   SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, or)
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_SHIM_OR_TO_ALL)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_SHIM_OR_TO_ALL)
 #undef DECL_SHIM_OR_TO_ALL
 
 /* shmem_xor_to_all */
 #define DECL_SHIM_XOR_TO_ALL(_typename, _type)                                 \
   SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, xor)
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_SHIM_XOR_TO_ALL)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_SHIM_XOR_TO_ALL)
 #undef DECL_SHIM_XOR_TO_ALL
 
 #ifdef ENABLE_PSHMEM
@@ -953,13 +953,13 @@ SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_SHIM_XOR_TO_ALL)
 /* shmem_min_to_all */
 #define DECL_SHIM_MIN_TO_ALL(_typename, _type)                                 \
   SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, min)
-SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_SHIM_MIN_TO_ALL)
+SHMEM_TO_ALL_MINMAX_TYPE_TABLE(DECL_SHIM_MIN_TO_ALL)
 #undef DECL_SHIM_MIN_TO_ALL
 
 /* shmem_max_to_all */
 #define DECL_SHIM_MAX_TO_ALL(_typename, _type)                                 \
   SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, max)
-SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_SHIM_MAX_TO_ALL)
+SHMEM_TO_ALL_MINMAX_TYPE_TABLE(DECL_SHIM_MAX_TO_ALL)
 #undef DECL_SHIM_MAX_TO_ALL
 
 #ifdef ENABLE_PSHMEM
@@ -1004,13 +1004,13 @@ SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_SHIM_MAX_TO_ALL)
 /* shmem_sum_to_all */
 #define DECL_SHIM_SUM_TO_ALL(_typename, _type)                                 \
   SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, sum)
-SHMEM_TOALL_ARITH_TYPE_TABLE(DECL_SHIM_SUM_TO_ALL)
+SHMEM_TO_ALL_ARITH_TYPE_TABLE(DECL_SHIM_SUM_TO_ALL)
 #undef DECL_SHIM_SUM_TO_ALL
 
 /* shmem_prod_to_all */
 #define DECL_SHIM_PROD_TO_ALL(_typename, _type)                                \
   SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, prod)
-SHMEM_TOALL_ARITH_TYPE_TABLE(DECL_SHIM_PROD_TO_ALL)
+SHMEM_TO_ALL_ARITH_TYPE_TABLE(DECL_SHIM_PROD_TO_ALL)
 #undef DECL_SHIM_PROD_TO_ALL
 
 #undef SHMEM_TYPENAME_OP_TO_ALL

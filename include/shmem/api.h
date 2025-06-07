@@ -3266,38 +3266,38 @@ SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_PROD_REDUCE)
 
 /* Declare SUM reductions */
 #define DECL_SUM_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, sum)
-SHMEM_TOALL_ARITH_TYPE_TABLE(DECL_SUM_TO_ALL)
+SHMEM_TO_ALL_ARITH_TYPE_TABLE(DECL_SUM_TO_ALL)
 #undef DECL_SUM_TO_ALL
 
 /* Declare PROD reductions */
 #define DECL_PROD_TO_ALL(_type, _typename)                                     \
   API_TO_ALL_TYPE(_type, _typename, prod)
-SHMEM_TOALL_ARITH_TYPE_TABLE(DECL_PROD_TO_ALL)
+SHMEM_TO_ALL_ARITH_TYPE_TABLE(DECL_PROD_TO_ALL)
 #undef DECL_PROD_TO_ALL
 
 /* Declare AND reductions */
 #define DECL_AND_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, and)
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_AND_TO_ALL)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_AND_TO_ALL)
 #undef DECL_AND_TO_ALL
 
 /* Declare OR reductions */
 #define DECL_OR_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, or)
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_OR_TO_ALL)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_OR_TO_ALL)
 #undef DECL_OR_TO_ALL
 
 /* Declare XOR reductions */
 #define DECL_XOR_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, xor)
-SHMEM_TOALL_BITWISE_TYPE_TABLE(DECL_XOR_TO_ALL)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_XOR_TO_ALL)
 #undef DECL_XOR_TO_ALL
 
 /* Declare MAX reductions */
 #define DECL_MAX_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, max)
-SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_MAX_TO_ALL)
+SHMEM_TO_ALL_MINMAX_TYPE_TABLE(DECL_MAX_TO_ALL)
 #undef DECL_MAX_TO_ALL
 
 /* Declare MIN reductions */
 #define DECL_MIN_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, min)
-SHMEM_TOALL_MINMAX_TYPE_TABLE(DECL_MIN_TO_ALL)
+SHMEM_TO_ALL_MINMAX_TYPE_TABLE(DECL_MIN_TO_ALL)
 #undef DECL_MIN_TO_ALL
 
 #undef API_TO_ALL_TYPE

@@ -43,7 +43,7 @@
  * This stops the not-a-context case turning into an error when
  * the value type doesn't match anything
  */
-inline static void shmem_generics_nomatch(void* dummy, ...) {}
+inline static void shmem_generics_nomatch(void *dummy, ...) {}
 
 /**
  * @brief Get numbered args out of parameter list
@@ -288,64 +288,69 @@ inline static void shmem_generics_nomatch(void* dummy, ...) {}
  */
 
 /* --- to_all reductions --- */
-#define SHMEM_TOALL_GENERIC_CASE(op, type, typename)                           \
+#define SHMEM_TO_ALL_GENERIC_CASE(op, type, typename)                          \
   type * : shmem_##typename##_##op##_to_all,
-#define SHMEM_TOALL_GENERIC_CASE_and(type, typename)                           \
-  SHMEM_TOALL_GENERIC_CASE(and, type, typename)
-#define SHMEM_TOALL_GENERIC_CASE_or(type, typename)                            \
-  SHMEM_TOALL_GENERIC_CASE(or, type, typename)
-#define SHMEM_TOALL_GENERIC_CASE_xor(type, typename)                           \
-  SHMEM_TOALL_GENERIC_CASE(xor, type, typename)
-#define SHMEM_TOALL_GENERIC_CASE_max(type, typename)                           \
-  SHMEM_TOALL_GENERIC_CASE(max, type, typename)
-#define SHMEM_TOALL_GENERIC_CASE_min(type, typename)                           \
-  SHMEM_TOALL_GENERIC_CASE(min, type, typename)
-#define SHMEM_TOALL_GENERIC_CASE_sum(type, typename)                           \
-  SHMEM_TOALL_GENERIC_CASE(sum, type, typename)
-#define SHMEM_TOALL_GENERIC_CASE_prod(type, typename)                          \
-  SHMEM_TOALL_GENERIC_CASE(prod, type, typename)
+#define SHMEM_TO_ALL_GENERIC_CASE_and(type, typename)                          \
+  SHMEM_TO_ALL_GENERIC_CASE(and, type, typename)
+#define SHMEM_TO_ALL_GENERIC_CASE_or(type, typename)                           \
+  SHMEM_TO_ALL_GENERIC_CASE(or, type, typename)
+#define SHMEM_TO_ALL_GENERIC_CASE_xor(type, typename)                          \
+  SHMEM_TO_ALL_GENERIC_CASE(xor, type, typename)
+#define SHMEM_TO_ALL_GENERIC_CASE_max(type, typename)                          \
+  SHMEM_TO_ALL_GENERIC_CASE(max, type, typename)
+#define SHMEM_TO_ALL_GENERIC_CASE_min(type, typename)                          \
+  SHMEM_TO_ALL_GENERIC_CASE(min, type, typename)
+#define SHMEM_TO_ALL_GENERIC_CASE_sum(type, typename)                          \
+  SHMEM_TO_ALL_GENERIC_CASE(sum, type, typename)
+#define SHMEM_TO_ALL_GENERIC_CASE_prod(type, typename)                         \
+  SHMEM_TO_ALL_GENERIC_CASE(prod, type, typename)
 
 #define shmem_and_to_all(...)                                                  \
-  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                   \
-      C11_SHMEM_TOALL_BITWISE_TYPE_TABLE(                                      \
-               SHMEM_TOALL_GENERIC_CASE_and) default: shmem_generics_nomatch)( \
+  _Generic(                                                                    \
+      SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                        \
+      C11_SHMEM_TO_ALL_BITWISE_TYPE_TABLE(                                     \
+          SHMEM_TO_ALL_GENERIC_CASE_and) default: shmem_generics_nomatch)(     \
       __VA_ARGS__)
 
 #define shmem_or_to_all(...)                                                   \
   _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                   \
-      C11_SHMEM_TOALL_BITWISE_TYPE_TABLE(                                      \
-               SHMEM_TOALL_GENERIC_CASE_or) default: shmem_generics_nomatch)(  \
+      C11_SHMEM_TO_ALL_BITWISE_TYPE_TABLE(                                     \
+               SHMEM_TO_ALL_GENERIC_CASE_or) default: shmem_generics_nomatch)( \
       __VA_ARGS__)
 
 #define shmem_xor_to_all(...)                                                  \
-  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                   \
-      C11_SHMEM_TOALL_BITWISE_TYPE_TABLE(                                      \
-               SHMEM_TOALL_GENERIC_CASE_xor) default: shmem_generics_nomatch)( \
+  _Generic(                                                                    \
+      SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                        \
+      C11_SHMEM_TO_ALL_BITWISE_TYPE_TABLE(                                     \
+          SHMEM_TO_ALL_GENERIC_CASE_xor) default: shmem_generics_nomatch)(     \
       __VA_ARGS__)
 
 #define shmem_max_to_all(...)                                                  \
-  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                   \
-      C11_SHMEM_TOALL_MINMAX_TYPE_TABLE(                                       \
-               SHMEM_TOALL_GENERIC_CASE_max) default: shmem_generics_nomatch)( \
+  _Generic(                                                                    \
+      SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                        \
+      C11_SHMEM_TO_ALL_MINMAX_TYPE_TABLE(                                      \
+          SHMEM_TO_ALL_GENERIC_CASE_max) default: shmem_generics_nomatch)(     \
       __VA_ARGS__)
 
 #define shmem_min_to_all(...)                                                  \
-  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                   \
-      C11_SHMEM_TOALL_MINMAX_TYPE_TABLE(                                       \
-               SHMEM_TOALL_GENERIC_CASE_min) default: shmem_generics_nomatch)( \
+  _Generic(                                                                    \
+      SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                        \
+      C11_SHMEM_TO_ALL_MINMAX_TYPE_TABLE(                                      \
+          SHMEM_TO_ALL_GENERIC_CASE_min) default: shmem_generics_nomatch)(     \
       __VA_ARGS__)
 
 #define shmem_sum_to_all(...)                                                  \
-  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                   \
-      C11_SHMEM_TOALL_ARITH_TYPE_TABLE(                                        \
-               SHMEM_TOALL_GENERIC_CASE_sum) default: shmem_generics_nomatch)( \
+  _Generic(                                                                    \
+      SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                        \
+      C11_SHMEM_TO_ALL_ARITH_TYPE_TABLE(                                       \
+          SHMEM_TO_ALL_GENERIC_CASE_sum) default: shmem_generics_nomatch)(     \
       __VA_ARGS__)
 
 #define shmem_prod_to_all(...)                                                 \
   _Generic(                                                                    \
       SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG1(__VA_ARGS__)),                        \
-      C11_SHMEM_TOALL_ARITH_TYPE_TABLE(                                        \
-          SHMEM_TOALL_GENERIC_CASE_prod) default: shmem_generics_nomatch)(     \
+      C11_SHMEM_TO_ALL_ARITH_TYPE_TABLE(                                       \
+          SHMEM_TO_ALL_GENERIC_CASE_prod) default: shmem_generics_nomatch)(    \
       __VA_ARGS__)
 
 /* --- team-based reduce reductions --- */

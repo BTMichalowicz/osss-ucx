@@ -167,7 +167,7 @@
  * - shmem_or_to_all()
  * - shmem_xor_to_all()
  */
-#define SHMEM_TOALL_BITWISE_TYPE_TABLE(X)                                      \
+#define SHMEM_TO_ALL_BITWISE_TYPE_TABLE(X)                                      \
   X(short, short)                                                              \
   X(int, int)                                                                  \
   X(long, long)                                                                \
@@ -180,7 +180,7 @@
  * - shmem_min_to_all()
  * - shmem_max_to_all()
  */
-#define SHMEM_TOALL_MINMAX_TYPE_TABLE(X)                                       \
+#define SHMEM_TO_ALL_MINMAX_TYPE_TABLE(X)                                       \
   X(short, short)                                                              \
   X(int, int)                                                                  \
   X(long, long)                                                                \
@@ -196,7 +196,7 @@
  * - shmem_sum_to_all()
  * - shmem_prod_to_all()
  */
-#define SHMEM_TOALL_ARITH_TYPE_TABLE(X)                                        \
+#define SHMEM_TO_ALL_ARITH_TYPE_TABLE(X)                                        \
   X(short, short)                                                              \
   X(int, int)                                                                  \
   X(long, long)                                                                \
