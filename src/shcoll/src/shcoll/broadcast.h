@@ -2,6 +2,7 @@
 #define _SHCOLL_BROADCAST_H 1
 
 #include <shmem/teams.h>
+#include <shmem/api_types.h>
 
 void shcoll_set_broadcast_tree_degree(int tree_degree);
 void shcoll_set_broadcast_knomial_tree_radix_barrier(int tree_radix);
@@ -56,39 +57,16 @@ SHCOLL_SIZED_BROADCAST_DECLARATION(scatter_collect, 64)
 /**
  * @brief Macro to declare broadcast implementations for all supported types
  */
-#define DECLARE_BROADCAST_TYPES(_algo)                                         \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, float, float)                      \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, double, double)                    \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, long double, longdouble)           \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, char, char)                        \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, signed char, schar)                \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, short, short)                      \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, int, int)                          \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, long, long)                        \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, long long, longlong)               \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, unsigned char, uchar)              \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, unsigned short, ushort)            \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, unsigned int, uint)                \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, unsigned long, ulong)              \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, unsigned long long, ulonglong)     \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, int8_t, int8)                      \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, int16_t, int16)                    \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, int32_t, int32)                    \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, int64_t, int64)                    \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, uint8_t, uint8)                    \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, uint16_t, uint16)                  \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, uint32_t, uint32)                  \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, uint64_t, uint64)                  \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, size_t, size)                      \
-  SHCOLL_TYPED_BROADCAST_DECLARATION(_algo, ptrdiff_t, ptrdiff)
+#define DECLARE_BROADCAST_TYPES(_type, _typename)                              \
+  SHCOLL_TYPED_BROADCAST_DECLARATION(linear, _type, _typename)                 \
+  SHCOLL_TYPED_BROADCAST_DECLARATION(complete_tree, _type, _typename)          \
+  SHCOLL_TYPED_BROADCAST_DECLARATION(binomial_tree, _type, _typename)          \
+  SHCOLL_TYPED_BROADCAST_DECLARATION(knomial_tree, _type, _typename)           \
+  SHCOLL_TYPED_BROADCAST_DECLARATION(knomial_tree_signal, _type, _typename)    \
+  SHCOLL_TYPED_BROADCAST_DECLARATION(scatter_collect, _type, _typename)
 
-/* Declare all typed algorithm variants */
-DECLARE_BROADCAST_TYPES(linear)
-DECLARE_BROADCAST_TYPES(complete_tree)
-DECLARE_BROADCAST_TYPES(binomial_tree)
-DECLARE_BROADCAST_TYPES(knomial_tree)
-DECLARE_BROADCAST_TYPES(knomial_tree_signal)
-DECLARE_BROADCAST_TYPES(scatter_collect)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECLARE_BROADCAST_TYPES)
+#undef DECLARE_BROADCAST_TYPES
 
 /**
  * @brief Macro to declare type-specific broadcast memory implementation

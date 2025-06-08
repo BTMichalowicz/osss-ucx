@@ -14,6 +14,7 @@
 #include "shcoll/compat.h"
 #include "shcoll/common.h"
 #include "util/trees.h"
+#include <shmem/api_types.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -555,42 +556,20 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
     return 0;                                                                  \
   }
 
-#define DEFINE_SHCOLL_BROADCAST_TYPES(_algo)                                   \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, float, float)                        \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, double, double)                      \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, long double, longdouble)             \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, unsigned char, uchar)                \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, char, char)                          \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, signed char, schar)                  \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, short, short)                        \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, int, int)                            \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, long, long)                          \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, long long, longlong)                 \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, unsigned short, ushort)              \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, unsigned int, uint)                  \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, unsigned long, ulong)                \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, unsigned long long, ulonglong)       \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, int8_t, int8)                        \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, int16_t, int16)                      \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, int32_t, int32)                      \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, int64_t, int64)                      \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, uint8_t, uint8)                      \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, uint16_t, uint16)                    \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, uint32_t, uint32)                    \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, uint64_t, uint64)                    \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, size_t, size)                        \
-  SHCOLL_BROADCAST_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
+#define DEFINE_BROADCAST_TYPES(_type, _typename)                               \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(linear, _type, _typename)                   \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(complete_tree, _type, _typename)            \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(binomial_tree, _type, _typename)            \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(knomial_tree, _type, _typename)             \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(knomial_tree_signal, _type, _typename)      \
+  SHCOLL_BROADCAST_TYPE_DEFINITION(scatter_collect, _type, _typename)
 
-DEFINE_SHCOLL_BROADCAST_TYPES(linear)
-DEFINE_SHCOLL_BROADCAST_TYPES(complete_tree)
-DEFINE_SHCOLL_BROADCAST_TYPES(binomial_tree)
-DEFINE_SHCOLL_BROADCAST_TYPES(knomial_tree)
-DEFINE_SHCOLL_BROADCAST_TYPES(knomial_tree_signal)
-DEFINE_SHCOLL_BROADCAST_TYPES(scatter_collect)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_BROADCAST_TYPES)
+#undef DEFINE_BROADCAST_TYPES
 
 /**
  * @brief Macro for memory broadcast implementations using legacy helpers
- 
+
  FIXME: me_as should be using internal team handle
  */
 #define SHCOLL_BROADCASTMEM_DEFINITION(_algo)                                  \

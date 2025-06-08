@@ -39,6 +39,7 @@
 #include <math.h> /* For log2 */
 
 #include <stdio.h>
+#include <shmem/api_types.h>
 
 /**
  * @brief Calculate edge color for color-based exchange algorithm
@@ -412,38 +413,20 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
  *
  * @param _algo Algorithm name to generate implementations for
  */
-#define DEFINE_SHCOLL_ALLTOALLS_TYPES(_algo)                                   \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, float, float)                        \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, double, double)                      \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, long double, longdouble)             \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, char, char)                          \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, signed char, schar)                  \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, short, short)                        \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int, int)                            \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, long, long)                          \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, long long, longlong)                 \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned char, uchar)                \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned short, ushort)              \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned int, uint)                  \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned long, ulong)                \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned long long, ulonglong)       \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int8_t, int8)                        \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int16_t, int16)                      \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int32_t, int32)                      \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int64_t, int64)                      \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint8_t, uint8)                      \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint16_t, uint16)                    \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint32_t, uint32)                    \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint64_t, uint64)                    \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, size_t, size)                        \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
+#define DEFINE_ALLTOALLS_TYPES(_type, _typename)                               \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(shift_exchange_barrier, _type, _typename)   \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(shift_exchange_counter, _type, _typename)   \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(xor_pairwise_exchange_barrier, _type,       \
+                                   _typename)                                  \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(xor_pairwise_exchange_counter, _type,       \
+                                   _typename)                                  \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(color_pairwise_exchange_barrier, _type,     \
+                                   _typename)                                  \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(color_pairwise_exchange_counter, _type,     \
+                                   _typename)
 
-DEFINE_SHCOLL_ALLTOALLS_TYPES(shift_exchange_barrier)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(shift_exchange_counter)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(xor_pairwise_exchange_barrier)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(xor_pairwise_exchange_counter)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_barrier)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_ALLTOALLS_TYPES)
+#undef DEFINE_ALLTOALLS_TYPES
 
 /**
  * @brief Define generic memory alltoalls implementations

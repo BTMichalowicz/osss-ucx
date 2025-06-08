@@ -13,12 +13,6 @@
 #include <stdint.h>
 #include <complex.h>
 
-/**
-
-  FIXME: Do active-set reductions use Table 9 or table 11?
-
- */
-
 /*
  * Standard RMA types (Table 5)
  *

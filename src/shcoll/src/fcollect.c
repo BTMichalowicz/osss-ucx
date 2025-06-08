@@ -16,6 +16,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include <shmem/api_types.h>
 
 /**
  * Helper function implementing linear fcollect algorithm
@@ -604,44 +605,22 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
  *
  * @param _algo Algorithm name
  */
-#define DEFINE_SHCOLL_FCOLLECT_TYPES(_algo)                                    \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, float, float)                         \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, double, double)                       \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, long double, longdouble)              \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, unsigned char, uchar)                 \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, char, char)                           \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, signed char, schar)                   \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, short, short)                         \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, int, int)                             \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, long, long)                           \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, long long, longlong)                  \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, unsigned short, ushort)               \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, unsigned int, uint)                   \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, unsigned long, ulong)                 \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, unsigned long long, ulonglong)        \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, int8_t, int8)                         \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, int16_t, int16)                       \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, int32_t, int32)                       \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, int64_t, int64)                       \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, uint8_t, uint8)                       \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, uint16_t, uint16)                     \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, uint32_t, uint32)                     \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, uint64_t, uint64)                     \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, size_t, size)                         \
-  SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
+#define DEFINE_FCOLLECT_TYPES(_type, _typename)                                \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(linear, _type, _typename)                    \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(all_linear, _type, _typename)                \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(all_linear1, _type, _typename)               \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(rec_dbl, _type, _typename)                   \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(ring, _type, _typename)                      \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(bruck, _type, _typename)                     \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(bruck_no_rotate, _type, _typename)           \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(bruck_signal, _type, _typename)              \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(bruck_inplace, _type, _typename)             \
+  SHCOLL_FCOLLECT_TYPE_DEFINITION(neighbor_exchange, _type, _typename)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_FCOLLECT_TYPES)
+#undef DEFINE_FCOLLECT_TYPES
 
 /* @formatter:on */
-
-DEFINE_SHCOLL_FCOLLECT_TYPES(linear)
-DEFINE_SHCOLL_FCOLLECT_TYPES(all_linear)
-DEFINE_SHCOLL_FCOLLECT_TYPES(all_linear1)
-DEFINE_SHCOLL_FCOLLECT_TYPES(rec_dbl)
-DEFINE_SHCOLL_FCOLLECT_TYPES(ring)
-DEFINE_SHCOLL_FCOLLECT_TYPES(bruck)
-DEFINE_SHCOLL_FCOLLECT_TYPES(bruck_no_rotate)
-DEFINE_SHCOLL_FCOLLECT_TYPES(bruck_signal)
-DEFINE_SHCOLL_FCOLLECT_TYPES(bruck_inplace)
-DEFINE_SHCOLL_FCOLLECT_TYPES(neighbor_exchange)
 
 /**
  * @brief Macro to declare fcollectmem implementations for different algorithms
