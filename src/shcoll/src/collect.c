@@ -694,6 +694,7 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
   SHCOLL_COLLECT_TYPE_DEFINITION(all_linear, _type, _typename)                 \
   SHCOLL_COLLECT_TYPE_DEFINITION(all_linear1, _type, _typename)                \
   SHCOLL_COLLECT_TYPE_DEFINITION(rec_dbl, _type, _typename)                    \
+  SHCOLL_COLLECT_TYPE_DEFINITION(rec_dbl_signal, _type, _typename)             \
   SHCOLL_COLLECT_TYPE_DEFINITION(ring, _type, _typename)                       \
   SHCOLL_COLLECT_TYPE_DEFINITION(bruck, _type, _typename)                      \
   SHCOLL_COLLECT_TYPE_DEFINITION(bruck_no_rotate, _type, _typename)            \
