@@ -13,9 +13,9 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
-
 #include "shmemc.h"
 #include "put_signal.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_float_put_signal = pshmem_ctx_float_put_signal
@@ -64,30 +64,11 @@
 #define shmem_ctx_uint64_put_signal pshmem_ctx_uint64_put_signal
 #endif /* ENABLE_PSHMEM */
 
-SHMEM_CTX_TYPED_PUT_SIGNAL(float, float)
-SHMEM_CTX_TYPED_PUT_SIGNAL(double, double)
-SHMEM_CTX_TYPED_PUT_SIGNAL(longdouble, long double)
-SHMEM_CTX_TYPED_PUT_SIGNAL(char, char)
-SHMEM_CTX_TYPED_PUT_SIGNAL(schar, signed char)
-SHMEM_CTX_TYPED_PUT_SIGNAL(short, short)
-SHMEM_CTX_TYPED_PUT_SIGNAL(int, int)
-SHMEM_CTX_TYPED_PUT_SIGNAL(long, long)
-SHMEM_CTX_TYPED_PUT_SIGNAL(longlong, long long)
-SHMEM_CTX_TYPED_PUT_SIGNAL(uchar, unsigned char)
-SHMEM_CTX_TYPED_PUT_SIGNAL(ushort, unsigned short)
-SHMEM_CTX_TYPED_PUT_SIGNAL(uint, unsigned int)
-SHMEM_CTX_TYPED_PUT_SIGNAL(ulong, unsigned long)
-SHMEM_CTX_TYPED_PUT_SIGNAL(ulonglong, unsigned long long)
-SHMEM_CTX_TYPED_PUT_SIGNAL(int8, int8_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL(int16, int16_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL(int32, int32_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL(int64, int64_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL(uint8, uint8_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL(uint16, uint16_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL(uint32, uint32_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL(uint64, uint64_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL(size, size_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL(ptrdiff, ptrdiff_t)
+#define PUT_SIGNAL_TYPE_HELPER(_type, _typename)                               \
+  SHMEM_CTX_TYPED_PUT_SIGNAL(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(PUT_SIGNAL_TYPE_HELPER)
+#undef PUT_SIGNAL_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_float_put_signal = pshmem_float_put_signal
@@ -140,30 +121,11 @@ SHMEM_CTX_TYPED_PUT_SIGNAL(ptrdiff, ptrdiff_t)
 #define shmem_ptrdiff_put_signal pshmem_ptrdiff_put_signal
 #endif /* ENABLE_PSHMEM */
 
-API_DECL_TYPED_PUT_SIGNAL(float, float)
-API_DECL_TYPED_PUT_SIGNAL(double, double)
-API_DECL_TYPED_PUT_SIGNAL(longdouble, long double)
-API_DECL_TYPED_PUT_SIGNAL(schar, signed char)
-API_DECL_TYPED_PUT_SIGNAL(char, char)
-API_DECL_TYPED_PUT_SIGNAL(short, short)
-API_DECL_TYPED_PUT_SIGNAL(int, int)
-API_DECL_TYPED_PUT_SIGNAL(long, long)
-API_DECL_TYPED_PUT_SIGNAL(longlong, long long)
-API_DECL_TYPED_PUT_SIGNAL(uchar, unsigned char)
-API_DECL_TYPED_PUT_SIGNAL(ushort, unsigned short)
-API_DECL_TYPED_PUT_SIGNAL(uint, unsigned int)
-API_DECL_TYPED_PUT_SIGNAL(ulong, unsigned long)
-API_DECL_TYPED_PUT_SIGNAL(ulonglong, unsigned long long)
-API_DECL_TYPED_PUT_SIGNAL(int8, int8_t)
-API_DECL_TYPED_PUT_SIGNAL(int16, int16_t)
-API_DECL_TYPED_PUT_SIGNAL(int32, int32_t)
-API_DECL_TYPED_PUT_SIGNAL(int64, int64_t)
-API_DECL_TYPED_PUT_SIGNAL(uint8, uint8_t)
-API_DECL_TYPED_PUT_SIGNAL(uint16, uint16_t)
-API_DECL_TYPED_PUT_SIGNAL(uint32, uint32_t)
-API_DECL_TYPED_PUT_SIGNAL(uint64, uint64_t)
-API_DECL_TYPED_PUT_SIGNAL(size, size_t)
-API_DECL_TYPED_PUT_SIGNAL(ptrdiff, ptrdiff_t)
+#define API_PUT_SIGNAL_TYPE_HELPER(_type, _typename)                           \
+  API_DECL_TYPED_PUT_SIGNAL(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(API_PUT_SIGNAL_TYPE_HELPER)
+#undef API_PUT_SIGNAL_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_put8_signal = pshmem_ctx_put8_signal
@@ -263,30 +225,11 @@ API_DECL_PUTMEM_SIGNAL()
 #define shmem_ctx_uint64_put_signal_nbi pshmem_ctx_uint64_put_signal_nbi
 #endif /* ENABLE_PSHMEM */
 
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(float, float)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(double, double)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(longdouble, long double)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(char, char)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(schar, signed char)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(short, short)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(int, int)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(long, long)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(longlong, long long)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(uchar, unsigned char)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(ushort, unsigned short)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(uint, unsigned int)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(ulong, unsigned long)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(ulonglong, unsigned long long)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(int8, int8_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(int16, int16_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(int32, int32_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(int64, int64_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(uint8, uint8_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(uint16, uint16_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(uint32, uint32_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(uint64, uint64_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(size, size_t)
-SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(ptrdiff, ptrdiff_t)
+#define CTX_PUT_SIGNAL_NBI_TYPE_HELPER(_type, _typename)                       \
+  SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(CTX_PUT_SIGNAL_NBI_TYPE_HELPER)
+#undef CTX_PUT_SIGNAL_NBI_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_float_put_signal_nbi = pshmem_float_put_signal_nbi
@@ -339,30 +282,11 @@ SHMEM_CTX_TYPED_PUT_SIGNAL_NBI(ptrdiff, ptrdiff_t)
 #define shmem_ptrdiff_put_signal_nbi pshmem_ptrdiff_put_signal_nbi
 #endif /* ENABLE_PSHMEM */
 
-API_DECL_TYPED_PUT_SIGNAL_NBI(float, float)
-API_DECL_TYPED_PUT_SIGNAL_NBI(double, double)
-API_DECL_TYPED_PUT_SIGNAL_NBI(longdouble, long double)
-API_DECL_TYPED_PUT_SIGNAL_NBI(schar, signed char)
-API_DECL_TYPED_PUT_SIGNAL_NBI(char, char)
-API_DECL_TYPED_PUT_SIGNAL_NBI(short, short)
-API_DECL_TYPED_PUT_SIGNAL_NBI(int, int)
-API_DECL_TYPED_PUT_SIGNAL_NBI(long, long)
-API_DECL_TYPED_PUT_SIGNAL_NBI(longlong, long long)
-API_DECL_TYPED_PUT_SIGNAL_NBI(uchar, unsigned char)
-API_DECL_TYPED_PUT_SIGNAL_NBI(ushort, unsigned short)
-API_DECL_TYPED_PUT_SIGNAL_NBI(uint, unsigned int)
-API_DECL_TYPED_PUT_SIGNAL_NBI(ulong, unsigned long)
-API_DECL_TYPED_PUT_SIGNAL_NBI(ulonglong, unsigned long long)
-API_DECL_TYPED_PUT_SIGNAL_NBI(int8, int8_t)
-API_DECL_TYPED_PUT_SIGNAL_NBI(int16, int16_t)
-API_DECL_TYPED_PUT_SIGNAL_NBI(int32, int32_t)
-API_DECL_TYPED_PUT_SIGNAL_NBI(int64, int64_t)
-API_DECL_TYPED_PUT_SIGNAL_NBI(uint8, uint8_t)
-API_DECL_TYPED_PUT_SIGNAL_NBI(uint16, uint16_t)
-API_DECL_TYPED_PUT_SIGNAL_NBI(uint32, uint32_t)
-API_DECL_TYPED_PUT_SIGNAL_NBI(uint64, uint64_t)
-API_DECL_TYPED_PUT_SIGNAL_NBI(size, size_t)
-API_DECL_TYPED_PUT_SIGNAL_NBI(ptrdiff, ptrdiff_t)
+#define API_PUT_SIGNAL_NBI_TYPE_HELPER(_type, _typename)                       \
+  API_DECL_TYPED_PUT_SIGNAL_NBI(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(API_PUT_SIGNAL_NBI_TYPE_HELPER)
+#undef API_PUT_SIGNAL_NBI_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_put8_signal_nbi = pshmem_ctx_put8_signal_nbi

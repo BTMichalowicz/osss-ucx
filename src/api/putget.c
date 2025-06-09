@@ -12,6 +12,7 @@
 #include "shmemc.h"
 
 #include "putget.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_float_put = pshmem_ctx_float_put
@@ -67,30 +68,10 @@
 /**
  * @brief Typed put operations for different data types
  */
-SHMEM_CTX_TYPED_PUT(float, float)
-SHMEM_CTX_TYPED_PUT(double, double)
-SHMEM_CTX_TYPED_PUT(longdouble, long double)
-SHMEM_CTX_TYPED_PUT(char, char)
-SHMEM_CTX_TYPED_PUT(schar, signed char)
-SHMEM_CTX_TYPED_PUT(short, short)
-SHMEM_CTX_TYPED_PUT(int, int)
-SHMEM_CTX_TYPED_PUT(long, long)
-SHMEM_CTX_TYPED_PUT(longlong, long long)
-SHMEM_CTX_TYPED_PUT(uchar, unsigned char)
-SHMEM_CTX_TYPED_PUT(ushort, unsigned short)
-SHMEM_CTX_TYPED_PUT(uint, unsigned int)
-SHMEM_CTX_TYPED_PUT(ulong, unsigned long)
-SHMEM_CTX_TYPED_PUT(ulonglong, unsigned long long)
-SHMEM_CTX_TYPED_PUT(int8, int8_t)
-SHMEM_CTX_TYPED_PUT(int16, int16_t)
-SHMEM_CTX_TYPED_PUT(int32, int32_t)
-SHMEM_CTX_TYPED_PUT(int64, int64_t)
-SHMEM_CTX_TYPED_PUT(uint8, uint8_t)
-SHMEM_CTX_TYPED_PUT(uint16, uint16_t)
-SHMEM_CTX_TYPED_PUT(uint32, uint32_t)
-SHMEM_CTX_TYPED_PUT(uint64, uint64_t)
-SHMEM_CTX_TYPED_PUT(size, size_t)
-SHMEM_CTX_TYPED_PUT(ptrdiff, ptrdiff_t)
+#define PUT_TYPE_HELPER(_type, _typename) SHMEM_CTX_TYPED_PUT(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(PUT_TYPE_HELPER)
+#undef PUT_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_put8 = pshmem_ctx_put8
@@ -178,30 +159,10 @@ SHMEM_CTX_PUTMEM()
 /**
  * @brief Typed put operations for single values
  */
-SHMEM_CTX_TYPED_P(float, float)
-SHMEM_CTX_TYPED_P(double, double)
-SHMEM_CTX_TYPED_P(longdouble, long double)
-SHMEM_CTX_TYPED_P(char, char)
-SHMEM_CTX_TYPED_P(schar, signed char)
-SHMEM_CTX_TYPED_P(short, short)
-SHMEM_CTX_TYPED_P(int, int)
-SHMEM_CTX_TYPED_P(long, long)
-SHMEM_CTX_TYPED_P(longlong, long long)
-SHMEM_CTX_TYPED_P(uchar, unsigned char)
-SHMEM_CTX_TYPED_P(ushort, unsigned short)
-SHMEM_CTX_TYPED_P(uint, unsigned int)
-SHMEM_CTX_TYPED_P(ulong, unsigned long)
-SHMEM_CTX_TYPED_P(ulonglong, unsigned long long)
-SHMEM_CTX_TYPED_P(int8, int8_t)
-SHMEM_CTX_TYPED_P(int16, int16_t)
-SHMEM_CTX_TYPED_P(int32, int32_t)
-SHMEM_CTX_TYPED_P(int64, int64_t)
-SHMEM_CTX_TYPED_P(uint8, uint8_t)
-SHMEM_CTX_TYPED_P(uint16, uint16_t)
-SHMEM_CTX_TYPED_P(uint32, uint32_t)
-SHMEM_CTX_TYPED_P(uint64, uint64_t)
-SHMEM_CTX_TYPED_P(size, size_t)
-SHMEM_CTX_TYPED_P(ptrdiff, ptrdiff_t)
+#define P_TYPE_HELPER(_type, _typename) SHMEM_CTX_TYPED_P(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(P_TYPE_HELPER)
+#undef P_TYPE_HELPER
 
 /**
  * @brief Implementation of strided put operations
@@ -264,30 +225,11 @@ SHMEM_CTX_TYPED_P(ptrdiff, ptrdiff_t)
 /**
  * @brief Typed strided put operations
  */
-SHMEM_CTX_TYPED_IPUT(float, float)
-SHMEM_CTX_TYPED_IPUT(double, double)
-SHMEM_CTX_TYPED_IPUT(longdouble, long double)
-SHMEM_CTX_TYPED_IPUT(char, char)
-SHMEM_CTX_TYPED_IPUT(schar, signed char)
-SHMEM_CTX_TYPED_IPUT(short, short)
-SHMEM_CTX_TYPED_IPUT(int, int)
-SHMEM_CTX_TYPED_IPUT(long, long)
-SHMEM_CTX_TYPED_IPUT(longlong, long long)
-SHMEM_CTX_TYPED_IPUT(uchar, unsigned char)
-SHMEM_CTX_TYPED_IPUT(ushort, unsigned short)
-SHMEM_CTX_TYPED_IPUT(uint, unsigned int)
-SHMEM_CTX_TYPED_IPUT(ulong, unsigned long)
-SHMEM_CTX_TYPED_IPUT(ulonglong, unsigned long long)
-SHMEM_CTX_TYPED_IPUT(int8, int8_t)
-SHMEM_CTX_TYPED_IPUT(int16, int16_t)
-SHMEM_CTX_TYPED_IPUT(int32, int32_t)
-SHMEM_CTX_TYPED_IPUT(int64, int64_t)
-SHMEM_CTX_TYPED_IPUT(uint8, uint8_t)
-SHMEM_CTX_TYPED_IPUT(uint16, uint16_t)
-SHMEM_CTX_TYPED_IPUT(uint32, uint32_t)
-SHMEM_CTX_TYPED_IPUT(uint64, uint64_t)
-SHMEM_CTX_TYPED_IPUT(size, size_t)
-SHMEM_CTX_TYPED_IPUT(ptrdiff, ptrdiff_t)
+#define IPUT_TYPE_HELPER(_type, _typename)                                     \
+  SHMEM_CTX_TYPED_IPUT(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(IPUT_TYPE_HELPER)
+#undef IPUT_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_iput8 = pshmem_ctx_iput8
@@ -365,30 +307,11 @@ SHMEM_CTX_SIZED_IPUT(128)
 /**
  * @brief Non-blocking typed put operations
  */
-SHMEM_CTX_TYPED_PUT_NBI(float, float)
-SHMEM_CTX_TYPED_PUT_NBI(double, double)
-SHMEM_CTX_TYPED_PUT_NBI(longdouble, long double)
-SHMEM_CTX_TYPED_PUT_NBI(char, char)
-SHMEM_CTX_TYPED_PUT_NBI(schar, signed char)
-SHMEM_CTX_TYPED_PUT_NBI(short, short)
-SHMEM_CTX_TYPED_PUT_NBI(int, int)
-SHMEM_CTX_TYPED_PUT_NBI(long, long)
-SHMEM_CTX_TYPED_PUT_NBI(longlong, long long)
-SHMEM_CTX_TYPED_PUT_NBI(uchar, unsigned char)
-SHMEM_CTX_TYPED_PUT_NBI(ushort, unsigned short)
-SHMEM_CTX_TYPED_PUT_NBI(uint, unsigned int)
-SHMEM_CTX_TYPED_PUT_NBI(ulong, unsigned long)
-SHMEM_CTX_TYPED_PUT_NBI(ulonglong, unsigned long long)
-SHMEM_CTX_TYPED_PUT_NBI(int8, int8_t)
-SHMEM_CTX_TYPED_PUT_NBI(int16, int16_t)
-SHMEM_CTX_TYPED_PUT_NBI(int32, int32_t)
-SHMEM_CTX_TYPED_PUT_NBI(int64, int64_t)
-SHMEM_CTX_TYPED_PUT_NBI(uint8, uint8_t)
-SHMEM_CTX_TYPED_PUT_NBI(uint16, uint16_t)
-SHMEM_CTX_TYPED_PUT_NBI(uint32, uint32_t)
-SHMEM_CTX_TYPED_PUT_NBI(uint64, uint64_t)
-SHMEM_CTX_TYPED_PUT_NBI(size, size_t)
-SHMEM_CTX_TYPED_PUT_NBI(ptrdiff, ptrdiff_t)
+#define PUT_NBI_TYPE_HELPER(_type, _typename)                                  \
+  SHMEM_CTX_TYPED_PUT_NBI(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(PUT_NBI_TYPE_HELPER)
+#undef PUT_NBI_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_put8_nbi = pshmem_ctx_put8_nbi
@@ -576,30 +499,11 @@ SHMEM_CTX_PUTMEM_NBI()
 /**
  * @brief Typed put operations
  */
-API_DECL_TYPED_PUT(float, float)
-API_DECL_TYPED_PUT(double, double)
-API_DECL_TYPED_PUT(longdouble, long double)
-API_DECL_TYPED_PUT(schar, signed char)
-API_DECL_TYPED_PUT(char, char)
-API_DECL_TYPED_PUT(short, short)
-API_DECL_TYPED_PUT(int, int)
-API_DECL_TYPED_PUT(long, long)
-API_DECL_TYPED_PUT(longlong, long long)
-API_DECL_TYPED_PUT(uchar, unsigned char)
-API_DECL_TYPED_PUT(ushort, unsigned short)
-API_DECL_TYPED_PUT(uint, unsigned int)
-API_DECL_TYPED_PUT(ulong, unsigned long)
-API_DECL_TYPED_PUT(ulonglong, unsigned long long)
-API_DECL_TYPED_PUT(int8, int8_t)
-API_DECL_TYPED_PUT(int16, int16_t)
-API_DECL_TYPED_PUT(int32, int32_t)
-API_DECL_TYPED_PUT(int64, int64_t)
-API_DECL_TYPED_PUT(uint8, uint8_t)
-API_DECL_TYPED_PUT(uint16, uint16_t)
-API_DECL_TYPED_PUT(uint32, uint32_t)
-API_DECL_TYPED_PUT(uint64, uint64_t)
-API_DECL_TYPED_PUT(size, size_t)
-API_DECL_TYPED_PUT(ptrdiff, ptrdiff_t)
+#define API_PUT_TYPE_HELPER(_type, _typename)                                  \
+  API_DECL_TYPED_PUT(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(API_PUT_TYPE_HELPER)
+#undef API_PUT_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_put8 = pshmem_put8
@@ -711,30 +615,10 @@ API_DECL_PUTMEM()
 /**
  * @brief Typed put operations for single values
  */
-API_DECL_TYPED_P(float, float)
-API_DECL_TYPED_P(double, double)
-API_DECL_TYPED_P(longdouble, long double)
-API_DECL_TYPED_P(schar, signed char)
-API_DECL_TYPED_P(char, char)
-API_DECL_TYPED_P(short, short)
-API_DECL_TYPED_P(int, int)
-API_DECL_TYPED_P(long, long)
-API_DECL_TYPED_P(longlong, long long)
-API_DECL_TYPED_P(uchar, unsigned char)
-API_DECL_TYPED_P(ushort, unsigned short)
-API_DECL_TYPED_P(uint, unsigned int)
-API_DECL_TYPED_P(ulong, unsigned long)
-API_DECL_TYPED_P(ulonglong, unsigned long long)
-API_DECL_TYPED_P(int8, int8_t)
-API_DECL_TYPED_P(int16, int16_t)
-API_DECL_TYPED_P(int32, int32_t)
-API_DECL_TYPED_P(int64, int64_t)
-API_DECL_TYPED_P(uint8, uint8_t)
-API_DECL_TYPED_P(uint16, uint16_t)
-API_DECL_TYPED_P(uint32, uint32_t)
-API_DECL_TYPED_P(uint64, uint64_t)
-API_DECL_TYPED_P(size, size_t)
-API_DECL_TYPED_P(ptrdiff, ptrdiff_t)
+#define API_P_TYPE_HELPER(_type, _typename) API_DECL_TYPED_P(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(API_P_TYPE_HELPER)
+#undef API_P_TYPE_HELPER
 
 /**
  * @brief Get operations
@@ -794,30 +678,10 @@ API_DECL_TYPED_P(ptrdiff, ptrdiff_t)
 /**
  * @brief Typed get operations
  */
-SHMEM_CTX_TYPED_GET(float, float)
-SHMEM_CTX_TYPED_GET(double, double)
-SHMEM_CTX_TYPED_GET(longdouble, long double)
-SHMEM_CTX_TYPED_GET(char, char)
-SHMEM_CTX_TYPED_GET(schar, signed char)
-SHMEM_CTX_TYPED_GET(short, short)
-SHMEM_CTX_TYPED_GET(int, int)
-SHMEM_CTX_TYPED_GET(long, long)
-SHMEM_CTX_TYPED_GET(longlong, long long)
-SHMEM_CTX_TYPED_GET(uchar, unsigned char)
-SHMEM_CTX_TYPED_GET(ushort, unsigned short)
-SHMEM_CTX_TYPED_GET(uint, unsigned int)
-SHMEM_CTX_TYPED_GET(ulong, unsigned long)
-SHMEM_CTX_TYPED_GET(ulonglong, unsigned long long)
-SHMEM_CTX_TYPED_GET(int8, int8_t)
-SHMEM_CTX_TYPED_GET(int16, int16_t)
-SHMEM_CTX_TYPED_GET(int32, int32_t)
-SHMEM_CTX_TYPED_GET(int64, int64_t)
-SHMEM_CTX_TYPED_GET(uint8, uint8_t)
-SHMEM_CTX_TYPED_GET(uint16, uint16_t)
-SHMEM_CTX_TYPED_GET(uint32, uint32_t)
-SHMEM_CTX_TYPED_GET(uint64, uint64_t)
-SHMEM_CTX_TYPED_GET(size, size_t)
-SHMEM_CTX_TYPED_GET(ptrdiff, ptrdiff_t)
+#define GET_TYPE_HELPER(_type, _typename) SHMEM_CTX_TYPED_GET(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(GET_TYPE_HELPER)
+#undef GET_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_get8 = pshmem_ctx_get8
@@ -896,30 +760,10 @@ SHMEM_CTX_GETMEM()
 #define shmem_ctx_ptrdiff_g pshmem_ctx_ptrdiff_g
 #endif /* ENABLE_PSHMEM */
 
-SHMEM_CTX_TYPED_G(float, float)
-SHMEM_CTX_TYPED_G(double, double)
-SHMEM_CTX_TYPED_G(longdouble, long double)
-SHMEM_CTX_TYPED_G(char, char)
-SHMEM_CTX_TYPED_G(schar, signed char)
-SHMEM_CTX_TYPED_G(short, short)
-SHMEM_CTX_TYPED_G(int, int)
-SHMEM_CTX_TYPED_G(long, long)
-SHMEM_CTX_TYPED_G(longlong, long long)
-SHMEM_CTX_TYPED_G(uchar, unsigned char)
-SHMEM_CTX_TYPED_G(ushort, unsigned short)
-SHMEM_CTX_TYPED_G(uint, unsigned int)
-SHMEM_CTX_TYPED_G(ulong, unsigned long)
-SHMEM_CTX_TYPED_G(ulonglong, unsigned long long)
-SHMEM_CTX_TYPED_G(int8, int8_t)
-SHMEM_CTX_TYPED_G(int16, int16_t)
-SHMEM_CTX_TYPED_G(int32, int32_t)
-SHMEM_CTX_TYPED_G(int64, int64_t)
-SHMEM_CTX_TYPED_G(uint8, uint8_t)
-SHMEM_CTX_TYPED_G(uint16, uint16_t)
-SHMEM_CTX_TYPED_G(uint32, uint32_t)
-SHMEM_CTX_TYPED_G(uint64, uint64_t)
-SHMEM_CTX_TYPED_G(size, size_t)
-SHMEM_CTX_TYPED_G(ptrdiff, ptrdiff_t)
+#define G_TYPE_HELPER(_type, _typename) SHMEM_CTX_TYPED_G(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(G_TYPE_HELPER)
+#undef G_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_float_iget = pshmem_ctx_float_iget
@@ -972,30 +816,11 @@ SHMEM_CTX_TYPED_G(ptrdiff, ptrdiff_t)
 #define shmem_ctx_ptrdiff_iget pshmem_ctx_ptrdiff_iget
 #endif /* ENABLE_PSHMEM */
 
-SHMEM_CTX_TYPED_IGET(float, float)
-SHMEM_CTX_TYPED_IGET(double, double)
-SHMEM_CTX_TYPED_IGET(longdouble, long double)
-SHMEM_CTX_TYPED_IGET(char, char)
-SHMEM_CTX_TYPED_IGET(schar, signed char)
-SHMEM_CTX_TYPED_IGET(short, short)
-SHMEM_CTX_TYPED_IGET(int, int)
-SHMEM_CTX_TYPED_IGET(long, long)
-SHMEM_CTX_TYPED_IGET(longlong, long long)
-SHMEM_CTX_TYPED_IGET(uchar, unsigned char)
-SHMEM_CTX_TYPED_IGET(ushort, unsigned short)
-SHMEM_CTX_TYPED_IGET(uint, unsigned int)
-SHMEM_CTX_TYPED_IGET(ulong, unsigned long)
-SHMEM_CTX_TYPED_IGET(ulonglong, unsigned long long)
-SHMEM_CTX_TYPED_IGET(int8, int8_t)
-SHMEM_CTX_TYPED_IGET(int16, int16_t)
-SHMEM_CTX_TYPED_IGET(int32, int32_t)
-SHMEM_CTX_TYPED_IGET(int64, int64_t)
-SHMEM_CTX_TYPED_IGET(uint8, uint8_t)
-SHMEM_CTX_TYPED_IGET(uint16, uint16_t)
-SHMEM_CTX_TYPED_IGET(uint32, uint32_t)
-SHMEM_CTX_TYPED_IGET(uint64, uint64_t)
-SHMEM_CTX_TYPED_IGET(size, size_t)
-SHMEM_CTX_TYPED_IGET(ptrdiff, ptrdiff_t)
+#define IGET_TYPE_HELPER(_type, _typename)                                     \
+  SHMEM_CTX_TYPED_IGET(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(IGET_TYPE_HELPER)
+#undef IGET_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_iget8 = pshmem_ctx_iget8
@@ -1067,30 +892,11 @@ SHMEM_CTX_SIZED_IGET(128)
 #define shmem_ctx_ptrdiff_get_nbi pshmem_ctx_ptrdiff_get_nbi
 #endif /* ENABLE_PSHMEM */
 
-SHMEM_CTX_TYPED_GET_NBI(float, float)
-SHMEM_CTX_TYPED_GET_NBI(double, double)
-SHMEM_CTX_TYPED_GET_NBI(longdouble, long double)
-SHMEM_CTX_TYPED_GET_NBI(char, char)
-SHMEM_CTX_TYPED_GET_NBI(schar, signed char)
-SHMEM_CTX_TYPED_GET_NBI(short, short)
-SHMEM_CTX_TYPED_GET_NBI(int, int)
-SHMEM_CTX_TYPED_GET_NBI(long, long)
-SHMEM_CTX_TYPED_GET_NBI(longlong, long long)
-SHMEM_CTX_TYPED_GET_NBI(uchar, unsigned char)
-SHMEM_CTX_TYPED_GET_NBI(ushort, unsigned short)
-SHMEM_CTX_TYPED_GET_NBI(uint, unsigned int)
-SHMEM_CTX_TYPED_GET_NBI(ulong, unsigned long)
-SHMEM_CTX_TYPED_GET_NBI(ulonglong, unsigned long long)
-SHMEM_CTX_TYPED_GET_NBI(int8, int8_t)
-SHMEM_CTX_TYPED_GET_NBI(int16, int16_t)
-SHMEM_CTX_TYPED_GET_NBI(int32, int32_t)
-SHMEM_CTX_TYPED_GET_NBI(int64, int64_t)
-SHMEM_CTX_TYPED_GET_NBI(uint8, uint8_t)
-SHMEM_CTX_TYPED_GET_NBI(uint16, uint16_t)
-SHMEM_CTX_TYPED_GET_NBI(uint32, uint32_t)
-SHMEM_CTX_TYPED_GET_NBI(uint64, uint64_t)
-SHMEM_CTX_TYPED_GET_NBI(size, size_t)
-SHMEM_CTX_TYPED_GET_NBI(ptrdiff, ptrdiff_t)
+#define GET_NBI_TYPE_HELPER(_type, _typename)                                  \
+  SHMEM_CTX_TYPED_GET_NBI(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(GET_NBI_TYPE_HELPER)
+#undef GET_NBI_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_get8_nbi = pshmem_ctx_get8_nbi
@@ -1267,30 +1073,11 @@ SHMEM_CTX_GETMEM_NBI()
 #define shmem_ptrdiff_get_nbi pshmem_ptrdiff_get_nbi
 #endif /* ENABLE_PSHMEM */
 
-API_DECL_TYPED_GET(float, float)
-API_DECL_TYPED_GET(double, double)
-API_DECL_TYPED_GET(longdouble, long double)
-API_DECL_TYPED_GET(schar, signed char)
-API_DECL_TYPED_GET(char, char)
-API_DECL_TYPED_GET(short, short)
-API_DECL_TYPED_GET(int, int)
-API_DECL_TYPED_GET(long, long)
-API_DECL_TYPED_GET(longlong, long long)
-API_DECL_TYPED_GET(uchar, unsigned char)
-API_DECL_TYPED_GET(ushort, unsigned short)
-API_DECL_TYPED_GET(uint, unsigned int)
-API_DECL_TYPED_GET(ulong, unsigned long)
-API_DECL_TYPED_GET(ulonglong, unsigned long long)
-API_DECL_TYPED_GET(int8, int8_t)
-API_DECL_TYPED_GET(int16, int16_t)
-API_DECL_TYPED_GET(int32, int32_t)
-API_DECL_TYPED_GET(int64, int64_t)
-API_DECL_TYPED_GET(uint8, uint8_t)
-API_DECL_TYPED_GET(uint16, uint16_t)
-API_DECL_TYPED_GET(uint32, uint32_t)
-API_DECL_TYPED_GET(uint64, uint64_t)
-API_DECL_TYPED_GET(size, size_t)
-API_DECL_TYPED_GET(ptrdiff, ptrdiff_t)
+#define API_GET_TYPE_HELPER(_type, _typename)                                  \
+  API_DECL_TYPED_GET(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(API_GET_TYPE_HELPER)
+#undef API_GET_TYPE_HELPER
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_get8 = pshmem_get8
@@ -1393,27 +1180,7 @@ API_DECL_GETMEM()
 #define shmem_ptrdiff_g pshmem_ptrdiff_g
 #endif /* ENABLE_PSHMEM */
 
-API_DECL_TYPED_G(float, float)
-API_DECL_TYPED_G(double, double)
-API_DECL_TYPED_G(longdouble, long double)
-API_DECL_TYPED_G(schar, signed char)
-API_DECL_TYPED_G(char, char)
-API_DECL_TYPED_G(short, short)
-API_DECL_TYPED_G(int, int)
-API_DECL_TYPED_G(long, long)
-API_DECL_TYPED_G(longlong, long long)
-API_DECL_TYPED_G(uchar, unsigned char)
-API_DECL_TYPED_G(ushort, unsigned short)
-API_DECL_TYPED_G(uint, unsigned int)
-API_DECL_TYPED_G(ulong, unsigned long)
-API_DECL_TYPED_G(ulonglong, unsigned long long)
-API_DECL_TYPED_G(int8, int8_t)
-API_DECL_TYPED_G(int16, int16_t)
-API_DECL_TYPED_G(int32, int32_t)
-API_DECL_TYPED_G(int64, int64_t)
-API_DECL_TYPED_G(uint8, uint8_t)
-API_DECL_TYPED_G(uint16, uint16_t)
-API_DECL_TYPED_G(uint32, uint32_t)
-API_DECL_TYPED_G(uint64, uint64_t)
-API_DECL_TYPED_G(size, size_t)
-API_DECL_TYPED_G(ptrdiff, ptrdiff_t)
+#define API_G_TYPE_HELPER(_type, _typename) API_DECL_TYPED_G(_typename, _type)
+
+SHMEM_STANDARD_RMA_TYPE_TABLE(API_G_TYPE_HELPER)
+#undef API_G_TYPE_HELPER

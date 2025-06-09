@@ -119,14 +119,14 @@ typedef struct shmemc_team {
   5 /* For barrier/sync, broadcast, collect/fcollect, alltoall/alltoalls,      \
        reductions */
 
-// clang-format off
+  // clang-format off
 /* Symbolic constants for pSync buffer indices */
 #define SHMEMC_PSYNC_BARRIER    0  /* team sync/barrier operations */
 #define SHMEMC_PSYNC_BROADCAST  1  /* broadcast operations */
 #define SHMEMC_PSYNC_COLLECT    2  /* collect/fcollect operations */
 #define SHMEMC_PSYNC_ALLTOALL   3  /* alltoall/alltoalls operations */
 #define SHMEMC_PSYNC_REDUCE     4  /* reduction operations */
-// clang-format on
+  // clang-format on
 
   long *pSyncs[SHMEMC_NUM_PSYNCS];
 } shmemc_team_t;

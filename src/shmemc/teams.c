@@ -223,8 +223,9 @@ long *shmemc_team_get_psync(shmemc_team_h th, int psync_type) {
   }
 
   if (psync_type < 0 || psync_type >= SHMEMC_NUM_PSYNCS) {
-    shmemu_warn("shmemc_team_get_psync: Invalid pSync type %d (valid range: 0-%d)",
-                psync_type, SHMEMC_NUM_PSYNCS - 1);
+    shmemu_warn(
+        "shmemc_team_get_psync: Invalid pSync type %d (valid range: 0-%d)",
+        psync_type, SHMEMC_NUM_PSYNCS - 1);
     return NULL;
   }
 
