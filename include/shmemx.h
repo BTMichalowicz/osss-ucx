@@ -326,16 +326,31 @@ int shmemx_query_interoperability(int property);
  */
 
 void shmemx_sec_init(void);
-/* Don't think we need this? */
 
+
+/** @brief A structure for metadata for commanding the peer process do perform
+ * encryption or decryption
+ */
+
+typedef enum encrypted_op {
+    PUT = 0,
+    GET,
+}encrypted_op_t;
+
+
+/* TODO: Do we send the below in the encrypted section? alongside buffer
+ * addresses and the like?  */
 
 typedef struct shmem_secure_attr {
+    int src_pe;
+    int dst_pe;
     size_t plaintext_size;
     size_t encrypted_size;
-    void *plaintext_buf;
-    void *encrypted_buf;
+    uintptr_t plaintext_buf_addr;
+    uintptr_t encrypted_buf_addr;
+    encrypted_op_t encrypted_op;
 
-} shmem_secure_attr_t ; /* Not sure if we need this yet */
+} shmem_secure_attr_t;
 
 
     
