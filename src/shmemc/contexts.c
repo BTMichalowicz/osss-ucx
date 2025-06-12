@@ -23,11 +23,6 @@
 
 #include <stdlib.h>
 
-#if ENABLE_SHMEM_ENCRYPTION
-#include "shmemx.h"
-#include "shmem_enc.h"
-#endif
-
 /**
  * @brief Manage free list of re-usable contexts
  */

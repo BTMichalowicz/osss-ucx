@@ -624,7 +624,7 @@ shmemc_context_h *shmemc_alloc_contexts(shmemc_team_h th);
 int shmemc_context_create(shmemc_team_h th, long options,
                           shmemc_context_h *ctxp);
 void shmemc_context_destroy(shmem_ctx_t ctx);
-unsigned long shmemc_context_id(shmem_ctx_t ctx);
+size_t shmemc_context_id(shmem_ctx_t ctx);
 
 /*
  * Special handling for default context
@@ -710,7 +710,7 @@ inline static int shmemc_n_pes() { return shmemc_team_n_pes(SHMEM_TEAM_WORLD); }
 #if ENABLE_SHMEM_ENCRYPTION
 #define shmemc_put(...) \
     do { \
-        if (SHMEM_ENCRYPT) { \
+        if (proc.env.shmem_encryption) { \
             shmemc_ctx_put(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
         }else {                 \
             shmemx_secure_put(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
@@ -719,7 +719,7 @@ inline static int shmemc_n_pes() { return shmemc_team_n_pes(SHMEM_TEAM_WORLD); }
 
 #define shmemc_get(...) \
     do { \
-        if (SHMEM_ENCRYPT) { \
+        if (proc.env.shmem_encryption) { \
             shmemc_ctx_get(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
         }else {                 \
             shmemx_secure_get(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
@@ -728,7 +728,7 @@ inline static int shmemc_n_pes() { return shmemc_team_n_pes(SHMEM_TEAM_WORLD); }
 
 #define shmemc_put_nbi(...) \
      do { \
-        if (SHMEM_ENCRYPT) { \
+        if (proc.env.shmem_encryption) { \
             shmemc_ctx_put_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
         }else {                 \
             shmemx_secure_put_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
@@ -738,7 +738,7 @@ inline static int shmemc_n_pes() { return shmemc_team_n_pes(SHMEM_TEAM_WORLD); }
 
 #define shmemc_get_nbi(...) \
     do { \
-        if (SHMEM_ENCRYPT) { \
+        if (proc.env.shmem_encryption) { \
             shmemc_ctx_get_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
         }else {                 \
             shmemx_secure_get_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \

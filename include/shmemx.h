@@ -335,7 +335,15 @@ void shmemx_sec_init(void);
 typedef enum encrypted_op {
     PUT = 0,
     GET,
+    NB_PUT,
+    NB_GET,
 }encrypted_op_t;
+
+
+#define DECRYPT_TAG 101
+#define ENCRYPT_TAG 102
+#define NB_ENC_TAG 103
+#define NB_DEC_TAG 104
 
 
 /* TODO: Do we send the below in the encrypted section? alongside buffer
@@ -369,10 +377,6 @@ typedef struct shmem_secure_attr {
  */
 
 
-#define GET_NAME "shmemc_ctx_get"
-#define PUT_NAME "shmemc_ctx_put"
-#define NB_GET_NAME "shmemc_ctx_get_nbi"
-#define NB_PUT_NAME "shmemc_ctx_put_nbi"
 
 int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, shmem_ctx_t shmem_ctx, size_t *cipher_len);
 
@@ -389,7 +393,6 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe);
-
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 

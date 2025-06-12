@@ -139,6 +139,10 @@ void shmemc_env_init(void) {
     proc.env.logging_events = strdup(e); /* free@end */
   }
 
+#if ENABLE_SHMEM_ENCRYPTION
+  proc.env.shmem_encryption = 0;
+#endif /*ENABLE_SHMEM_ENCRYPTION */
+
   /* Initialize all collective variables to NULL */
   proc.env.coll.barrier = NULL;
   proc.env.coll.barrier_all = NULL;

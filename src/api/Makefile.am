@@ -156,6 +156,7 @@ libshmem_la_SOURCES    = $(LIBSHMEM_SOURCES)
 libshmem_la_CFLAGS     = $(AM_CFLAGS)
 if ENABLE_SHMEM_ENCRYPTION
 libshmem_la_CFLAGS	  += -DENABLE_SHMEM_ENCRYPTION
+liballocator_la_CFLAGS += -DENABLE_SHMEM_ENCRYPTION 
 endif # ENABLE_SHMEM_ENCRYPTION
 libshmem_la_CPPFLAGS   = $(all_cppflags)
 libshmem_la_LDFLAGS    = -version-info 0:0:0

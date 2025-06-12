@@ -19,23 +19,10 @@
 
 #include <ucp/api/ucp.h>
 
-#if 0
 #if ENABLE_SHMEM_ENCRYPTION
 #include "shmemx.h"
 #include "shmem_enc.h"
-
-unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
-unsigned char recv_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
-unsigned char nbi_put_ciphertext[NON_BLOCKING_OP_COUNT][NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
-unsigned long long nbput_count = 0;
-
-unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
-unsigned char nbi_get_ciphertext[NON_BLOCKING_OP_COUNT][NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
-unsigned long long nbget_count = 0;
-
-
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-#endif
 
 /*
  * -- helpers ----------------------------------------------------------------
@@ -721,6 +708,17 @@ void shmemc_ctx_put(shmem_ctx_t ctx, void *dest, const void *src, size_t nbytes,
 
   shmemu_assert(s == UCS_OK, MODULE ": put failed (status: %s)",
                 ucs_status_string(s));
+
+
+#if ENABLE_SHMEM_ENCRYPTION
+  if (proc.env.shmem_encryption){
+      unsigned int decryption_flag = 412345;
+      sp = ucp_tag_send_sync_nbx(ep, &decryption_flag, sizeof(unsigned int), DECRYPT_TAG, &prm);
+      s = check_wait_for_request(ch, sp);
+      shmemu_assert(s == UCS_OK, MODULE ": decrypt_send_flag failed (status: %s)",
+              ucs_status_string(s));
+  }
+#endif /* ENABLE_SHMEM_ENCRYPTION */
 }
 
 void shmemc_ctx_get(shmem_ctx_t ctx, void *dest, const void *src, size_t nbytes,
