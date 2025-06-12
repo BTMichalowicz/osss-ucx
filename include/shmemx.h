@@ -310,15 +310,15 @@ int shmemx_query_interoperability(int property);
 
 
 /* Constant items */
-#define MAX_MSG_SIZE (unsigned long)(2<<24) /* 16 MB */
+#define MAX_MSG_SIZE (2<<19) /* 512 KB */
 //const unsigned long long max_msg_size = 2<<27ul;
 #define OFFSET 400
 //const unsigned long long pt2pt_size = max_msg_size + OFFSET;
-#define COLL_OFFSET 4000
+#define COLL_OFFSET 400
 #define GCM_KEY_SIZE 32
 #define AES_TAG_LEN 16
 #define AES_RAND_BYTES 16
-#define NON_BLOCKING_OP_COUNT 8192
+#define NON_BLOCKING_OP_COUNT 1024
 
 /**
  * @brief Initializes the default contexts for encryption based on the default ctx
