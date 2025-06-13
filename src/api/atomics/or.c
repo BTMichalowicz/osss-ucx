@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_uint_atomic_or = pshmem_ctx_uint_atomic_or
@@ -38,13 +39,12 @@
  * performs a bitwise OR between the target and value without the possibility
  * of another process updating the target during the operation.
  */
-SHMEM_CTX_TYPE_BITWISE(or, uint, unsigned int)
-SHMEM_CTX_TYPE_BITWISE(or, ulong, unsigned long)
-SHMEM_CTX_TYPE_BITWISE(or, ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_BITWISE(or, int32, int32_t)
-SHMEM_CTX_TYPE_BITWISE(or, int64, int64_t)
-SHMEM_CTX_TYPE_BITWISE(or, uint32, uint32_t)
-SHMEM_CTX_TYPE_BITWISE(or, uint64, uint64_t)
+
+/* Define context-based atomic OR operations using the type table */
+#define SHMEM_CTX_TYPE_BITWISE_HELPER(_type, _typename)                        \
+  SHMEM_CTX_TYPE_BITWISE(or, _typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_BITWISE_HELPER)
+#undef SHMEM_CTX_TYPE_BITWISE_HELPER
 
 /**
  * @brief Defines the API for atomic OR operations
@@ -53,10 +53,8 @@ SHMEM_CTX_TYPE_BITWISE(or, uint64, uint64_t)
  * for different integer types. Each function performs an OR operation
  * without a context.
  */
-API_DEF_VOID_AMO2(or, uint, unsigned int)
-API_DEF_VOID_AMO2(or, ulong, unsigned long)
-API_DEF_VOID_AMO2(or, ulonglong, unsigned long long)
-API_DEF_VOID_AMO2(or, int32, int32_t)
-API_DEF_VOID_AMO2(or, int64, int64_t)
-API_DEF_VOID_AMO2(or, uint32, uint32_t)
-API_DEF_VOID_AMO2(or, uint64, uint64_t)
+/* Define non-context atomic OR operations using the type table */
+#define API_DEF_VOID_AMO2_HELPER(_type, _typename)                             \
+  API_DEF_VOID_AMO2(or, _typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(API_DEF_VOID_AMO2_HELPER)
+#undef API_DEF_VOID_AMO2_HELPER

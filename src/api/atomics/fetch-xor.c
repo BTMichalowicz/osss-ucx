@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_uint_atomic_fetch_xor = pshmem_ctx_uint_atomic_fetch_xor
@@ -45,18 +46,15 @@
  * fetch-and-xor performs an XOR operation between the target and value
  * and returns the value that had previously been at the target address.
  */
-SHMEM_CTX_TYPE_FETCH_BITWISE(xor, uint, unsigned int)
-SHMEM_CTX_TYPE_FETCH_BITWISE(xor, ulong, unsigned long)
-SHMEM_CTX_TYPE_FETCH_BITWISE(xor, ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_FETCH_BITWISE(xor, int32, int32_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE(xor, int64, int64_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE(xor, uint32, uint32_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE(xor, uint64, uint64_t)
 
-API_DEF_AMO2(fetch_xor, uint, unsigned int)
-API_DEF_AMO2(fetch_xor, ulong, unsigned long)
-API_DEF_AMO2(fetch_xor, ulonglong, unsigned long long)
-API_DEF_AMO2(fetch_xor, int32, int32_t)
-API_DEF_AMO2(fetch_xor, int64, int64_t)
-API_DEF_AMO2(fetch_xor, uint32, uint32_t)
-API_DEF_AMO2(fetch_xor, uint64, uint64_t)
+/* Define context-based atomic fetch-xor operations using the type table */
+#define SHMEM_CTX_TYPE_FETCH_BITWISE_HELPER(_type, _typename)                  \
+  SHMEM_CTX_TYPE_FETCH_BITWISE(xor, _typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_FETCH_BITWISE_HELPER)
+#undef SHMEM_CTX_TYPE_FETCH_BITWISE_HELPER
+
+/* Define non-context atomic fetch-xor operations using the type table */
+#define API_DEF_AMO2_HELPER(_type, _typename)                                  \
+  API_DEF_AMO2(fetch_xor, _typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(API_DEF_AMO2_HELPER)
+#undef API_DEF_AMO2_HELPER

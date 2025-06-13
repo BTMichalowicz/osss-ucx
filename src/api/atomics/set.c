@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_int_atomic_set = pshmem_ctx_int_atomic_set
@@ -62,20 +63,11 @@
                                           &value, sizeof(value), pe));         \
   }
 
-SHMEM_CTX_TYPE_SET(float, float)
-SHMEM_CTX_TYPE_SET(double, double)
-SHMEM_CTX_TYPE_SET(int, int)
-SHMEM_CTX_TYPE_SET(long, long)
-SHMEM_CTX_TYPE_SET(longlong, long long)
-SHMEM_CTX_TYPE_SET(uint, unsigned int)
-SHMEM_CTX_TYPE_SET(ulong, unsigned long)
-SHMEM_CTX_TYPE_SET(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_SET(int32, int32_t)
-SHMEM_CTX_TYPE_SET(int64, int64_t)
-SHMEM_CTX_TYPE_SET(uint32, uint32_t)
-SHMEM_CTX_TYPE_SET(uint64, uint64_t)
-SHMEM_CTX_TYPE_SET(size, size_t)
-SHMEM_CTX_TYPE_SET(ptrdiff, ptrdiff_t)
+/* Define context-based atomic set operations using the type table */
+#define SHMEM_CTX_TYPE_SET_HELPER(_type, _typename)                            \
+  SHMEM_CTX_TYPE_SET(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_SET_HELPER)
+#undef SHMEM_CTX_TYPE_SET_HELPER
 
 /**
  * @brief Defines the API for atomic set operations
@@ -84,17 +76,8 @@ SHMEM_CTX_TYPE_SET(ptrdiff, ptrdiff_t)
  * for different types. Each function performs a set operation without a
  * context.
  */
-API_DEF_VOID_AMO2(set, float, float)
-API_DEF_VOID_AMO2(set, double, double)
-API_DEF_VOID_AMO2(set, int, int)
-API_DEF_VOID_AMO2(set, long, long)
-API_DEF_VOID_AMO2(set, longlong, long long)
-API_DEF_VOID_AMO2(set, uint, unsigned int)
-API_DEF_VOID_AMO2(set, ulong, unsigned long)
-API_DEF_VOID_AMO2(set, ulonglong, unsigned long long)
-API_DEF_VOID_AMO2(set, int32, int32_t)
-API_DEF_VOID_AMO2(set, int64, int64_t)
-API_DEF_VOID_AMO2(set, uint32, uint32_t)
-API_DEF_VOID_AMO2(set, uint64, uint64_t)
-API_DEF_VOID_AMO2(set, size, size_t)
-API_DEF_VOID_AMO2(set, ptrdiff, ptrdiff_t)
+/* Define non-context atomic set operations using the type table */
+#define API_DEF_VOID_AMO2_HELPER(_type, _typename)                             \
+  API_DEF_VOID_AMO2(set, _typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(API_DEF_VOID_AMO2_HELPER)
+#undef API_DEF_VOID_AMO2_HELPER

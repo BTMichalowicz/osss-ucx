@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_int_atomic_compare_swap = pshmem_int_atomic_compare_swap
@@ -66,28 +67,15 @@
     return v;                                                                  \
   }
 
-SHMEM_CTX_TYPE_CSWAP(int, int)
-SHMEM_CTX_TYPE_CSWAP(long, long)
-SHMEM_CTX_TYPE_CSWAP(longlong, long long)
-SHMEM_CTX_TYPE_CSWAP(uint, unsigned int)
-SHMEM_CTX_TYPE_CSWAP(ulong, unsigned long)
-SHMEM_CTX_TYPE_CSWAP(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_CSWAP(int32, int32_t)
-SHMEM_CTX_TYPE_CSWAP(int64, int64_t)
-SHMEM_CTX_TYPE_CSWAP(uint32, uint32_t)
-SHMEM_CTX_TYPE_CSWAP(uint64, uint64_t)
-SHMEM_CTX_TYPE_CSWAP(size, size_t)
-SHMEM_CTX_TYPE_CSWAP(ptrdiff, ptrdiff_t)
+/* Define context-based atomic compare-and-swap operations using the type table
+ */
+#define SHMEM_CTX_TYPE_CSWAP_HELPER(_type, _typename)                          \
+  SHMEM_CTX_TYPE_CSWAP(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_CSWAP_HELPER)
+#undef SHMEM_CTX_TYPE_CSWAP_HELPER
 
-API_DEF_AMO3(compare_swap, int, int)
-API_DEF_AMO3(compare_swap, long, long)
-API_DEF_AMO3(compare_swap, longlong, long long)
-API_DEF_AMO3(compare_swap, uint, unsigned int)
-API_DEF_AMO3(compare_swap, ulong, unsigned long)
-API_DEF_AMO3(compare_swap, ulonglong, unsigned long long)
-API_DEF_AMO3(compare_swap, int32, int32_t)
-API_DEF_AMO3(compare_swap, int64, int64_t)
-API_DEF_AMO3(compare_swap, uint32, uint32_t)
-API_DEF_AMO3(compare_swap, uint64, uint64_t)
-API_DEF_AMO3(compare_swap, size, size_t)
-API_DEF_AMO3(compare_swap, ptrdiff, ptrdiff_t)
+/* Define non-context atomic compare-and-swap operations using the type table */
+#define API_DEF_AMO3_HELPER(_type, _typename)                                  \
+  API_DEF_AMO3(compare_swap, _typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(API_DEF_AMO3_HELPER)
+#undef API_DEF_AMO3_HELPER

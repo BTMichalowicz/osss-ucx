@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_int_atomic_add = pshmem_ctx_int_atomic_add
@@ -44,42 +45,26 @@
 /**
  * @brief Macro to define atomic add operations for different types
  *
- * @param _name Type name string
+ * @param _typename Type name string
  * @param _type Data type
  *
  * Defines a function that atomically adds a value to a remote variable
  */
-#define SHMEM_CTX_TYPE_ADD(_name, _type)                                       \
-  void shmem_ctx_##_name##_atomic_add(shmem_ctx_t ctx, _type *target,          \
-                                      _type value, int pe) {                   \
+#define SHMEM_CTX_TYPE_ADD(_typename, _type)                                   \
+  void shmem_ctx_##_typename##_atomic_add(shmem_ctx_t ctx, _type *target,      \
+                                          _type value, int pe) {               \
     SHMEMT_MUTEX_NOPROTECT(                                                    \
         shmemc_ctx_add(ctx, target, &value, sizeof(value), pe));               \
   }
 
 /* Define atomic add operations for different types */
-SHMEM_CTX_TYPE_ADD(int, int)
-SHMEM_CTX_TYPE_ADD(long, long)
-SHMEM_CTX_TYPE_ADD(longlong, long long)
-SHMEM_CTX_TYPE_ADD(uint, unsigned int)
-SHMEM_CTX_TYPE_ADD(ulong, unsigned long)
-SHMEM_CTX_TYPE_ADD(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_ADD(int32, int32_t)
-SHMEM_CTX_TYPE_ADD(int64, int64_t)
-SHMEM_CTX_TYPE_ADD(uint32, uint32_t)
-SHMEM_CTX_TYPE_ADD(uint64, uint64_t)
-SHMEM_CTX_TYPE_ADD(size, size_t)
-SHMEM_CTX_TYPE_ADD(ptrdiff, ptrdiff_t)
+#define SHMEM_CTX_TYPE_ADD_HELPER(_type, _typename)                            \
+  SHMEM_CTX_TYPE_ADD(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_ADD_HELPER)
+#undef SHMEM_CTX_TYPE_ADD_HELPER
 
 /* Define non-context atomic add operations */
-API_DEF_VOID_AMO2(add, int, int)
-API_DEF_VOID_AMO2(add, long, long)
-API_DEF_VOID_AMO2(add, longlong, long long)
-API_DEF_VOID_AMO2(add, uint, unsigned int)
-API_DEF_VOID_AMO2(add, ulong, unsigned long)
-API_DEF_VOID_AMO2(add, ulonglong, unsigned long long)
-API_DEF_VOID_AMO2(add, int32, int32_t)
-API_DEF_VOID_AMO2(add, int64, int64_t)
-API_DEF_VOID_AMO2(add, uint32, uint32_t)
-API_DEF_VOID_AMO2(add, uint64, uint64_t)
-API_DEF_VOID_AMO2(add, size, size_t)
-API_DEF_VOID_AMO2(add, ptrdiff, ptrdiff_t)
+#define API_DEF_VOID_AMO2_HELPER(_type, _typename)                             \
+  API_DEF_VOID_AMO2(add, _typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(API_DEF_VOID_AMO2_HELPER)
+#undef API_DEF_VOID_AMO2_HELPER

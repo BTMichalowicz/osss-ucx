@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_int_atomic_inc = pshmem_ctx_int_atomic_inc
@@ -60,18 +61,11 @@
         shmemc_ctx_add(ctx, target, &one, sizeof(one), pe));                   \
   }
 
-SHMEM_CTX_TYPE_INC(int, int)
-SHMEM_CTX_TYPE_INC(long, long)
-SHMEM_CTX_TYPE_INC(longlong, long long)
-SHMEM_CTX_TYPE_INC(uint, unsigned int)
-SHMEM_CTX_TYPE_INC(ulong, unsigned long)
-SHMEM_CTX_TYPE_INC(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_INC(int32, int32_t)
-SHMEM_CTX_TYPE_INC(int64, int64_t)
-SHMEM_CTX_TYPE_INC(uint32, uint32_t)
-SHMEM_CTX_TYPE_INC(uint64, uint64_t)
-SHMEM_CTX_TYPE_INC(size, size_t)
-SHMEM_CTX_TYPE_INC(ptrdiff, ptrdiff_t)
+/* Define context-based atomic increment operations using the type table */
+#define SHMEM_CTX_TYPE_INC_HELPER(_type, _typename)                            \
+  SHMEM_CTX_TYPE_INC(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_INC_HELPER)
+#undef SHMEM_CTX_TYPE_INC_HELPER
 
 /**
  * @brief Defines the API for atomic increment operations
@@ -80,15 +74,8 @@ SHMEM_CTX_TYPE_INC(ptrdiff, ptrdiff_t)
  * for different integer types. Each function performs an increment operation
  * without a context.
  */
-API_DEF_VOID_AMO1(inc, int, int)
-API_DEF_VOID_AMO1(inc, long, long)
-API_DEF_VOID_AMO1(inc, longlong, long long)
-API_DEF_VOID_AMO1(inc, uint, unsigned int)
-API_DEF_VOID_AMO1(inc, ulong, unsigned long)
-API_DEF_VOID_AMO1(inc, ulonglong, unsigned long long)
-API_DEF_VOID_AMO1(inc, int32, int32_t)
-API_DEF_VOID_AMO1(inc, int64, int64_t)
-API_DEF_VOID_AMO1(inc, uint32, uint32_t)
-API_DEF_VOID_AMO1(inc, uint64, uint64_t)
-API_DEF_VOID_AMO1(inc, size, size_t)
-API_DEF_VOID_AMO1(inc, ptrdiff, ptrdiff_t)
+/* Define non-context atomic increment operations using the type table */
+#define API_DEF_VOID_AMO1_HELPER(_type, _typename)                             \
+  API_DEF_VOID_AMO1(inc, _typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(API_DEF_VOID_AMO1_HELPER)
+#undef API_DEF_VOID_AMO1_HELPER
