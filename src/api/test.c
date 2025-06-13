@@ -99,10 +99,13 @@
   }
 
 SHMEM_TYPE_TEST(short, short, 16)
+SHMEM_TYPE_TEST(ushort, unsigned short, 16)
+
+// TODO: it would be lovely if we could use the type table
+//       here but I do not know how we the size of the type
 SHMEM_TYPE_TEST(int, int, 32)
 SHMEM_TYPE_TEST(long, long, 64)
 SHMEM_TYPE_TEST(longlong, long long, 64)
-SHMEM_TYPE_TEST(ushort, unsigned short, 16)
 SHMEM_TYPE_TEST(uint, unsigned int, 32)
 SHMEM_TYPE_TEST(ulong, unsigned long, 64)
 SHMEM_TYPE_TEST(ulonglong, unsigned long long, 64)
@@ -112,3 +115,5 @@ SHMEM_TYPE_TEST(uint32, uint32_t, 32)
 SHMEM_TYPE_TEST(uint64, uint64_t, 64)
 SHMEM_TYPE_TEST(size, size_t, 64)
 SHMEM_TYPE_TEST(ptrdiff, ptrdiff_t, 64)
+
+

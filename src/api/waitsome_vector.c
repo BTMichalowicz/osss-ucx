@@ -128,6 +128,8 @@
     });                                                                        \
   }
 
+// TODO: it would be lovely if we could use the type table
+//       here but I do not know how we the size of the type
 SHMEM_TYPE_WAIT_UNTIL_SOME_VECTOR(short, short, 16)
 SHMEM_TYPE_WAIT_UNTIL_SOME_VECTOR(int, int, 32)
 SHMEM_TYPE_WAIT_UNTIL_SOME_VECTOR(long, long, 64)
