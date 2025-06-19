@@ -13,7 +13,36 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <pmix.h>
 
+static volatile int active = -1;
+
+
+static const pmix_status_t ENC_DEC_SUCCESS = PMIX_SUCCESS;
+
+void enc_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
+        const pmix_proc_t *source, pmix_info_t info[],
+        size_t ninfo, pmix_info_t results[],
+        size_t nresults,
+        pmix_event_notification_cbfunc_fn_t cbfunc){
+
+    NO_WARN_UNUSED(cbfunc);
+    NO_WARN_UNUSED(evhdlr_registration_id);
+    NO_WARN_UNUSED(status);
+
+}
+
+
+static void enc_notif_callbk(pmix_status_t status, size_t evhandler_ref, void *cbdata){
+    volatile int *act = (volatile int *)cbdata;
+
+    NO_WARN_UNUSED(status);
+    NO_WARN_UNUSED(evhandler_ref);
+
+    shmemu_assert(status == PMIX_SUCCESS,
+            "shmem_enc_init_cb can't register event for encryption");
+    *act = status;
+}
 
 const unsigned char gcm_key[GCM_KEY_SIZE] = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','a','b','c','d','e','f'};
 //unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
@@ -70,6 +99,24 @@ void shmemx_sec_init(){
     }
     nbi_put_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT);
     nbi_get_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT);
+
+    pmix_status_t sp = ENC_DEC_SUCCESS;
+    active = -1;
+
+    PMIx_Register_event_handler(&sp, 1, NULL, 0, enc_notif_fn,
+            enc_notif_callbk, (void *)&active);
+    while(active == -1){}
+
+    shmemu_assert(active == 0, "shmem_enc_init: PMIx_enc_handler reg failed");
+
+//   active = -1;
+
+//    PMIx_Register_event_handler(&sp, NULL, 0, dec_notif_fn,
+//            enc_notif_callbk, (void *)&active);
+//    while(active == -1){}
+
+//    shmemu_assert(active == 0, "shmem_enc_init: PMIx_dec_handler reg failed");
+
     return;
 }
 
@@ -225,6 +272,5 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
     free(blocking_get_ciphertext);
 
 }
-
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */

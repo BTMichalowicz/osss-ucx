@@ -713,13 +713,44 @@ void shmemc_ctx_put(shmem_ctx_t ctx, void *dest, const void *src, size_t nbytes,
 #if ENABLE_SHMEM_ENCRYPTION
   if (proc.env.shmem_encryption){
       unsigned int decryption_flag = 412345;
-      sp = ucp_tag_send_sync_nbx(ep, &decryption_flag, sizeof(unsigned int), DECRYPT_TAG, &prm);
+      sp = ucp_tag_send_nbx(ep, &decryption_flag, sizeof(unsigned int), DECRYPT_TAG, &prm);
       s = check_wait_for_request(ch, sp);
       shmemu_assert(s == UCS_OK, MODULE ": decrypt_send_flag failed (status: %s)",
               ucs_status_string(s));
   }
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 }
+
+#if ENABLE_SHMEM_ENCRYPTION
+/* TODO: Where would this get called??? */
+void decrypt_time(shmem_ctx_t ctx, void *dest, const void *src, size_t nbytes,
+                    int pe){
+
+    if (proc.env.shmem_encryption){
+
+        unsigned int decryption_flag = 0;
+        shmemc_context_h ch = (shmemc_context_h)ctx;
+        uint64_t r_dest;  /* address on other PE */
+        ucp_rkey_h r_key; /* rkey for remote address */
+        ucp_ep_h ep;
+#if defined(HAVE_UCP_PUT_NBX) || defined(HAVE_UCP_PUT_NB)
+        ucs_status_ptr_t sp;
+#endif /* HAVE_UCP_PUT_NBX || HAVE_UCP_PUT_NB */
+        ucs_status_t s;
+
+        ucp_worker_h recv_worker = NULL;
+
+        get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
+        ep = lookup_ucp_ep(ch, pe);
+        const ucp_request_param_t prm = {.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK,
+            .cb.send = noop_callbackx};
+        
+       // sp = ucp_tag_recv_nbx(worker, dest, nbytes, 
+
+    }
+}
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 
 void shmemc_ctx_get(shmem_ctx_t ctx, void *dest, const void *src, size_t nbytes,
                     int pe) {

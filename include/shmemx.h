@@ -14,9 +14,14 @@
 
 #include <shmem.h>
 
+#if ENABLE_SHMEM_ENCRYPTION
+#include <pmix.h>
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
 
 /**
  * @defgroup shmemx_experimental OpenSHMEM Experimental Extensions
@@ -320,6 +325,7 @@ int shmemx_query_interoperability(int property);
 #define AES_RAND_BYTES 16
 #define NON_BLOCKING_OP_COUNT 1024
 
+
 /**
  * @brief Initializes the default contexts for encryption based on the default ctx
  * @return void return type, or crash
@@ -360,6 +366,12 @@ typedef struct shmem_secure_attr {
 
 } shmem_secure_attr_t;
 
+
+void enc_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
+        const pmix_proc_t *source,  pmix_info_t info[],
+        size_t ninfo, pmix_info_t results[],
+        size_t nresults,
+        pmix_event_notification_cbfunc_fn_t cbfunc);
 
     
 
