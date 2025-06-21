@@ -71,21 +71,6 @@
  * - shmem_atomic_fetch_inc_nbi()
  * - shmem_atomic_fetch_add_nbi()
  *
- * - shmem_wait_until() (FIXME: also need `short` and `ushort`, which are
- * deprecated)
- * - shmem_wait_until_all()
- * - shmem_wait_until_any()
- * - shmem_wait_until_some()
- * - shmem_wait_until_all_vector()
- * - shmem_wait_until_any_vector()
- * - shmem_wait_until_some_vector()
- * - shmem_test() (FIXME: also need `short` and `ushort`, which are deprecated)
- * - shmmem_test_all()
- * - shmem_test_any()
- * - shmem_test_some()
- * - shmem_test_all_vector()
- * - shmem_test_any_vector()
- * - shmem_test_some_vector()
  *
  * NOTE: Only canonical C types are included below to avoid _Generic
  * duplicate/compatible type errors.
@@ -276,6 +261,44 @@
   X(long double, longdouble)                                                   \
   X(double _Complex, complexd)                                                 \
   X(float _Complex, complexf)
+
+/*
+ * Pt2pt synchronization types. While specification states
+ * these should be the standard AMO types, we support several
+ * depreciated ones, so we keep them in a separate table.
+ *
+ * Used by:
+ * - shmem_wait_until() (FIXME: also need `short` and `ushort`, which are
+ * deprecated)
+ * - shmem_wait_until_all()
+ * - shmem_wait_until_any()
+ * - shmem_wait_until_some()
+ * - shmem_wait_until_all_vector()
+ * - shmem_wait_until_any_vector()
+ * - shmem_wait_until_some_vector()
+ * - shmem_test() (FIXME: also need `short` and `ushort`, which are deprecated)
+ * - shmem_test_all()
+ * - shmem_test_any()
+ * - shmem_test_some()
+ * - shmem_test_all_vector()
+ * - shmem_test_any_vector()
+ * - shmem_test_some_vector()
+ */
+#define C11_SHMEM_PT2PT_SYNC_TYPE_TABLE(X)                                     \
+  X(short, short)                                                              \
+  X(int, int)                                                                  \
+  X(long, long)                                                                \
+  X(long long, longlong)                                                       \
+  X(int32_t, int32)                                                            \
+  X(int64_t, int64)                                                            \
+  X(unsigned short, ushort)                                                    \
+  X(unsigned int, uint)                                                        \
+  X(unsigned long, ulong)                                                      \
+  X(unsigned long long, ulonglong)                                             \
+  X(uint32_t, uint32)                                                          \
+  X(uint64_t, uint64)                                                          \
+  X(size_t, size)                                                              \
+  X(ptrdiff_t, ptrdiff)                                                        \
 
 /* Preprocesser hack used for implementation of typed routines
  * that need the operand size.
