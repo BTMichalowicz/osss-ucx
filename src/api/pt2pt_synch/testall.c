@@ -13,6 +13,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#include <shmem/generics.h>
 #include "shmem_mutex.h"
 #include "module.h"
 #include "shmemu.h"
@@ -112,19 +113,11 @@
     });                                                                        \
   }
 
-// TODO: it would be lovely if we could use the type table
-//       here but I do not know how we the size of the type
-SHMEM_TYPE_TEST_ALL(short, short, 16)
-SHMEM_TYPE_TEST_ALL(int, int, 32)
-SHMEM_TYPE_TEST_ALL(long, long, 64)
-SHMEM_TYPE_TEST_ALL(longlong, long long, 64)
-SHMEM_TYPE_TEST_ALL(ushort, unsigned short, 16)
-SHMEM_TYPE_TEST_ALL(uint, unsigned int, 32)
-SHMEM_TYPE_TEST_ALL(ulong, unsigned long, 64)
-SHMEM_TYPE_TEST_ALL(ulonglong, unsigned long long, 64)
-SHMEM_TYPE_TEST_ALL(int32, int32_t, 32)
-SHMEM_TYPE_TEST_ALL(int64, int64_t, 64)
-SHMEM_TYPE_TEST_ALL(uint32, uint32_t, 32)
-SHMEM_TYPE_TEST_ALL(uint64, uint64_t, 64)
-SHMEM_TYPE_TEST_ALL(size, size_t, 64)
-SHMEM_TYPE_TEST_ALL(ptrdiff, ptrdiff_t, 64)
+#define SHMEM_TYPE_TEST_ALL_HELPER(CTYPE, SHMTYPE) \
+  SHMEM_APPLY(SHMEM_TYPE_TEST_ALL, SHMTYPE, CTYPE, SHMEM_TYPE_BITSOF_##SHMTYPE)
+
+/* shorts are not in the table */
+SHMEM_TYPE_TEST_ALL_HELPER(short, short)
+SHMEM_TYPE_TEST_ALL_HELPER(unsigned short, ushort)
+
+C11_SHMEM_STANDARD_AMO_TYPE_TABLE(SHMEM_TYPE_TEST_ALL_HELPER)

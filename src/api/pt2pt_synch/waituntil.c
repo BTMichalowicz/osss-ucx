@@ -12,6 +12,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#include <shmem/generics.h>
 #include "shmem_mutex.h"
 #include "shmemu.h"
 #include "shmemc.h"
@@ -97,22 +98,14 @@
     });                                                                        \
   }
 
-// TODO: it would be lovely if we could use the type table
-//       here but I do not know how we the size of the type
-SHMEM_TYPE_WAIT_UNTIL(short, short, 16)
-SHMEM_TYPE_WAIT_UNTIL(int, int, 32)
-SHMEM_TYPE_WAIT_UNTIL(long, long, 64)
-SHMEM_TYPE_WAIT_UNTIL(longlong, long long, 64)
-SHMEM_TYPE_WAIT_UNTIL(ushort, unsigned short, 16)
-SHMEM_TYPE_WAIT_UNTIL(uint, unsigned int, 32)
-SHMEM_TYPE_WAIT_UNTIL(ulong, unsigned long, 64)
-SHMEM_TYPE_WAIT_UNTIL(ulonglong, unsigned long long, 64)
-SHMEM_TYPE_WAIT_UNTIL(int32, int32_t, 32)
-SHMEM_TYPE_WAIT_UNTIL(int64, int64_t, 64)
-SHMEM_TYPE_WAIT_UNTIL(uint32, uint32_t, 32)
-SHMEM_TYPE_WAIT_UNTIL(uint64, uint64_t, 64)
-SHMEM_TYPE_WAIT_UNTIL(size, size_t, 64)
-SHMEM_TYPE_WAIT_UNTIL(ptrdiff, ptrdiff_t, 64)
+#define SHMEM_TYPE_WAIT_UNTIL_HELPER(CTYPE, SHMTYPE) \
+  SHMEM_APPLY(SHMEM_TYPE_WAIT_UNTIL, SHMTYPE, CTYPE, SHMEM_TYPE_BITSOF_##SHMTYPE)
+
+/* shorts are not in the table */
+SHMEM_TYPE_WAIT_UNTIL_HELPER(short, short)
+SHMEM_TYPE_WAIT_UNTIL_HELPER(unsigned short, ushort)
+
+C11_SHMEM_STANDARD_AMO_TYPE_TABLE(SHMEM_TYPE_WAIT_UNTIL_HELPER)
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_signal_wait_until = pshmem_signal_wait_until
