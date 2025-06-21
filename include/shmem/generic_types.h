@@ -277,6 +277,24 @@
   X(double _Complex, complexd)                                                 \
   X(float _Complex, complexf)
 
+/* Preprocesser hack used for implementation of typed routines
+ * that need the operand size.
+ */
+#define SHMEM_TYPE_BITSOF_short 16
+#define SHMEM_TYPE_BITSOF_ushort 16
+#define SHMEM_TYPE_BITSOF_int 32
+#define SHMEM_TYPE_BITSOF_long 64
+#define SHMEM_TYPE_BITSOF_longlong 64
+#define SHMEM_TYPE_BITSOF_uint 32
+#define SHMEM_TYPE_BITSOF_ulong 64
+#define SHMEM_TYPE_BITSOF_ulonglong 64
+#define SHMEM_TYPE_BITSOF_int32 32
+#define SHMEM_TYPE_BITSOF_int64 64
+#define SHMEM_TYPE_BITSOF_uint32 32
+#define SHMEM_TYPE_BITSOF_uint64 64
+#define SHMEM_TYPE_BITSOF_size 64
+#define SHMEM_TYPE_BITSOF_ptrdiff 64
+
 #endif /* SHMEM_HAS_C11 */
 
 #endif /* _SHMEM_GENERIC_TYPES_H */
