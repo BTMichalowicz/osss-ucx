@@ -13,6 +13,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#include <shmem/generics.h>
 #include "shmem_mutex.h"
 #include "module.h"
 #include "shmemu.h"
@@ -112,19 +113,8 @@
     });                                                                        \
   }
 
-// TODO: it would be lovely if we could use the type table
-//       here but I do not know how we the size of the type
-SHMEM_TYPE_TEST_SOME(short, short, 16)
-SHMEM_TYPE_TEST_SOME(int, int, 32)
-SHMEM_TYPE_TEST_SOME(long, long, 64)
-SHMEM_TYPE_TEST_SOME(longlong, long long, 64)
-SHMEM_TYPE_TEST_SOME(ushort, unsigned short, 16)
-SHMEM_TYPE_TEST_SOME(uint, unsigned int, 32)
-SHMEM_TYPE_TEST_SOME(ulong, unsigned long, 64)
-SHMEM_TYPE_TEST_SOME(ulonglong, unsigned long long, 64)
-SHMEM_TYPE_TEST_SOME(int32, int32_t, 32)
-SHMEM_TYPE_TEST_SOME(int64, int64_t, 64)
-SHMEM_TYPE_TEST_SOME(uint32, uint32_t, 32)
-SHMEM_TYPE_TEST_SOME(uint64, uint64_t, 64)
-SHMEM_TYPE_TEST_SOME(size, size_t, 64)
-SHMEM_TYPE_TEST_SOME(ptrdiff, ptrdiff_t, 64)
+
+#define SHMEM_TYPE_TEST_SOME_HELPER(CTYPE, SHMTYPE) \
+  SHMEM_APPLY(SHMEM_TYPE_TEST_SOME, SHMTYPE, CTYPE, SHMEM_TYPE_BITSOF_##SHMTYPE)
+
+C11_SHMEM_PT2PT_SYNC_TYPE_TABLE(SHMEM_TYPE_TEST_SOME_HELPER)

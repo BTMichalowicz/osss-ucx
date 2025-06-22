@@ -12,6 +12,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#include <shmem/generics.h>
 #include "shmem_mutex.h"
 #include "module.h"
 #include "shmemu.h"
@@ -62,7 +63,7 @@
  * @return Returns 1 if the comparison evaluates to true, 0 if it evaluates to
  * false
  */
-#define SHMEM_TYPE_TEST(_opname, _type, _size)                                 \
+#define SHMEM_TYPE_TEST_INTERNAL(_opname, _type, _size)                                 \
   int shmem_##_opname##_test(_type *ivar, int cmp, _type cmp_value) {          \
     SHMEMT_MUTEX_NOPROTECT(switch (cmp) {                                      \
       case SHMEM_CMP_EQ:                                                       \
@@ -98,22 +99,7 @@
     });                                                                        \
   }
 
-SHMEM_TYPE_TEST(short, short, 16)
-SHMEM_TYPE_TEST(ushort, unsigned short, 16)
+#define SHMEM_TYPE_TEST_HELPER(CTYPE, SHMTYPE) \
+  SHMEM_APPLY(SHMEM_TYPE_TEST_INTERNAL, SHMTYPE, CTYPE, SHMEM_TYPE_BITSOF_##SHMTYPE)
 
-// TODO: it would be lovely if we could use the type table
-//       here but I do not know how we the size of the type
-SHMEM_TYPE_TEST(int, int, 32)
-SHMEM_TYPE_TEST(long, long, 64)
-SHMEM_TYPE_TEST(longlong, long long, 64)
-SHMEM_TYPE_TEST(uint, unsigned int, 32)
-SHMEM_TYPE_TEST(ulong, unsigned long, 64)
-SHMEM_TYPE_TEST(ulonglong, unsigned long long, 64)
-SHMEM_TYPE_TEST(int32, int32_t, 32)
-SHMEM_TYPE_TEST(int64, int64_t, 64)
-SHMEM_TYPE_TEST(uint32, uint32_t, 32)
-SHMEM_TYPE_TEST(uint64, uint64_t, 64)
-SHMEM_TYPE_TEST(size, size_t, 64)
-SHMEM_TYPE_TEST(ptrdiff, ptrdiff_t, 64)
-
-
+C11_SHMEM_PT2PT_SYNC_TYPE_TABLE(SHMEM_TYPE_TEST_HELPER)
