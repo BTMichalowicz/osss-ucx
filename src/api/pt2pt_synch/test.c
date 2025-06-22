@@ -63,7 +63,7 @@
  * @return Returns 1 if the comparison evaluates to true, 0 if it evaluates to
  * false
  */
-#define SHMEM_TYPE_TEST_INTERNAL(_opname, _type, _size)                                 \
+#define SHMEM_TYPE_TEST_INTERNAL(_opname, _type, _size)                        \
   int shmem_##_opname##_test(_type *ivar, int cmp, _type cmp_value) {          \
     SHMEMT_MUTEX_NOPROTECT(switch (cmp) {                                      \
       case SHMEM_CMP_EQ:                                                       \
@@ -99,7 +99,8 @@
     });                                                                        \
   }
 
-#define SHMEM_TYPE_TEST_HELPER(CTYPE, SHMTYPE) \
-  SHMEM_APPLY(SHMEM_TYPE_TEST_INTERNAL, SHMTYPE, CTYPE, SHMEM_TYPE_BITSOF_##SHMTYPE)
+#define SHMEM_TYPE_TEST_HELPER(CTYPE, SHMTYPE)                                 \
+  SHMEM_APPLY(SHMEM_TYPE_TEST_INTERNAL, SHMTYPE, CTYPE,                        \
+              SHMEM_TYPE_BITSOF_##SHMTYPE)
 
 C11_SHMEM_PT2PT_SYNC_TYPE_TABLE(SHMEM_TYPE_TEST_HELPER)

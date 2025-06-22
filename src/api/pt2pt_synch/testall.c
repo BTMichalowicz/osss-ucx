@@ -113,7 +113,7 @@
     });                                                                        \
   }
 
-#define SHMEM_TYPE_TEST_ALL_HELPER(CTYPE, SHMTYPE) \
+#define SHMEM_TYPE_TEST_ALL_HELPER(CTYPE, SHMTYPE)                             \
   SHMEM_APPLY(SHMEM_TYPE_TEST_ALL, SHMTYPE, CTYPE, SHMEM_TYPE_BITSOF_##SHMTYPE)
 
 C11_SHMEM_PT2PT_SYNC_TYPE_TABLE(SHMEM_TYPE_TEST_ALL_HELPER)
