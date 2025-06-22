@@ -1,6 +1,0 @@
-- Update include/pshmem.h with all the new routines
-
-- MAKE SURE NO ROUTINES ARE MISSING ANY TYPES
-
-- Anything need to be done with shmemx?
-
