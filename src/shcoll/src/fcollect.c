@@ -550,8 +550,6 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
  * @param _algo Algorithm name
  * @param type Data type
  * @param _typename Type name string
- *
- * TODO: need a better way of handling the pSync allocation
  */
 #define SHCOLL_FCOLLECT_TYPE_DEFINITION(_algo, type, _typename)                \
   int shcoll_##_typename##_fcollect_##_algo(                                   \
@@ -582,7 +580,6 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
                                                                                \
     /* Ensure all PEs have initialized pSync */                                \
     /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
-    /* TODO: need a better way of handling the pSync allocation */             \
     shmem_team_sync(team_h);                                                   \
                                                                                \
     /* Zero out destination buffer */                                          \
@@ -625,7 +622,6 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_FCOLLECT_TYPES)
 /**
  * @brief Macro to declare fcollectmem implementations for different algorithms
  *
- * TODO: need a better way of handling the pSync allocation
  */
 #define SHCOLL_FCOLLECTMEM_DEFINITION(_algo)                                   \
   int shcoll_fcollectmem_##_algo(shmem_team_t team, void *dest,                \
@@ -655,7 +651,6 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_FCOLLECT_TYPES)
                                                                                \
     /* Ensure all PEs have initialized pSync */                                \
     /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
-    /* TODO: need a better way of handling the pSync allocation */             \
     shmem_team_sync(team_h);                                                   \
                                                                                \
     /* Zero out destination buffer */                                          \

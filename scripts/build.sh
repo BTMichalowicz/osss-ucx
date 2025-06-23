@@ -10,6 +10,11 @@
 # This script will clean the build directory, run autogen, configure, and compile the project.
 #
 
+echo "SWHOME=$SWHOME"
+echo "PMIX_DIR=$PMIX_DIR"
+echo "UCX_DIR=$UCX_DIR"
+echo "OMPI_DIR=$OMPI_DIR"
+
 HLINE="--------------------------------------------"
 pwd=$(pwd)
 
@@ -44,7 +49,7 @@ export SHMEM_LAUNCHER="$OMPI_BIN/mpiexec"
   --prefix=$PREFIX        \
   --with-pmix=$PMIX_DIR   \
   --with-ucx=$UCX_DIR     \
-  --with-heap-size=1G     \
+  --with-heap-size=128M   \
   --enable-debug --enable-pshmem
 
 # ---  Compile

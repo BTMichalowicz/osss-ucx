@@ -539,7 +539,10 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
     long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_BROADCAST);       \
     SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[BROADCAST]");                     \
                                                                                \
-    /* Initialize destination buffer */                                        \
+    /* Ensure all PEs have initialized pSync */                                \
+    /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
+    shmem_team_sync(team_h);                                                   \
+                                                                               \
     int me_as = shmem_team_my_pe(team);                                        \
     if (me_as != PE_root)                                                      \
       memset(dest, 0, nelems * sizeof(_type));                                 \
@@ -599,7 +602,10 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_BROADCAST_TYPES)
     long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_BROADCAST);       \
     SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[BROADCAST]");                     \
                                                                                \
-    /* Initialize destination buffer on root */                                \
+    /* Ensure all PEs have initialized pSync */                                \
+    /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
+    shmem_team_sync(team_h);                                                   \
+                                                                               \
     if (shmem_team_my_pe(team) == PE_root)                                     \
       memcpy(dest, source, nelems);                                            \
                                                                                \

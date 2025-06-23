@@ -329,6 +329,10 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
     long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL);        \
     SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[ALLTOALL]");                      \
                                                                                \
+    /* Ensure all PEs have initialized pSync */                                \
+    /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
+    shmem_team_sync(team_h);                                                   \
+                                                                               \
     /* Perform alltoall using the team's pSync */                              \
     alltoall_helper_##_algo(dest, source, nelems * sizeof(_type), PE_start,    \
                             logPE_stride, PE_size, pSync);                     \
@@ -399,6 +403,10 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_ALLTOALL_TYPES)
     /* Use the pre-allocated pSync buffer from the team structure */           \
     long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL);        \
     SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[ALLTOALL]");                      \
+                                                                               \
+    /* Ensure all PEs have initialized pSync */                                \
+    /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
+    shmem_team_sync(team_h);                                                   \
                                                                                \
     /* Perform alltoall using the team's pSync */                              \
     alltoall_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,      \

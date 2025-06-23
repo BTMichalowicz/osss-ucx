@@ -93,3 +93,4 @@ elif [ "$TEST" == "shmembench_1.4" ]; then
 elif [ "$TEST" == "shmembench_1.5" ]; then
   test_shmembench_1_5
 fi 
+

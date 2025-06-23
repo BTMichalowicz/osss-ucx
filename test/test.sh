@@ -93,11 +93,11 @@ echo
 # $oshrun $flags -np 4 ./bin/test_alltoalls
 # echo
 
-# # --- shmem_collect ---
-# echo $hline ; echo "  Running shmem_collect test" ; echo $hline
-# $oshcc test_collect.c -o ./bin/test_collect
-# $oshrun $flags -np 4 ./bin/test_collect
-# echo
+# --- shmem_collect ---
+echo $hline ; echo "  Running shmem_collect test" ; echo $hline
+$oshcc test_collect.c -o ./bin/test_collect
+$oshrun $flags -np 4 ./bin/test_collect
+echo
 
 # # --- shmem_fcollect ---
 # echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
@@ -147,8 +147,8 @@ echo
 # $oshrun $flags -np 4 ./bin/simple
 # echo
 
-# -- to_all ---
-echo $hline ; echo "  Running to_all test" ; echo $hline
-$oshcc test_to_all.c -o ./bin/test_to_all -Wno-deprecated-declarations
-$oshrun $flags -np 4 ./bin/test_to_all
-echo
+# # -- to_all ---
+# echo $hline ; echo "  Running to_all test" ; echo $hline
+# $oshcc test_to_all.c -o ./bin/test_to_all -Wno-deprecated-declarations
+# $oshrun $flags -np 4 ./bin/test_to_all
+# echo

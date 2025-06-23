@@ -673,6 +673,10 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
     long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT);         \
     SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[COLLECT]");                       \
                                                                                \
+    /* Ensure all PEs have initialized pSync */                                \
+    /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
+    shmem_team_sync(team_h);                                                   \
+                                                                               \
     /* Zero out destination buffer */                                          \
     memset(dest, 0, sizeof(_type) * nelems * PE_size);                         \
                                                                                \
@@ -731,6 +735,10 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_COLLECT_TYPES)
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT);         \
     SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[COLLECT]");                       \
+                                                                               \
+    /* Ensure all PEs have initialized pSync */                                \
+    /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
+    shmem_team_sync(team_h);                                                   \
                                                                                \
     /* Zero out destination buffer */                                          \
     memset(dest, 0, nelems *PE_size);                                          \
