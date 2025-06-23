@@ -466,13 +466,13 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_ALLTOALLS_TYPES)
     }                                                                          \
                                                                                \
     /* Validate symmetric memory */                                            \
-    SHMEMU_CHECK_SYMMETRIC(dest, nelems *element_size_bytes *PE_size);         \
-    SHMEMU_CHECK_SYMMETRIC(source, nelems *element_size_bytes *PE_size);       \
+    SHMEMU_CHECK_SYMMETRIC(dest, nelems * element_size_bytes * PE_size);       \
+    SHMEMU_CHECK_SYMMETRIC(source, nelems * element_size_bytes * PE_size);     \
                                                                                \
     /* Check for overlap between source and destination */                     \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
-                                nelems *element_size_bytes *PE_size,           \
-                                nelems *element_size_bytes *PE_size);          \
+                                nelems * element_size_bytes * PE_size,         \
+                                nelems * element_size_bytes * PE_size);        \
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
     long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL);        \

@@ -4772,7 +4772,7 @@ mspace create_mspace(size_t capacity, int locked) {
   size_t msize = pad_request(sizeof(struct malloc_state));
   init_mparams(); /* Ensure pagesize etc initialized */
 
-  if (capacity < (size_t) - (msize + TOP_FOOT_SIZE + mparams.page_size)) {
+  if (capacity < (size_t)-(msize + TOP_FOOT_SIZE + mparams.page_size)) {
     size_t rs = ((capacity == 0) ? mparams.granularity
                                  : (capacity + TOP_FOOT_SIZE + msize));
     size_t tsize = granularity_align(rs);
@@ -4792,7 +4792,7 @@ mspace create_mspace_with_base(void *base, size_t capacity, int locked) {
   init_mparams(); /* Ensure pagesize etc initialized */
 
   if (capacity > msize + TOP_FOOT_SIZE &&
-      capacity < (size_t) - (msize + TOP_FOOT_SIZE + mparams.page_size)) {
+      capacity < (size_t)-(msize + TOP_FOOT_SIZE + mparams.page_size)) {
     m = init_user_mstate((char *)base, capacity);
     m->seg.sflags = EXTERN_BIT;
     set_lock(m, locked);

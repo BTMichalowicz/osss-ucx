@@ -22,8 +22,7 @@
  * @brief Helper macro to create thread level table entries
  * @param _thr Thread level name (e.g. SINGLE, MULTIPLE)
  */
-#define GLUE(_thr)                                                             \
-  { SHMEM_THREAD_##_thr, #_thr }
+#define GLUE(_thr) {SHMEM_THREAD_##_thr, #_thr}
 
 /** Value indicating unknown/invalid thread level */
 #define NONE (SHMEM_THREAD_SINGLE - 1)

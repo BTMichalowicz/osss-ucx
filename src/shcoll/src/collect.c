@@ -728,9 +728,9 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_COLLECT_TYPES)
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
                                                                                \
     /* Buffer Checks */                                                        \
-    SHMEMU_CHECK_SYMMETRIC(dest, nelems *PE_size);                             \
+    SHMEMU_CHECK_SYMMETRIC(dest, nelems * PE_size);                            \
     SHMEMU_CHECK_SYMMETRIC(source, nelems);                                    \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size, nelems);        \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems * PE_size, nelems);       \
                                                                                \
     /* Allocate pSync from symmetric heap */                                   \
     long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT);         \
@@ -741,7 +741,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_COLLECT_TYPES)
     shmem_team_sync(team_h);                                                   \
                                                                                \
     /* Zero out destination buffer */                                          \
-    memset(dest, 0, nelems *PE_size);                                          \
+    memset(dest, 0, nelems * PE_size);                                         \
                                                                                \
     /* Perform collect using extracted geometry */                             \
     collect_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,       \

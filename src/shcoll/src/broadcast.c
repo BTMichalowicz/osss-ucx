@@ -594,8 +594,8 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_BROADCAST_TYPES)
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
                                                                                \
     /* Buffer checks */                                                        \
-    SHMEMU_CHECK_SYMMETRIC(dest, nelems *PE_size);                             \
-    SHMEMU_CHECK_SYMMETRIC(source, nelems *PE_size);                           \
+    SHMEMU_CHECK_SYMMETRIC(dest, nelems * PE_size);                            \
+    SHMEMU_CHECK_SYMMETRIC(source, nelems * PE_size);                          \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems, nelems);                 \
                                                                                \
     /* Allocate and initialize pSync */                                        \

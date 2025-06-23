@@ -304,16 +304,15 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
     /* Check initialization */                                                 \
     SHMEMU_CHECK_INIT();                                                       \
                                                                                \
-    /* Check team validity and cast to internal handle */                      \
+    /* Team geometry */                                                        \
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
-    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
                                                                                \
     /* Get team parameters */                                                  \
     const int PE_size = team_h->nranks;                                        \
-    const int PE_start = team_h->start;         /* Use stored start */         \
-    const int stride = team_h->stride;          /* Use stored stride */        \
-    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__); /* Check stride if DEBUG */    \
-    /* Calculate log2 stride, assuming stride is valid */                      \
+    const int PE_start = team_h->start;                                        \
+    const int stride = team_h->stride;                                         \
+    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
                                                                                \
     /* Check buffer symmetry */                                                \
@@ -340,7 +339,6 @@ SHCOLL_ALLTOALL_SIZE_DEFINITION(color_pairwise_exchange_signal, 64)
     /* Reset the pSync buffer */                                               \
     shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_ALLTOALL);                    \
                                                                                \
-    /* No need to free or reset the team's pSync buffer */                     \
     return 0;                                                                  \
   }
 
@@ -377,7 +375,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_ALLTOALL_TYPES)
                                                                                \
     /* Check team validity and cast to internal handle */                      \
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
-    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
                                                                                \
     /* Check for NULL pointers */                                              \
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
@@ -385,20 +383,19 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_ALLTOALL_TYPES)
                                                                                \
     /* Get team parameters */                                                  \
     const int PE_size = team_h->nranks;                                        \
-    const int PE_start = team_h->start;         /* Use stored start */         \
-    const int stride = team_h->stride;          /* Use stored stride */        \
-    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__); /* Check stride if DEBUG */    \
-    /* Calculate log2 stride, assuming stride is valid (checked above if       \
-     * DEBUG) */                                                               \
+    const int PE_start = team_h->start;                                        \
+    const int stride = team_h->stride;                                         \
+    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
+                                                                               \
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
                                                                                \
     /* Check buffer symmetry */                                                \
-    SHMEMU_CHECK_SYMMETRIC(dest, nelems *PE_size);                             \
-    SHMEMU_CHECK_SYMMETRIC(source, nelems *PE_size);                           \
+    SHMEMU_CHECK_SYMMETRIC(dest, nelems * PE_size);                            \
+    SHMEMU_CHECK_SYMMETRIC(source, nelems * PE_size);                          \
                                                                                \
     /* Check for overlap between source and destination */                     \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size,                 \
-                                nelems *PE_size);                              \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems * PE_size,                \
+                                nelems * PE_size);                             \
                                                                                \
     /* Use the pre-allocated pSync buffer from the team structure */           \
     long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL);        \
@@ -415,7 +412,6 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_ALLTOALL_TYPES)
     /* Reset the pSync buffer */                                               \
     shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_ALLTOALL);                    \
                                                                                \
-    /* No need to free or reset the team's pSync buffer */                     \
     return 0;                                                                  \
   }
 

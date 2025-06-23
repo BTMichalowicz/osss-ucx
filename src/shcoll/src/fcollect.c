@@ -561,7 +561,7 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
     SHMEMU_CHECK_NULL(source, "source");                                       \
                                                                                \
     /* Get team parameters */                                                  \
-    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
     const int PE_size = team_h->nranks;                                        \
     const int PE_start = team_h->start;                                        \
     const int stride = team_h->stride;                                         \
@@ -633,7 +633,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_FCOLLECT_TYPES)
     SHMEMU_CHECK_NULL(source, "source");                                       \
                                                                                \
     /* Get team parameters */                                                  \
-    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
     const int PE_size = team_h->nranks;                                        \
     const int PE_start = team_h->start;                                        \
     const int stride = team_h->stride;                                         \
@@ -641,9 +641,9 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_FCOLLECT_TYPES)
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
                                                                                \
     /* Buffer Checks */                                                        \
-    SHMEMU_CHECK_SYMMETRIC(dest, nelems *PE_size);                             \
+    SHMEMU_CHECK_SYMMETRIC(dest, nelems * PE_size);                            \
     SHMEMU_CHECK_SYMMETRIC(source, nelems);                                    \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems *PE_size, nelems);        \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems * PE_size, nelems);       \
                                                                                \
     /* Use the team's pSync buffer for collect/fcollect operations */          \
     long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT);         \
@@ -654,7 +654,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_FCOLLECT_TYPES)
     shmem_team_sync(team_h);                                                   \
                                                                                \
     /* Zero out destination buffer */                                          \
-    memset(dest, 0, nelems *PE_size);                                          \
+    memset(dest, 0, nelems * PE_size);                                         \
                                                                                \
     /* Perform fcollect */                                                     \
     fcollect_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,      \
