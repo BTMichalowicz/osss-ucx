@@ -17,6 +17,55 @@
 
 static volatile int active = -1;
 
+/*
+ * where the heap lives on PE "pe"
+ */
+
+inline static size_t get_base(size_t region, int pe) {
+  return proc.comms.regions[region].minfo[pe].base;
+}
+
+inline static uint64_t translate_region_address(uint64_t local_addr,
+                                                size_t region, int pe) {
+  if (region == 0) {
+    return local_addr;
+  } else {
+    const long my_offset = local_addr - get_base(region, proc.li.rank);
+
+    if (my_offset < 0) {
+      return 0;
+    }
+
+    return my_offset + get_base(region, pe);
+  }
+}
+
+inline static uint64_t translate_address(uint64_t local_addr, int pe) {
+  long r = lookup_region(local_addr);
+
+  if (r < 0) {
+    return 0;
+  }
+
+  return translate_region_address(local_addr, r, pe);
+}
+
+/*
+ * All ops here need to find remote keys and addresses
+ */
+inline static void get_remote_key_and_addr(shmemc_context_h ch,
+                                           uint64_t local_addr, int pe,
+                                           ucp_rkey_h *rkey_p,
+                                           uint64_t *raddr_p) {
+  const long r = lookup_region(local_addr);
+
+  shmemu_assert(r >= 0, MODULE ": can't find memory region for %p",
+                (void *)local_addr);
+
+  *rkey_p = lookup_rkey(ch, r, pe);
+  *raddr_p = translate_region_address(local_addr, r, pe);
+}
+
 
 static const pmix_status_t ENC_DEC_SUCCESS = PMIX_SUCCESS;
 
@@ -94,6 +143,8 @@ static inline void handleErrors(char *message){
 }
 
 void shmemx_sec_init(){
+
+    fprintf(stderr, "Starting sec init\n");
     char *enc_dec = NULL;
     int res = 0;
     if (defcp->enc_ctx == NULL){
