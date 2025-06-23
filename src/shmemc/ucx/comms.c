@@ -709,7 +709,7 @@ void shmemc_ctx_put(shmem_ctx_t ctx, void *dest, const void *src, size_t nbytes,
   shmemu_assert(s == UCS_OK, MODULE ": put failed (status: %s)",
                 ucs_status_string(s));
 
-
+#if 0
 #if ENABLE_SHMEM_ENCRYPTION
   if (proc.env.shmem_encryption){
       unsigned int decryption_flag = 412345;
@@ -719,8 +719,9 @@ void shmemc_ctx_put(shmem_ctx_t ctx, void *dest, const void *src, size_t nbytes,
               ucs_status_string(s));
   }
 #endif /* ENABLE_SHMEM_ENCRYPTION */
+#endif
 }
-
+#if 0
 #if ENABLE_SHMEM_ENCRYPTION
 /* TODO: Where would this get called??? */
 void decrypt_time(shmem_ctx_t ctx, void *dest, const void *src, size_t nbytes,
@@ -750,6 +751,7 @@ void decrypt_time(shmem_ctx_t ctx, void *dest, const void *src, size_t nbytes,
     }
 }
 #endif /* ENABLE_SHMEM_ENCRYPTION */
+#endif /* #if 0 for decrypt_time */
 
 
 void shmemc_ctx_get(shmem_ctx_t ctx, void *dest, const void *src, size_t nbytes,

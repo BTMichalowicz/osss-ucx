@@ -32,6 +32,41 @@ void enc_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
 
 }
 
+void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
+        const pmix_proc_t *source, pmix_info_t info[],
+        size_t ninfo, pmix_info_t results[],
+        size_t nresults,
+        pmix_event_notification_cbfunc_fn_t cbfunc){
+
+    NO_WARN_UNUSED(cbfunc);
+    NO_WARN_UNUSED(evhdlr_registration_id);
+    NO_WARN_UNUSED(status);
+
+    pmix_info_t buffer = info[0];
+    void *dest = buffer.value.data.ptr;
+    pmix_info_t size = info[1];
+    size_t cipherlen = size.value.data.uint32;
+    pmix_info_t dest_rank = info[2];
+    uint32_t pe = dest_rank.value.data.uint32;
+    pmix_info_t proc_rank = info[3];
+
+    int source_rank = source ? source->rank : PMIX_RANK_UNDEF;
+
+    fprintf(stderr, "pe: %d, source: %d, equal? %d\n", pe, source_rank, pe == source_rank);
+
+    shmemu_assert(source != NULL, "dec_notif_fn: source proc struct is NULL\n");
+
+    shmemc_context_h ch = defcp; 
+    uint64_t r_dest;  /* address on other PE */
+    ucp_rkey_h r_key; /* rkey for remote address */
+
+    get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
+
+    shmem_global_exit(-1);
+
+}
+
+
 
 static void enc_notif_callbk(pmix_status_t status, size_t evhandler_ref, void *cbdata){
     volatile int *act = (volatile int *)cbdata;
@@ -109,13 +144,13 @@ void shmemx_sec_init(){
 
     shmemu_assert(active == 0, "shmem_enc_init: PMIx_enc_handler reg failed");
 
-//   active = -1;
+   active = -1;
 
-//    PMIx_Register_event_handler(&sp, NULL, 0, dec_notif_fn,
-//            enc_notif_callbk, (void *)&active);
-//    while(active == -1){}
+    PMIx_Register_event_handler(&sp, 1, NULL, 0, dec_notif_fn,
+            enc_notif_callbk, (void *)&active);
+    while(active == -1){}
 
-//    shmemu_assert(active == 0, "shmem_enc_init: PMIx_dec_handler reg failed");
+    shmemu_assert(active == 0, "shmem_enc_init: PMIx_dec_handler reg failed");
 
     return;
 }
@@ -145,8 +180,6 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
         shmem_ctx_t shmem_ctx, size_t  *cipher_len){
 
     shmemc_context_h c2 = (shmemc_context_h)shmem_ctx;
-
-
     EVP_DecryptInit_ex2(c2->dec_ctx, NULL, NULL, NULL, cipherbuf+src);
     EVP_DecryptUpdate(c2->dec_ctx, rbuf+dest, cipher_len, cipherbuf+src+AES_RAND_BYTES, (bytes-AES_RAND_BYTES));
     EVP_CIPHER_CTX_ctrl(c2->dec_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, (rbuf+dest+(*cipher_len)));
@@ -166,14 +199,6 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
             ((unsigned char *)nbi_put_ciphertext[nbput_count]),
             0, src, 0, nbytes, ctx, &cipherlen);
 
-  //  shmem_secure_attr_t attr = {}
-  //  attr.src_pe = proc.li.rank;
-  //  attr.dst_pe = pe;
-  //  attr.plaintext_size = nbytes;
-  // attr.encrypted_size = cipherlen;
-  //  attr.plaintext_buf_addr = (uintptr_t) &src;
-  //  attr.encrypted_buf_addr = (uintptr_t) (&(nbi_put_ciphertext[nbput_count][0]));
-  //  attr.encrypted_op = NB_PUT;
 
     shmemc_ctx_put_nbi(ctx, dest, 
             ((unsigned char*)(nbi_put_ciphertext[nbput_count++][0])),
@@ -186,38 +211,78 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe){
 
     unsigned char *blocking_put_ciphertext = calloc(1, nbytes);
-
-
-    size_t cipherlen = 0;
+       size_t cipherlen = 0;
     int res = shmemx_encrypt_single_buffer(
             (blocking_put_ciphertext),
             0, src, 0, nbytes, ctx, &cipherlen);
-
-
- //   shmem_secure_attr_t attr = {}
- //   attr.src_pe = proc.li.rank;
- //   attr.dst_pe = pe;
- //   attr.plaintext_size = nbytes;
- //   attr.encrypted_size = cipherlen;
- //   attr.plaintext_buf_addr = (uintptr_t) &src;
- //   attr.encrypted_buf_addr = (uintptr_t) (&blocking_put_ciphertext);
- //   attr.encrypted_op = PUT;
-
 
     shmemc_ctx_put(ctx, dest, 
             blocking_put_ciphertext,
             cipherlen, pe);
 
-// TODO    ucp_tag_send_sync_nbx(...);
+    /* Only begin PMIX Construction AFTER the put has been set up appropriately
+     * */
 
-    /*TODO: SIGNAL DECRYPTION here for the blocking_put_ciphertext... but
-     * how?!?! 
-     * Look at shmem context?
-     * See address pointers and extra functions... though we'd need transport
-     * layer items there to catch messages to say
-     * "Pick this path to decrypt?" 
-     *
+    /* Step 1, Get PMIX_Rank from the other peer proc.
+     * Step 2: Set up notification in custom range 
+     * Step 3: Profit?
      */
+
+    pmix_status_t ps;
+    pmix_info_t si[4];
+
+//    shmemc_context_h ch = (shmemc_context_h)ctx;
+//    uint64_t r_dest;  /* address on other PE */
+//    ucp_rkey_h r_key; /* rkey for remote address */
+//    ucp_ep_h ep;
+
+//    get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
+
+
+    pmix_proc_t *procs;
+    size_t nprocs = 1;
+    procs = (pmix_proc_t *)malloc(sizeof(pmix_proc_t)*nprocs);
+
+    PMIX_LOAD_PROCID(procs, PMIX_RANGE_NAMESPACE, pe);
+    //  PMIX_LOAD_PROCID(&procs[1], PMIX_RANGE_NAMESPACE, dest);
+
+    pmix_data_array_t pmix_darray;
+    pmix_darray.size = nprocs;
+    pmix_darray.type = PMIX_PROC;
+    PMIX_DATA_ARRAY_CONSTRUCT(&pmix_darray, nprocs, PMIX_PROC);
+    memcpy(pmix_darray.array, procs, nprocs*sizeof(pmix_proc_t));
+
+    
+    PMIX_INFO_CONSTRUCT(&si[0]);
+    PMIX_LOAD_KEY(si[0].key, "Remote_secure_buffer");
+    si[0].value.type = PMIX_POINTER;
+    si[0].value.data.ptr = dest;
+   // PMIX_INFO_LOAD(&si, PMIX_GRANK, &success, PMIX_INT);
+    PMIX_INFO_CONSTRUCT(&si[1]);
+    PMIX_LOAD_KEY(si[1].key, "Remote_buffer_enc_size");
+    si[1].value.type = PMIX_UINT32;
+    si[1].value.data.uint32 = cipherlen;
+
+    PMIX_INFO_CONSTRUCT(&si[2]);
+    PMIX_LOAD_KEY(si[2].key, "Destination_rank");
+    si[2].value.type = PMIX_UINT32;
+    si[2].value.data.uint32 = pe;
+
+
+    PMIX_INFO_CONSTRUCT(&si[3]);
+    PMIX_INFO_LOAD(&si[3], PMIX_RANGE_CUSTOM, &pmix_darray, PMIX_DATA_ARRAY);
+
+    ps = PMIx_Notify_event(PMIX_SUCCESS, procs, PMIX_RANGE_CUSTOM, &si,
+            4, NULL, NULL);
+
+    if (ps != PMIX_SUCCESS){
+        shmemu_assert(ps == PMIX_SUCCESS,
+                " shmem_ctx_secure_put: PMIx can't notify decryption: %s",
+                PMIx_Error_string(ps));
+    };
+
+    PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
+    free(procs);
     free (blocking_put_ciphertext);
 }
 
