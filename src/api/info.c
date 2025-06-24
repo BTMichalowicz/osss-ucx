@@ -243,6 +243,14 @@ void info_output_features(FILE *strm, const char *prefix, const char *suffix) {
 #endif /* ENABLE_EXPERIMENTAL */
   );
 
+  output(strm, prefix, suffix, "Encrypted comms",
+#if ENABLE_SHMEM_ENCRYPTION
+          "on"
+#else
+          "off"
+#endif /* ENABLE_SHMEM ENCRYPTION */
+  );
+
   output(strm, prefix, suffix, "Profiling interface",
 #ifdef ENABLE_PSHMEM
          "on"

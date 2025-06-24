@@ -18,6 +18,62 @@
 static volatile int active = -1;
 
 /*
+ * -- helpers ----------------------------------------------------------------
+ */
+
+/*
+ * shortcut to look up the UCP endpoint of a context
+ */
+inline static ucp_ep_h lookup_ucp_ep(shmemc_context_h ch, int pe) {
+  return ch->eps[pe];
+}
+
+/*
+ * find rkey for memory "region" on PE "pe"
+ */
+inline static ucp_rkey_h lookup_rkey(shmemc_context_h ch, size_t region,
+                                     int pe) {
+  return ch->racc[region].rinfo[pe].rkey;
+}
+
+/*
+ * -- translation helpers ---------------------------------------------------
+ */
+
+/*
+ * is the given address in this memory region?  Non-zero if yes, 0 if
+ * not.
+ */
+inline static int in_region(uint64_t addr, size_t region) {
+  const mem_info_t *mip = &proc.comms.regions[region].minfo[proc.li.rank];
+
+  return (mip->base <= addr) && (addr < mip->end);
+}
+
+/*
+ * find memory region that ADDR is in, or -1 if none
+ */
+inline static long lookup_region(uint64_t addr) {
+  long r;
+
+  /*
+   * Let's search down from top heap to globals (#0) under
+   * assumption most data in heaps and newest one is most likely
+   * (may need to revisit)
+   */
+  for (r = proc.comms.nregions - 1; r >= 0; --r) {
+    if (in_region(addr, (size_t)r)) {
+      return r;
+      /* NOT REACHED */
+    }
+  }
+
+  return -1L;
+}
+
+
+
+/*
  * where the heap lives on PE "pe"
  */
 
@@ -67,7 +123,8 @@ inline static void get_remote_key_and_addr(shmemc_context_h ch,
 }
 
 
-static const pmix_status_t ENC_DEC_SUCCESS = PMIX_SUCCESS;
+static const pmix_status_t ENC_SUCCESS = PMIX_ERR_START_DECRYPTION;
+static const pmix_status_t DEC_SUCCESS = PMIX_ERR_START_ENCRYPTION;
 
 void enc_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
         const pmix_proc_t *source, pmix_info_t info[],
@@ -144,7 +201,7 @@ static inline void handleErrors(char *message){
 
 void shmemx_sec_init(){
 
-    fprintf(stderr, "Starting sec init\n");
+  //  fprintf(stderr, "Starting sec init\n");
     char *enc_dec = NULL;
     int res = 0;
     if (defcp->enc_ctx == NULL){
@@ -186,7 +243,7 @@ void shmemx_sec_init(){
     nbi_put_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT);
     nbi_get_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT);
 
-    pmix_status_t sp = ENC_DEC_SUCCESS;
+    pmix_status_t sp = DEC_SUCCESS;
     active = -1;
 
     PMIx_Register_event_handler(&sp, 1, NULL, 0, enc_notif_fn,
@@ -195,7 +252,9 @@ void shmemx_sec_init(){
 
     shmemu_assert(active == 0, "shmem_enc_init: PMIx_enc_handler reg failed");
 
-   active = -1;
+    active = -1;
+
+    sp = ENC_SUCCESS;
 
     PMIx_Register_event_handler(&sp, 1, NULL, 0, dec_notif_fn,
             enc_notif_callbk, (void *)&active);
@@ -281,14 +340,6 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 
     pmix_status_t ps;
     pmix_info_t si[4];
-
-//    shmemc_context_h ch = (shmemc_context_h)ctx;
-//    uint64_t r_dest;  /* address on other PE */
-//    ucp_rkey_h r_key; /* rkey for remote address */
-//    ucp_ep_h ep;
-
-//    get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
-
 
     pmix_proc_t *procs;
     size_t nprocs = 1;
