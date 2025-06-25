@@ -709,8 +709,9 @@ inline static int shmemc_n_pes() { return shmemc_team_n_pes(SHMEM_TEAM_WORLD); }
 
 #if ENABLE_SHMEM_ENCRYPTION
 #define shmemc_put(...) \
+   fprintf("Entering shmem put. Encryption: %d\n", proc.env.shmem_encryption); \
     do { \
-        if (proc.env.shmem_encryption) { \
+        if (proc.env.shmem_encryption == 0) { \
             shmemc_ctx_put(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
         }else {                 \
             shmemx_secure_put(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
@@ -719,7 +720,7 @@ inline static int shmemc_n_pes() { return shmemc_team_n_pes(SHMEM_TEAM_WORLD); }
 
 #define shmemc_get(...) \
     do { \
-        if (proc.env.shmem_encryption) { \
+        if (proc.env.shmem_encryption == 0) { \
             shmemc_ctx_get(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
         }else {                 \
             shmemx_secure_get(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
@@ -728,7 +729,7 @@ inline static int shmemc_n_pes() { return shmemc_team_n_pes(SHMEM_TEAM_WORLD); }
 
 #define shmemc_put_nbi(...) \
      do { \
-        if (proc.env.shmem_encryption) { \
+        if (proc.env.shmem_encryption == 0) { \
             shmemc_ctx_put_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
         }else {                 \
             shmemx_secure_put_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
@@ -738,7 +739,7 @@ inline static int shmemc_n_pes() { return shmemc_team_n_pes(SHMEM_TEAM_WORLD); }
 
 #define shmemc_get_nbi(...) \
     do { \
-        if (proc.env.shmem_encryption) { \
+        if (proc.env.shmem_encryption == 0) { \
             shmemc_ctx_get_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \
         }else {                 \
             shmemx_secure_get_nbi(SHMEM_CTX_DEFAULT, __VA_ARGS__); \

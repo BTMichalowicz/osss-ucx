@@ -12,6 +12,147 @@
 #include "shmemc.h"
 #include "shmem_mutex.h"
 
+#if ENABLE_SHMEM_ENCRYPTION
+#include "shmemx.h"
+#include "shmem_enc.h"
+
+/**
+ * @brief Macro to define a typed put operation with a context
+ * @param _name Type name
+ * @param _type C type
+ */
+#define SHMEM_CTX_TYPED_PUT(_name, _type)                                      \
+  void shmem_ctx_##_name##_put(shmem_ctx_t ctx, _type *dest, const _type *src, \
+                               size_t nelems, int pe) {                        \
+    const size_t nb = sizeof(_type) * nelems;                                  \
+                                                                               \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_PE_ARG_RANGE(pe, 5);                                          \
+    SHMEMU_CHECK_SYMMETRIC(dest, 2);                                           \
+                                                                               \
+    logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
+           __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
+                                                                               \
+     if (proc.env.shmem_encryption == 1){                                      \
+        SHMEMT_MUTEX_NOPROTECT(shmemx_secure_put(ctx, dest, src, nb, pe));     \
+     }else{                                                                    \
+        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put(ctx, dest, src, nb, pe));        \
+     }                                                                         \
+  }
+
+/**
+ * @brief Macro to define a typed get operation with a context
+ * @param _name Type name
+ * @param _type C type
+ */
+#define SHMEM_CTX_TYPED_GET(_name, _type)                                      \
+  void shmem_ctx_##_name##_get(shmem_ctx_t ctx, _type *dest, const _type *src, \
+                               size_t nelems, int pe) {                        \
+    const size_t nb = sizeof(_type) * nelems;                                  \
+                                                                               \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_PE_ARG_RANGE(pe, 5);                                          \
+    SHMEMU_CHECK_SYMMETRIC(src, 3);                                            \
+                                                                               \
+    logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
+           __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
+                                                                               \
+     if (proc.env.shmem_encryption == 1){                                      \
+        SHMEMT_MUTEX_NOPROTECT(shmemx_secure_get(ctx, dest, src, nb, pe));     \
+     }else{                                                                    \
+        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get(ctx, dest, src, nb, pe));        \
+     }                                                                         \
+  }
+
+/**
+ * @brief Macro to define a sized put operation with a context
+ * @param _size Size in bits
+ */
+#define SHMEM_CTX_SIZED_PUT(_size)                                             \
+  void shmem_ctx_put##_size(shmem_ctx_t ctx, void *dest, const void *src,      \
+                            size_t nelems, int pe) {                           \
+    const size_t nb = BITS2BYTES(_size) * nelems;                              \
+                                                                               \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_PE_ARG_RANGE(pe, 5);                                          \
+    SHMEMU_CHECK_SYMMETRIC(dest, 2);                                           \
+                                                                               \
+    logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
+           __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
+                                                                               \
+     if (proc.env.shmem_encryption == 1){                                      \
+        SHMEMT_MUTEX_NOPROTECT(shmemx_secure_put(ctx, dest, src, nb, pe));     \
+     }else{                                                                    \
+        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put(ctx, dest, src, nb, pe));        \
+     }                                                                         \
+  }
+
+/**
+ * @brief Macro to define a sized get operation with a context
+ * @param _size Size in bits
+ */
+#define SHMEM_CTX_SIZED_GET(_size)                                             \
+  void shmem_ctx_get##_size(shmem_ctx_t ctx, void *dest, const void *src,      \
+                            size_t nelems, int pe) {                           \
+    const size_t nb = BITS2BYTES(_size) * nelems;                              \
+                                                                               \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_PE_ARG_RANGE(pe, 5);                                          \
+    SHMEMU_CHECK_SYMMETRIC(src, 3);                                            \
+                                                                               \
+    logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
+           __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
+                                                                               \
+    if (proc.env.shmem_encryption == 1){                                      \
+        SHMEMT_MUTEX_NOPROTECT(shmemx_secure_get(ctx, dest, src, nb, pe));     \
+    }else{                                                                    \
+       SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get(ctx, dest, src, nb, pe));        \
+    }                                                                          \
+  }
+
+/**
+ * @brief Macro to define a memory put operation with a context
+ */
+#define SHMEM_CTX_PUTMEM()                                                     \
+  void shmem_ctx_putmem(shmem_ctx_t ctx, void *dest, const void *src,          \
+                        size_t nelems, int pe) {                               \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_PE_ARG_RANGE(pe, 5);                                          \
+    SHMEMU_CHECK_SYMMETRIC(dest, 2);                                           \
+                                                                               \
+    logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
+           __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
+                                                                               \
+     if (proc.env.shmem_encryption == 1){                                      \
+        SHMEMT_MUTEX_NOPROTECT(shmemx_secure_put(ctx, dest, src, nelems, pe));     \
+     }else{                                                                    \
+        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put(ctx, dest, src, nelems, pe));        \
+     }                                                                         \
+  }
+
+/**
+ * @brief Macro to define a memory get operation with a context
+ */
+#define SHMEM_CTX_GETMEM()                                                     \
+  void shmem_ctx_getmem(shmem_ctx_t ctx, void *dest, const void *src,          \
+                        size_t nelems, int pe) {                               \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_PE_ARG_RANGE(pe, 5);                                          \
+    SHMEMU_CHECK_SYMMETRIC(src, 3);                                            \
+                                                                               \
+    logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
+           __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
+                                                                               \
+     if (proc.env.shmem_encryption == 1){                                      \
+        SHMEMT_MUTEX_NOPROTECT(shmemx_secure_get(ctx, dest, src, nelems, pe));     \
+     }else{                                                                    \
+        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get(ctx, dest, src, nelems, pe));        \
+     }                                                                         \
+  }
+
+
+#else /* ENABLE_SHMEM_ENCRYPTION */
+
 /**
  * @brief Macro to define a typed put operation with a context
  * @param _name Type name
@@ -121,6 +262,8 @@
                                                                                \
     SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get(ctx, dest, src, nelems, pe));        \
   }
+
+#endif /*ENABLE_SHMEM_ENCRYPTION */
 
 /**
  * @brief Macro to define a typed strided put operation with a context

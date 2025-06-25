@@ -168,7 +168,9 @@ void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
 
     get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
 
-    shmem_global_exit(-1);
+
+
+    //shmem_global_exit(-1);
 
 }
 
@@ -201,9 +203,25 @@ static inline void handleErrors(char *message){
 
 void shmemx_sec_init(){
 
-  //  fprintf(stderr, "Starting sec init\n");
-    char *enc_dec = NULL;
-    int res = 0;
+   //  fprintf(stderr, "Starting sec init\n");
+   char *enc_dec = NULL;
+   int res = 0;
+
+
+   if ((enc_dec = getenv("SHMEM_ENABLE_ENCRYPTION")) != NULL){
+      proc.env.shmem_encryption = atoi(enc_dec);
+      assert(proc.env.shmem_encryption == 0 || proc.env.shmem_encryption == 1);
+   }
+
+   fprintf(stderr, "shmem_encryption: %d\n",
+         proc.env.shmem_encryption);
+
+   if (proc.env.shmem_encryption == 0){
+      return; /* Why bother setting things up? */
+   }
+
+
+
     if (defcp->enc_ctx == NULL){
         if (!(defcp->enc_ctx = EVP_CIPHER_CTX_new())){
             handleErrors("cipher failed to be created");
@@ -236,10 +254,6 @@ void shmemx_sec_init(){
         }
     }
 
-    if ((enc_dec = getenv("SHMEM_ENABLE_ENCRYPTION")) != NULL){
-        proc.env.shmem_encryption = atoi(enc_dec);
-        assert(proc.env.shmem_encryption == 0 || proc.env.shmem_encryption == 1);
-    }
     nbi_put_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT);
     nbi_get_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT);
 
@@ -249,6 +263,7 @@ void shmemx_sec_init(){
     PMIx_Register_event_handler(&sp, 1, NULL, 0, enc_notif_fn,
             enc_notif_callbk, (void *)&active);
     while(active == -1){}
+    fprintf(stderr, "Active 1: %d\n", active);
 
     shmemu_assert(active == 0, "shmem_enc_init: PMIx_enc_handler reg failed");
 
@@ -259,6 +274,7 @@ void shmemx_sec_init(){
     PMIx_Register_event_handler(&sp, 1, NULL, 0, dec_notif_fn,
             enc_notif_callbk, (void *)&active);
     while(active == -1){}
+    fprintf(stderr, "Active 2: %d\n", active);
 
     shmemu_assert(active == 0, "shmem_enc_init: PMIx_dec_handler reg failed");
 
@@ -322,13 +338,19 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 
     unsigned char *blocking_put_ciphertext = calloc(1, nbytes);
        size_t cipherlen = 0;
+
+       fprintf(stderr, "encruption start\n");
     int res = shmemx_encrypt_single_buffer(
             (blocking_put_ciphertext),
             0, src, 0, nbytes, ctx, &cipherlen);
 
+    fprintf(stderr, "Encryption end\n");
+
     shmemc_ctx_put(ctx, dest, 
             blocking_put_ciphertext,
             cipherlen, pe);
+
+    fprintf(stderr, "Put end\n");
 
     /* Only begin PMIX Construction AFTER the put has been set up appropriately
      * */
@@ -373,8 +395,8 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 
     PMIX_INFO_CONSTRUCT(&si[3]);
     PMIX_INFO_LOAD(&si[3], PMIX_RANGE_CUSTOM, &pmix_darray, PMIX_DATA_ARRAY);
-
-    ps = PMIx_Notify_event(PMIX_SUCCESS, procs, PMIX_RANGE_CUSTOM, &si,
+   fprintf(stderr, "Starting signaling\n");
+    ps = PMIx_Notify_event(PMIX_ERR_START_DECRYPTION, procs, PMIX_RANGE_CUSTOM, &si,
             4, NULL, NULL);
 
     if (ps != PMIX_SUCCESS){
@@ -382,6 +404,8 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
                 " shmem_ctx_secure_put: PMIx can't notify decryption: %s",
                 PMIx_Error_string(ps));
     };
+
+    fprintf(stderr, "Signaling success? %s\n", ps == PMIX_SUCCESS ? "yes" : "no");
 
     PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
     free(procs);
