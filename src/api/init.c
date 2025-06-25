@@ -24,8 +24,7 @@
 
 #ifdef ENABLE_EXPERIMENTAL
 #include "allocator/xmemalloc.h"
-#ifdef ENABLE_SHMEM_ENCRYPTION
-#include "shmem_enc.h"
+#if ENABLE_SHMEM_ENCRYPTION
 #include "shmemx.h"
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 #endif /* ENABLE_EXPERIMENTAL */
@@ -114,8 +113,6 @@ inline static int init_thread_helper(int requested, int *provided) {
   /* utiltiies */
   
 #if ENABLE_SHMEM_ENCRYPTION
-  //ch->enc_ctx = NULL;
-  //ch->dec_ctx = NULL;
   shmemx_sec_init();
 #endif /* ENABLE_SHMEM_ENCRYPTION */
   shmemt_init();

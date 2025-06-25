@@ -4,6 +4,8 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+
+
 #include "shmemu.h"
 #include "shmemc.h"
 #include "state.h"
@@ -19,10 +21,6 @@
 
 #include <ucp/api/ucp.h>
 
-#if ENABLE_SHMEM_ENCRYPTION
-#include "shmemx.h"
-#include "shmem_enc.h"
-#endif /* ENABLE_SHMEM_ENCRYPTION */
 
 /*
  * -- helpers ----------------------------------------------------------------

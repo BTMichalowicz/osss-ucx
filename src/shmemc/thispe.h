@@ -17,10 +17,6 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#if ENABLE_SHMEM_ENCRYPTION
-#include "shmem_enc.h"
-#endif /* ENABLE_SHMEM_ENCRYPTION */
-
 #include "boolean.h"
 #include "threading.h"
 

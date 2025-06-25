@@ -14,10 +14,6 @@
 
 #include <shmem.h>
 
-#if ENABLE_SHMEM_ENCRYPTION
-#include <pmix.h>
-#endif /* ENABLE_SHMEM_ENCRYPTION */
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -365,15 +361,6 @@ typedef struct shmem_secure_attr {
     encrypted_op_t encrypted_op;
 
 } shmem_secure_attr_t;
-
-
-void enc_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
-        const pmix_proc_t *source,  pmix_info_t info[],
-        size_t ninfo, pmix_info_t results[],
-        size_t nresults,
-        pmix_event_notification_cbfunc_fn_t cbfunc);
-
-    
 
 /**
  * @brief Encrypt single-pe-put/get buffers on the user side before sending them

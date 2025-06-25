@@ -149,12 +149,10 @@ typedef struct shmemc_context {
 
   shmemc_team_h team; /* team we belong to */
 
-
 #if ENABLE_SHMEM_ENCRYPTION
   EVP_CIPHER_CTX *enc_ctx; /* NULL at start */
   EVP_CIPHER_CTX *dec_ctx; /* Also NULL at the start */
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-
 
   /*
    * possibly other things
