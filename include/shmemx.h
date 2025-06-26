@@ -395,6 +395,15 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 
+#define DEBUG_SHMEM(fmt, args...)                       \
+   do {                                                 \
+      fflush(stdout);                                   \
+      fprintf(stdout, "[rank_%d][%s:%d][%s] "fmt,       \
+            proc.li.rank, __FILE__, __LINE__, __func__, \
+            ##args);                                    \
+      fflush(stdout);                                   \
+   } while(0);
+
 /* ENDING SHMEM ENCRYPTION ADDITIONS: BTM */
 #ifdef __cplusplus
 }

@@ -9,6 +9,7 @@
 #include "shmem_enc.h"
 #include "shmemx.h"
 #include "shmemu.h"
+#include "shmem_mutex.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -158,7 +159,7 @@ void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
 
     int source_rank = source ? source->rank : PMIX_RANK_UNDEF;
 
-    fprintf(stderr, "pe: %d, source: %d, equal? %d\n", pe, source_rank, pe == source_rank);
+    DEBUG_SHMEM( "pe: %d, source: %d, equal? %d\n", pe, source_rank, pe == source_rank);
 
     shmemu_assert(source != NULL, "dec_notif_fn: source proc struct is NULL\n");
 
@@ -168,7 +169,7 @@ void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
 
     get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
 
-
+    void *r_dest_ciphertext = (void *)r_dest; 
 
     //shmem_global_exit(-1);
 
@@ -203,7 +204,7 @@ static inline void handleErrors(char *message){
 
 void shmemx_sec_init(){
 
-   //  fprintf(stderr, "Starting sec init\n");
+   //  DEBUG_SHMEM( "Starting sec init\n");
    char *enc_dec = NULL;
    int res = 0;
 
@@ -213,21 +214,15 @@ void shmemx_sec_init(){
       assert(proc.env.shmem_encryption == 0 || proc.env.shmem_encryption == 1);
    }
 
-   fprintf(stderr, "shmem_encryption: %d\n",
-         proc.env.shmem_encryption);
+//   DEBUG_SHMEM( "shmem_encryption: %d\n",
+//         proc.env.shmem_encryption);
 
-   if (proc.env.shmem_encryption == 0){
-      return; /* Why bother setting things up? */
-   }
-
-
-
-    if (defcp->enc_ctx == NULL){
+ //   if (defcp->enc_ctx == NULL){
         if (!(defcp->enc_ctx = EVP_CIPHER_CTX_new())){
             handleErrors("cipher failed to be created");
         }
         /* Begin using AES_256_gcm */
-        res = EVP_EncryptInit_ex2(defcp->enc_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+        res = EVP_EncryptInit_ex2(defcp->enc_ctx, EVP_aes_256_gcm(), gcm_key, NULL, NULL);
         if (res != 1){
             handleErrors("failed to begin encryption portion");
         }
@@ -236,14 +231,14 @@ void shmemx_sec_init(){
         if (res != 1){
             handleErrors("Failed to set up the Initialization Vector Length");
         }
-    }
+//    }
 
-    if (defcp->dec_ctx == NULL){
+ //   if (defcp->dec_ctx == NULL){
         if (!(defcp->dec_ctx = EVP_CIPHER_CTX_new())){
             handleErrors("cipher failed to be created");
         }
         /* Begin using AES_256_gcm */
-        res = EVP_DecryptInit_ex2(defcp->dec_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+        res = EVP_DecryptInit_ex2(defcp->dec_ctx, EVP_aes_256_gcm(), gcm_key, NULL, NULL);
         if (res != 1){
             handleErrors("failed to begin Decryption portion");
         }
@@ -252,7 +247,7 @@ void shmemx_sec_init(){
         if (res != 1){
             handleErrors("Failed to set up the Initialization Vector Length");
         }
-    }
+//    }
 
     nbi_put_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT);
     nbi_get_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT);
@@ -263,7 +258,7 @@ void shmemx_sec_init(){
     PMIx_Register_event_handler(&sp, 1, NULL, 0, enc_notif_fn,
             enc_notif_callbk, (void *)&active);
     while(active == -1){}
-    fprintf(stderr, "Active 1: %d\n", active);
+    //DEBUG_SHMEM( "Active 1: %d\n", active);
 
     shmemu_assert(active == 0, "shmem_enc_init: PMIx_enc_handler reg failed");
 
@@ -274,7 +269,7 @@ void shmemx_sec_init(){
     PMIx_Register_event_handler(&sp, 1, NULL, 0, dec_notif_fn,
             enc_notif_callbk, (void *)&active);
     while(active == -1){}
-    fprintf(stderr, "Active 2: %d\n", active);
+   // DEBUG_SHMEM( "Active 2: %d\n", active);
 
     shmemu_assert(active == 0, "shmem_enc_init: PMIx_dec_handler reg failed");
 
@@ -288,8 +283,18 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
         
     shmemc_context_h c2 = (shmemc_context_h)shmem_ctx;
     int const_bytes = AES_RAND_BYTES;
+    DEBUG_SHMEM("Entering rand_buytes with cipherbuf+src: %p+0x%x\n",
+          cipherbuf, src);
     RAND_bytes(cipherbuf+src, const_bytes);
-    EVP_EncryptInit_ex2(c2->enc_ctx, NULL, NULL, NULL, cipherbuf+src);
+
+    DEBUG_SHMEM("send_buf: %p, src %llu, dest %llu, cipherbuf: %p, c2: %p, enc_ctx: %p\n",
+          sbuf, src, dest, cipherbuf, c2, c2->enc_ctx);
+
+    struct ossl_param_st enc_data = {};
+    enc_data.key = gcm_key;
+    enc_data.data = cipherbuf+src;
+    enc_data.data_size = bytes;
+    EVP_EncryptInit_ex2(c2->enc_ctx, EVP_aes_256_gcm(), gcm_key, cipherbuf+src, &enc_data);;
 
     EVP_EncryptUpdate(c2->enc_ctx,cipherbuf+src+const_bytes,cipher_len, sbuf+dest, bytes);
 
@@ -339,18 +344,20 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     unsigned char *blocking_put_ciphertext = calloc(1, nbytes);
        size_t cipherlen = 0;
 
-       fprintf(stderr, "encruption start\n");
-    int res = shmemx_encrypt_single_buffer(
+       //DEBUG_SHMEM( "encruption start\n");
+    int res  = 0;
+    SHMEMT_MUTEX_NOPROTECT(
+    shmemx_encrypt_single_buffer(
             (blocking_put_ciphertext),
-            0, src, 0, nbytes, ctx, &cipherlen);
+            proc.li.rank, src, pe, nbytes, ctx, &cipherlen));
 
-    fprintf(stderr, "Encryption end\n");
+    DEBUG_SHMEM( "Encryption end\n");
 
     shmemc_ctx_put(ctx, dest, 
             blocking_put_ciphertext,
             cipherlen, pe);
 
-    fprintf(stderr, "Put end\n");
+    DEBUG_SHMEM( "Put end\n");
 
     /* Only begin PMIX Construction AFTER the put has been set up appropriately
      * */
@@ -366,8 +373,8 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     pmix_proc_t *procs;
     size_t nprocs = 1;
     procs = (pmix_proc_t *)malloc(sizeof(pmix_proc_t)*nprocs);
-
-    PMIX_LOAD_PROCID(procs, PMIX_RANGE_NAMESPACE, pe);
+    DEBUG_SHMEM("Entering PMIX_LOAD_PROC_ID\n");
+    PMIX_LOAD_PROCID(procs, procs->nspace, pe);
     //  PMIX_LOAD_PROCID(&procs[1], PMIX_RANGE_NAMESPACE, dest);
 
     pmix_data_array_t pmix_darray;
@@ -392,11 +399,10 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     si[2].value.type = PMIX_UINT32;
     si[2].value.data.uint32 = pe;
 
-
     PMIX_INFO_CONSTRUCT(&si[3]);
-    PMIX_INFO_LOAD(&si[3], PMIX_RANGE_CUSTOM, &pmix_darray, PMIX_DATA_ARRAY);
-   fprintf(stderr, "Starting signaling\n");
-    ps = PMIx_Notify_event(PMIX_ERR_START_DECRYPTION, procs, PMIX_RANGE_CUSTOM, &si,
+    PMIX_INFO_LOAD(&si[3], "Proc_Data_array", &pmix_darray, PMIX_DATA_ARRAY);
+    DEBUG_SHMEM( "Starting signaling\n");
+    ps = PMIx_Notify_event(PMIX_ERR_START_DECRYPTION, procs, PMIX_RANGE_CUSTOM, &(si[0]),
             4, NULL, NULL);
 
     if (ps != PMIX_SUCCESS){
@@ -405,7 +411,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
                 PMIx_Error_string(ps));
     };
 
-    fprintf(stderr, "Signaling success? %s\n", ps == PMIX_SUCCESS ? "yes" : "no");
+    DEBUG_SHMEM( "Signaling success? %s\n", ps == PMIX_SUCCESS ? "yes" : "no");
 
     PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
     free(procs);
