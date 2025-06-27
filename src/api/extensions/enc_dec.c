@@ -155,7 +155,13 @@ void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
     size_t cipherlen = size.value.data.uint32;
     pmix_info_t dest_rank = info[2];
     uint32_t pe = dest_rank.value.data.uint32;
-    pmix_info_t proc_rank = info[3];
+    pmix_info_t non_blocking = info[3];
+    int is_nonblocking = non_blocking.value.data.integer;
+    pmix_info_t og_bytes = info[4];
+    size_t og_size = og_bytes.value.data.uint32;
+    pmix_info_t context = info[5];
+    shmem_ctx_t ctx = (shmem_ctx_t)context.value.data.ptr;
+    pmix_info_t proc_rank = info[6];
 
     int source_rank = source ? source->rank : PMIX_RANK_UNDEF;
 
@@ -169,8 +175,17 @@ void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
 
     get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
 
-    void *r_dest_ciphertext = (void *)r_dest; 
+    void *r_dest_ciphertext = malloc(cipherlen);
+    memcpy(r_dest_ciphertext, (void*)r_dest, cipherlen);
 
+    size_t cipher_len = 0;
+
+    shmemx_decrypt_single_buffer((unsigned char *)r_dest_ciphertext, pe, (const void *)r_dest, proc.li.rank, og_size + AES_RAND_BYTES, ctx, &cipherlen);
+
+   /* Hopefully the above is "it" for the 
+    * decryption. Would need to see in an actual application
+    */
+    
     //shmem_global_exit(-1);
 
 }
@@ -294,13 +309,18 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
     enc_data.key = gcm_key;
     enc_data.data = cipherbuf+src;
     enc_data.data_size = bytes;
-    EVP_EncryptInit_ex2(c2->enc_ctx, EVP_aes_256_gcm(), gcm_key, cipherbuf+src, &enc_data);;
 
-    EVP_EncryptUpdate(c2->enc_ctx,cipherbuf+src+const_bytes,cipher_len, sbuf+dest, bytes);
+    DEBUG_SHMEM("Byte count :%d \n", (int)bytes);
+    EVP_EncryptInit_ex2(c2->enc_ctx, EVP_aes_256_gcm(), gcm_key, cipherbuf+src, &enc_data);
+
+
+    EVP_EncryptUpdate(c2->enc_ctx,cipherbuf+src+const_bytes,(int)cipher_len, sbuf+dest, bytes);
 
     EVP_EncryptFinal_ex(c2->enc_ctx, cipherbuf+const_bytes+src+(*cipher_len), (int *)cipher_len);
 
     EVP_CIPHER_CTX_ctrl(c2->enc_ctx, EVP_CTRL_GCM_GET_TAG, AES_TAG_LEN, cipherbuf+const_bytes+src+bytes);
+
+    DEBUG_SHMEM("Ciphertext %p, Cipher_len %d\n", cipherbuf, *((int *)(cipher_len)));
     
   
     return 0;
@@ -310,8 +330,16 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
         const void *rbuf, unsigned long long dest, size_t bytes, 
         shmem_ctx_t shmem_ctx, size_t  *cipher_len){
 
+
+   struct ossl_param_st enc_data = {};
+   enc_data.key = gcm_key;
+   enc_data.data = cipherbuf+src;
+   enc_data.data_size = *(cipher_len);
+   enc_data.return_size = bytes;
+
+
     shmemc_context_h c2 = (shmemc_context_h)shmem_ctx;
-    EVP_DecryptInit_ex2(c2->dec_ctx, NULL, NULL, NULL, cipherbuf+src);
+    EVP_DecryptInit_ex2(c2->dec_ctx, EVP_aes_256_gcm(), gcm_key,  cipherbuf+src, &enc_data);
     EVP_DecryptUpdate(c2->dec_ctx, rbuf+dest, cipher_len, cipherbuf+src+AES_RAND_BYTES, (bytes-AES_RAND_BYTES));
     EVP_CIPHER_CTX_ctrl(c2->dec_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, (rbuf+dest+(*cipher_len)));
     if (!(EVP_DecryptFinal_ex(c2->dec_ctx, (rbuf+dest+(*cipher_len)), (int *)cipher_len) > 0)){
@@ -351,7 +379,8 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
             (blocking_put_ciphertext),
             proc.li.rank, src, pe, nbytes, ctx, &cipherlen));
 
-    DEBUG_SHMEM( "Encryption end\n");
+    DEBUG_SHMEM( "Encryption end, ciphertext: %p, cipherlen: %u \n",
+          blocking_put_ciphertext, cipherlen);
 
     shmemc_ctx_put(ctx, dest, 
             blocking_put_ciphertext,
@@ -368,7 +397,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
      */
 
     pmix_status_t ps;
-    pmix_info_t si[4];
+    pmix_info_t si[7];
 
     pmix_proc_t *procs;
     size_t nprocs = 1;
@@ -400,10 +429,25 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     si[2].value.data.uint32 = pe;
 
     PMIX_INFO_CONSTRUCT(&si[3]);
-    PMIX_INFO_LOAD(&si[3], "Proc_Data_array", &pmix_darray, PMIX_DATA_ARRAY);
+    PMIX_LOAD_KEY(si[3].key, "is_nonblocking");
+    si[3].value.type = PMIX_INT;
+    si[3].value.data.integer = 0;
+
+    PMIX_INFO_CONSTRUCT(&si[4]);
+    PMIX_LOAD_KEY(si[4].key, "og_bytes");
+    si[4].value.type = PMIX_UINT32;
+    si[4].value.data.uint32 = nbytes;
+
+    PMIX_INFO_CONSTRUCT(&si[5]);
+    PMIX_LOAD_KEY(si[5].key, "shmem_context");
+    si[5].value.type = PMIX_POINTER;
+    si[5].value.data.ptr = ctx;
+
+    PMIX_INFO_CONSTRUCT(&si[6]);
+    PMIX_INFO_LOAD(&si[6], "Proc_Data_array", &pmix_darray, PMIX_DATA_ARRAY);
     DEBUG_SHMEM( "Starting signaling\n");
     ps = PMIx_Notify_event(PMIX_ERR_START_DECRYPTION, procs, PMIX_RANGE_CUSTOM, &(si[0]),
-            4, NULL, NULL);
+            7, NULL, NULL);
 
     if (ps != PMIX_SUCCESS){
         shmemu_assert(ps == PMIX_SUCCESS,
