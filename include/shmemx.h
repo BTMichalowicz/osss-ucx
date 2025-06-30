@@ -406,6 +406,18 @@ extern pmix_proc_t *my_second_pmix;
       fflush(stdout);                                   \
    } while(0);
 
+#define ERROR_SHMEM(fmt, args...)                       \
+   do {                                                 \
+      fflush(stdout);                                   \
+      fprintf(stdout, "[rank_%d][%s:%d][%s][ERROR] "fmt,       \
+            proc.li.rank, __FILE__, __LINE__, __func__, \
+            ##args);                                    \
+      fflush(stdout);                                   \
+   } while(0);
+
+
+
+
 /* ENDING SHMEM ENCRYPTION ADDITIONS: BTM */
 #ifdef __cplusplus
 }
