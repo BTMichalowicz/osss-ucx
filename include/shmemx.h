@@ -318,7 +318,7 @@ int shmemx_query_interoperability(int property);
 #define COLL_OFFSET 400
 #define GCM_KEY_SIZE 32
 #define AES_TAG_LEN 16
-#define AES_RAND_BYTES 16
+#define AES_RAND_BYTES 12
 #define NON_BLOCKING_OP_COUNT 1024
 
 

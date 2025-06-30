@@ -13,8 +13,8 @@
 #include "shmem_mutex.h"
 
 #if ENABLE_SHMEM_ENCRYPTION
-#include "shmemx.h"
-#include "shmem_enc.h"
+//#include "shmemx.h"
+//#include "shmem_enc.h"
 
 /**
  * @brief Macro to define a typed put operation with a context
@@ -33,11 +33,11 @@
     logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
            __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
                                                                                \
-     if (proc.env.shmem_encryption == 1){                                      \
+/*     if (proc.env.shmem_encryption == 1){                                      \
         SHMEMT_MUTEX_NOPROTECT(shmemx_secure_put(ctx, dest, src, nb, pe));     \
-     }else{                                                                    \
+     }else{                                                  */                  \
         SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put(ctx, dest, src, nb, pe));        \
-     }                                                                         \
+    /* } */                                                                        \
   }
 
 /**
@@ -57,11 +57,11 @@
     logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
            __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
                                                                                \
-     if (proc.env.shmem_encryption == 1){                                      \
+    /* if (proc.env.shmem_encryption == 1){                                      \
         SHMEMT_MUTEX_NOPROTECT(shmemx_secure_get(ctx, dest, src, nb, pe));     \
-     }else{                                                                    \
+     }else{   */                                                                 \
         SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get(ctx, dest, src, nb, pe));        \
-     }                                                                         \
+    /* } */                                                                        \
   }
 
 /**
@@ -80,11 +80,11 @@
     logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
            __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
                                                                                \
-     if (proc.env.shmem_encryption == 1){                                      \
+   /*  if (proc.env.shmem_encryption == 1){                                      \
         SHMEMT_MUTEX_NOPROTECT(shmemx_secure_put(ctx, dest, src, nb, pe));     \
-     }else{                                                                    \
+     }else{*/                                                                    \
         SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put(ctx, dest, src, nb, pe));        \
-     }                                                                         \
+    /* } */                                                                        \
   }
 
 /**
@@ -103,11 +103,11 @@
     logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
            __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
                                                                                \
-    if (proc.env.shmem_encryption == 1){                                      \
+  /*  if (proc.env.shmem_encryption == 1){                                      \
         SHMEMT_MUTEX_NOPROTECT(shmemx_secure_get(ctx, dest, src, nb, pe));     \
-    }else{                                                                    \
+    }else{   */                                                                 \
        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get(ctx, dest, src, nb, pe));        \
-    }                                                                          \
+    /*} */                                                                         \
   }
 
 /**
@@ -123,11 +123,11 @@
     logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
            __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
                                                                                \
-     if (proc.env.shmem_encryption == 1){                                      \
+   /*  if (proc.env.shmem_encryption == 1){                                      \
         SHMEMT_MUTEX_NOPROTECT(shmemx_secure_put(ctx, dest, src, nelems, pe));     \
-     }else{                                                                    \
+     }else{ */                                                                   \
         SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_put(ctx, dest, src, nelems, pe));        \
-     }                                                                         \
+    /* } */                                                                        \
   }
 
 /**
@@ -143,11 +143,11 @@
     logger(LOG_RMA, "%s(ctx=%lu, dest=%p, src=%p, nelems=%lu, pe=%d)",         \
            __func__, shmemc_context_id(ctx), dest, src, nelems, pe);           \
                                                                                \
-     if (proc.env.shmem_encryption == 1){                                      \
+ /*    if (proc.env.shmem_encryption == 1){                                      \
         SHMEMT_MUTEX_NOPROTECT(shmemx_secure_get(ctx, dest, src, nelems, pe));     \
-     }else{                                                                    \
+     }else{  */                                                                  \
         SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_get(ctx, dest, src, nelems, pe));        \
-     }                                                                         \
+   /*  }  */                                                                       \
   }
 
 
