@@ -308,7 +308,7 @@ int shmemx_query_interoperability(int property);
 
 /* BEGINNING SHMEM ENCRYPTION ADDITIONS: BTM */
 #if ENABLE_SHMEM_ENCRYPTION
-
+#include <pmix.h>
 
 /* Constant items */
 #define MAX_MSG_SIZE (2<<19) /* 512 KB */
@@ -377,9 +377,9 @@ typedef struct shmem_secure_attr {
 
 
 
-int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, shmem_ctx_t shmem_ctx, size_t *cipher_len);
+int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes);
 
-int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *rbuf, unsigned long long dest, size_t bytes, shmem_ctx_t shmem_ctx, size_t *cipher_len);
+int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
 
 void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe);
@@ -392,6 +392,8 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe);
+
+extern pmix_proc_t *my_second_pmix;
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 
