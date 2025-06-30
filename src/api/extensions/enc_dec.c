@@ -338,14 +338,19 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
   //  enc_data.data_size = bytes;
 
     DEBUG_SHMEM("Byte count :%d \n", (int)bytes);
-    if((res = EVP_EncryptInit_ex(enc_ctx, EVP_aes_256_gcm(), NULL, NULL, cipherbuf+src) != 1)){
+    if((res = EVP_EncryptInit_ex(enc_ctx, EVP_aes_256_gcm(), NULL, NULL, cipherbuf+src)) != 1){
        ERROR_SHMEM("Encryption failed from error %d: %s\n",
              ERR_get_error(), ERR_error_string(res, NULL));
+       memset(NULL, 0, 10);
     }
 
 
 
-    EVP_EncryptUpdate(enc_ctx,cipherbuf+src+const_bytes, &block_put_cipherlen, sbuf+dest, bytes);
+    if ((res = EVP_EncryptUpdate(enc_ctx,cipherbuf+src+const_bytes, &block_put_cipherlen, sbuf+dest, bytes))!=1){
+       ERROR_SHMEM("Encrypt_Update failed: %s\n",
+             ERR_error_string(ERR_get_error(), NULL));
+       memset(NULL, 0, 10);
+    }
 
     shmemu_assert(block_put_cipherlen >0, "shmemx_encrypt_single_buffer: ciphertext is 0...\n");
 
@@ -371,7 +376,7 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
    DEBUG_SHMEM("Cipher_len %ld, expectd bytes %ld\n", cipher_len, bytes);
 
 
-      EVP_DecryptInit_ex(dec_ctx, NULL, NULL, NULL, cipherbuf+src);
+      EVP_DecryptInit_ex(dec_ctx, EVP_aes_256_gcm(), NULL, NULL, cipherbuf+src);
     EVP_DecryptUpdate(dec_ctx, ((unsigned char *)(rbuf+dest)), &cipher_len, cipherbuf+src+AES_RAND_BYTES, (bytes-AES_RAND_BYTES));
     EVP_CIPHER_CTX_ctrl(dec_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, (rbuf+dest+(cipher_len)));
     if (!(EVP_DecryptFinal_ex(dec_ctx, (rbuf+dest+(cipher_len)), &cipher_len) > 0)){
