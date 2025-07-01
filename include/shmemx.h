@@ -334,32 +334,19 @@ void shmemx_sec_init(void);
  * encryption or decryption
  */
 
-typedef enum encrypted_op {
-    PUT = 0,
-    GET,
-    NB_PUT,
-    NB_GET,
-}encrypted_op_t;
-
-
-#define DECRYPT_TAG 101
-#define ENCRYPT_TAG 102
-#define NB_ENC_TAG 103
-#define NB_DEC_TAG 104
-
 
 /* TODO: Do we send the below in the encrypted section? alongside buffer
  * addresses and the like?  */
+/* ANSWER: Yes, for non-blocking put/get */
 
 typedef struct shmem_secure_attr {
     int src_pe;
     int dst_pe;
     size_t plaintext_size;
     size_t encrypted_size;
-    uintptr_t plaintext_buf_addr;
-    uintptr_t encrypted_buf_addr;
-    encrypted_op_t encrypted_op;
-
+    uintptr_t remote_buf_addr;
+    uintptr_t local_buf_addr;
+    uintptr_t local_buf;
 } shmem_secure_attr_t;
 
 /**
@@ -377,7 +364,7 @@ typedef struct shmem_secure_attr {
 
 
 
-int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes);
+int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipher_len);
 
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
 
