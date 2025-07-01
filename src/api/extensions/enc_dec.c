@@ -337,11 +337,8 @@ void shmemx_sec_init(){
     PMIx_Register_event_handler(&sp, 1, NULL, 0, dec_notif_fn,
             enc_notif_callbk, (void *)&active);
     while(active == -1){}
-
     shmemu_assert(active == 0, "shmem_enc_init: PMIx_dec_handler reg failed");
-
     DEBUG_SHMEM("Encrypion initialization has been completed\n");
-
     return;
 }
 
@@ -476,7 +473,6 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
     nb_put_ctr[nbput_count].plaintext_size = nbytes;
     nb_put_ctr[nbput_count].encrypted_size = cipherlen;
     nb_put_ctr[nbput_count].remote_buf_addr = r_dest;
-    nb_put_ctr[nbput_count].local_buf_addr = local_dest;
     nb_put_ctr[nbput_count].local_buf = (uintptr_t) src;
     
 
@@ -682,6 +678,8 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
     nb_get_ctr[nbget_count].dst_pe = proc.li.rank;
     nb_get_ctr[nbget_count].plaintext_size = nbytes;
     nb_get_ctr[nbget_count].encrypted_size = nbytes+AES_TAG_LEN+AES_RAND_BYTES;
+    nb_get_ctr[nbget_count].local_buf_addr = (uintptr_t) dest;
+    
 
     /*TODO: SIGNAL DECRYPTION IN WAIT!! */
 

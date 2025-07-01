@@ -383,7 +383,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 extern pmix_proc_t *my_second_pmix;
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-
+#if 1
 #define DEBUG_SHMEM(fmt, args...)                       \
    do {                                                 \
       fflush(stdout);                                   \
@@ -392,7 +392,9 @@ extern pmix_proc_t *my_second_pmix;
             ##args);                                    \
       fflush(stdout);                                   \
    } while(0);
-
+#else
+#define DEBUG_SHMEM(...)
+#endif /* 1/0 for DEBUG PRINTS */
 #define ERROR_SHMEM(fmt, args...)                       \
    do {                                                 \
       fflush(stdout);                                   \
