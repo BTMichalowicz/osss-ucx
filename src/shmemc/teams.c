@@ -517,21 +517,28 @@ int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,
   for (i = 0; i < size; ++i) {
     khint_t k;
 
+    /* Get the parent PE at position 'walk' */
     k = kh_get(map, parh->fwd, walk);
-    const int up = kh_val(parh->fwd, k);
+    if (k == kh_end(parh->fwd)) {
+      /* This shouldn't happen if parameters are valid */
+      shmemu_warn("Parent PE %d not found in forward map", walk);
+      free(newt);
+      *newh = SHMEM_TEAM_INVALID;
+      return -1;
+    }
 
-    /* Check if this PE is part of the team */
-    if (is_member(up, start, size)) {
-      k = kh_put(map, newt->fwd, i, &absent);
-      kh_val(newt->fwd, k) = up;
+    const int global_pe = kh_val(parh->fwd, k);
 
-      k = kh_put(map, newt->rev, up, &absent);
-      kh_val(newt->rev, k) = i;
+    /* Add this PE to the new team mapping */
+    k = kh_put(map, newt->fwd, i, &absent);
+    kh_val(newt->fwd, k) = global_pe;
 
-      /* If this is me, set my rank in the team */
-      if (up == proc.li.rank) {
-        newt->rank = i;
-      }
+    k = kh_put(map, newt->rev, global_pe, &absent);
+    kh_val(newt->rev, k) = i;
+
+    /* If this global PE is me, set my rank in the team */
+    if (global_pe == proc.li.rank) {
+      newt->rank = i;
     }
 
     walk += stride;

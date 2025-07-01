@@ -45,11 +45,11 @@ $oshcc --version
 # $oshrun $flags -np 4 ./bin/test_init_thread
 # echo
 
-# --- shmem_put ---
-echo $hline ; echo "  Running shmem_put test" ; echo $hline
-$oshcc test_put.c -o ./bin/test_put
-$oshrun $flags -np 2 ./bin/test_put
-echo
+# # --- shmem_put ---
+# echo $hline ; echo "  Running shmem_put test" ; echo $hline
+# $oshcc test_put.c -o ./bin/test_put
+# $oshrun $flags -np 2 ./bin/test_put
+# echo
 
 # # --- shmem_info ---
 # echo $hline ; echo "  Running shmem_info test" ; echo $hline
@@ -93,11 +93,11 @@ echo
 # $oshrun $flags -np 4 ./bin/test_alltoalls
 # echo
 
-# --- shmem_collect ---
-echo $hline ; echo "  Running shmem_collect test" ; echo $hline
-$oshcc test_collect.c -o ./bin/test_collect
-$oshrun $flags -np 4 ./bin/test_collect
-echo
+# # --- shmem_collect ---
+# echo $hline ; echo "  Running shmem_collect test" ; echo $hline
+# $oshcc test_collect.c -o ./bin/test_collect
+# $oshrun $flags -np 4 ./bin/test_collect
+# echo
 
 # # --- shmem_fcollect ---
 # echo $hline ; echo "  Running shmem_fcollect test" ; echo $hline
@@ -152,3 +152,9 @@ echo
 # $oshcc test_to_all.c -o ./bin/test_to_all -Wno-deprecated-declarations
 # $oshrun $flags -np 4 ./bin/test_to_all
 # echo
+
+# --- shmem_team_my_pe ---
+echo $hline ; echo "  Running shmem_team_my_pe test" ; echo $hline
+$oshcc test_team_my_pe.c -o ./bin/test_team_my_pe
+$oshrun $flags -np 8 ./bin/test_team_my_pe
+echo

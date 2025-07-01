@@ -460,7 +460,7 @@ broadcast_helper_scatter_collect(void *target, const void *source,
     SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
     SHMEMU_CHECK_SYMMETRIC(dest, (_size) / (CHAR_BIT) * nelems * PE_size);     \
     SHMEMU_CHECK_SYMMETRIC(source, (_size) / (CHAR_BIT) * nelems * PE_size);   \
-    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_ALLTOALL_SYNC_SIZE);   \
+    SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_BCAST_SYNC_SIZE);      \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, (_size) / (CHAR_BIT) * nelems,   \
                                 (_size) / (CHAR_BIT) * nelems);                \
     /* Perform broadcast */                                                    \
