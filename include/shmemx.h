@@ -310,8 +310,12 @@ int shmemx_query_interoperability(int property);
 #if ENABLE_SHMEM_ENCRYPTION
 #include <pmix.h>
 
+#define KILO 1024
+#define MEGA KILO*KILO
+#define GIGA KILO*MGEA
+
 /* Constant items */
-#define MAX_MSG_SIZE (2<<19) /* 512 KB */
+#define MAX_MSG_SIZE (4*MEGA)
 //const unsigned long long max_msg_size = 2<<27ul;
 #define OFFSET 400
 //const unsigned long long pt2pt_size = max_msg_size + OFFSET;
@@ -368,7 +372,7 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
 
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
 
-int shmemx_secure_wait(void);
+int shmemx_secure_quiet(void);
 
 void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe);
@@ -385,7 +389,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 extern pmix_proc_t *my_second_pmix;
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-#if 1
+#if 0
 #define DEBUG_SHMEM(fmt, args...)                       \
    do {                                                 \
       fflush(stdout);                                   \
@@ -399,11 +403,11 @@ extern pmix_proc_t *my_second_pmix;
 #endif /* 1/0 for DEBUG PRINTS */
 #define ERROR_SHMEM(fmt, args...)                       \
    do {                                                 \
-      fflush(stdout);                                   \
-      fprintf(stdout, "[rank_%d][%s:%d][%s][ERROR] "fmt,       \
+      fflush(stderr);                                   \
+      fprintf(stderr, "[rank_%d][%s:%d][%s][ERROR] "fmt,       \
             proc.li.rank, __FILE__, __LINE__, __func__, \
             ##args);                                    \
-      fflush(stdout);                                   \
+      fflush(stderr);                                   \
    } while(0);
 
 

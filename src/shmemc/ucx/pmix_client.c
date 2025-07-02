@@ -34,7 +34,9 @@ static pmix_proc_t my_pmix; /* about me */
 static pmix_proc_t wc_pmix; /* wildcard lookups */
 static pmix_proc_t ex_pmix; /* internal exchanges */
 
+#if ENABLE_SHMEM_ENCRYPTION
 pmix_proc_t *my_second_pmix = &my_pmix;
+#endif /* ENABLE_SHMEM_ENCRYPTION */
 
 static pmix_key_t k1; /* re-usable key spaces */
 #ifndef ENABLE_ALIGNED_ADDRESSES
