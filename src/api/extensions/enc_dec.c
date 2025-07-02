@@ -234,11 +234,11 @@ static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
     DEBUG_SHMEM("Setting up ciphertext from address for cipherlen %d\n", cipherlen);
     memcpy(r_dest_ciphertext, (void*)dest, cipherlen);
 
-    size_t cipher_len = 0;
+    size_t cipher_len = cipherlen;
 
     DEBUG_SHMEM("Decryption time!\n");
 
-    shmemx_decrypt_single_buffer((unsigned char *)r_dest_ciphertext, pe, dest, proc.li.rank, og_size + AES_RAND_BYTES, cipherlen);
+    shmemx_decrypt_single_buffer((unsigned char *)r_dest_ciphertext, pe, dest, proc.li.rank, og_size + AES_RAND_BYTES, (int)cipher_len);
 
    /* Hopefully the above is "it" for the 
     * decryption. Would need to see in an actual application
@@ -436,7 +436,7 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
     }
 
     DEBUG_SHMEM("DecryptFinal_ex passed\n");
-    return 0;
+    return res != 0 ? 0 : 0;
 }
 
 
@@ -491,7 +491,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     int res  = 0;
     unsigned char *blocking_put_ciphertext = calloc(1, nbytes*4);
     shmemx_encrypt_single_buffer(
-            &(blocking_put_ciphertext[0]),
+            blocking_put_ciphertext,
             proc.li.rank, src, pe, nbytes, ((size_t *)(&block_put_cipherlen)));
 
     DEBUG_SHMEM( "Encryption end, ciphertext: %p, cipherlen: %d \n",
@@ -538,7 +538,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
    
     PMIX_INFO_CONSTRUCT(&si[0]);
     PMIX_INFO_LOAD(&si[0], PMIX_EVENT_CUSTOM_RANGE, &pmix_darray, PMIX_DATA_ARRAY);
-    DEBUG_SHMEM("dest ptr: %p\n", r_dest);
+    DEBUG_SHMEM("dest ptr, one passed in %p: %p\n", r_dest, dest);
 
     PMIX_INFO_CONSTRUCT(&si[1]);
     PMIX_LOAD_KEY(si[1].key, "Remote_secure_buffer");
@@ -558,7 +558,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     PMIX_INFO_CONSTRUCT(&si[4]);
     PMIX_LOAD_KEY(si[4].key, "is_nonblocking");
     si[4].value.type = PMIX_INT;
-    si[4].value.data.integer = 0;
+    si[4].value.data.integer = 1;
 
     PMIX_INFO_CONSTRUCT(&si[5]);
     PMIX_LOAD_KEY(si[5].key, "og_bytes");
@@ -646,7 +646,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
     PMIX_INFO_CONSTRUCT(&si[3]);
     PMIX_LOAD_KEY(si[3].key, "is_nonblocking");
     si[3].value.type = PMIX_INT;
-    si[3].value.data.integer = 0;
+    si[3].value.data.integer = 1;
 
     PMIX_INFO_CONSTRUCT(&si[4]);
     PMIX_LOAD_KEY(si[4].key, "og_bytes");
@@ -679,9 +679,52 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
     nb_get_ctr[nbget_count].plaintext_size = nbytes;
     nb_get_ctr[nbget_count].encrypted_size = nbytes+AES_TAG_LEN+AES_RAND_BYTES;
     nb_get_ctr[nbget_count].local_buf_addr = (uintptr_t) dest;
-    
+    nbget_count++; 
 
     /*TODO: SIGNAL DECRYPTION IN WAIT!! */
+
+}
+
+
+int shmemx_secure_quiet(void){
+
+   int shmem_errno = 0; /* SUCCESS */
+   pmix_status_t ps;
+   pmix_info_t put_array[6]; 
+   /* Need the put-based PMIx array for the remote cleanup.
+    * As long as it's not super-time consuming, then we're
+    * okay... I think
+    */
+
+   int ctr = 0;
+   while (ctr < nbput_count){
+      shmem_secure_attr_t put_data = nb_put_ctr[ctr];
+      
+      
+      free(nbi_put_ciphertext[ctr]);
+      ctr++;
+   }
+
+   ctr = 0;
+
+   while (ctr < nbget_count){
+      shmem_secure_attr_t get_data = nb_get_ctr[ctr];
+
+      int cipher_text = 0;
+
+      if (shmemx_decrypt_single_buffer(nbi_get_ciphertext[ctr], get_data.src_pe, 
+            (void *)(get_data.local_buf),get_data.dst_pe, get_data.plaintext_size,
+            get_data.encrypted_size) != 0){
+         ERROR_SHMEM("Failed to decrypt on buffer %p with ciphertext %p, counter %d\n",
+               (void *)get_data.local_buf, nbi_get_ciphertext[ctr]);
+      }
+      free(nbi_get_ciphertext[ctr]);
+      nbi_get_ciphertext[ctr] = NULL;
+      ctr++;
+   }
+
+   memset(nb_put_ctr, 0, (sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2));
+   memset(nb_get_ctr, 0, (sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2));
 
 }
 
