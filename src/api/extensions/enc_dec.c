@@ -558,7 +558,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     PMIX_INFO_CONSTRUCT(&si[4]);
     PMIX_LOAD_KEY(si[4].key, "is_nonblocking");
     si[4].value.type = PMIX_INT;
-    si[4].value.data.integer = 1;
+    si[4].value.data.integer = 0;
 
     PMIX_INFO_CONSTRUCT(&si[5]);
     PMIX_LOAD_KEY(si[5].key, "og_bytes");
