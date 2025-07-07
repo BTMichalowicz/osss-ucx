@@ -371,24 +371,43 @@ inline static void shmem_generics_nomatch(void *dummy, ...) {}
 #define SHMEM_REDUCE_GENERIC_CASE_prod(type, typename)                         \
   SHMEM_REDUCE_GENERIC_CASE(prod, type, typename)
 
-#define shmem_and_reduce(...)                                                  \
-  _Generic(                                                                    \
-      SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                        \
-      C11_SHMEM_REDUCE_BITWISE_TYPE_TABLE(                                     \
-          SHMEM_REDUCE_GENERIC_CASE_and) default: shmem_generics_nomatch)(     \
+#define shmem_and_reduce(...)                                                                               \
+  _Generic(                                                                                                 \
+      SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                                     \
+      C11_SHMEM_REDUCE_BITWISE_CANONICAL_TYPES(SHMEM_REDUCE_GENERIC_CASE_and) default: _Generic(            \
+          SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                                 \
+          C11_SHMEM_REDUCE_BITWISE_STDINT_SMALL_TYPES(SHMEM_REDUCE_GENERIC_CASE_and) default: _Generic(     \
+              SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                             \
+              C11_SHMEM_REDUCE_BITWISE_STDINT_64BIT_TYPES(SHMEM_REDUCE_GENERIC_CASE_and) default: _Generic( \
+                  SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                         \
+                  C11_SHMEM_REDUCE_BITWISE_STDINT_SIZE_TYPES(                                               \
+                      SHMEM_REDUCE_GENERIC_CASE_and) default: shmem_generics_nomatch))))(                   \
       __VA_ARGS__)
 
-#define shmem_or_reduce(...)                                                   \
-  _Generic(SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                   \
-      C11_SHMEM_REDUCE_BITWISE_TYPE_TABLE(                                     \
-               SHMEM_REDUCE_GENERIC_CASE_or) default: shmem_generics_nomatch)( \
+#define shmem_or_reduce(...)                                                                               \
+  _Generic(                                                                                                \
+      SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                                    \
+      C11_SHMEM_REDUCE_BITWISE_CANONICAL_TYPES(SHMEM_REDUCE_GENERIC_CASE_or) default: _Generic(            \
+          SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                                \
+          C11_SHMEM_REDUCE_BITWISE_STDINT_SMALL_TYPES(SHMEM_REDUCE_GENERIC_CASE_or) default: _Generic(     \
+              SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                            \
+              C11_SHMEM_REDUCE_BITWISE_STDINT_64BIT_TYPES(SHMEM_REDUCE_GENERIC_CASE_or) default: _Generic( \
+                  SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                        \
+                  C11_SHMEM_REDUCE_BITWISE_STDINT_SIZE_TYPES(                                              \
+                      SHMEM_REDUCE_GENERIC_CASE_or) default: shmem_generics_nomatch))))(                   \
       __VA_ARGS__)
 
-#define shmem_xor_reduce(...)                                                  \
-  _Generic(                                                                    \
-      SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                        \
-      C11_SHMEM_REDUCE_BITWISE_TYPE_TABLE(                                     \
-          SHMEM_REDUCE_GENERIC_CASE_xor) default: shmem_generics_nomatch)(     \
+#define shmem_xor_reduce(...)                                                                               \
+  _Generic(                                                                                                 \
+      SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                                     \
+      C11_SHMEM_REDUCE_BITWISE_CANONICAL_TYPES(SHMEM_REDUCE_GENERIC_CASE_xor) default: _Generic(            \
+          SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                                 \
+          C11_SHMEM_REDUCE_BITWISE_STDINT_SMALL_TYPES(SHMEM_REDUCE_GENERIC_CASE_xor) default: _Generic(     \
+              SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                             \
+              C11_SHMEM_REDUCE_BITWISE_STDINT_64BIT_TYPES(SHMEM_REDUCE_GENERIC_CASE_xor) default: _Generic( \
+                  SHC11_TYPE_EVAL_PTR(SHC11_GET_ARG2(__VA_ARGS__)),                                         \
+                  C11_SHMEM_REDUCE_BITWISE_STDINT_SIZE_TYPES(                                               \
+                      SHMEM_REDUCE_GENERIC_CASE_xor) default: shmem_generics_nomatch))))(                   \
       __VA_ARGS__)
 
 #define shmem_max_reduce(...)                                                  \

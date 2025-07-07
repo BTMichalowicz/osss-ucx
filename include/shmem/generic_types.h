@@ -195,18 +195,41 @@
  * - shmem_or_reduce()
  * - shmem_xor_reduce()
  *
- * NOTE: Only canonical C types are included below to avoid _Generic
- * duplicate/compatible type errors.
+ * NOTE: Full OpenSHMEM 1.5 specification compliance.
+ * We use chained _Generic to handle conflicts between canonical C types
+ * and stdint.h types on systems where they may be aliases.
  */
-#define C11_SHMEM_REDUCE_BITWISE_TYPE_TABLE(X)                                 \
+
+/* Primary canonical C types for bitwise reductions */
+#define C11_SHMEM_REDUCE_BITWISE_CANONICAL_TYPES(X)                            \
   X(unsigned char, uchar)                                                      \
   X(unsigned short, ushort)                                                    \
   X(unsigned int, uint)                                                        \
   X(unsigned long, ulong)                                                      \
-  X(unsigned long long, ulonglong)                                             \
-  X(int, int)                                                                  \
-  X(long, long)                                                                \
-  X(long long, longlong)
+  X(unsigned long long, ulonglong)
+
+/* Extended stdint.h types for bitwise reductions - Group 1 (smaller types) */
+#define C11_SHMEM_REDUCE_BITWISE_STDINT_SMALL_TYPES(X)                         \
+  X(int8_t, int8)                                                              \
+  X(int16_t, int16)                                                            \
+  X(int32_t, int32)                                                            \
+  X(uint8_t, uint8)                                                            \
+  X(uint16_t, uint16)                                                          \
+  X(uint32_t, uint32)
+
+/* Extended stdint.h types for bitwise reductions - Group 2 (64-bit types) */
+#define C11_SHMEM_REDUCE_BITWISE_STDINT_64BIT_TYPES(X)                         \
+  X(int64_t, int64)                                                            \
+  X(uint64_t, uint64)
+
+/* Extended stdint.h types for bitwise reductions - Group 3 (size_t) */
+#define C11_SHMEM_REDUCE_BITWISE_STDINT_SIZE_TYPES(X) X(size_t, size)
+
+/* Legacy combined table for API compatibility */
+#define C11_SHMEM_REDUCE_BITWISE_STDINT_TYPES(X)                               \
+  C11_SHMEM_REDUCE_BITWISE_STDINT_SMALL_TYPES(X)                               \
+  C11_SHMEM_REDUCE_BITWISE_STDINT_64BIT_TYPES(X)                               \
+  C11_SHMEM_REDUCE_BITWISE_STDINT_SIZE_TYPES(X)
 
 /*
  * Team-based reduce minmax operations (Table 10)
@@ -298,7 +321,7 @@
   X(uint32_t, uint32)                                                          \
   X(uint64_t, uint64)                                                          \
   X(size_t, size)                                                              \
-  X(ptrdiff_t, ptrdiff)                                                        \
+  X(ptrdiff_t, ptrdiff)
 
 /* Preprocesser hack used for implementation of typed routines
  * that need the operand size.
