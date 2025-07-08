@@ -34,8 +34,7 @@ shmem_secure_attr_t *nb_get_ctr = NULL;
 
 
 static volatile int active = -1;
-EVP_CIPHER_CTX *enc_ctx = NULL;
-EVP_CIPHER_CTX *dec_ctx = NULL;
+
 int block_put_cipherlen = 0;
 int block_get_cipheren = 0;
 //unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
@@ -174,7 +173,7 @@ static void enc_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
 
     pmix_info_t buffer = info[1];
     uintptr_t dest = (uintptr_t)buffer.value.data.uint64;
-    shmemu_assert(dest != 0, "dec_notif_fn: dest buffer is NULL!\n");
+    shmemu_assert(dest != 0, "enc_notif_fn: dest buffer is NULL!\n");
     int rank = info[3].value.data.uint32;
     int is_nonblocking = info[4].value.data.integer;
     size_t og_bytes = info[5].value.data.uint32;
@@ -228,9 +227,9 @@ static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
     shmemu_assert(source != NULL, "dec_notif_fn: source proc struct is NULL\n");
 
  
-    void *r_dest_ciphertext = malloc(cipherlen);
+    void *r_dest_ciphertext = malloc(cipherlen + AES_RAND_BYTES+AES_TAG_LEN);
     DEBUG_SHMEM("Setting up ciphertext from address for cipherlen %d\n", cipherlen);
-    memcpy(r_dest_ciphertext, (void*)dest, cipherlen);
+    memcpy(r_dest_ciphertext, (void*)dest, cipherlen + AES_RAND_BYTES+AES_TAG_LEN);
 
     size_t cipher_len = cipherlen;
 
@@ -246,6 +245,7 @@ static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
     if (cbfunc){
        cbfunc(PMIX_SUCCESS, NULL, 0, NULL, NULL, cbdata);
     }
+    free(r_dest_ciphertext);
 }
 
 
@@ -268,50 +268,41 @@ static inline void handleErrors(char *message){
 
 void shmemx_sec_init(){
 
-   //  DEBUG_SHMEM( "Starting sec init\n");
-   char *enc_dec = NULL;
-   int res = 0;
+    char *enc_dec = NULL;
+    int res = 0;
 
 
-   if ((enc_dec = getenv("SHMEM_ENABLE_ENCRYPTION")) != NULL){
-      proc.env.shmem_encryption = atoi(enc_dec);
-      assert(proc.env.shmem_encryption == 0 || proc.env.shmem_encryption == 1);
-   }
+    if ((enc_dec = getenv("SHMEM_ENABLE_ENCRYPTION")) != NULL){
+        proc.env.shmem_encryption = atoi(enc_dec);
+        assert(proc.env.shmem_encryption == 0 || proc.env.shmem_encryption == 1);
+    }
 
-//   DEBUG_SHMEM( "shmem_encryption: %d\n",
-//         proc.env.shmem_encryption);
+    if (!(defcp->enc_ctx = EVP_CIPHER_CTX_new())){
+        handleErrors("cipher failed to be created");
+    }
+    /* Begin using AES_256_gcm */
+    res = EVP_EncryptInit_ex(defcp->enc_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+    if (res != 1){
+        handleErrors("failed to begin encryption portion");
+    }
 
- //   if (defcp->enc_ctx == NULL){
-        if (!(defcp->enc_ctx = EVP_CIPHER_CTX_new())){
-            handleErrors("cipher failed to be created");
-        }
-        /* Begin using AES_256_gcm */
-        res = EVP_EncryptInit_ex(defcp->enc_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
-        if (res != 1){
-            handleErrors("failed to begin encryption portion");
-        }
+    res = EVP_CIPHER_CTX_ctrl(defcp->enc_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+    if (res != 1){
+        handleErrors("Failed to set up the Initialization Vector Length");
+    }
+    if (!(defcp->dec_ctx = EVP_CIPHER_CTX_new())){
+        handleErrors("cipher failed to be created");
+    }
+    /* Begin using AES_256_gcm */
+    res = EVP_DecryptInit_ex(defcp->dec_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+    if (res != 1){
+        handleErrors("failed to begin Decryption portion");
+    }
 
-        res = EVP_CIPHER_CTX_ctrl(defcp->enc_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
-        if (res != 1){
-            handleErrors("Failed to set up the Initialization Vector Length");
-        }
-//    }
-
- //   if (defcp->dec_ctx == NULL){
-        if (!(defcp->dec_ctx = EVP_CIPHER_CTX_new())){
-            handleErrors("cipher failed to be created");
-        }
-        /* Begin using AES_256_gcm */
-        res = EVP_DecryptInit_ex(defcp->dec_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
-        if (res != 1){
-            handleErrors("failed to begin Decryption portion");
-        }
-
-        res = EVP_CIPHER_CTX_ctrl(defcp->dec_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
-        if (res != 1){
-            handleErrors("Failed to set up the Initialization Vector Length");
-        }
-//    }
+    res = EVP_CIPHER_CTX_ctrl(defcp->dec_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+    if (res != 1){
+        handleErrors("Failed to set up the Initialization Vector Length");
+    }
 
     nbi_put_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT*2);
     nbi_get_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT*2);
@@ -344,7 +335,7 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
         const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipherlen){
 
    int res = 0;
-   int len = 0;
+   int len = 0, temp_len = 0;
 
     int const_bytes = AES_RAND_BYTES;
     DEBUG_SHMEM("Entering rand_bytes with cipherbuf+src: %p+0x%x\n",
@@ -373,20 +364,28 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
 
     shmemu_assert(len >0, "shmemx_encrypt_single_buffer: ciphertext is 0...\n");
 
+    temp_len = len;
+
     if ((res = EVP_EncryptFinal_ex(defcp->enc_ctx, cipherbuf+const_bytes+src+(len), &len))!= 1){
        ERROR_SHMEM("EncryptFinal_ex failed: %s\n",
              ERR_error_string(ERR_get_error(), NULL));
        memset(NULL, 0, 10);
     }
 
+    DEBUG_SHMEM("EncryptFinal passed. Len: %d\n", temp_len+len);
+
     if ((res = EVP_CIPHER_CTX_ctrl(defcp->enc_ctx, EVP_CTRL_GCM_GET_TAG, AES_TAG_LEN, cipherbuf+const_bytes+src+bytes))!= 1){
-        ERROR_SHMEM("EncryptFinal_ex failed: %s\n",
+        ERROR_SHMEM("CTX_CTRL: %s\n",
               ERR_error_string(ERR_get_error(), NULL));
         memset(NULL, 0, 10);
     }
-    *cipherlen = len;
+    temp_len+=len;
 
-    DEBUG_SHMEM("Ciphertext %p, Cipher_len %d\n", cipherbuf, (int)(*cipherlen));
+    DEBUG_SHMEM("Ciphertext %p, Cipher_len %d\n", cipherbuf, temp_len);
+
+    *cipherlen = temp_len;
+
+
     
   
     return 0;
@@ -395,13 +394,7 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, 
         void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len){
 
-//   struct ossl_param_st enc_data = {};
-//   enc_data.key = gcm_key;
-//   enc_data.data = cipherbuf+src;
-//   enc_data.data_size = (cipher_len);
-//   enc_data.return_size = bytes;
-//
-//
+
 
    DEBUG_SHMEM("Cipher_len placeholder %ld, expectd bytes %ld\n", cipher_len, bytes);
    int res = 0;
@@ -431,6 +424,9 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
        memset(NULL, 0, 10);
 
     }
+    DEBUG_SHMEM("CIPHER_CTX_ctrl passed\n");
+
+    int temp_len = cipher_len;
 
     DEBUG_SHMEM("CTX_ctrl passed \n");
     if ((res = EVP_DecryptFinal_ex(defcp->dec_ctx, (rbuf+dest+(cipher_len)), (int *)( &cipher_len))) != 1){
@@ -447,7 +443,7 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe){
 
     size_t cipherlen = 0;
-    nbi_put_ciphertext[nbput_count] = malloc(sizeof(char) * nbytes);
+    nbi_put_ciphertext[nbput_count] = malloc(sizeof(char) * nbytes*2);
     shmemx_encrypt_single_buffer(
             ((unsigned char *)nbi_put_ciphertext[nbput_count]),
             0, src, 0, nbytes, ((size_t *)(&cipherlen)));
@@ -513,7 +509,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     put_t1 = shmemx_wtime();
     shmemc_ctx_put(ctx, dest, 
             blocking_put_ciphertext,
-            block_put_cipherlen /*nbytes+AES_TAG_LEN+AES_RAND_BYTES*/, 
+            nbytes+AES_TAG_LEN+AES_RAND_BYTES /*nbytes+AES_TAG_LEN+AES_RAND_BYTES*/, 
             pe);
     put_t2 = (shmemx_wtime() - put_t1)*1e6;
 
@@ -555,7 +551,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
    
     PMIX_INFO_CONSTRUCT(&si[0]);
     PMIX_INFO_LOAD(&si[0], PMIX_EVENT_CUSTOM_RANGE, &pmix_darray, PMIX_DATA_ARRAY);
-    DEBUG_SHMEM("dest ptr, one passed in %p: %p\n", r_dest, dest);
+    DEBUG_SHMEM("dest ptr, one passed in 0x%x: %p\n", r_dest, dest);
 
     PMIX_INFO_CONSTRUCT(&si[1]);
     PMIX_LOAD_KEY(si[1].key, "Remote_secure_buffer");
@@ -565,12 +561,12 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     PMIX_INFO_CONSTRUCT(&si[2]);
     PMIX_LOAD_KEY(si[2].key, "Remote_buffer_enc_size");
     si[2].value.type = PMIX_INT;
-    si[2].value.data.integer = block_put_cipherlen;
+    si[2].value.data.integer = block_put_cipherlen;  // +AES_TAG_LEN+AES_RAND_BYTES;
 
     PMIX_INFO_CONSTRUCT(&si[3]);
     PMIX_LOAD_KEY(si[3].key, "Destination_rank");
     si[3].value.type = PMIX_UINT32;
-    si[3].value.data.uint32 = pe;
+    si[3].value.data.uint32 = 0;
 
     PMIX_INFO_CONSTRUCT(&si[4]);
     PMIX_LOAD_KEY(si[4].key, "is_nonblocking");
@@ -605,7 +601,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     free (blocking_put_ciphertext);
     total_t2 = (shmemx_wtime()-total_t1)*1e6;
 
-   DEBUG_SHMEM("For %d bytes\n"
+   DEBUG_SHMEM("For %u bytes\n"
                 "Encrypt_time %.3f\nPut_time: %.3f\npmix_construct: %.3f\n"
                 "PMIX_notify_time: %.3f\nTotal_time: %.3f\n",
                 nbytes, enc_t2, put_t2, pmix_construct_time,
@@ -617,7 +613,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe){
 
-    nbi_get_ciphertext[nbget_count] = malloc(sizeof(char) * nbytes);
+    nbi_get_ciphertext[nbget_count] = malloc(sizeof(char) * nbytes*2);
 
     size_t cipherlen = 0;
 
@@ -655,7 +651,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
    
     PMIX_INFO_CONSTRUCT(&si[0]);
     PMIX_INFO_LOAD(&si[0], PMIX_EVENT_CUSTOM_RANGE, &pmix_darray, PMIX_DATA_ARRAY);
-    DEBUG_SHMEM("dest ptr: %p\n", r_dest);
+    DEBUG_SHMEM("dest ptr: %p\n", (void *)r_dest);
 
     PMIX_INFO_CONSTRUCT(&si[1]);
     PMIX_LOAD_KEY(si[1].key, "Remote_secure_buffer");
@@ -798,7 +794,7 @@ int shmemx_secure_quiet(void){
             (void *)(get_data.local_buf),get_data.dst_pe, get_data.plaintext_size,
             get_data.encrypted_size) != 0){
          ERROR_SHMEM("Failed to decrypt on buffer %p with ciphertext %p, counter %d\n",
-               (void *)get_data.local_buf, nbi_get_ciphertext[ctr]);
+               (void *)get_data.local_buf, nbi_get_ciphertext[ctr], ctr);
       }
       free(nbi_get_ciphertext[ctr]);
 
@@ -855,6 +851,7 @@ int shmemx_secure_quiet(void){
    memset(nb_put_ctr, 0, (sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2));
    memset(nb_get_ctr, 0, (sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2));
 
+   return 0;
 }
 
 
@@ -897,7 +894,7 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
    
     PMIX_INFO_CONSTRUCT(&si[0]);
     PMIX_INFO_LOAD(&si[0], PMIX_EVENT_CUSTOM_RANGE, &pmix_darray, PMIX_DATA_ARRAY);
-    DEBUG_SHMEM("dest ptr: %p\n", r_dest);
+    DEBUG_SHMEM("dest ptr: %p\n", (void *)r_dest);
 
     PMIX_INFO_CONSTRUCT(&si[1]);
     PMIX_LOAD_KEY(si[1].key, "Remote_secure_buffer");
@@ -956,11 +953,17 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
 
     dec_t1 = shmemx_wtime();
 
-    int res_bytes = nbytes+AES_TAG_LEN+AES_RAND_BYTES;
+    int res_bytes = nbytes+AES_RAND_BYTES;
     shmemx_decrypt_single_buffer(blocking_get_ciphertext, 0, dest, 0, nbytes+AES_RAND_BYTES,  (size_t)res_bytes);
     dec_t2 = (shmemx_wtime()-dec_t1)*1e6;
 
    DEBUG_SHMEM("Second Decryption passing after first one. Need to talk to remote proc to do it there, too\n");
+
+    PMIX_INFO_CONSTRUCT(&si[2]);
+    PMIX_LOAD_KEY(si[2].key, "Remote_buffer_enc_size");
+    si[2].value.type = PMIX_INT;
+    si[2].value.data.integer = nbytes; //block_get_cipherlen;
+
     double dec2_t1 = shmemx_wtime();
     ps = PMIx_Notify_event(DEC_SUCCESS, procs, PMIX_RANGE_CUSTOM, &(si[0]),
           6, NULL, NULL);
@@ -977,12 +980,13 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
     free(blocking_get_ciphertext);
     total_t2 = (shmemx_wtime()-total_t1)*1e6;
 
-      DEBUG_SHMEM("For %d bytes\n"
+      DEBUG_SHMEM("For %u bytes\n"
                 "Decrypt_time %.3f\nGet_time: %.3f\npmix_construct: %.3f\n"
                 "PMIX_notify_time: %.3f\n2nd_dec: %.3f\nTotal_time: %.3f\n",
                 nbytes, dec_t2, get_t2, pmix_construct_time,
                 pmix_t2, dec2_t2, total_t2);
 
+    
 }
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
