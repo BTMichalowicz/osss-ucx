@@ -558,8 +558,6 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_BROADCAST_TYPES)
 
 /**
  * @brief Macro for memory broadcast implementations using legacy helpers
-
- FIXME: me_as should be using internal team handle
  */
 #define SHCOLL_BROADCASTMEM_DEFINITION(_algo)                                  \
   int shcoll_broadcastmem_##_algo(shmem_team_t team, void *dest,               \

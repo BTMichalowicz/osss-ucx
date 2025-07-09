@@ -310,7 +310,7 @@ inline static void barrier_sync_helper_dissemination(int PE_start,
     SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
     SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
     SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_BARRIER_SYNC_SIZE);    \
-    /* TODO: memory fence */                                                   \
+    /* TODO: memory fence? */                                                   \
     barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
   }                                                                            \
                                                                                \
@@ -319,7 +319,7 @@ inline static void barrier_sync_helper_dissemination(int PE_start,
     SHMEMU_CHECK_INIT();                                                       \
     SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
     SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_BARRIER_SYNC_SIZE);    \
-    /* TODO: memory fence */                                                   \
+    /* TODO: memory fence? */                                                   \
     barrier_sync_helper_##_algo(0, 0, shmem_n_pes(), pSync);                   \
   }
 

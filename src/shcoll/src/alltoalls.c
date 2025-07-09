@@ -29,14 +29,14 @@
 #include "shcoll/compat.h"
 
 #include "shmem.h"
-#include "shmemc.h"         /* For shmemc_team_h */
-#include "shmemu.h"         /* For SHMEMU_CHECK_* macros */
-#include "shcoll/barrier.h" /* For shcoll_barrier_binomial_tree */
+#include "shmemc.h"
+#include "shmemu.h"
+#include "shcoll/barrier.h" 
 
 #include <limits.h>
 #include <assert.h>
 #include <string.h>
-#include <math.h> /* For log2 */
+#include <math.h> 
 
 #include <stdio.h>
 #include <shmem/api_types.h>
@@ -271,48 +271,52 @@ SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
                                  shift_exchange, SHIFT_PEER, 1, _nbi)
 
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION,
-                                 xor_pairwise_exchange, SHIFT_PEER, XOR_COND, )
+                                 xor_pairwise_exchange, XOR_PEER, XOR_COND, )
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION,
-                                 xor_pairwise_exchange, SHIFT_PEER, XOR_COND,
+                                 xor_pairwise_exchange, XOR_PEER, XOR_COND,
                                  _nbi)
 
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
-                                 xor_pairwise_exchange, SHIFT_PEER, XOR_COND, )
+                                 xor_pairwise_exchange, XOR_PEER, XOR_COND, )
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
-                                 xor_pairwise_exchange, SHIFT_PEER, XOR_COND,
+                                 xor_pairwise_exchange, XOR_PEER, XOR_COND,
                                  _nbi)
 
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION,
-                                 color_pairwise_exchange, SHIFT_PEER, 1, )
+                                 color_pairwise_exchange, COLOR_PEER,
+                                 COLOR_COND, )
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION,
-                                 color_pairwise_exchange, SHIFT_PEER, 1, _nbi)
+                                 color_pairwise_exchange, COLOR_PEER,
+                                 COLOR_COND, _nbi)
 
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
-                                 color_pairwise_exchange, SHIFT_PEER, 1, )
+                                 color_pairwise_exchange, COLOR_PEER,
+                                 COLOR_COND, )
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
-                                 color_pairwise_exchange, SHIFT_PEER, 1, _nbi)
+                                 color_pairwise_exchange, COLOR_PEER,
+                                 COLOR_COND, _nbi)
 
 /* Generate 8-bit versions specifically for _mem functions */
 ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(shift_exchange, 8, SHIFT_PEER, 1, )
 ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(shift_exchange, 8, SHIFT_PEER, 1, )
-ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, 8, SHIFT_PEER,
+ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, 8, XOR_PEER,
                                          XOR_COND, )
-ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, 8, SHIFT_PEER,
+ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, 8, XOR_PEER,
                                          XOR_COND, )
-ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
-                                         1, )
-ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
-                                         1, )
+ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, 8, COLOR_PEER,
+                                         COLOR_COND, )
+ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, COLOR_PEER,
+                                         COLOR_COND, )
 ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(shift_exchange, 8, SHIFT_PEER, 1, _nbi)
 ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(shift_exchange, 8, SHIFT_PEER, 1, _nbi)
-ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, 8, SHIFT_PEER,
+ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, 8, XOR_PEER,
                                          XOR_COND, _nbi)
-ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, 8, SHIFT_PEER,
+ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, 8, XOR_PEER,
                                          XOR_COND, _nbi)
-ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
-                                         1, _nbi)
-ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
-                                         1, _nbi)
+ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, 8, COLOR_PEER,
+                                         COLOR_COND, _nbi)
+ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, COLOR_PEER,
+                                         COLOR_COND, _nbi)
 
 /**
  * @brief Helper macro to define type-specific alltoalls implementation

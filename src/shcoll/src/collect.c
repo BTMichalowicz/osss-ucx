@@ -660,7 +660,8 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
                                 sizeof(_type) * nelems * team_h->nranks,       \
                                 sizeof(_type) * nelems);                       \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[COLLECT]");                       \
+    SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT),    \
+                      "team_h->pSyncs[COLLECT]");                             \
                                                                                \
     memset(dest, 0, sizeof(_type) * nelems * team_h->nranks);                  \
                                                                                \
