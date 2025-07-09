@@ -38,6 +38,7 @@
 
 #include "shcoll.h"
 #include "table.h"
+#include "shmem/api_types.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -49,27 +50,24 @@
  * @param _algo The algorithm implementation name
  */
 #define SIZED_REG(_op, _algo)                                                  \
-  { #_algo, shcoll_##_op##32##_##_algo, shcoll_##_op##64##_##_algo }
+  {#_algo, shcoll_##_op##32##_##_algo, shcoll_##_op##64##_##_algo}
 
 /**
  * @brief Macro to terminate a sized operation table
  */
-#define SIZED_LAST                                                             \
-  { "", NULL, NULL }
+#define SIZED_LAST {"", NULL, NULL}
 
 /**
  * @brief Macro to register an unsized collective operation
  * @param _op The collective operation name
  * @param _algo The algorithm implementation name
  */
-#define UNSIZED_REG(_op, _algo)                                                \
-  { #_algo, shcoll_##_op##_##_algo }
+#define UNSIZED_REG(_op, _algo) {#_algo, shcoll_##_op##_##_algo}
 
 /**
  * @brief Macro to terminate an unsized operation table
  */
-#define UNSIZED_LAST                                                           \
-  { "", NULL }
+#define UNSIZED_LAST {"", NULL}
 
 /******************************************************** */
 
@@ -80,46 +78,24 @@
  * @param _typename The data type name
  */
 #define TYPED_REG(_op, _algo, _typename)                                       \
-  { #_algo, #_typename, shcoll_##_typename##_##_op##_##_algo }
+  {#_algo, #_typename, shcoll_##_typename##_##_op##_##_algo}
 
 /**
  * @brief Macro to terminate a typed operation table
  */
-#define TYPED_LAST                                                             \
-  { "", "", NULL }
-
-/**
- * @brief Macro to register a typed collective operation for all supported types
- * @param _op The collective operation name
- * @param _algo The algorithm implementation name
- */
-#define TYPED_REG_FOR_ALL_TYPES(_op, _algo)                                    \
-  TYPED_REG(_op, _algo, float), TYPED_REG(_op, _algo, double),                 \
-      TYPED_REG(_op, _algo, longdouble), TYPED_REG(_op, _algo, char),          \
-      TYPED_REG(_op, _algo, schar), TYPED_REG(_op, _algo, short),              \
-      TYPED_REG(_op, _algo, int), TYPED_REG(_op, _algo, long),                 \
-      TYPED_REG(_op, _algo, longlong), TYPED_REG(_op, _algo, uchar),           \
-      TYPED_REG(_op, _algo, ushort), TYPED_REG(_op, _algo, uint),              \
-      TYPED_REG(_op, _algo, ulong), TYPED_REG(_op, _algo, ulonglong),          \
-      TYPED_REG(_op, _algo, int8), TYPED_REG(_op, _algo, int16),               \
-      TYPED_REG(_op, _algo, int32), TYPED_REG(_op, _algo, int64),              \
-      TYPED_REG(_op, _algo, uint8), TYPED_REG(_op, _algo, uint16),             \
-      TYPED_REG(_op, _algo, uint32), TYPED_REG(_op, _algo, uint64),            \
-      TYPED_REG(_op, _algo, size), TYPED_REG(_op, _algo, ptrdiff)
+#define TYPED_LAST {"", "", NULL}
 
 /**
  * @brief Macro to register an untyped collective operation
  * @param _op The collective operation name
  * @param _algo The algorithm implementation name
  */
-#define UNTYPED_REG(_op, _algo)                                                \
-  { #_algo, shcoll_##_op##_##_algo }
+#define UNTYPED_REG(_op, _algo) {#_algo, shcoll_##_op##_##_algo}
 
 /**
  * @brief Macro to terminate an untyped operation table
  */
-#define UNTYPED_LAST                                                           \
-  { "", NULL }
+#define UNTYPED_LAST {"", NULL}
 
 /******************************************************** */
 /**
@@ -129,49 +105,7 @@
  * @param _typename The data type name
  */
 #define TYPED_TO_ALL_REG(_op, _algo, _typename)                                \
-  { #_algo, #_typename, shcoll_##_typename##_##_op##_to_all_##_algo }
-
-/**
- * @brief Macro to register a typed to_all collective operation for bitwise
- * operations
- * @param _op The collective operation name (and, or, xor)
- * @param _algo The algorithm implementation name
- */
-#define TYPED_REG_FOR_BITWISE_TO_ALL(_op, _algo)                               \
-  TYPED_TO_ALL_REG(_op, _algo, short), TYPED_TO_ALL_REG(_op, _algo, int),      \
-      TYPED_TO_ALL_REG(_op, _algo, long),                                      \
-      TYPED_TO_ALL_REG(_op, _algo, longlong)
-
-/**
- * @brief Macro to register a typed to_all collective operation for min/max
- * operations
- * @param _op The collective operation name (min, max)
- * @param _algo The algorithm implementation name
- */
-#define TYPED_REG_FOR_MINMAX_TO_ALL(_op, _algo)                                \
-  TYPED_TO_ALL_REG(_op, _algo, short), TYPED_TO_ALL_REG(_op, _algo, int),      \
-      TYPED_TO_ALL_REG(_op, _algo, long),                                      \
-      TYPED_TO_ALL_REG(_op, _algo, longlong),                                  \
-      TYPED_TO_ALL_REG(_op, _algo, double),                                    \
-      TYPED_TO_ALL_REG(_op, _algo, float),                                     \
-      TYPED_TO_ALL_REG(_op, _algo, longdouble)
-
-/**
- * @brief Macro to register a typed to_all collective operation for arithmetic
- * operations
- * @param _op The collective operation name (sum, prod)
- * @param _algo The algorithm implementation name
- */
-#define TYPED_REG_FOR_ARITH_TO_ALL(_op, _algo)                                 \
-  TYPED_TO_ALL_REG(_op, _algo, short), TYPED_TO_ALL_REG(_op, _algo, int),      \
-      TYPED_TO_ALL_REG(_op, _algo, long),                                      \
-      TYPED_TO_ALL_REG(_op, _algo, longlong),                                  \
-      TYPED_TO_ALL_REG(_op, _algo, double),                                    \
-      TYPED_TO_ALL_REG(_op, _algo, float),                                     \
-      TYPED_TO_ALL_REG(_op, _algo, longdouble),                                \
-      TYPED_TO_ALL_REG(_op, _algo, size),                                      \
-      TYPED_TO_ALL_REG(_op, _algo, ptrdiff)
-
+  {#_algo, #_typename, shcoll_##_typename##_##_op##_to_all_##_algo}
 /**
  * @brief Macro to register a typed collective reduction operation
  * @param _op The collective operation name
@@ -179,97 +113,26 @@
  * @param _typename The data type name
  */
 #define TYPED_REDUCE_REG(_op, _algo, _typename)                                \
-  { #_algo, #_typename, shcoll_##_typename##_##_op##_reduce_##_algo }
-
-/**
- * @brief Macro to register a typed reduce collective operation for bitwise
- * operations
- * @param _op The collective operation name (and, or, xor)
- * @param _algo The algorithm implementation name
- */
-#define TYPED_REG_FOR_BITWISE_REDUCE(_op, _algo)                               \
-  TYPED_REDUCE_REG(_op, _algo, uchar), TYPED_REDUCE_REG(_op, _algo, ushort),   \
-      TYPED_REDUCE_REG(_op, _algo, uint), TYPED_REDUCE_REG(_op, _algo, ulong), \
-      TYPED_REDUCE_REG(_op, _algo, ulonglong),                                 \
-      TYPED_REDUCE_REG(_op, _algo, int8), TYPED_REDUCE_REG(_op, _algo, int16), \
-      TYPED_REDUCE_REG(_op, _algo, int32),                                     \
-      TYPED_REDUCE_REG(_op, _algo, int64),                                     \
-      TYPED_REDUCE_REG(_op, _algo, uint8),                                     \
-      TYPED_REDUCE_REG(_op, _algo, uint16),                                    \
-      TYPED_REDUCE_REG(_op, _algo, uint32),                                    \
-      TYPED_REDUCE_REG(_op, _algo, uint64), TYPED_REDUCE_REG(_op, _algo, size)
-
-/**
- * @brief Macro to register a typed reduce collective operation for min/max
- * operations
- * @param _op The collective operation name (min, max)
- * @param _algo The algorithm implementation name
- */
-#define TYPED_REG_FOR_MINMAX_REDUCE(_op, _algo)                                \
-  TYPED_REDUCE_REG(_op, _algo, char), TYPED_REDUCE_REG(_op, _algo, schar),     \
-      TYPED_REDUCE_REG(_op, _algo, short), TYPED_REDUCE_REG(_op, _algo, int),  \
-      TYPED_REDUCE_REG(_op, _algo, long),                                      \
-      TYPED_REDUCE_REG(_op, _algo, longlong),                                  \
-      TYPED_REDUCE_REG(_op, _algo, ptrdiff),                                   \
-      TYPED_REDUCE_REG(_op, _algo, uchar),                                     \
-      TYPED_REDUCE_REG(_op, _algo, ushort),                                    \
-      TYPED_REDUCE_REG(_op, _algo, uint), TYPED_REDUCE_REG(_op, _algo, ulong), \
-      TYPED_REDUCE_REG(_op, _algo, ulonglong),                                 \
-      TYPED_REDUCE_REG(_op, _algo, int8), TYPED_REDUCE_REG(_op, _algo, int16), \
-      TYPED_REDUCE_REG(_op, _algo, int32),                                     \
-      TYPED_REDUCE_REG(_op, _algo, int64),                                     \
-      TYPED_REDUCE_REG(_op, _algo, uint8),                                     \
-      TYPED_REDUCE_REG(_op, _algo, uint16),                                    \
-      TYPED_REDUCE_REG(_op, _algo, uint32),                                    \
-      TYPED_REDUCE_REG(_op, _algo, uint64),                                    \
-      TYPED_REDUCE_REG(_op, _algo, size), TYPED_REDUCE_REG(_op, _algo, float), \
-      TYPED_REDUCE_REG(_op, _algo, double),                                    \
-      TYPED_REDUCE_REG(_op, _algo, longdouble)
-
-/**
- * @brief Macro to register a typed reduce collective operation for arithmetic
- * operations
- * @param _op The collective operation name (sum, prod)
- * @param _algo The algorithm implementation name
- */
-#define TYPED_REG_FOR_ARITH_REDUCE(_op, _algo)                                 \
-  TYPED_REDUCE_REG(_op, _algo, char), TYPED_REDUCE_REG(_op, _algo, schar),     \
-      TYPED_REDUCE_REG(_op, _algo, short), TYPED_REDUCE_REG(_op, _algo, int),  \
-      TYPED_REDUCE_REG(_op, _algo, long),                                      \
-      TYPED_REDUCE_REG(_op, _algo, longlong),                                  \
-      TYPED_REDUCE_REG(_op, _algo, ptrdiff),                                   \
-      TYPED_REDUCE_REG(_op, _algo, uchar),                                     \
-      TYPED_REDUCE_REG(_op, _algo, ushort),                                    \
-      TYPED_REDUCE_REG(_op, _algo, uint), TYPED_REDUCE_REG(_op, _algo, ulong), \
-      TYPED_REDUCE_REG(_op, _algo, ulonglong),                                 \
-      TYPED_REDUCE_REG(_op, _algo, int8), TYPED_REDUCE_REG(_op, _algo, int16), \
-      TYPED_REDUCE_REG(_op, _algo, int32),                                     \
-      TYPED_REDUCE_REG(_op, _algo, int64),                                     \
-      TYPED_REDUCE_REG(_op, _algo, uint8),                                     \
-      TYPED_REDUCE_REG(_op, _algo, uint16),                                    \
-      TYPED_REDUCE_REG(_op, _algo, uint32),                                    \
-      TYPED_REDUCE_REG(_op, _algo, uint64),                                    \
-      TYPED_REDUCE_REG(_op, _algo, size), TYPED_REDUCE_REG(_op, _algo, float), \
-      TYPED_REDUCE_REG(_op, _algo, double),                                    \
-      TYPED_REDUCE_REG(_op, _algo, longdouble),                                \
-      TYPED_REDUCE_REG(_op, _algo, complexd),                                  \
-      TYPED_REDUCE_REG(_op, _algo, complexf)
+  {#_algo, #_typename, shcoll_##_typename##_##_op##_reduce_##_algo}
 
 /******************************************************** */
 /**
  * @brief Table of alltoall collective algorithms for all types
  */
+#define ALLTOALL_TYPE_REG(_type, _typename)                                    \
+  TYPED_REG(alltoall, shift_exchange_barrier, _typename),                      \
+      TYPED_REG(alltoall, shift_exchange_counter, _typename),                  \
+      TYPED_REG(alltoall, shift_exchange_signal, _typename),                   \
+      TYPED_REG(alltoall, xor_pairwise_exchange_barrier, _typename),           \
+      TYPED_REG(alltoall, xor_pairwise_exchange_counter, _typename),           \
+      TYPED_REG(alltoall, xor_pairwise_exchange_signal, _typename),            \
+      TYPED_REG(alltoall, color_pairwise_exchange_barrier, _typename),         \
+      TYPED_REG(alltoall, color_pairwise_exchange_counter, _typename),         \
+      TYPED_REG(alltoall, color_pairwise_exchange_signal, _typename),
+
 static typed_op_t alltoall_type_tab[] = {
-    TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, shift_exchange_signal),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, xor_pairwise_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, xor_pairwise_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, xor_pairwise_exchange_signal),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, color_pairwise_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, color_pairwise_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoall, color_pairwise_exchange_signal),
-    TYPED_LAST};
+    SHMEM_STANDARD_RMA_TYPE_TABLE(ALLTOALL_TYPE_REG) TYPED_LAST};
+#undef ALLTOALL_TYPE_REG
 
 /**
  * @brief Table of generic alltoallmem collective algorithms
@@ -304,14 +167,17 @@ static sized_op_t alltoall_size_tab[] = {
 /**
  * @brief Table of alltoalls collective algorithms for all types
  */
+#define ALLTOALLS_TYPE_REG(_type, _typename)                                   \
+  TYPED_REG(alltoalls, shift_exchange_barrier, _typename),                     \
+      TYPED_REG(alltoalls, shift_exchange_counter, _typename),                 \
+      TYPED_REG(alltoalls, xor_pairwise_exchange_barrier, _typename),          \
+      TYPED_REG(alltoalls, xor_pairwise_exchange_counter, _typename),          \
+      TYPED_REG(alltoalls, color_pairwise_exchange_barrier, _typename),        \
+      TYPED_REG(alltoalls, color_pairwise_exchange_counter, _typename),
+
 static typed_op_t alltoalls_type_tab[] = {
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, shift_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, xor_pairwise_exchange_counter),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_barrier),
-    TYPED_REG_FOR_ALL_TYPES(alltoalls, color_pairwise_exchange_counter),
-    TYPED_LAST};
+    SHMEM_STANDARD_RMA_TYPE_TABLE(ALLTOALLS_TYPE_REG) TYPED_LAST};
+#undef ALLTOALLS_TYPE_REG
 
 /**
  * @brief Table of generic alltoalls (deprecated)
@@ -340,16 +206,19 @@ static sized_op_t alltoalls_size_tab[] = {
 /**
  * @brief Table of collect collective algorithms
  */
+#define COLLECT_TYPE_REG(_type, _typename)                                     \
+  TYPED_REG(collect, linear, _typename),                                       \
+      TYPED_REG(collect, all_linear, _typename),                               \
+      TYPED_REG(collect, all_linear1, _typename),                              \
+      TYPED_REG(collect, rec_dbl, _typename),                                  \
+      TYPED_REG(collect, rec_dbl_signal, _typename),                           \
+      TYPED_REG(collect, ring, _typename),                                     \
+      TYPED_REG(collect, bruck, _typename),                                    \
+      TYPED_REG(collect, bruck_no_rotate, _typename),
+
 static typed_op_t collect_type_tab[] = {
-    TYPED_REG_FOR_ALL_TYPES(collect, linear),
-    TYPED_REG_FOR_ALL_TYPES(collect, all_linear),
-    TYPED_REG_FOR_ALL_TYPES(collect, all_linear1),
-    TYPED_REG_FOR_ALL_TYPES(collect, rec_dbl),
-    TYPED_REG_FOR_ALL_TYPES(collect, rec_dbl_signal),
-    TYPED_REG_FOR_ALL_TYPES(collect, ring),
-    TYPED_REG_FOR_ALL_TYPES(collect, bruck),
-    TYPED_REG_FOR_ALL_TYPES(collect, bruck_no_rotate),
-    TYPED_LAST};
+    SHMEM_STANDARD_RMA_TYPE_TABLE(COLLECT_TYPE_REG) TYPED_LAST};
+#undef COLLECT_TYPE_REG
 
 /**
  * @brief Table of generic collectmem (deprecated)
@@ -381,18 +250,21 @@ static sized_op_t collect_size_tab[] = {SIZED_REG(collect, linear),
 /**
  * @brief Table of fcollect collective algorithms
  */
+#define FCOLLECT_TYPE_REG(_type, _typename)                                    \
+  TYPED_REG(fcollect, linear, _typename),                                      \
+      TYPED_REG(fcollect, all_linear, _typename),                              \
+      TYPED_REG(fcollect, all_linear1, _typename),                             \
+      TYPED_REG(fcollect, rec_dbl, _typename),                                 \
+      TYPED_REG(fcollect, ring, _typename),                                    \
+      TYPED_REG(fcollect, bruck, _typename),                                   \
+      TYPED_REG(fcollect, bruck_no_rotate, _typename),                         \
+      TYPED_REG(fcollect, bruck_signal, _typename),                            \
+      TYPED_REG(fcollect, bruck_inplace, _typename),                           \
+      TYPED_REG(fcollect, neighbor_exchange, _typename),
+
 static typed_op_t fcollect_type_tab[] = {
-    TYPED_REG_FOR_ALL_TYPES(fcollect, linear),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, all_linear),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, all_linear1),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, rec_dbl),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, ring),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_no_rotate),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_signal),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, bruck_inplace),
-    TYPED_REG_FOR_ALL_TYPES(fcollect, neighbor_exchange),
-    TYPED_LAST};
+    SHMEM_STANDARD_RMA_TYPE_TABLE(FCOLLECT_TYPE_REG) TYPED_LAST};
+#undef FCOLLECT_TYPE_REG
 
 /**
  * @brief Table of generic fcollectmem (deprecated)
@@ -428,14 +300,17 @@ static sized_op_t fcollect_size_tab[] = {SIZED_REG(fcollect, linear),
 /**
  * @brief Table of broadcast collective algorithms
  */
+#define BROADCAST_TYPE_REG(_type, _typename)                                   \
+  TYPED_REG(broadcast, linear, _typename),                                     \
+      TYPED_REG(broadcast, complete_tree, _typename),                          \
+      TYPED_REG(broadcast, binomial_tree, _typename),                          \
+      TYPED_REG(broadcast, knomial_tree, _typename),                           \
+      TYPED_REG(broadcast, knomial_tree_signal, _typename),                    \
+      TYPED_REG(broadcast, scatter_collect, _typename),
+
 static typed_op_t broadcast_type_tab[] = {
-    TYPED_REG_FOR_ALL_TYPES(broadcast, linear),
-    TYPED_REG_FOR_ALL_TYPES(broadcast, complete_tree),
-    TYPED_REG_FOR_ALL_TYPES(broadcast, binomial_tree),
-    TYPED_REG_FOR_ALL_TYPES(broadcast, knomial_tree),
-    TYPED_REG_FOR_ALL_TYPES(broadcast, knomial_tree_signal),
-    TYPED_REG_FOR_ALL_TYPES(broadcast, scatter_collect),
-    TYPED_LAST};
+    SHMEM_STANDARD_RMA_TYPE_TABLE(BROADCAST_TYPE_REG) TYPED_LAST};
+#undef BROADCAST_TYPE_REG
 
 /**
  * @brief Table of generic broadcastmem (deprecated)
@@ -464,156 +339,198 @@ static sized_op_t broadcast_size_tab[] = {
 /**
  * @brief Table of and_to_all collective algorithms
  */
+#define AND_TO_ALL_REG(_type, _typename)                                       \
+  TYPED_TO_ALL_REG(and, linear, _typename),                                    \
+      TYPED_TO_ALL_REG(and, binomial, _typename),                              \
+      TYPED_TO_ALL_REG(and, rec_dbl, _typename),                               \
+      TYPED_TO_ALL_REG(and, rabenseifner, _typename),                          \
+      TYPED_TO_ALL_REG(and, rabenseifner2, _typename),
+
 static typed_to_all_op_t and_to_all_tab[] = {
-    TYPED_REG_FOR_BITWISE_TO_ALL(and, linear),
-    TYPED_REG_FOR_BITWISE_TO_ALL(and, binomial),
-    TYPED_REG_FOR_BITWISE_TO_ALL(and, rec_dbl),
-    TYPED_REG_FOR_BITWISE_TO_ALL(and, rabenseifner),
-    TYPED_REG_FOR_BITWISE_TO_ALL(and, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_TO_ALL_BITWISE_TYPE_TABLE(AND_TO_ALL_REG) TYPED_LAST};
+#undef AND_TO_ALL_REG
 
 /**
  * @brief Table of or_to_all collective algorithms
  */
+#define OR_TO_ALL_REG(_type, _typename)                                        \
+  TYPED_TO_ALL_REG(or, linear, _typename),                                     \
+      TYPED_TO_ALL_REG(or, binomial, _typename),                               \
+      TYPED_TO_ALL_REG(or, rec_dbl, _typename),                                \
+      TYPED_TO_ALL_REG(or, rabenseifner, _typename),                           \
+      TYPED_TO_ALL_REG(or, rabenseifner2, _typename),
+
 static typed_to_all_op_t or_to_all_tab[] = {
-    TYPED_REG_FOR_BITWISE_TO_ALL(or, linear),
-    TYPED_REG_FOR_BITWISE_TO_ALL(or, binomial),
-    TYPED_REG_FOR_BITWISE_TO_ALL(or, rec_dbl),
-    TYPED_REG_FOR_BITWISE_TO_ALL(or, rabenseifner),
-    TYPED_REG_FOR_BITWISE_TO_ALL(or, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_TO_ALL_BITWISE_TYPE_TABLE(OR_TO_ALL_REG) TYPED_LAST};
+#undef OR_TO_ALL_REG
 
 /**
  * @brief Table of xor_to_all collective algorithms
  */
+#define XOR_TO_ALL_REG(_type, _typename)                                       \
+  TYPED_TO_ALL_REG(xor, linear, _typename),                                    \
+      TYPED_TO_ALL_REG(xor, binomial, _typename),                              \
+      TYPED_TO_ALL_REG(xor, rec_dbl, _typename),                               \
+      TYPED_TO_ALL_REG(xor, rabenseifner, _typename),                          \
+      TYPED_TO_ALL_REG(xor, rabenseifner2, _typename),
+
 static typed_to_all_op_t xor_to_all_tab[] = {
-    TYPED_REG_FOR_BITWISE_TO_ALL(xor, linear),
-    TYPED_REG_FOR_BITWISE_TO_ALL(xor, binomial),
-    TYPED_REG_FOR_BITWISE_TO_ALL(xor, rec_dbl),
-    TYPED_REG_FOR_BITWISE_TO_ALL(xor, rabenseifner),
-    TYPED_REG_FOR_BITWISE_TO_ALL(xor, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_TO_ALL_BITWISE_TYPE_TABLE(XOR_TO_ALL_REG) TYPED_LAST};
+#undef XOR_TO_ALL_REG
 
 /**
  * @brief Table of max_to_all collective algorithms
  */
+#define MAX_TO_ALL_REG(_type, _typename)                                       \
+  TYPED_TO_ALL_REG(max, linear, _typename),                                    \
+      TYPED_TO_ALL_REG(max, binomial, _typename),                              \
+      TYPED_TO_ALL_REG(max, rec_dbl, _typename),                               \
+      TYPED_TO_ALL_REG(max, rabenseifner, _typename),                          \
+      TYPED_TO_ALL_REG(max, rabenseifner2, _typename),
+
 static typed_to_all_op_t max_to_all_tab[] = {
-    TYPED_REG_FOR_MINMAX_TO_ALL(max, linear),
-    TYPED_REG_FOR_MINMAX_TO_ALL(max, binomial),
-    TYPED_REG_FOR_MINMAX_TO_ALL(max, rec_dbl),
-    TYPED_REG_FOR_MINMAX_TO_ALL(max, rabenseifner),
-    TYPED_REG_FOR_MINMAX_TO_ALL(max, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_TO_ALL_MINMAX_TYPE_TABLE(MAX_TO_ALL_REG) TYPED_LAST};
+#undef MAX_TO_ALL_REG
 
 /**
  * @brief Table of min_to_all collective algorithms
  */
+#define MIN_TO_ALL_REG(_type, _typename)                                       \
+  TYPED_TO_ALL_REG(min, linear, _typename),                                    \
+      TYPED_TO_ALL_REG(min, binomial, _typename),                              \
+      TYPED_TO_ALL_REG(min, rec_dbl, _typename),                               \
+      TYPED_TO_ALL_REG(min, rabenseifner, _typename),                          \
+      TYPED_TO_ALL_REG(min, rabenseifner2, _typename),
+
 static typed_to_all_op_t min_to_all_tab[] = {
-    TYPED_REG_FOR_MINMAX_TO_ALL(min, linear),
-    TYPED_REG_FOR_MINMAX_TO_ALL(min, binomial),
-    TYPED_REG_FOR_MINMAX_TO_ALL(min, rec_dbl),
-    TYPED_REG_FOR_MINMAX_TO_ALL(min, rabenseifner),
-    TYPED_REG_FOR_MINMAX_TO_ALL(min, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_TO_ALL_MINMAX_TYPE_TABLE(MIN_TO_ALL_REG) TYPED_LAST};
+#undef MIN_TO_ALL_REG
 
 /**
  * @brief Table of sum_to_all collective algorithms
  */
+#define SUM_TO_ALL_REG(_type, _typename)                                       \
+  TYPED_TO_ALL_REG(sum, linear, _typename),                                    \
+      TYPED_TO_ALL_REG(sum, binomial, _typename),                              \
+      TYPED_TO_ALL_REG(sum, rec_dbl, _typename),                               \
+      TYPED_TO_ALL_REG(sum, rabenseifner, _typename),                          \
+      TYPED_TO_ALL_REG(sum, rabenseifner2, _typename),
+
 static typed_to_all_op_t sum_to_all_tab[] = {
-    TYPED_REG_FOR_ARITH_TO_ALL(sum, linear),
-    TYPED_REG_FOR_ARITH_TO_ALL(sum, binomial),
-    TYPED_REG_FOR_ARITH_TO_ALL(sum, rec_dbl),
-    TYPED_REG_FOR_ARITH_TO_ALL(sum, rabenseifner),
-    TYPED_REG_FOR_ARITH_TO_ALL(sum, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_TO_ALL_ARITH_TYPE_TABLE(SUM_TO_ALL_REG) TYPED_LAST};
+#undef SUM_TO_ALL_REG
 
 /**
  * @brief Table of prod_to_all collective algorithms
  */
+#define PROD_TO_ALL_REG(_type, _typename)                                      \
+  TYPED_TO_ALL_REG(prod, linear, _typename),                                   \
+      TYPED_TO_ALL_REG(prod, binomial, _typename),                             \
+      TYPED_TO_ALL_REG(prod, rec_dbl, _typename),                              \
+      TYPED_TO_ALL_REG(prod, rabenseifner, _typename),                         \
+      TYPED_TO_ALL_REG(prod, rabenseifner2, _typename),
+
 static typed_to_all_op_t prod_to_all_tab[] = {
-    TYPED_REG_FOR_ARITH_TO_ALL(prod, linear),
-    TYPED_REG_FOR_ARITH_TO_ALL(prod, binomial),
-    TYPED_REG_FOR_ARITH_TO_ALL(prod, rec_dbl),
-    TYPED_REG_FOR_ARITH_TO_ALL(prod, rabenseifner),
-    TYPED_REG_FOR_ARITH_TO_ALL(prod, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_TO_ALL_ARITH_TYPE_TABLE(PROD_TO_ALL_REG) TYPED_LAST};
+#undef PROD_TO_ALL_REG
 
 /**
  * @brief Table of and_reduce collective algorithms
  */
+#define AND_REDUCE_REG(_type, _typename)                                       \
+  TYPED_REDUCE_REG(and, linear, _typename),                                    \
+      TYPED_REDUCE_REG(and, binomial, _typename),                              \
+      TYPED_REDUCE_REG(and, rec_dbl, _typename),                               \
+      TYPED_REDUCE_REG(and, rabenseifner, _typename),                          \
+      TYPED_REDUCE_REG(and, rabenseifner2, _typename),
+
 static typed_op_t and_reduce_tab[] = {
-    TYPED_REG_FOR_BITWISE_REDUCE(and, linear),
-    TYPED_REG_FOR_BITWISE_REDUCE(and, binomial),
-    TYPED_REG_FOR_BITWISE_REDUCE(and, rec_dbl),
-    TYPED_REG_FOR_BITWISE_REDUCE(and, rabenseifner),
-    TYPED_REG_FOR_BITWISE_REDUCE(and, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_REDUCE_BITWISE_TYPE_TABLE(AND_REDUCE_REG) TYPED_LAST};
+#undef AND_REDUCE_REG
 
 /**
  * @brief Table of or_reduce collective algorithms
  */
+#define OR_REDUCE_REG(_type, _typename)                                        \
+  TYPED_REDUCE_REG(or, linear, _typename),                                     \
+      TYPED_REDUCE_REG(or, binomial, _typename),                               \
+      TYPED_REDUCE_REG(or, rec_dbl, _typename),                                \
+      TYPED_REDUCE_REG(or, rabenseifner, _typename),                           \
+      TYPED_REDUCE_REG(or, rabenseifner2, _typename),
+
 static typed_op_t or_reduce_tab[] = {
-    TYPED_REG_FOR_BITWISE_REDUCE(or, linear),
-    TYPED_REG_FOR_BITWISE_REDUCE(or, binomial),
-    TYPED_REG_FOR_BITWISE_REDUCE(or, rec_dbl),
-    TYPED_REG_FOR_BITWISE_REDUCE(or, rabenseifner),
-    TYPED_REG_FOR_BITWISE_REDUCE(or, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_REDUCE_BITWISE_TYPE_TABLE(OR_REDUCE_REG) TYPED_LAST};
+#undef OR_REDUCE_REG
 
 /**
  * @brief Table of xor_reduce collective algorithms
  */
+#define XOR_REDUCE_REG(_type, _typename)                                       \
+  TYPED_REDUCE_REG(xor, linear, _typename),                                    \
+      TYPED_REDUCE_REG(xor, binomial, _typename),                              \
+      TYPED_REDUCE_REG(xor, rec_dbl, _typename),                               \
+      TYPED_REDUCE_REG(xor, rabenseifner, _typename),                          \
+      TYPED_REDUCE_REG(xor, rabenseifner2, _typename),
+
 static typed_op_t xor_reduce_tab[] = {
-    TYPED_REG_FOR_BITWISE_REDUCE(xor, linear),
-    TYPED_REG_FOR_BITWISE_REDUCE(xor, binomial),
-    TYPED_REG_FOR_BITWISE_REDUCE(xor, rec_dbl),
-    TYPED_REG_FOR_BITWISE_REDUCE(xor, rabenseifner),
-    TYPED_REG_FOR_BITWISE_REDUCE(xor, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_REDUCE_BITWISE_TYPE_TABLE(XOR_REDUCE_REG) TYPED_LAST};
+#undef XOR_REDUCE_REG
 
 /**
  * @brief Table of max_reduce collective algorithms
  */
+#define MAX_REDUCE_REG(_type, _typename)                                       \
+  TYPED_REDUCE_REG(max, linear, _typename),                                    \
+      TYPED_REDUCE_REG(max, binomial, _typename),                              \
+      TYPED_REDUCE_REG(max, rec_dbl, _typename),                               \
+      TYPED_REDUCE_REG(max, rabenseifner, _typename),                          \
+      TYPED_REDUCE_REG(max, rabenseifner2, _typename),
+
 static typed_op_t max_reduce_tab[] = {
-    TYPED_REG_FOR_MINMAX_REDUCE(max, linear),
-    TYPED_REG_FOR_MINMAX_REDUCE(max, binomial),
-    TYPED_REG_FOR_MINMAX_REDUCE(max, rec_dbl),
-    TYPED_REG_FOR_MINMAX_REDUCE(max, rabenseifner),
-    TYPED_REG_FOR_MINMAX_REDUCE(max, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_REDUCE_MINMAX_TYPE_TABLE(MAX_REDUCE_REG) TYPED_LAST};
+#undef MAX_REDUCE_REG
 
 /**
  * @brief Table of min_reduce collective algorithms
  */
+#define MIN_REDUCE_REG(_type, _typename)                                       \
+  TYPED_REDUCE_REG(min, linear, _typename),                                    \
+      TYPED_REDUCE_REG(min, binomial, _typename),                              \
+      TYPED_REDUCE_REG(min, rec_dbl, _typename),                               \
+      TYPED_REDUCE_REG(min, rabenseifner, _typename),                          \
+      TYPED_REDUCE_REG(min, rabenseifner2, _typename),
+
 static typed_op_t min_reduce_tab[] = {
-    TYPED_REG_FOR_MINMAX_REDUCE(min, linear),
-    TYPED_REG_FOR_MINMAX_REDUCE(min, binomial),
-    TYPED_REG_FOR_MINMAX_REDUCE(min, rec_dbl),
-    TYPED_REG_FOR_MINMAX_REDUCE(min, rabenseifner),
-    TYPED_REG_FOR_MINMAX_REDUCE(min, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_REDUCE_MINMAX_TYPE_TABLE(MIN_REDUCE_REG) TYPED_LAST};
+#undef MIN_REDUCE_REG
 
 /**
  * @brief Table of sum_reduce collective algorithms
  */
+#define SUM_REDUCE_REG(_type, _typename)                                       \
+  TYPED_REDUCE_REG(sum, linear, _typename),                                    \
+      TYPED_REDUCE_REG(sum, binomial, _typename),                              \
+      TYPED_REDUCE_REG(sum, rec_dbl, _typename),                               \
+      TYPED_REDUCE_REG(sum, rabenseifner, _typename),                          \
+      TYPED_REDUCE_REG(sum, rabenseifner2, _typename),
+
 static typed_op_t sum_reduce_tab[] = {
-    TYPED_REG_FOR_ARITH_REDUCE(sum, linear),
-    TYPED_REG_FOR_ARITH_REDUCE(sum, binomial),
-    TYPED_REG_FOR_ARITH_REDUCE(sum, rec_dbl),
-    TYPED_REG_FOR_ARITH_REDUCE(sum, rabenseifner),
-    TYPED_REG_FOR_ARITH_REDUCE(sum, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_REDUCE_ARITH_TYPE_TABLE(SUM_REDUCE_REG) TYPED_LAST};
+#undef SUM_REDUCE_REG
 
 /**
  * @brief Table of prod_reduce collective algorithms
  */
+#define PROD_REDUCE_REG(_type, _typename)                                      \
+  TYPED_REDUCE_REG(prod, linear, _typename),                                   \
+      TYPED_REDUCE_REG(prod, binomial, _typename),                             \
+      TYPED_REDUCE_REG(prod, rec_dbl, _typename),                              \
+      TYPED_REDUCE_REG(prod, rabenseifner, _typename),                         \
+      TYPED_REDUCE_REG(prod, rabenseifner2, _typename),
+
 static typed_op_t prod_reduce_tab[] = {
-    TYPED_REG_FOR_ARITH_REDUCE(prod, linear),
-    TYPED_REG_FOR_ARITH_REDUCE(prod, binomial),
-    TYPED_REG_FOR_ARITH_REDUCE(prod, rec_dbl),
-    TYPED_REG_FOR_ARITH_REDUCE(prod, rabenseifner),
-    TYPED_REG_FOR_ARITH_REDUCE(prod, rabenseifner2),
-    TYPED_LAST};
+    SHMEM_REDUCE_ARITH_TYPE_TABLE(PROD_REDUCE_REG) TYPED_LAST};
+#undef PROD_REDUCE_REG
 
 /**
  * @brief Table of barrier_all collective algorithms

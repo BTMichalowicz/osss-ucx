@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_int_atomic_fetch_inc = pshmem_ctx_int_atomic_fetch_inc
@@ -71,18 +72,12 @@
     return v;                                                                  \
   }
 
-SHMEM_CTX_TYPE_FINC(int, int)
-SHMEM_CTX_TYPE_FINC(long, long)
-SHMEM_CTX_TYPE_FINC(longlong, long long)
-SHMEM_CTX_TYPE_FINC(uint, unsigned int)
-SHMEM_CTX_TYPE_FINC(ulong, unsigned long)
-SHMEM_CTX_TYPE_FINC(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_FINC(int32, int32_t)
-SHMEM_CTX_TYPE_FINC(int64, int64_t)
-SHMEM_CTX_TYPE_FINC(uint32, uint32_t)
-SHMEM_CTX_TYPE_FINC(uint64, uint64_t)
-SHMEM_CTX_TYPE_FINC(size, size_t)
-SHMEM_CTX_TYPE_FINC(ptrdiff, ptrdiff_t)
+/* Define context-based atomic fetch-and-increment operations using the type
+ * table */
+#define SHMEM_CTX_TYPE_FINC_HELPER(_type, _typename)                           \
+  SHMEM_CTX_TYPE_FINC(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_FINC_HELPER)
+#undef SHMEM_CTX_TYPE_FINC_HELPER
 
 /**
  * @brief Default context atomic fetch-and-increment operations
@@ -90,15 +85,9 @@ SHMEM_CTX_TYPE_FINC(ptrdiff, ptrdiff_t)
  * These operations perform the same functionality as the context-based
  * operations above but use the default SHMEM context.
  */
-API_DEF_AMO1(fetch_inc, int, int)
-API_DEF_AMO1(fetch_inc, long, long)
-API_DEF_AMO1(fetch_inc, longlong, long long)
-API_DEF_AMO1(fetch_inc, uint, unsigned int)
-API_DEF_AMO1(fetch_inc, ulong, unsigned long)
-API_DEF_AMO1(fetch_inc, ulonglong, unsigned long long)
-API_DEF_AMO1(fetch_inc, int32, int32_t)
-API_DEF_AMO1(fetch_inc, int64, int64_t)
-API_DEF_AMO1(fetch_inc, uint32, uint32_t)
-API_DEF_AMO1(fetch_inc, uint64, uint64_t)
-API_DEF_AMO1(fetch_inc, size, size_t)
-API_DEF_AMO1(fetch_inc, ptrdiff, ptrdiff_t)
+/* Define non-context atomic fetch-and-increment operations using the type table
+ */
+#define API_DEF_AMO1_HELPER(_type, _typename)                                  \
+  API_DEF_AMO1(fetch_inc, _typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(API_DEF_AMO1_HELPER)
+#undef API_DEF_AMO1_HELPER

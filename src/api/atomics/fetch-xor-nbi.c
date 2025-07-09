@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_uint_atomic_fetch_xor_nbi = pshmem_uint_atomic_fetch_xor_nbi
@@ -45,13 +46,13 @@
  * on a remote data object and return the previous value in a non-blocking
  * manner.
  */
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, uint, unsigned int)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, ulong, unsigned long)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, int32, int32_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, int64, int64_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, uint32, uint32_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, uint64, uint64_t)
+
+/* Define context-based non-blocking atomic fetch-xor operations using the type
+ * table */
+#define SHMEM_CTX_TYPE_FETCH_BITWISE_NBI_HELPER(_type, _typename)              \
+  SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, _typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_FETCH_BITWISE_NBI_HELPER)
+#undef SHMEM_CTX_TYPE_FETCH_BITWISE_NBI_HELPER
 
 /**
  * @brief Non-blocking atomic fetch-and-xor operations without contexts
@@ -60,10 +61,9 @@ SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(xor, uint64, uint64_t)
  * object and return the previous value in a non-blocking manner, using the
  * default context.
  */
-API_DEF_AMO2_NBI(fetch_xor, uint, unsigned int)
-API_DEF_AMO2_NBI(fetch_xor, ulong, unsigned long)
-API_DEF_AMO2_NBI(fetch_xor, ulonglong, unsigned long long)
-API_DEF_AMO2_NBI(fetch_xor, int32, int32_t)
-API_DEF_AMO2_NBI(fetch_xor, int64, int64_t)
-API_DEF_AMO2_NBI(fetch_xor, uint32, uint32_t)
-API_DEF_AMO2_NBI(fetch_xor, uint64, uint64_t)
+/* Define non-context non-blocking atomic fetch-xor operations using the type
+ * table */
+#define API_DEF_AMO2_NBI_HELPER(_type, _typename)                              \
+  API_DEF_AMO2_NBI(fetch_xor, _typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(API_DEF_AMO2_NBI_HELPER)
+#undef API_DEF_AMO2_NBI_HELPER

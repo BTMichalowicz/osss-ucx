@@ -19,6 +19,7 @@
 #define _SHCOLL_FCOLLECT_H 1
 
 #include <shmem/teams.h>
+#include <shmem/api_types.h>
 
 /**
  * @brief Macro to declare type-specific fcollect implementation
@@ -34,46 +35,24 @@
 /**
  * @brief Macro to declare fcollect implementations for all supported types
  *
- * @param _algo Algorithm name to generate declarations for
+ * @param _type Data type
+ * @param _typename Type name string
  */
-#define DECLARE_FCOLLECT_TYPES(_algo)                                          \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, float, float)                       \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, double, double)                     \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, long double, longdouble)            \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, char, char)                         \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, signed char, schar)                 \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, short, short)                       \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, int, int)                           \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, long, long)                         \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, long long, longlong)                \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, unsigned char, uchar)               \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, unsigned short, ushort)             \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, unsigned int, uint)                 \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, unsigned long, ulong)               \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, unsigned long long, ulonglong)      \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, int8_t, int8)                       \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, int16_t, int16)                     \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, int32_t, int32)                     \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, int64_t, int64)                     \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, uint8_t, uint8)                     \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, uint16_t, uint16)                   \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, uint32_t, uint32)                   \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, uint64_t, uint64)                   \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, size_t, size)                       \
-  SHCOLL_TYPED_FCOLLECT_DECLARATION(_algo, ptrdiff_t, ptrdiff)
+#define DECLARE_FCOLLECT_TYPES(_type, _typename)                               \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(linear, _type, _typename)                  \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(all_linear, _type, _typename)              \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(all_linear1, _type, _typename)             \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(rec_dbl, _type, _typename)                 \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(rec_dbl_signal, _type, _typename)          \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(ring, _type, _typename)                    \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(bruck, _type, _typename)                   \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(bruck_no_rotate, _type, _typename)         \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(bruck_signal, _type, _typename)            \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(bruck_inplace, _type, _typename)           \
+  SHCOLL_TYPED_FCOLLECT_DECLARATION(neighbor_exchange, _type, _typename)
 
-/* Declare all algorithm variants */
-DECLARE_FCOLLECT_TYPES(linear)
-DECLARE_FCOLLECT_TYPES(all_linear)
-DECLARE_FCOLLECT_TYPES(all_linear1)
-DECLARE_FCOLLECT_TYPES(rec_dbl)
-DECLARE_FCOLLECT_TYPES(rec_dbl_signal)
-DECLARE_FCOLLECT_TYPES(ring)
-DECLARE_FCOLLECT_TYPES(bruck)
-DECLARE_FCOLLECT_TYPES(bruck_no_rotate)
-DECLARE_FCOLLECT_TYPES(bruck_signal)
-DECLARE_FCOLLECT_TYPES(bruck_inplace)
-DECLARE_FCOLLECT_TYPES(neighbor_exchange)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECLARE_FCOLLECT_TYPES)
+#undef DECLARE_FCOLLECT_TYPES
 
 /**
  * @brief Macro to declare type-specific fcollect memory implementation

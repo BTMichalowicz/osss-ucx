@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_int_atomic_fetch_nbi = pshmem_ctx_int_atomic_fetch_nbi
@@ -79,20 +80,12 @@
         shmemc_ctx_fetch(ctx, (_type *)target, sizeof(*target), pe, fetch));   \
   }
 
-SHMEM_CTX_TYPE_FETCH_NBI(float, float)
-SHMEM_CTX_TYPE_FETCH_NBI(double, double)
-SHMEM_CTX_TYPE_FETCH_NBI(int, int)
-SHMEM_CTX_TYPE_FETCH_NBI(long, long)
-SHMEM_CTX_TYPE_FETCH_NBI(longlong, long long)
-SHMEM_CTX_TYPE_FETCH_NBI(uint, unsigned int)
-SHMEM_CTX_TYPE_FETCH_NBI(ulong, unsigned long)
-SHMEM_CTX_TYPE_FETCH_NBI(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_FETCH_NBI(int32, int32_t)
-SHMEM_CTX_TYPE_FETCH_NBI(int64, int64_t)
-SHMEM_CTX_TYPE_FETCH_NBI(uint32, uint32_t)
-SHMEM_CTX_TYPE_FETCH_NBI(uint64, uint64_t)
-SHMEM_CTX_TYPE_FETCH_NBI(size, size_t)
-SHMEM_CTX_TYPE_FETCH_NBI(ptrdiff, ptrdiff_t)
+/* Define context-based non-blocking atomic fetch operations using the type
+ * table */
+#define SHMEM_CTX_TYPE_FETCH_NBI_HELPER(_type, _typename)                      \
+  SHMEM_CTX_TYPE_FETCH_NBI(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_FETCH_NBI_HELPER)
+#undef SHMEM_CTX_TYPE_FETCH_NBI_HELPER
 
 /**
  * @brief Default context non-blocking atomic fetch operations
@@ -100,17 +93,9 @@ SHMEM_CTX_TYPE_FETCH_NBI(ptrdiff, ptrdiff_t)
  * These operations perform the same functionality as the context-based
  * operations above but use the default SHMEM context.
  */
-API_DEF_CONST_AMO1_NBI(fetch, float, float)
-API_DEF_CONST_AMO1_NBI(fetch, double, double)
-API_DEF_CONST_AMO1_NBI(fetch, int, int)
-API_DEF_CONST_AMO1_NBI(fetch, long, long)
-API_DEF_CONST_AMO1_NBI(fetch, longlong, long long)
-API_DEF_CONST_AMO1_NBI(fetch, uint, unsigned int)
-API_DEF_CONST_AMO1_NBI(fetch, ulong, unsigned long)
-API_DEF_CONST_AMO1_NBI(fetch, ulonglong, unsigned long long)
-API_DEF_CONST_AMO1_NBI(fetch, int32, int32_t)
-API_DEF_CONST_AMO1_NBI(fetch, int64, int64_t)
-API_DEF_CONST_AMO1_NBI(fetch, uint32, uint32_t)
-API_DEF_CONST_AMO1_NBI(fetch, uint64, uint64_t)
-API_DEF_CONST_AMO1_NBI(fetch, size, size_t)
-API_DEF_CONST_AMO1_NBI(fetch, ptrdiff, ptrdiff_t)
+/* Define non-context non-blocking atomic fetch operations using the type table
+ */
+#define API_DEF_CONST_AMO1_NBI_HELPER(_type, _typename)                        \
+  API_DEF_CONST_AMO1_NBI(fetch, _typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(API_DEF_CONST_AMO1_NBI_HELPER)
+#undef API_DEF_CONST_AMO1_NBI_HELPER

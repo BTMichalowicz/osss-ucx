@@ -10,6 +10,7 @@
 #include <stddef.h> /* ptrdiff_t */
 #include <stdint.h> /* sized int types */
 #include <stdarg.h>
+#include <shmem/api_types.h>
 
 /*
  * for handling the "I" (upper-case eye) macro for complex numbers
@@ -351,11 +352,30 @@ void shmem_info_get_vendor_version_number(int *version);
 void shmem_pcontrol(const int level, ...);
 
 ////////////////////////////////////////////////////////////////////////////////
-/*
- * I/O
+/**
+ * @brief Declares context-based put/get operations for typed data
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_typename_put(shmem_ctx_t ctx, type *dest, const type *src,
+ * size_t nelems, int pe); void shmem_ctx_typename_iput(shmem_ctx_t ctx, type
+ * *dest, const type *src, ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe);
+ * void shmem_ctx_typename_put_nbi(shmem_ctx_t ctx, type *dest, const type *src,
+ * size_t nelems, int pe);
+ * @endcode
+ *
+ * @param[in] ctx     The context on which to perform the operation
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ * @param[in] tst     Stride between elements in target array
+ * @param[in] sst     Stride between elements in source array
+ *
+ * @section Effect
+ * Transfers data from local array to remote PE's symmetric array
  */
-
-////////////////////////////////////////////////////////////////////////////////
 #define API_DECL_CTX_PUTGET(_opname, _typename, _type)                         \
   void shmem_ctx_##_typename##_##_opname(                                      \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems, int pe);  \
@@ -365,59 +385,41 @@ void shmem_pcontrol(const int level, ...);
   void shmem_ctx_##_typename##_##_opname##_nbi(                                \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems, int pe);
 
-API_DECL_CTX_PUTGET(put, float, float)
-API_DECL_CTX_PUTGET(put, double, double)
-API_DECL_CTX_PUTGET(put, longdouble, long double)
-API_DECL_CTX_PUTGET(put, schar, signed char)
-API_DECL_CTX_PUTGET(put, char, char)
-API_DECL_CTX_PUTGET(put, short, short)
-API_DECL_CTX_PUTGET(put, int, int)
-API_DECL_CTX_PUTGET(put, long, long)
-API_DECL_CTX_PUTGET(put, longlong, long long)
-API_DECL_CTX_PUTGET(put, uchar, unsigned char)
-API_DECL_CTX_PUTGET(put, ushort, unsigned short)
-API_DECL_CTX_PUTGET(put, uint, unsigned int)
-API_DECL_CTX_PUTGET(put, ulong, unsigned long)
-API_DECL_CTX_PUTGET(put, ulonglong, unsigned long long)
-API_DECL_CTX_PUTGET(put, int8, int8_t)
-API_DECL_CTX_PUTGET(put, int16, int16_t)
-API_DECL_CTX_PUTGET(put, int32, int32_t)
-API_DECL_CTX_PUTGET(put, int64, int64_t)
-API_DECL_CTX_PUTGET(put, uint8, uint8_t)
-API_DECL_CTX_PUTGET(put, uint16, uint16_t)
-API_DECL_CTX_PUTGET(put, uint32, uint32_t)
-API_DECL_CTX_PUTGET(put, uint64, uint64_t)
-API_DECL_CTX_PUTGET(put, size, size_t)
-API_DECL_CTX_PUTGET(put, ptrdiff, ptrdiff_t)
+#define DECL_CTX_PUT(_type, _typename)                                         \
+  API_DECL_CTX_PUTGET(put, _typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_PUT)
+#undef DECL_CTX_PUT
 
-API_DECL_CTX_PUTGET(get, float, float)
-API_DECL_CTX_PUTGET(get, double, double)
-API_DECL_CTX_PUTGET(get, longdouble, long double)
-API_DECL_CTX_PUTGET(get, schar, signed char)
-API_DECL_CTX_PUTGET(get, char, char)
-API_DECL_CTX_PUTGET(get, short, short)
-API_DECL_CTX_PUTGET(get, int, int)
-API_DECL_CTX_PUTGET(get, long, long)
-API_DECL_CTX_PUTGET(get, longlong, long long)
-API_DECL_CTX_PUTGET(get, uchar, unsigned char)
-API_DECL_CTX_PUTGET(get, ushort, unsigned short)
-API_DECL_CTX_PUTGET(get, uint, unsigned int)
-API_DECL_CTX_PUTGET(get, ulong, unsigned long)
-API_DECL_CTX_PUTGET(get, ulonglong, unsigned long long)
-API_DECL_CTX_PUTGET(get, int8, int8_t)
-API_DECL_CTX_PUTGET(get, int16, int16_t)
-API_DECL_CTX_PUTGET(get, int32, int32_t)
-API_DECL_CTX_PUTGET(get, int64, int64_t)
-API_DECL_CTX_PUTGET(get, uint8, uint8_t)
-API_DECL_CTX_PUTGET(get, uint16, uint16_t)
-API_DECL_CTX_PUTGET(get, uint32, uint32_t)
-API_DECL_CTX_PUTGET(get, uint64, uint64_t)
-API_DECL_CTX_PUTGET(get, size, size_t)
-API_DECL_CTX_PUTGET(get, ptrdiff, ptrdiff_t)
+#define DECL_CTX_GET(_type, _typename)                                         \
+  API_DECL_CTX_PUTGET(get, _typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_GET)
+#undef DECL_CTX_GET
 
 #undef API_DECL_CTX_PUTGET
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put/get operations for typed data
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_typename_put(type *dest, const type *src, size_t nelems, int pe);
+ * void shmem_typename_iput(type *dest, const type *src, ptrdiff_t tst,
+ * ptrdiff_t sst, size_t nelems, int pe); void shmem_typename_put_nbi(type
+ * *dest, const type *src, size_t nelems, int pe);
+ * @endcode
+ *
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ * @param[in] tst     Stride between elements in target array
+ * @param[in] sst     Stride between elements in source array
+ *
+ * @section Effect
+ * Transfers data from local array to remote PE's symmetric array
+ */
 #define API_DECL_PUTGET(_opname, _typename, _type)                             \
   void shmem_##_typename##_##_opname(_type *dest, const _type *src,            \
                                      size_t nelems, int pe);                   \
@@ -427,59 +429,42 @@ API_DECL_CTX_PUTGET(get, ptrdiff, ptrdiff_t)
   void shmem_##_typename##_##_opname##_nbi(_type *dest, const _type *src,      \
                                            size_t nelems, int pe);
 
-API_DECL_PUTGET(put, float, float)
-API_DECL_PUTGET(put, double, double)
-API_DECL_PUTGET(put, longdouble, long double)
-API_DECL_PUTGET(put, schar, signed char)
-API_DECL_PUTGET(put, char, char)
-API_DECL_PUTGET(put, short, short)
-API_DECL_PUTGET(put, int, int)
-API_DECL_PUTGET(put, long, long)
-API_DECL_PUTGET(put, longlong, long long)
-API_DECL_PUTGET(put, uchar, unsigned char)
-API_DECL_PUTGET(put, ushort, unsigned short)
-API_DECL_PUTGET(put, uint, unsigned int)
-API_DECL_PUTGET(put, ulong, unsigned long)
-API_DECL_PUTGET(put, ulonglong, unsigned long long)
-API_DECL_PUTGET(put, int8, int8_t)
-API_DECL_PUTGET(put, int16, int16_t)
-API_DECL_PUTGET(put, int32, int32_t)
-API_DECL_PUTGET(put, int64, int64_t)
-API_DECL_PUTGET(put, uint8, uint8_t)
-API_DECL_PUTGET(put, uint16, uint16_t)
-API_DECL_PUTGET(put, uint32, uint32_t)
-API_DECL_PUTGET(put, uint64, uint64_t)
-API_DECL_PUTGET(put, size, size_t)
-API_DECL_PUTGET(put, ptrdiff, ptrdiff_t)
+#define DECL_PUT(_type, _typename) API_DECL_PUTGET(put, _typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PUT)
+#undef DECL_PUT
 
-API_DECL_PUTGET(get, float, float)
-API_DECL_PUTGET(get, double, double)
-API_DECL_PUTGET(get, longdouble, long double)
-API_DECL_PUTGET(get, schar, signed char)
-API_DECL_PUTGET(get, char, char)
-API_DECL_PUTGET(get, short, short)
-API_DECL_PUTGET(get, int, int)
-API_DECL_PUTGET(get, long, long)
-API_DECL_PUTGET(get, longlong, long long)
-API_DECL_PUTGET(get, uchar, unsigned char)
-API_DECL_PUTGET(get, ushort, unsigned short)
-API_DECL_PUTGET(get, uint, unsigned int)
-API_DECL_PUTGET(get, ulong, unsigned long)
-API_DECL_PUTGET(get, ulonglong, unsigned long long)
-API_DECL_PUTGET(get, int8, int8_t)
-API_DECL_PUTGET(get, int16, int16_t)
-API_DECL_PUTGET(get, int32, int32_t)
-API_DECL_PUTGET(get, int64, int64_t)
-API_DECL_PUTGET(get, uint8, uint8_t)
-API_DECL_PUTGET(get, uint16, uint16_t)
-API_DECL_PUTGET(get, uint32, uint32_t)
-API_DECL_PUTGET(get, uint64, uint64_t)
-API_DECL_PUTGET(get, size, size_t)
-API_DECL_PUTGET(get, ptrdiff, ptrdiff_t)
+#define DECL_GET(_type, _typename) API_DECL_PUTGET(get, _typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_GET)
+#undef DECL_GET
 
 #undef API_DECL_PUTGET
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put/get operations for fixed-size data
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_putX(shmem_ctx_t ctx, void *dest, const void *src, size_t
+ * nelems, int pe); void shmem_ctx_iputX(shmem_ctx_t ctx, void *dest, const void
+ * *src, ptrdiff_t tst, ptrdiff_t sst, size_t nelems, int pe); void
+ * shmem_ctx_putX_nbi(shmem_ctx_t ctx, void *dest, const void *src, size_t
+ * nelems, int pe);
+ * @endcode
+ * where X is one of: 8, 16, 32, 64, 128
+ *
+ * @param[in] ctx     The context on which to perform the operation
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ * @param[in] tst     Stride between elements in target array
+ * @param[in] sst     Stride between elements in source array
+ *
+ * @section Effect
+ * Transfers fixed-size data from local array to remote PE's symmetric array
+ */
 #define API_DECL_CTX_PUTGET_SIZE(_opname, _size)                               \
   void shmem_ctx_##_opname##_size(shmem_ctx_t ctx, void *dest,                 \
                                   const void *src, size_t nelems, int pe);     \
@@ -504,6 +489,29 @@ API_DECL_CTX_PUTGET_SIZE(get, 128)
 #undef API_DECL_CTX_PUTGET_SIZE
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put/get operations for fixed-size data
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_putX(void *dest, const void *src, size_t nelems, int pe);
+ * void shmem_iputX(void *dest, const void *src, ptrdiff_t tst, ptrdiff_t sst,
+ * size_t nelems, int pe); void shmem_putX_nbi(void *dest, const void *src,
+ * size_t nelems, int pe);
+ * @endcode
+ * where X is one of: 8, 16, 32, 64, 128
+ *
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ * @param[in] tst     Stride between elements in target array
+ * @param[in] sst     Stride between elements in source array
+ *
+ * @section Effect
+ * Transfers fixed-size data from local array to remote PE's symmetric array
+ */
 #define API_DECL_PUTGET_SIZE(_opname, _size)                                   \
   void shmem_##_opname##_size(void *dest, const void *src, size_t nelems,      \
                               int pe);                                         \
@@ -527,6 +535,26 @@ API_DECL_PUTGET_SIZE(get, 128)
 #undef API_DECL_PUTGET_SIZE
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put/get operations for memory blocks
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_putmem(shmem_ctx_t ctx, void *dest, const void *src, size_t
+ * nelems, int pe); void shmem_ctx_putmem_nbi(shmem_ctx_t ctx, void *dest, const
+ * void *src, size_t nelems, int pe);
+ * @endcode
+ *
+ * @param[in] ctx     The context on which to perform the operation
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Effect
+ * Transfers memory blocks from local array to remote PE's symmetric array
+ */
 #define API_DECL_CTX_PUTGET_MEM(_opname)                                       \
   void shmem_ctx_##_opname##mem(shmem_ctx_t ctx, void *dest, const void *src,  \
                                 size_t nelems, int pe);                        \
@@ -539,6 +567,24 @@ API_DECL_CTX_PUTGET_MEM(get)
 #undef API_DECL_CTX_PUTGET_MEM
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put/get operations for memory blocks
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_putmem(void *dest, const void *src, size_t nelems, int pe);
+ * void shmem_putmem_nbi(void *dest, const void *src, size_t nelems, int pe);
+ * @endcode
+ *
+ * @param[out] dest   Symmetric destination array on remote PE
+ * @param[in] src     Local source array
+ * @param[in] nelems  Number of elements to transfer
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Effect
+ * Transfers memory blocks from local array to remote PE's symmetric array
+ */
 #define API_DECL_PUTGET_MEM(_opname)                                           \
   void shmem_##_opname##mem(void *dest, const void *src, size_t nelems,        \
                             int pe);                                           \
@@ -551,255 +597,277 @@ API_DECL_PUTGET_MEM(get)
 #undef API_DECL_PUTGET_MEM
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put operations for single values
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_typename_p(shmem_ctx_t ctx, type *dest, type src, int pe);
+ * @endcode
+ *
+ * @param[in] ctx     The context on which to perform the operation
+ * @param[out] dest   Symmetric destination variable on remote PE
+ * @param[in] src     Local source value
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Effect
+ * Transfers a single value from local variable to remote PE's symmetric
+ * variable
+ */
 #define API_CTX_DECL_P(_typename, _type)                                       \
   void shmem_ctx_##_typename##_p(shmem_ctx_t ctx, _type *dest, _type src,      \
                                  int pe);
 
-API_CTX_DECL_P(float, float)
-API_CTX_DECL_P(double, double)
-API_CTX_DECL_P(longdouble, long double)
-API_CTX_DECL_P(schar, signed char)
-API_CTX_DECL_P(char, char)
-API_CTX_DECL_P(short, short)
-API_CTX_DECL_P(int, int)
-API_CTX_DECL_P(long, long)
-API_CTX_DECL_P(longlong, long long)
-API_CTX_DECL_P(uchar, unsigned char)
-API_CTX_DECL_P(ushort, unsigned short)
-API_CTX_DECL_P(uint, unsigned int)
-API_CTX_DECL_P(ulong, unsigned long)
-API_CTX_DECL_P(ulonglong, unsigned long long)
-API_CTX_DECL_P(int8, int8_t)
-API_CTX_DECL_P(int16, int16_t)
-API_CTX_DECL_P(int32, int32_t)
-API_CTX_DECL_P(int64, int64_t)
-API_CTX_DECL_P(uint8, uint8_t)
-API_CTX_DECL_P(uint16, uint16_t)
-API_CTX_DECL_P(uint32, uint32_t)
-API_CTX_DECL_P(uint64, uint64_t)
-API_CTX_DECL_P(size, size_t)
-API_CTX_DECL_P(ptrdiff, ptrdiff_t)
+#define DECL_CTX_P(_type, _typename) API_CTX_DECL_P(_typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_P)
+#undef DECL_CTX_P
 
 #undef API_CTX_DECL_P
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put operations for single values
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_typename_p(type *dest, type src, int pe);
+ * @endcode
+ *
+ * @param[out] dest   Symmetric destination variable on remote PE
+ * @param[in] src     Local source value
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Effect
+ * Transfers a single value from local variable to remote PE's symmetric
+ * variable
+ */
 #define API_DECL_P(_typename, _type)                                           \
   void shmem_##_typename##_p(_type *dest, _type src, int pe);
 
-API_DECL_P(float, float)
-API_DECL_P(double, double)
-API_DECL_P(longdouble, long double)
-API_DECL_P(schar, signed char)
-API_DECL_P(char, char)
-API_DECL_P(short, short)
-API_DECL_P(int, int)
-API_DECL_P(long, long)
-API_DECL_P(longlong, long long)
-API_DECL_P(uchar, unsigned char)
-API_DECL_P(ushort, unsigned short)
-API_DECL_P(uint, unsigned int)
-API_DECL_P(ulong, unsigned long)
-API_DECL_P(ulonglong, unsigned long long)
-API_DECL_P(int8, int8_t)
-API_DECL_P(int16, int16_t)
-API_DECL_P(int32, int32_t)
-API_DECL_P(int64, int64_t)
-API_DECL_P(uint8, uint8_t)
-API_DECL_P(uint16, uint16_t)
-API_DECL_P(uint32, uint32_t)
-API_DECL_P(uint64, uint64_t)
-API_DECL_P(size, size_t)
-API_DECL_P(ptrdiff, ptrdiff_t)
+#define DECL_P(_type, _typename) API_DECL_P(_typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_P)
+#undef DECL_P
 
 #undef API_DECL_P
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based get operations for single values
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * type shmem_ctx_typename_g(shmem_ctx_t ctx, const type *src, int pe);
+ * @endcode
+ *
+ * @param[in] ctx     The context on which to perform the operation
+ * @param[in] src     Symmetric source variable on remote PE
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Return
+ * The value from the remote PE
+ *
+ * @section Effect
+ * Gets a single value from remote PE's symmetric variable
+ */
 #define API_CTX_DECL_G(_typename, _type)                                       \
   _type shmem_ctx_##_typename##_g(shmem_ctx_t ctx, const _type *src, int pe);
 
-API_CTX_DECL_G(float, float)
-API_CTX_DECL_G(double, double)
-API_CTX_DECL_G(longdouble, long double)
-API_CTX_DECL_G(schar, signed char)
-API_CTX_DECL_G(char, char)
-API_CTX_DECL_G(short, short)
-API_CTX_DECL_G(int, int)
-API_CTX_DECL_G(long, long)
-API_CTX_DECL_G(longlong, long long)
-API_CTX_DECL_G(uchar, unsigned char)
-API_CTX_DECL_G(ushort, unsigned short)
-API_CTX_DECL_G(uint, unsigned int)
-API_CTX_DECL_G(ulong, unsigned long)
-API_CTX_DECL_G(ulonglong, unsigned long long)
-API_CTX_DECL_G(int8, int8_t)
-API_CTX_DECL_G(int16, int16_t)
-API_CTX_DECL_G(int32, int32_t)
-API_CTX_DECL_G(int64, int64_t)
-API_CTX_DECL_G(uint8, uint8_t)
-API_CTX_DECL_G(uint16, uint16_t)
-API_CTX_DECL_G(uint32, uint32_t)
-API_CTX_DECL_G(uint64, uint64_t)
-API_CTX_DECL_G(size, size_t)
-API_CTX_DECL_G(ptrdiff, ptrdiff_t)
+#define DECL_CTX_G(_type, _typename) API_CTX_DECL_G(_typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_G)
+#undef DECL_CTX_G
 
 #undef API_CTX_DECL_G
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context get operations for single values
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * type shmem_typename_g(const type *src, int pe);
+ * @endcode
+ *
+ * @param[in] src     Symmetric source variable on remote PE
+ * @param[in] pe      PE number of remote PE
+ *
+ * @section Return
+ * The value from the remote PE
+ *
+ * @section Effect
+ * Gets a single value from remote PE's symmetric variable
+ */
 #define API_DECL_G(_typename, _type)                                           \
   _type shmem_##_typename##_g(const _type *src, int pe);
 
-API_DECL_G(float, float)
-API_DECL_G(double, double)
-API_DECL_G(longdouble, long double)
-API_DECL_G(schar, signed char)
-API_DECL_G(char, char)
-API_DECL_G(short, short)
-API_DECL_G(int, int)
-API_DECL_G(long, long)
-API_DECL_G(longlong, long long)
-API_DECL_G(uchar, unsigned char)
-API_DECL_G(ushort, unsigned short)
-API_DECL_G(uint, unsigned int)
-API_DECL_G(ulong, unsigned long)
-API_DECL_G(ulonglong, unsigned long long)
-API_DECL_G(int8, int8_t)
-API_DECL_G(int16, int16_t)
-API_DECL_G(int32, int32_t)
-API_DECL_G(int64, int64_t)
-API_DECL_G(uint8, uint8_t)
-API_DECL_G(uint16, uint16_t)
-API_DECL_G(uint32, uint32_t)
-API_DECL_G(uint64, uint64_t)
-API_DECL_G(size, size_t)
-API_DECL_G(ptrdiff, ptrdiff_t)
+#define DECL_G(_type, _typename) API_DECL_G(_typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_G)
+#undef DECL_G
 
 #undef API_DECL_G
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put operations with signal
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_typename_put_signal(shmem_ctx_t ctx, type *dest, const type
+ * *src, size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int
+ * pe); void shmem_ctx_typename_put_signal_nbi(shmem_ctx_t ctx, type *dest,
+ * const type *src, size_t nelems, uint64_t *sig_addr, uint64_t signal, int
+ * sig_op, int pe);
+ * @endcode
+ *
+ * @param[in] ctx       The context on which to perform the operation
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers data and signals completion to remote PE
+ */
 #define API_DECL_CTX_PUT_SIGNAL(_typename, _type)                              \
   void shmem_ctx_##_typename##_put_signal(                                     \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems,           \
-      uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
+      uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
 
-API_DECL_CTX_PUT_SIGNAL(float, float);
-API_DECL_CTX_PUT_SIGNAL(double, double);
-API_DECL_CTX_PUT_SIGNAL(longdouble, long double);
-API_DECL_CTX_PUT_SIGNAL(schar, signed char);
-API_DECL_CTX_PUT_SIGNAL(char, char);
-API_DECL_CTX_PUT_SIGNAL(short, short);
-API_DECL_CTX_PUT_SIGNAL(int, int);
-API_DECL_CTX_PUT_SIGNAL(long, long);
-API_DECL_CTX_PUT_SIGNAL(longlong, long long);
-API_DECL_CTX_PUT_SIGNAL(uchar, unsigned char);
-API_DECL_CTX_PUT_SIGNAL(ushort, unsigned short);
-API_DECL_CTX_PUT_SIGNAL(uint, unsigned int);
-API_DECL_CTX_PUT_SIGNAL(ulong, unsigned long);
-API_DECL_CTX_PUT_SIGNAL(ulonglong, unsigned long long);
-API_DECL_CTX_PUT_SIGNAL(int8, int8_t);
-API_DECL_CTX_PUT_SIGNAL(int16, int16_t);
-API_DECL_CTX_PUT_SIGNAL(int32, int32_t);
-API_DECL_CTX_PUT_SIGNAL(int64, int64_t);
-API_DECL_CTX_PUT_SIGNAL(uint8, uint8_t);
-API_DECL_CTX_PUT_SIGNAL(uint16, uint16_t);
-API_DECL_CTX_PUT_SIGNAL(uint32, uint32_t);
-API_DECL_CTX_PUT_SIGNAL(uint64, uint64_t);
-API_DECL_CTX_PUT_SIGNAL(size, size_t);
-API_DECL_CTX_PUT_SIGNAL(ptrdiff, ptrdiff_t);
+#define DECL_CTX_PUT_SIGNAL(_type, _typename)                                  \
+  API_DECL_CTX_PUT_SIGNAL(_typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_PUT_SIGNAL)
+#undef DECL_CTX_PUT_SIGNAL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based non-blocking put operations with signal
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_typename_put_signal_nbi(shmem_ctx_t ctx, type *dest, const
+ * type *src, size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op,
+ * int pe);
+ * @endcode
+ *
+ * @param[in] ctx       The context on which to perform the operation
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Initiates non-blocking transfer of data and signals completion to remote PE
+ */
 #define API_DECL_CTX_PUT_SIGNAL_NBI(_typename, _type)                          \
   void shmem_ctx_##_typename##_put_signal_nbi(                                 \
       shmem_ctx_t ctx, _type *dest, const _type *src, size_t nelems,           \
-      uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
+      uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
 
-API_DECL_CTX_PUT_SIGNAL_NBI(float, float);
-API_DECL_CTX_PUT_SIGNAL_NBI(double, double);
-API_DECL_CTX_PUT_SIGNAL_NBI(longdouble, long double);
-API_DECL_CTX_PUT_SIGNAL_NBI(schar, signed char);
-API_DECL_CTX_PUT_SIGNAL_NBI(char, char);
-API_DECL_CTX_PUT_SIGNAL_NBI(short, short);
-API_DECL_CTX_PUT_SIGNAL_NBI(int, int);
-API_DECL_CTX_PUT_SIGNAL_NBI(long, long);
-API_DECL_CTX_PUT_SIGNAL_NBI(longlong, long long);
-API_DECL_CTX_PUT_SIGNAL_NBI(uchar, unsigned char);
-API_DECL_CTX_PUT_SIGNAL_NBI(ushort, unsigned short);
-API_DECL_CTX_PUT_SIGNAL_NBI(uint, unsigned int);
-API_DECL_CTX_PUT_SIGNAL_NBI(ulong, unsigned long);
-API_DECL_CTX_PUT_SIGNAL_NBI(ulonglong, unsigned long long);
-API_DECL_CTX_PUT_SIGNAL_NBI(int8, int8_t);
-API_DECL_CTX_PUT_SIGNAL_NBI(int16, int16_t);
-API_DECL_CTX_PUT_SIGNAL_NBI(int32, int32_t);
-API_DECL_CTX_PUT_SIGNAL_NBI(int64, int64_t);
-API_DECL_CTX_PUT_SIGNAL_NBI(uint8, uint8_t);
-API_DECL_CTX_PUT_SIGNAL_NBI(uint16, uint16_t);
-API_DECL_CTX_PUT_SIGNAL_NBI(uint32, uint32_t);
-API_DECL_CTX_PUT_SIGNAL_NBI(uint64, uint64_t);
-API_DECL_CTX_PUT_SIGNAL_NBI(size, size_t);
-API_DECL_CTX_PUT_SIGNAL_NBI(ptrdiff, ptrdiff_t);
+#define DECL_CTX_PUT_SIGNAL_NBI(_type, _typename)                              \
+  API_DECL_CTX_PUT_SIGNAL_NBI(_typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_CTX_PUT_SIGNAL_NBI)
+#undef DECL_CTX_PUT_SIGNAL_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put operations with signal
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_typename_put_signal(type *dest, const type *src, size_t nelems,
+ * uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ *
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers data and signals completion to remote PE
+ */
 #define API_DECL_PUT_SIGNAL(_typename, _type)                                  \
   void shmem_##_typename##_put_signal(_type *dest, const _type *src,           \
                                       size_t nelems, uint64_t *sig_addr,       \
-                                      uint64_t signal, int sig_op, int pe)
+                                      uint64_t signal, int sig_op, int pe);
 
-API_DECL_PUT_SIGNAL(float, float);
-API_DECL_PUT_SIGNAL(double, double);
-API_DECL_PUT_SIGNAL(longdouble, long double);
-API_DECL_PUT_SIGNAL(schar, signed char);
-API_DECL_PUT_SIGNAL(char, char);
-API_DECL_PUT_SIGNAL(short, short);
-API_DECL_PUT_SIGNAL(int, int);
-API_DECL_PUT_SIGNAL(long, long);
-API_DECL_PUT_SIGNAL(longlong, long long);
-API_DECL_PUT_SIGNAL(uchar, unsigned char);
-API_DECL_PUT_SIGNAL(ushort, unsigned short);
-API_DECL_PUT_SIGNAL(uint, unsigned int);
-API_DECL_PUT_SIGNAL(ulong, unsigned long);
-API_DECL_PUT_SIGNAL(ulonglong, unsigned long long);
-API_DECL_PUT_SIGNAL(int8, int8_t);
-API_DECL_PUT_SIGNAL(int16, int16_t);
-API_DECL_PUT_SIGNAL(int32, int32_t);
-API_DECL_PUT_SIGNAL(int64, int64_t);
-API_DECL_PUT_SIGNAL(uint8, uint8_t);
-API_DECL_PUT_SIGNAL(uint16, uint16_t);
-API_DECL_PUT_SIGNAL(uint32, uint32_t);
-API_DECL_PUT_SIGNAL(uint64, uint64_t);
-API_DECL_PUT_SIGNAL(size, size_t);
-API_DECL_PUT_SIGNAL(ptrdiff, ptrdiff_t);
+#define DECL_PUT_SIGNAL(_type, _typename) API_DECL_PUT_SIGNAL(_typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PUT_SIGNAL)
+#undef DECL_PUT_SIGNAL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context non-blocking put operations with signal
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_typename_put_signal_nbi(type *dest, const type *src, size_t
+ * nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ *
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Initiates non-blocking transfer of data and signals completion to remote PE
+ */
 #define API_DECL_PUT_SIGNAL_NBI(_typename, _type)                              \
-  void shmem_##_typename##_put_signal_nbi(_type *dest, const _type *src,       \
-                                          size_t nelems, uint64_t *sig_addr,   \
-                                          uint64_t signal, int sig_op, int pe)
+  void shmem_##_typename##_put_signal_nbi(                                     \
+      _type *dest, const _type *src, size_t nelems, uint64_t *sig_addr,        \
+      uint64_t signal, int sig_op, int pe);
 
-API_DECL_PUT_SIGNAL_NBI(float, float);
-API_DECL_PUT_SIGNAL_NBI(double, double);
-API_DECL_PUT_SIGNAL_NBI(longdouble, long double);
-API_DECL_PUT_SIGNAL_NBI(schar, signed char);
-API_DECL_PUT_SIGNAL_NBI(char, char);
-API_DECL_PUT_SIGNAL_NBI(short, short);
-API_DECL_PUT_SIGNAL_NBI(int, int);
-API_DECL_PUT_SIGNAL_NBI(long, long);
-API_DECL_PUT_SIGNAL_NBI(longlong, long long);
-API_DECL_PUT_SIGNAL_NBI(uchar, unsigned char);
-API_DECL_PUT_SIGNAL_NBI(ushort, unsigned short);
-API_DECL_PUT_SIGNAL_NBI(uint, unsigned int);
-API_DECL_PUT_SIGNAL_NBI(ulong, unsigned long);
-API_DECL_PUT_SIGNAL_NBI(ulonglong, unsigned long long);
-API_DECL_PUT_SIGNAL_NBI(int8, int8_t);
-API_DECL_PUT_SIGNAL_NBI(int16, int16_t);
-API_DECL_PUT_SIGNAL_NBI(int32, int32_t);
-API_DECL_PUT_SIGNAL_NBI(int64, int64_t);
-API_DECL_PUT_SIGNAL_NBI(uint8, uint8_t);
-API_DECL_PUT_SIGNAL_NBI(uint16, uint16_t);
-API_DECL_PUT_SIGNAL_NBI(uint32, uint32_t);
-API_DECL_PUT_SIGNAL_NBI(uint64, uint64_t);
-API_DECL_PUT_SIGNAL_NBI(size, size_t);
-API_DECL_PUT_SIGNAL_NBI(ptrdiff, ptrdiff_t);
+#define DECL_PUT_SIGNAL_NBI(_type, _typename)                                  \
+  API_DECL_PUT_SIGNAL_NBI(_typename, _type)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_PUT_SIGNAL_NBI)
+#undef DECL_PUT_SIGNAL_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put operations with signal for fixed sizes
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_putX_signal(shmem_ctx_t ctx, void *dest, const void *src,
+ * size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe); void
+ * shmem_ctx_putX_signal_nbi(shmem_ctx_t ctx, void *dest, const void *src,
+ * size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ * where X is one of: 8, 16, 32, 64, 128
+ *
+ * @param[in] ctx       The context on which to perform the operation
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers fixed-size data and signals completion to remote PE
+ */
 #define API_DECL_CTX_PUT_SIGNAL_SIZE(_size)                                    \
   void shmem_ctx_put##_size##_signal(                                          \
       shmem_ctx_t ctx, void *dest, const void *src, size_t nelems,             \
@@ -817,6 +885,30 @@ API_DECL_CTX_PUT_SIGNAL_SIZE(128)
 #undef API_DECL_CTX_PUT_SIGNAL_SIZE
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares context-based put operations with signal for memory blocks
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_putmem_signal(shmem_ctx_t ctx, void *dest, const void *src,
+ * size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe); void
+ * shmem_ctx_putmem_signal_nbi(shmem_ctx_t ctx, void *dest, const void *src,
+ * size_t nelems, uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ *
+ * @param[in] ctx       The context on which to perform the operation
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers memory blocks and signals completion to remote PE
+ */
 #define API_DECL_CTX_PUTMEM_SIGNAL()                                           \
   void shmem_ctx_putmem_signal(shmem_ctx_t ctx, void *dest, const void *src,   \
                                size_t nelems, uint64_t *sig_addr,              \
@@ -830,6 +922,30 @@ API_DECL_CTX_PUTMEM_SIGNAL()
 #undef API_DECL_CTX_PUTMEM_SIGNAL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put operations with signal for fixed-size data
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_putX_signal(void *dest, const void *src, size_t nelems,
+ * uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * void shmem_putX_signal_nbi(void *dest, const void *src, size_t nelems,
+ * uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ * where X is one of: 8, 16, 32, 64, 128
+ *
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers fixed-size data and signals completion to remote PE
+ */
 #define API_DECL_PUT_SIGNAL_SIZE(_size)                                        \
   void shmem_put##_size##_signal(void *dest, const void *src, size_t nelems,   \
                                  uint64_t *sig_addr, uint64_t signal,          \
@@ -847,6 +963,29 @@ API_DECL_PUT_SIGNAL_SIZE(128)
 #undef API_DECL_PUT_SIGNAL_SIZE
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Declares non-context put operations with signal for memory blocks
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_putmem_signal(void *dest, const void *src, size_t nelems,
+ * uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * void shmem_putmem_signal_nbi(void *dest, const void *src, size_t nelems,
+ * uint64_t *sig_addr, uint64_t signal, int sig_op, int pe);
+ * @endcode
+ *
+ * @param[out] dest     Symmetric destination array on remote PE
+ * @param[in] src       Local source array
+ * @param[in] nelems    Number of elements to transfer
+ * @param[out] sig_addr Address of signal variable on remote PE
+ * @param[in] signal    Signal value to write after transfer
+ * @param[in] sig_op    Signal operation to perform
+ * @param[in] pe        PE number of remote PE
+ *
+ * @section Effect
+ * Transfers memory blocks and signals completion to remote PE
+ */
 #define API_DECL_PUTMEM_SIGNAL()                                               \
   void shmem_putmem_signal(void *dest, const void *src, size_t nelems,         \
                            uint64_t *sig_addr, uint64_t signal, int sig_op,    \
@@ -1327,13 +1466,10 @@ void *shmem_align(size_t alignment, size_t size) _WUR;
 void *shmem_malloc_with_hints(size_t size, long hints) _WUR;
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_DECL_TEST_AND_WAIT_UNTIL(_opname, _rettype, _typename, _type)      \
-  /* see \ref shmem_##_typename##_opname() */                                  \
-  _rettype shmem_##_typename##_##_opname(_type *ivar, int cmp, _type cmp_value)
-
 /**
  * @brief test for symmetric variable to change value
  * @page shmem_long_test
+ * @page shmem_long_wait_until
  * @section Synopsis
  *
  * @subsection c C/C++
@@ -1349,329 +1485,501 @@ void *shmem_malloc_with_hints(size_t size, long hints) _WUR;
  * 1 if the comparison is true, 0 if not
  *
  */
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, longdouble, long double);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, schar, signed char);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, char, char);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, short, short); //  _DEPRECATED;
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, int, int);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, long, long);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, longlong, long long);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, uchar, unsigned char);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, ushort, unsigned short); // _DEPRECATED;
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, uint, unsigned int);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, ulong, unsigned long);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, ulonglong, unsigned long long);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, int32, int32_t);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, int64, int64_t);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, uint32, uint32_t);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, uint64, uint64_t);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, size, size_t);
-API_DECL_TEST_AND_WAIT_UNTIL(test, int, ptrdiff, ptrdiff_t);
 
-////////////////////////////////////////////////////////////////////////////////
-/**
- * @brief wait for a symmetric variable to change value with
- *        specified condition
- * @page shmmem_long_wait_until
- * @section Synopsis
- *
- * @subsection c C/C++
- @code
- void shmem_long_wait_until(long *ivar, int cmp, long cmp_value);
- @endcode
- *
- * @section Effect
- *
- * ivar updated by another PE, wait for that to happen
- *
- * @section Return
- * None.
- *
- */
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, longdouble, long double);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, schar, signed char);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, char, char);
+#define API_DECL_TEST_AND_WAIT_UNTIL(_opname, _rettype, _typename, _type)      \
+  _rettype shmem_##_typename##_##_opname(_type *ivar, int cmp, _type cmp_value);
+
+/* Deprecated types (short, ushort) */
+API_DECL_TEST_AND_WAIT_UNTIL(test, int, short, short); //  _DEPRECATED;
+API_DECL_TEST_AND_WAIT_UNTIL(test, int, ushort, unsigned short); // _DEPRECATED;
+
+/* All other types from SHMEM_STANDARD_AMO_TYPE_TABLE */
+#define DECL_TEST(_type, _typename)                                            \
+  API_DECL_TEST_AND_WAIT_UNTIL(test, int, _typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST)
+#undef DECL_TEST
+
+/* Deprecated types (short, ushort) */
 API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, short, short); // _DEPRECATED;
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, int, int);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, long, long);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, longlong, long long);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, uchar, unsigned char);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ushort, unsigned short); // _DEPRECATED;
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, uint, unsigned int);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ulong, unsigned long);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ulonglong, unsigned long long);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, int32, int32_t);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, int64, int64_t);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, uint32, uint32_t);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, uint64, uint64_t);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, size, size_t);
-API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ptrdiff, ptrdiff_t);
+API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, ushort,
+                             unsigned short); // _DEPRECATED;
+
+/* All other types from SHMEM_STANDARD_AMO_TYPE_TABLE */
+#define DECL_WAIT_UNTIL(_type, _typename)                                      \
+  API_DECL_TEST_AND_WAIT_UNTIL(wait_until, void, _typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL)
+#undef DECL_WAIT_UNTIL
 
 #undef API_DECL_TEST_AND_WAIT_UNTIL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if all variables in an array meet a specified condition
+ * @page shmem_long_test_all
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * int shmem_long_test_all(long *ivars, size_t nelems, const int *status, int
+ * cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars     Array of symmetric variables to be tested
+ * @param nelems    Number of elements in the ivars array
+ * @param status    Array indicating which ivars elements to monitor
+ * @param cmp       Comparison operator from shmem_cmp_constants
+ * @param cmp_value The value to compare against
+ *
+ * @section Effect
+ * Tests if all elements in ivars array meet the condition specified by the
+ * comparison operator and comparison value. Only elements with corresponding
+ * non-zero status values are tested.
+ *
+ * @section Return
+ * Returns 1 if all tested elements meet the condition, 0 otherwise.
+ */
 #define API_DECL_TEST_ALL(_typename, _type)                                    \
   int shmem_##_typename##_test_all(_type *ivars, size_t nelems,                \
                                    const int *status, int cmp,                 \
-                                   _type cmp_value)
+                                   _type cmp_value);
 
-API_DECL_TEST_ALL(short, short) _DEPRECATED;
-API_DECL_TEST_ALL(int, int);
-API_DECL_TEST_ALL(long, long);
-API_DECL_TEST_ALL(longlong, long long);
-API_DECL_TEST_ALL(ushort, unsigned short) _DEPRECATED;
-API_DECL_TEST_ALL(uint, unsigned int);
-API_DECL_TEST_ALL(ulong, unsigned long);
-API_DECL_TEST_ALL(ulonglong, unsigned long long);
-API_DECL_TEST_ALL(int32, int32_t);
-API_DECL_TEST_ALL(int64, int64_t);
-API_DECL_TEST_ALL(uint32, uint32_t);
-API_DECL_TEST_ALL(uint64, uint64_t);
-API_DECL_TEST_ALL(size, size_t);
-API_DECL_TEST_ALL(ptrdiff, ptrdiff_t);
+#define DECL_TEST_ALL(_type, _typename) API_DECL_TEST_ALL(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_ALL)
+#undef DECL_TEST_ALL
+
+#undef API_DECL_TEST_ALL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if any variable in an array meets a specified condition
+ * @page shmem_long_test_any
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_test_any(long *ivars, size_t nelems, const int *status, int
+ * cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars     Array of symmetric variables to be tested
+ * @param nelems    Number of elements in the ivars array
+ * @param status    Array indicating which ivars elements to monitor
+ * @param cmp       Comparison operator from shmem_cmp_constants
+ * @param cmp_value The value to compare against
+ *
+ * @section Effect
+ * Tests if any element in ivars array meets the condition specified by the
+ * comparison operator and comparison value. Only elements with corresponding
+ * non-zero status values are tested.
+ *
+ * @section Return
+ * Returns the index of the first element that meets the condition, or nelems if
+ * no element meets the condition.
+ */
 #define API_DECL_TEST_ANY(_typename, _type)                                    \
   size_t shmem_##_typename##_test_any(_type *ivars, size_t nelems,             \
                                       const int *status, int cmp,              \
-                                      _type cmp_value)
+                                      _type cmp_value);
 
-API_DECL_TEST_ANY(short, short) _DEPRECATED;
-API_DECL_TEST_ANY(int, int);
-API_DECL_TEST_ANY(long, long);
-API_DECL_TEST_ANY(longlong, long long);
-API_DECL_TEST_ANY(ushort, unsigned short) _DEPRECATED;
-API_DECL_TEST_ANY(uint, unsigned int);
-API_DECL_TEST_ANY(ulong, unsigned long);
-API_DECL_TEST_ANY(ulonglong, unsigned long long);
-API_DECL_TEST_ANY(int32, int32_t);
-API_DECL_TEST_ANY(int64, int64_t);
-API_DECL_TEST_ANY(uint32, uint32_t);
-API_DECL_TEST_ANY(uint64, uint64_t);
-API_DECL_TEST_ANY(size, size_t);
-API_DECL_TEST_ANY(ptrdiff, ptrdiff_t);
+#define DECL_TEST_ANY(_type, _typename) API_DECL_TEST_ANY(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_ANY)
+#undef DECL_TEST_ANY
+
+#undef API_DECL_TEST_ANY
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if some variables in an array meet a specified condition
+ * @page shmem_long_test_some
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_test_some(long *ivars, size_t nelems, size_t *indices,
+ * const int *status, int cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars     Array of symmetric variables to be tested
+ * @param nelems    Number of elements in the ivars array
+ * @param indices   Array to store indices of elements that meet the condition
+ * @param status    Array indicating which ivars elements to monitor
+ * @param cmp       Comparison operator from shmem_cmp_constants
+ * @param cmp_value The value to compare against
+ *
+ * @section Effect
+ * Tests if any elements in ivars array meet the condition specified by the
+ * comparison operator and comparison value. Only elements with corresponding
+ * non-zero status values are tested. The indices of elements that meet the
+ * condition are stored in the indices array.
+ *
+ * @section Return
+ * Returns the number of elements that meet the condition.
+ */
 #define API_DECL_TEST_SOME(_typename, _type)                                   \
   size_t shmem_##_typename##_test_some(_type *ivars, size_t nelems,            \
                                        size_t *indices, const int *status,     \
-                                       int cmp, _type cmp_value)
+                                       int cmp, _type cmp_value);
 
-API_DECL_TEST_SOME(short, short) _DEPRECATED;
-API_DECL_TEST_SOME(int, int);
-API_DECL_TEST_SOME(long, long);
-API_DECL_TEST_SOME(longlong, long long);
-API_DECL_TEST_SOME(ushort, unsigned short) _DEPRECATED;
-API_DECL_TEST_SOME(uint, unsigned int);
-API_DECL_TEST_SOME(ulong, unsigned long);
-API_DECL_TEST_SOME(ulonglong, unsigned long long);
-API_DECL_TEST_SOME(int32, int32_t);
-API_DECL_TEST_SOME(int64, int64_t);
-API_DECL_TEST_SOME(uint32, uint32_t);
-API_DECL_TEST_SOME(uint64, uint64_t);
-API_DECL_TEST_SOME(size, size_t);
-API_DECL_TEST_SOME(ptrdiff, ptrdiff_t);
+#define DECL_TEST_SOME(_type, _typename) API_DECL_TEST_SOME(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_SOME)
+#undef DECL_TEST_SOME
+
+#undef API_DECL_TEST_SOME
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if all variables in an array meet specified conditions using a
+ * vector of comparison values
+ * @page shmem_long_test_all_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * int shmem_long_test_all_vector(long *ivars, size_t nelems, const int *status,
+ * int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to be tested
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Tests if all elements in ivars array meet the conditions specified by the
+ * comparison operator and corresponding comparison values in cmp_values array.
+ * Only elements with corresponding non-zero status values are tested.
+ *
+ * @section Return
+ * Returns 1 if all elements meet their conditions, 0 otherwise.
+ */
 #define API_DECL_TEST_ALL_VECTOR(_typename, _type)                             \
   int shmem_##_typename##_test_all_vector(_type *ivars, size_t nelems,         \
                                           const int *status, int cmp,          \
-                                          _type *cmp_values)
+                                          _type *cmp_values);
 
-API_DECL_TEST_ALL_VECTOR(short, short) _DEPRECATED;
-API_DECL_TEST_ALL_VECTOR(int, int);
-API_DECL_TEST_ALL_VECTOR(long, long);
-API_DECL_TEST_ALL_VECTOR(longlong, long long);
-API_DECL_TEST_ALL_VECTOR(ushort, unsigned short) _DEPRECATED;
-API_DECL_TEST_ALL_VECTOR(uint, unsigned int);
-API_DECL_TEST_ALL_VECTOR(ulong, unsigned long);
-API_DECL_TEST_ALL_VECTOR(ulonglong, unsigned long long);
-API_DECL_TEST_ALL_VECTOR(int32, int32_t);
-API_DECL_TEST_ALL_VECTOR(int64, int64_t);
-API_DECL_TEST_ALL_VECTOR(uint32, uint32_t);
-API_DECL_TEST_ALL_VECTOR(uint64, uint64_t);
-API_DECL_TEST_ALL_VECTOR(size, size_t);
-API_DECL_TEST_ALL_VECTOR(ptrdiff, ptrdiff_t);
+#define DECL_TEST_ALL_VECTOR(_type, _typename)                                 \
+  API_DECL_TEST_ALL_VECTOR(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_ALL_VECTOR)
+#undef DECL_TEST_ALL_VECTOR
+
+#undef API_DECL_TEST_ALL_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if any variable in an array meets specified conditions using a
+ * vector of comparison values
+ * @page shmem_long_test_any_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_test_any_vector(long *ivars, size_t nelems, const int
+ * *status, int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to be tested
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Tests if any element in ivars array meets the condition specified by the
+ * comparison operator and corresponding comparison value in cmp_values array.
+ * Only elements with corresponding non-zero status values are tested.
+ *
+ * @section Return
+ * Returns the index of the first element that meets its condition, or nelems if
+ * no element meets its condition.
+ */
 #define API_DECL_TEST_ANY_VECTOR(_typename, _type)                             \
   size_t shmem_##_typename##_test_any_vector(_type *ivars, size_t nelems,      \
                                              const int *status, int cmp,       \
-                                             _type *cmp_values)
+                                             _type *cmp_values);
 
-API_DECL_TEST_ANY_VECTOR(short, short) _DEPRECATED;
-API_DECL_TEST_ANY_VECTOR(int, int);
-API_DECL_TEST_ANY_VECTOR(long, long);
-API_DECL_TEST_ANY_VECTOR(longlong, long long);
-API_DECL_TEST_ANY_VECTOR(ushort, unsigned short) _DEPRECATED;
-API_DECL_TEST_ANY_VECTOR(uint, unsigned int);
-API_DECL_TEST_ANY_VECTOR(ulong, unsigned long);
-API_DECL_TEST_ANY_VECTOR(ulonglong, unsigned long long);
-API_DECL_TEST_ANY_VECTOR(int32, int32_t);
-API_DECL_TEST_ANY_VECTOR(int64, int64_t);
-API_DECL_TEST_ANY_VECTOR(uint32, uint32_t);
-API_DECL_TEST_ANY_VECTOR(uint64, uint64_t);
-API_DECL_TEST_ANY_VECTOR(size, size_t);
-API_DECL_TEST_ANY_VECTOR(ptrdiff, ptrdiff_t);
+#define DECL_TEST_ANY_VECTOR(_type, _typename)                                 \
+  API_DECL_TEST_ANY_VECTOR(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_ANY_VECTOR)
+#undef DECL_TEST_ANY_VECTOR
+
+#undef API_DECL_TEST_ANY_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Test if some variables in an array meet specified conditions using a
+ * vector of comparison values
+ * @page shmem_long_test_some_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_test_some_vector(long *ivars, size_t nelems, size_t
+ * *indices, const int *status, int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to be tested
+ * @param nelems     Number of elements in the ivars array
+ * @param indices    Array to store indices of elements that meet their
+ * conditions
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Tests if elements in ivars array meet the conditions specified by the
+ * comparison operator and corresponding comparison values in cmp_values array.
+ * Only elements with corresponding non-zero status values are tested. Indices
+ * of elements that meet their conditions are stored in the indices array.
+ *
+ * @section Return
+ * Returns the number of elements that meet their conditions.
+ */
 #define API_DECL_TEST_SOME_VECTOR(_typename, _type)                            \
   size_t shmem_##_typename##_test_some_vector(                                 \
       _type *ivars, size_t nelems, size_t *indices, const int *status,         \
-      int cmp, _type *cmp_values)
+      int cmp, _type *cmp_values);
 
-API_DECL_TEST_SOME_VECTOR(short, short) _DEPRECATED;
-API_DECL_TEST_SOME_VECTOR(int, int);
-API_DECL_TEST_SOME_VECTOR(long, long);
-API_DECL_TEST_SOME_VECTOR(longlong, long long);
-API_DECL_TEST_SOME_VECTOR(ushort, unsigned short) _DEPRECATED;
-API_DECL_TEST_SOME_VECTOR(uint, unsigned int);
-API_DECL_TEST_SOME_VECTOR(ulong, unsigned long);
-API_DECL_TEST_SOME_VECTOR(ulonglong, unsigned long long);
-API_DECL_TEST_SOME_VECTOR(int32, int32_t);
-API_DECL_TEST_SOME_VECTOR(int64, int64_t);
-API_DECL_TEST_SOME_VECTOR(uint32, uint32_t);
-API_DECL_TEST_SOME_VECTOR(uint64, uint64_t);
-API_DECL_TEST_SOME_VECTOR(size, size_t);
-API_DECL_TEST_SOME_VECTOR(ptrdiff, ptrdiff_t);
+#define DECL_TEST_SOME_VECTOR(_type, _typename)                                \
+  API_DECL_TEST_SOME_VECTOR(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_TEST_SOME_VECTOR)
+#undef DECL_TEST_SOME_VECTOR
+
+#undef API_DECL_TEST_SOME_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until all variables in an array meet a specified condition
+ * @page shmem_long_wait_until_all
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_long_wait_until_all(long *ivars, size_t nelems, const int *status,
+ * int cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_value  Value to compare against each element
+ *
+ * @section Effect
+ * Waits until all elements in ivars array meet the condition specified by the
+ * comparison operator and comparison value. Only elements with corresponding
+ * non-zero status values are monitored.
+ *
+ * @section Return
+ * None.
+ */
 #define API_DECL_WAIT_UNTIL_ALL(_typename, _type)                              \
   void shmem_##_typename##_wait_until_all(_type *ivars, size_t nelems,         \
                                           const int *status, int cmp,          \
-                                          _type cmp_value)
+                                          _type cmp_value);
 
-API_DECL_WAIT_UNTIL_ALL(short, short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_ALL(int, int);
-API_DECL_WAIT_UNTIL_ALL(long, long);
-API_DECL_WAIT_UNTIL_ALL(longlong, long long);
-API_DECL_WAIT_UNTIL_ALL(ushort, unsigned short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_ALL(uint, unsigned int);
-API_DECL_WAIT_UNTIL_ALL(ulong, unsigned long);
-API_DECL_WAIT_UNTIL_ALL(ulonglong, unsigned long long);
-API_DECL_WAIT_UNTIL_ALL(int32, int32_t);
-API_DECL_WAIT_UNTIL_ALL(int64, int64_t);
-API_DECL_WAIT_UNTIL_ALL(uint32, uint32_t);
-API_DECL_WAIT_UNTIL_ALL(uint64, uint64_t);
-API_DECL_WAIT_UNTIL_ALL(size, size_t);
-API_DECL_WAIT_UNTIL_ALL(ptrdiff, ptrdiff_t);
+#define DECL_WAIT_UNTIL_ALL(_type, _typename)                                  \
+  API_DECL_WAIT_UNTIL_ALL(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_ALL)
+#undef DECL_WAIT_UNTIL_ALL
+
+#undef API_DECL_WAIT_UNTIL_ALL
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until any variable in an array meets a specified condition
+ * @page shmem_long_wait_until_any
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_wait_until_any(long *ivars, size_t nelems, const int
+ * *status, int cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_value  Value to compare against each element
+ *
+ * @section Effect
+ * Waits until any element in ivars array meets the condition specified by the
+ * comparison operator and comparison value. Only elements with corresponding
+ * non-zero status values are monitored.
+ *
+ * @section Return
+ * Index of the first element that meets the condition.
+ */
 #define API_DECL_WAIT_UNTIL_ANY(_typename, _type)                              \
   size_t shmem_##_typename##_wait_until_any(_type *ivars, size_t nelems,       \
                                             const int *status, int cmp,        \
-                                            _type cmp_value)
+                                            _type cmp_value);
 
-API_DECL_WAIT_UNTIL_ANY(short, short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_ANY(int, int);
-API_DECL_WAIT_UNTIL_ANY(long, long);
-API_DECL_WAIT_UNTIL_ANY(longlong, long long);
-API_DECL_WAIT_UNTIL_ANY(ushort, unsigned short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_ANY(uint, unsigned int);
-API_DECL_WAIT_UNTIL_ANY(ulong, unsigned long);
-API_DECL_WAIT_UNTIL_ANY(ulonglong, unsigned long long);
-API_DECL_WAIT_UNTIL_ANY(int32, int32_t);
-API_DECL_WAIT_UNTIL_ANY(int64, int64_t);
-API_DECL_WAIT_UNTIL_ANY(uint32, uint32_t);
-API_DECL_WAIT_UNTIL_ANY(uint64, uint64_t);
-API_DECL_WAIT_UNTIL_ANY(size, size_t);
-API_DECL_WAIT_UNTIL_ANY(ptrdiff, ptrdiff_t);
+#define DECL_WAIT_UNTIL_ANY(_type, _typename)                                  \
+  API_DECL_WAIT_UNTIL_ANY(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_ANY)
+#undef DECL_WAIT_UNTIL_ANY
+
+#undef API_DECL_WAIT_UNTIL_ANY
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until some variables in an array meet a specified condition
+ * @page shmem_long_wait_until_some
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_wait_until_some(long *ivars, size_t nelems, size_t
+ * *indices, const int *status, int cmp, long cmp_value);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param indices    Array to store indices of elements that meet the condition
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_value  Value to compare against each element
+ *
+ * @section Effect
+ * Waits until at least one element in ivars array meets the condition specified
+ * by the comparison operator and comparison value. Only elements with
+ * corresponding non-zero status values are monitored. Indices of elements that
+ * meet the condition are stored in the indices array.
+ *
+ * @section Return
+ * Number of elements that meet the condition.
+ */
 #define API_DECL_WAIT_UNTIL_SOME(_typename, _type)                             \
   size_t shmem_##_typename##_wait_until_some(                                  \
       _type *ivars, size_t nelems, size_t *indices, const int *status,         \
-      int cmp, _type cmp_value)
+      int cmp, _type cmp_value);
 
-API_DECL_WAIT_UNTIL_SOME(short, short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_SOME(int, int);
-API_DECL_WAIT_UNTIL_SOME(long, long);
-API_DECL_WAIT_UNTIL_SOME(longlong, long long);
-API_DECL_WAIT_UNTIL_SOME(ushort, unsigned short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_SOME(uint, unsigned int);
-API_DECL_WAIT_UNTIL_SOME(ulong, unsigned long);
-API_DECL_WAIT_UNTIL_SOME(ulonglong, unsigned long long);
-API_DECL_WAIT_UNTIL_SOME(int32, int32_t);
-API_DECL_WAIT_UNTIL_SOME(int64, int64_t);
-API_DECL_WAIT_UNTIL_SOME(uint32, uint32_t);
-API_DECL_WAIT_UNTIL_SOME(uint64, uint64_t);
-API_DECL_WAIT_UNTIL_SOME(size, size_t);
-API_DECL_WAIT_UNTIL_SOME(ptrdiff, ptrdiff_t);
+#define DECL_WAIT_UNTIL_SOME(_type, _typename)                                 \
+  API_DECL_WAIT_UNTIL_SOME(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_SOME)
+#undef DECL_WAIT_UNTIL_SOME
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until all variables in an array meet specified conditions using a
+ * vector of comparison values
+ * @page shmem_long_wait_until_all_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_long_wait_until_all_vector(long *ivars, size_t nelems, const int
+ * *status, int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Waits until all elements in ivars array meet the conditions specified by the
+ * comparison operator and corresponding comparison values in cmp_values array.
+ * Only elements with corresponding non-zero status values are monitored.
+ *
+ * @section Return
+ * None.
+ */
 #define API_DECL_WAIT_UNTIL_ALL_VECTOR(_typename, _type)                       \
   void shmem_##_typename##_wait_until_all_vector(_type *ivars, size_t nelems,  \
                                                  const int *status, int cmp,   \
-                                                 _type *cmp_values)
+                                                 _type *cmp_values);
 
-API_DECL_WAIT_UNTIL_ALL_VECTOR(short, short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_ALL_VECTOR(int, int);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(long, long);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(longlong, long long);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(ushort, unsigned short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_ALL_VECTOR(uint, unsigned int);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(ulong, unsigned long);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(ulonglong, unsigned long long);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(int32, int32_t);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(int64, int64_t);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(uint32, uint32_t);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(uint64, uint64_t);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(size, size_t);
-API_DECL_WAIT_UNTIL_ALL_VECTOR(ptrdiff, ptrdiff_t);
+#define DECL_WAIT_UNTIL_ALL_VECTOR(_type, _typename)                           \
+  API_DECL_WAIT_UNTIL_ALL_VECTOR(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_ALL_VECTOR)
+#undef DECL_WAIT_UNTIL_ALL_VECTOR
+
+#undef API_DECL_WAIT_UNTIL_ALL_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until any variable in an array meets its condition using a vector
+ * of comparison values
+ * @page shmem_long_wait_until_any_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_wait_until_any_vector(long *ivars, size_t nelems, const int
+ * *status, int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Waits until any element in ivars array meets its condition specified by the
+ * comparison operator and corresponding comparison value in cmp_values array.
+ * Only elements with corresponding non-zero status values are monitored.
+ *
+ * @section Return
+ * Index of the first element that meets its condition.
+ */
 #define API_DECL_WAIT_UNTIL_ANY_VECTOR(_typename, _type)                       \
   size_t shmem_##_typename##_wait_until_any_vector(                            \
       _type *ivars, size_t nelems, const int *status, int cmp,                 \
-      _type *cmp_values)
+      _type *cmp_values);
 
-API_DECL_WAIT_UNTIL_ANY_VECTOR(short, short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_ANY_VECTOR(int, int);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(long, long);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(longlong, long long);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(ushort, unsigned short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_ANY_VECTOR(uint, unsigned int);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(ulong, unsigned long);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(ulonglong, unsigned long long);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(int32, int32_t);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(int64, int64_t);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(uint32, uint32_t);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(uint64, uint64_t);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(size, size_t);
-API_DECL_WAIT_UNTIL_ANY_VECTOR(ptrdiff, ptrdiff_t);
+#define DECL_WAIT_UNTIL_ANY_VECTOR(_type, _typename)                           \
+  API_DECL_WAIT_UNTIL_ANY_VECTOR(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_ANY_VECTOR)
+#undef DECL_WAIT_UNTIL_ANY_VECTOR
+
+#undef API_DECL_WAIT_UNTIL_ANY_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Wait until some variables in an array meet their conditions using a
+ * vector of comparison values
+ * @page shmem_long_wait_until_some_vector
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * size_t shmem_long_wait_until_some_vector(long *ivars, size_t nelems, size_t
+ * *indices, const int *status, int cmp, long *cmp_values);
+ * @endcode
+ *
+ * @param ivars      Array of symmetric variables to wait on
+ * @param nelems     Number of elements in the ivars array
+ * @param indices    Array to store indices of elements that meet their
+ * conditions
+ * @param status     Array indicating which ivars elements to monitor
+ * @param cmp        Comparison operator from shmem_cmp_constants
+ * @param cmp_values Array of values to compare against each element
+ *
+ * @section Effect
+ * Waits until at least one element in ivars array meets its condition specified
+ * by the comparison operator and corresponding comparison value in cmp_values
+ * array. Only elements with corresponding non-zero status values are monitored.
+ * Indices of elements that meet their conditions are stored in the indices
+ * array.
+ *
+ * @section Return
+ * Number of elements that meet their conditions.
+ */
 #define API_DECL_WAIT_UNTIL_SOME_VECTOR(_typename, _type)                      \
   size_t shmem_##_typename##_wait_until_some_vector(                           \
       _type *ivars, size_t nelems, size_t *indices, const int *status,         \
-      int cmp, _type *cmp_values)
+      int cmp, _type *cmp_values);
 
-API_DECL_WAIT_UNTIL_SOME_VECTOR(short, short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_SOME_VECTOR(int, int);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(long, long);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(longlong, long long);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(ushort, unsigned short) _DEPRECATED;
-API_DECL_WAIT_UNTIL_SOME_VECTOR(uint, unsigned int);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(ulong, unsigned long);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(ulonglong, unsigned long long);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(int32, int32_t);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(int64, int64_t);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(uint32, uint32_t);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(uint64, uint64_t);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(size, size_t);
-API_DECL_WAIT_UNTIL_SOME_VECTOR(ptrdiff, ptrdiff_t);
+#define DECL_WAIT_UNTIL_SOME_VECTOR(_type, _typename)                          \
+  API_DECL_WAIT_UNTIL_SOME_VECTOR(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_WAIT_UNTIL_SOME_VECTOR)
+#undef DECL_WAIT_UNTIL_SOME_VECTOR
 
-#undef API_DECL_TEST_ALL
-#undef API_DECL_TEST_ANY
-#undef API_DECL_TEST_SOME
-#undef API_DECL_WAIT_UNTIL_ALL
-#undef API_DECL_WAIT_UNTIL_ANY
-#undef API_DECL_WAIT_UNTIL_SOME
-#undef API_DECL_WAIT_UNTIL_ALL_VECTOR
-#undef API_DECL_WAIT_UNTIL_ANY_VECTOR
-#undef API_DECL_WAIT_UNTIL_SOME_VECTOR
-#undef API_DECL_WAIT_UNTIL_ALL_VECTOR
-#undef API_DECL_WAIT_UNTIL_ANY_VECTOR
 #undef API_DECL_WAIT_UNTIL_SOME_VECTOR
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1702,24 +2010,11 @@ API_DECL_WAIT_UNTIL_SOME_VECTOR(ptrdiff, ptrdiff_t);
           shmem_##_typename##_wait_until with compare operator SHMEM_CMP_NE,   \
           1.4);
 
-API_DECL_WAIT(longdouble, long double)
-API_DECL_WAIT(schar, signed char)
-API_DECL_WAIT(char, char)
-API_DECL_WAIT(short, short)
-API_DECL_WAIT(int, int)
-API_DECL_WAIT(long, long)
-API_DECL_WAIT(longlong, long long)
-API_DECL_WAIT(uchar, unsigned char)
-API_DECL_WAIT(ushort, unsigned short)
-API_DECL_WAIT(uint, unsigned int)
-API_DECL_WAIT(ulong, unsigned long)
-API_DECL_WAIT(ulonglong, unsigned long long)
-API_DECL_WAIT(int32, int32_t)
-API_DECL_WAIT(int64, int64_t)
-API_DECL_WAIT(uint32, uint32_t)
-API_DECL_WAIT(uint64, uint64_t)
-API_DECL_WAIT(size, size_t)
-API_DECL_WAIT(ptrdiff, ptrdiff_t)
+#define DECL_WAIT(_type, _typename) API_DECL_WAIT(_typename, _type)
+SHMEM_DEPR_PT2PT_SYNC_TYPE_TABLE(DECL_WAIT)
+#undef DECL_WAIT
+
+#undef API_DECL_WAIT
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1741,53 +2036,32 @@ API_DECL_WAIT(ptrdiff, ptrdiff_t)
  * None.
  *
  */
-#define API_CTX_DECL_SWAP(_typename, _type)                                    \
-  _type shmem_ctx_##_typename##_atomic_swap(shmem_ctx_t ctx, _type *target,    \
-                                            _type value, int pe) _WUR;         \
-  _type shmem_##_typename##_atomic_swap(_type *target, _type value, int pe);
+#define API_DECL_ATOMIC_SWAP(_typename, _type)                                 \
+  _type shmem_##_typename##_atomic_swap(_type *dest, _type value, int pe)      \
+      _WUR;                                                                    \
+  _type shmem_ctx_##_typename##_atomic_swap(shmem_ctx_t ctx, _type *dest,      \
+                                            _type value, int pe) _WUR;
 
-API_CTX_DECL_SWAP(float, float)
-API_CTX_DECL_SWAP(double, double)
-API_CTX_DECL_SWAP(int, int)
-API_CTX_DECL_SWAP(long, long)
-API_CTX_DECL_SWAP(longlong, long long)
-API_CTX_DECL_SWAP(uchar, unsigned char)
-API_CTX_DECL_SWAP(uint, unsigned int)
-API_CTX_DECL_SWAP(ulong, unsigned long)
-API_CTX_DECL_SWAP(ulonglong, unsigned long long)
-API_CTX_DECL_SWAP(int32, int32_t)
-API_CTX_DECL_SWAP(int64, int64_t)
-API_CTX_DECL_SWAP(uint32, uint32_t)
-API_CTX_DECL_SWAP(uint64, uint64_t)
-API_CTX_DECL_SWAP(size, size_t)
-API_CTX_DECL_SWAP(ptrdiff, ptrdiff_t)
+#define DECL_ATOMIC_SWAP(_type, _typename)                                     \
+  API_DECL_ATOMIC_SWAP(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_ATOMIC_SWAP)
+#undef DECL_ATOMIC_SWAP
 
-#undef API_CTX_DECL_SWAP
+#undef API_DECL_ATOMIC_SWAP
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_CTX_DECL_SWAP_NBI(_typename, _type)                                \
-  void shmem_ctx_##_typename##_atomic_swap_nbi(                                \
-      shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe);      \
+#define API_DECL_ATOMIC_SWAP_NBI(_typename, _type)                             \
   void shmem_##_typename##_atomic_swap_nbi(_type *fetch, _type *target,        \
-                                           _type value, int pe);
+                                           _type value, int pe);               \
+  void shmem_ctx_##_typename##_atomic_swap_nbi(                                \
+      shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe);
 
-API_CTX_DECL_SWAP_NBI(float, float)
-API_CTX_DECL_SWAP_NBI(double, double)
-API_CTX_DECL_SWAP_NBI(int, int)
-API_CTX_DECL_SWAP_NBI(long, long)
-API_CTX_DECL_SWAP_NBI(longlong, long long)
-API_CTX_DECL_SWAP_NBI(uchar, unsigned char)
-API_CTX_DECL_SWAP_NBI(uint, unsigned int)
-API_CTX_DECL_SWAP_NBI(ulong, unsigned long)
-API_CTX_DECL_SWAP_NBI(ulonglong, unsigned long long)
-API_CTX_DECL_SWAP_NBI(int32, int32_t)
-API_CTX_DECL_SWAP_NBI(int64, int64_t)
-API_CTX_DECL_SWAP_NBI(uint32, uint32_t)
-API_CTX_DECL_SWAP_NBI(uint64, uint64_t)
-API_CTX_DECL_SWAP_NBI(size, size_t)
-API_CTX_DECL_SWAP_NBI(ptrdiff, ptrdiff_t)
+#define DECL_ATOMIC_SWAP_NBI(_type, _typename)                                 \
+  API_DECL_ATOMIC_SWAP_NBI(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_ATOMIC_SWAP_NBI)
+#undef DECL_ATOMIC_SWAP_NBI
 
-#undef API_CTX_DECL_SWAP_NBI
+#undef API_DECL_ATOMIC_SWAP_NBI
 
 long shmem_long_swap(long *target, long value, int pe)
     _DEPRECATED_BY(shmem_long_atomic_swap, 1.4) _WUR;
@@ -1824,53 +2098,62 @@ double shmem_double_swap(double *target, double value, int pe)
  * None.
  *
  */
-#define API_CTX_DECL_CSWAP(_typename, _type)                                   \
+#define API_DECL_ATOMIC_COMPARE_SWAP(_typename, _type)                         \
+  _type shmem_##_typename##_atomic_compare_swap(_type *dest, _type cond,       \
+                                                _type value, int pe);          \
   _type shmem_ctx_##_typename##_atomic_compare_swap(                           \
-      shmem_ctx_t ctx, _type *target, _type cond, _type value, int pe) _WUR;   \
-  _type shmem_##_typename##_atomic_compare_swap(_type *target, _type cond,     \
-                                                _type value, int pe);
+      shmem_ctx_t ctx, _type *dest, _type cond, _type value, int pe) _WUR;
 
-/* no reals */
-API_CTX_DECL_CSWAP(int, int)
-API_CTX_DECL_CSWAP(long, long)
-API_CTX_DECL_CSWAP(longlong, long long)
-API_CTX_DECL_CSWAP(uint, unsigned int)
-API_CTX_DECL_CSWAP(ulong, unsigned long)
-API_CTX_DECL_CSWAP(ulonglong, unsigned long long)
-API_CTX_DECL_CSWAP(int32, int32_t)
-API_CTX_DECL_CSWAP(int64, int64_t)
-API_CTX_DECL_CSWAP(uint32, uint32_t)
-API_CTX_DECL_CSWAP(uint64, uint64_t)
-API_CTX_DECL_CSWAP(size, size_t)
-API_CTX_DECL_CSWAP(ptrdiff, ptrdiff_t)
+#define DECL_ATOMIC_COMPARE_SWAP(_type, _typename)                             \
+  API_DECL_ATOMIC_COMPARE_SWAP(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_COMPARE_SWAP)
+#undef DECL_ATOMIC_COMPARE_SWAP
 
-#undef API_CTX_DECL_CSWAP
+#undef API_DECL_ATOMIC_COMPARE_SWAP
 
 ////////////////////////////////////////////////////////////////////////////////
-#define API_CTX_DECL_CSWAP_NBI(_typename, _type)                               \
-  void shmem_ctx_##_typename##_atomic_compare_swap_nbi(                        \
-      shmem_ctx_t ctx, _type *fetch, _type *target, _type cond, _type value,   \
-      int pe);                                                                 \
+/**
+ * @brief Non-blocking atomic conditional swap operation
+ * @page shmem_atomic_compare_swap_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_long_atomic_compare_swap_nbi(shmem_ctx_t ctx, long *fetch,
+ *                                            long *dest, long cond, long value,
+ *                                            int pe);
+ * @endcode
+ *
+ * @param fetch    Local address where to store the old value from the target PE
+ * @param dest     Address of the symmetric data object to be updated on the
+ * target PE
+ * @param cond     Value to be compared with the value at dest on the target PE
+ * @param value    Value to be atomically written if cond equals the value at
+ * dest
+ * @param pe       PE number of the target PE
+ *
+ * @section Effect
+ * Performs a non-blocking atomic conditional swap operation. If the value at
+ * address dest on PE pe equals cond, then value is written to address dest on
+ * PE pe. The old value at dest on PE pe is returned in fetch. The operation is
+ * non-blocking in that it may return before the operation is completed at the
+ * target PE.
+ *
+ * @section Return
+ * None.
+ */
+#define API_DECL_ATOMIC_COMPARE_SWAP_NBI(_typename, _type)                     \
   void shmem_##_typename##_atomic_compare_swap_nbi(                            \
-      _type *target, _type *fetch, _type cond, _type value, int pe);
+      _type *fetch, _type *dest, _type cond, _type value, int pe);             \
+  void shmem_ctx_##_typename##_atomic_compare_swap_nbi(                        \
+      shmem_ctx_t ctx, _type *fetch, _type *dest, _type cond, _type value,     \
+      int pe);
 
-/* no reals */
-API_CTX_DECL_CSWAP_NBI(int, int)
-API_CTX_DECL_CSWAP_NBI(long, long)
-API_CTX_DECL_CSWAP_NBI(longlong, long long)
-API_CTX_DECL_CSWAP_NBI(uint, unsigned int)
-API_CTX_DECL_CSWAP_NBI(ulong, unsigned long)
-API_CTX_DECL_CSWAP_NBI(ulonglong, unsigned long long)
-API_CTX_DECL_CSWAP_NBI(int32, int32_t)
-API_CTX_DECL_CSWAP_NBI(int64, int64_t)
-API_CTX_DECL_CSWAP_NBI(uint32, uint32_t)
-API_CTX_DECL_CSWAP_NBI(uint64, uint64_t)
-API_CTX_DECL_CSWAP_NBI(size, size_t)
-API_CTX_DECL_CSWAP_NBI(ptrdiff, ptrdiff_t)
+#define DECL_ATOMIC_COMPARE_SWAP_NBI(_type, _typename)                         \
+  API_DECL_ATOMIC_COMPARE_SWAP_NBI(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_COMPARE_SWAP_NBI)
+#undef DECL_ATOMIC_COMPARE_SWAP_NBI
 
-#undef API_CTX_DECL_CSWAP_NBI
-
-////////////////////////////////////////////////////////////////////////////////
 long shmem_long_cswap(long *target, long cond, long value, int pe)
     _DEPRECATED_BY(shmem_long_atomic_compare_swap, 1.4) _WUR;
 int shmem_int_cswap(int *target, int cond, int value, int pe)
@@ -1878,6 +2161,8 @@ int shmem_int_cswap(int *target, int cond, int value, int pe)
 long long shmem_longlong_cswap(long long *target, long long cond,
                                long long value, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_compare_swap, 1.4) _WUR;
+
+#undef API_DECL_CSWAP_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1898,39 +2183,58 @@ long long shmem_longlong_cswap(long long *target, long long cond,
  * None.
  *
  */
+#define API_DECL_ATOMIC_FETCH_ADD(_typename, _type)                            \
+  _type shmem_##_typename##_atomic_fetch_add(_type *dest, _type value, int pe) \
+      _WUR;                                                                    \
+  _type shmem_ctx_##_typename##_atomic_fetch_add(shmem_ctx_t ctx, _type *dest, \
+                                                 _type value, int pe) _WUR;
 
-SHMEM_DECL_AMO2(fetch_add, long, long)
-SHMEM_DECL_AMO2(fetch_add, int, int)
-SHMEM_DECL_AMO2(fetch_add, longlong, long long)
-SHMEM_DECL_AMO2(fetch_add, uint, unsigned int)
-SHMEM_DECL_AMO2(fetch_add, ulong, unsigned long)
-SHMEM_DECL_AMO2(fetch_add, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2(fetch_add, int32, int32_t)
-SHMEM_DECL_AMO2(fetch_add, int64, int64_t)
-SHMEM_DECL_AMO2(fetch_add, uint32, uint32_t)
-SHMEM_DECL_AMO2(fetch_add, uint64, uint64_t)
-SHMEM_DECL_AMO2(fetch_add, size, size_t)
-SHMEM_DECL_AMO2(fetch_add, ptrdiff, ptrdiff_t)
+#define DECL_ATOMIC_FETCH_ADD(_type, _typename)                                \
+  API_DECL_ATOMIC_FETCH_ADD(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_ADD)
+#undef DECL_ATOMIC_FETCH_ADD
+#undef API_DECL_ATOMIC_FETCH_ADD
 
-SHMEM_DECL_AMO2_NBI(fetch_add, long, long)
-SHMEM_DECL_AMO2_NBI(fetch_add, int, int)
-SHMEM_DECL_AMO2_NBI(fetch_add, longlong, long long)
-SHMEM_DECL_AMO2_NBI(fetch_add, uint, unsigned int)
-SHMEM_DECL_AMO2_NBI(fetch_add, ulong, unsigned long)
-SHMEM_DECL_AMO2_NBI(fetch_add, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2_NBI(fetch_add, int32, int32_t)
-SHMEM_DECL_AMO2_NBI(fetch_add, int64, int64_t)
-SHMEM_DECL_AMO2_NBI(fetch_add, uint32, uint32_t)
-SHMEM_DECL_AMO2_NBI(fetch_add, uint64, uint64_t)
-SHMEM_DECL_AMO2_NBI(fetch_add, size, size_t)
-SHMEM_DECL_AMO2_NBI(fetch_add, ptrdiff, ptrdiff_t)
-
-long shmem_long_fadd(long *target, long value, int pe)
-    _DEPRECATED_BY(shmem_long_atomic_fetch_add, 1.4) _WUR;
 int shmem_int_fadd(int *target, int value, int pe)
     _DEPRECATED_BY(shmem_int_atomic_fetch_add, 1.4) _WUR;
+long shmem_long_fadd(long *target, long value, int pe)
+    _DEPRECATED_BY(shmem_long_atomic_fetch_add, 1.4) _WUR;
 long long shmem_longlong_fadd(long long *target, long long value, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_fetch_add, 1.4) _WUR;
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Non-blocking atomic fetch-and-add on a remote PE
+ * @page shmem_long_atomic_fetch_add_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_long_atomic_fetch_add_nbi(long *fetch, const long *dest, long
+ * value, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param dest     Address of symmetric data object on target PE
+ * @param value    Value to be atomically added
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically adds value to dest on PE pe and returns the previous contents of
+ * dest through fetch without blocking. The operation must be completed without
+ * the possibility of another process updating dest between the fetch and add.
+ */
+#define API_DECL_ATOMIC_FETCH_ADD_NBI(_typename, _type)                        \
+  void shmem_##_typename##_atomic_fetch_add_nbi(                               \
+      _type *fetch, const _type *dest, _type value, int pe);                   \
+  void shmem_ctx_##_typename##_atomic_fetch_add_nbi(                           \
+      shmem_ctx_t ctx, _type *fetch, const _type *dest, _type value, int pe);
+
+#define DECL_ATOMIC_FETCH_ADD_NBI(_type, _typename)                            \
+  API_DECL_ATOMIC_FETCH_ADD_NBI(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_ADD_NBI)
+#undef DECL_ATOMIC_FETCH_ADD_NBI
+#undef API_DECL_ATOMIC_FETCH_ADD_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -1951,31 +2255,16 @@ long long shmem_longlong_fadd(long long *target, long long value, int pe)
  * None.
  *
  */
-SHMEM_DECL_AMO1(fetch_inc, long, long)
-SHMEM_DECL_AMO1(fetch_inc, int, int)
-SHMEM_DECL_AMO1(fetch_inc, longlong, long long)
-SHMEM_DECL_AMO1(fetch_inc, uint, unsigned int)
-SHMEM_DECL_AMO1(fetch_inc, ulong, unsigned long)
-SHMEM_DECL_AMO1(fetch_inc, ulonglong, unsigned long long)
-SHMEM_DECL_AMO1(fetch_inc, int32, int32_t)
-SHMEM_DECL_AMO1(fetch_inc, int64, int64_t)
-SHMEM_DECL_AMO1(fetch_inc, uint32, uint32_t)
-SHMEM_DECL_AMO1(fetch_inc, uint64, uint64_t)
-SHMEM_DECL_AMO1(fetch_inc, size, size_t)
-SHMEM_DECL_AMO1(fetch_inc, ptrdiff, ptrdiff_t)
+#define API_DECL_ATOMIC_FETCH_INC(_typename, _type)                            \
+  _type shmem_##_typename##_atomic_fetch_inc(_type *dest, int pe) _WUR;        \
+  _type shmem_ctx_##_typename##_atomic_fetch_inc(shmem_ctx_t ctx, _type *dest, \
+                                                 int pe) _WUR;
 
-SHMEM_DECL_AMO1_NBI(fetch_inc, long, long)
-SHMEM_DECL_AMO1_NBI(fetch_inc, int, int)
-SHMEM_DECL_AMO1_NBI(fetch_inc, longlong, long long)
-SHMEM_DECL_AMO1_NBI(fetch_inc, uint, unsigned int)
-SHMEM_DECL_AMO1_NBI(fetch_inc, ulong, unsigned long)
-SHMEM_DECL_AMO1_NBI(fetch_inc, ulonglong, unsigned long long)
-SHMEM_DECL_AMO1_NBI(fetch_inc, int32, int32_t)
-SHMEM_DECL_AMO1_NBI(fetch_inc, int64, int64_t)
-SHMEM_DECL_AMO1_NBI(fetch_inc, uint32, uint32_t)
-SHMEM_DECL_AMO1_NBI(fetch_inc, uint64, uint64_t)
-SHMEM_DECL_AMO1_NBI(fetch_inc, size, size_t)
-SHMEM_DECL_AMO1_NBI(fetch_inc, ptrdiff, ptrdiff_t)
+#define DECL_ATOMIC_FETCH_INC(_type, _typename)                                \
+  API_DECL_ATOMIC_FETCH_INC(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_INC)
+#undef DECL_ATOMIC_FETCH_INC
+#undef API_DECL_ATOMIC_FETCH_INC
 
 long shmem_long_finc(long *target, int pe)
     _DEPRECATED_BY(shmem_long_atomic_fetch_inc, 1.4) _WUR;
@@ -1983,6 +2272,45 @@ int shmem_int_finc(int *target, int pe)
     _DEPRECATED_BY(shmem_int_atomic_fetch_inc, 1.4) _WUR;
 long long shmem_longlong_finc(long long *target, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_fetch_inc, 1.4) _WUR;
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief These routines perform a non-blocking atomic fetch-and-increment
+ * operation
+ * @page shmem_atomic_fetch_inc_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_atomic_fetch_inc_nbi(TYPE *fetch, TYPE *dest, int pe);
+ * void shmem_ctx_atomic_fetch_inc_nbi(shmem_ctx_t ctx, TYPE *fetch, TYPE *dest,
+ * int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param dest     Address of symmetric data object on target PE
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically performs a non-blocking fetch of the old value at dest on PE pe
+ * and increments dest. The old value from dest is returned in fetch. The
+ * operation must be completed without the possibility of another process
+ * updating dest between the fetch and the increment.
+ *
+ * @section Return
+ * None.
+ */
+#define API_DECL_ATOMIC_FETCH_INC_NBI(_typename, _type)                        \
+  void shmem_##_typename##_atomic_fetch_inc_nbi(_type *fetch, _type *dest,     \
+                                                int pe);                       \
+  void shmem_ctx_##_typename##_atomic_fetch_inc_nbi(                           \
+      shmem_ctx_t ctx, _type *fetch, _type *dest, int pe);
+
+#define DECL_ATOMIC_FETCH_INC_NBI(_type, _typename)                            \
+  API_DECL_ATOMIC_FETCH_INC_NBI(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_INC_NBI)
+#undef DECL_ATOMIC_FETCH_INC_NBI
+#undef API_DECL_ATOMIC_FETCH_INC_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2003,18 +2331,15 @@ long long shmem_longlong_finc(long long *target, int pe)
  * None.
  *
  */
-SHMEM_DECL_VOID_AMO2(add, long, long)
-SHMEM_DECL_VOID_AMO2(add, int, int)
-SHMEM_DECL_VOID_AMO2(add, longlong, long long)
-SHMEM_DECL_VOID_AMO2(add, uint, unsigned int)
-SHMEM_DECL_VOID_AMO2(add, ulong, unsigned long)
-SHMEM_DECL_VOID_AMO2(add, ulonglong, unsigned long long)
-SHMEM_DECL_VOID_AMO2(add, int32, int32_t)
-SHMEM_DECL_VOID_AMO2(add, int64, int64_t)
-SHMEM_DECL_VOID_AMO2(add, uint32, uint32_t)
-SHMEM_DECL_VOID_AMO2(add, uint64, uint64_t)
-SHMEM_DECL_VOID_AMO2(add, size, size_t)
-SHMEM_DECL_VOID_AMO2(add, ptrdiff, ptrdiff_t)
+#define API_DECL_ATOMIC_ADD(_typename, _type)                                  \
+  void shmem_##_typename##_atomic_add(_type *dest, _type value, int pe);       \
+  void shmem_ctx_##_typename##_atomic_add(shmem_ctx_t ctx, _type *dest,        \
+                                          _type value, int pe);
+
+#define DECL_ATOMIC_ADD(_type, _typename) API_DECL_ATOMIC_ADD(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_ADD)
+#undef DECL_ATOMIC_ADD
+#undef API_DECL_ATOMIC_ADD
 
 void shmem_long_add(long *target, long value, int pe)
     _DEPRECATED_BY(shmem_long_atomic_add, 1.4);
@@ -2062,13 +2387,15 @@ void shmem_longlong_add(long long *target, long long value, int pe)
  * None.
  *
  */
-SHMEM_DECL_VOID_AMO2(or, ulong, unsigned long)
-SHMEM_DECL_VOID_AMO2(or, uint, unsigned int)
-SHMEM_DECL_VOID_AMO2(or, ulonglong, unsigned long long)
-SHMEM_DECL_VOID_AMO2(or, int32, int32_t)
-SHMEM_DECL_VOID_AMO2(or, int64, int64_t)
-SHMEM_DECL_VOID_AMO2(or, uint32, uint32_t)
-SHMEM_DECL_VOID_AMO2(or, uint64, uint64_t)
+#define API_DECL_ATOMIC_OR(_typename, _type)                                   \
+  void shmem_##_typename##_atomic_or(_type *dest, _type value, int pe);        \
+  void shmem_ctx_##_typename##_atomic_or(shmem_ctx_t ctx, _type *dest,         \
+                                         _type value, int pe);
+
+#define DECL_ATOMIC_OR(_type, _typename) API_DECL_ATOMIC_OR(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_OR)
+#undef DECL_ATOMIC_OR
+#undef API_DECL_ATOMIC_OR
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2111,22 +2438,53 @@ SHMEM_DECL_VOID_AMO2(or, uint64, uint64_t)
  * Value stored previously in remote location.
  *
  */
+#define API_DECL_ATOMIC_FETCH_OR(_typename, _type)                             \
+  _type shmem_##_typename##_atomic_fetch_or(_type *target, _type value,        \
+                                            int pe) _WUR;                      \
+  _type shmem_ctx_##_typename##_atomic_fetch_or(                               \
+      shmem_ctx_t ctx, _type *target, _type value, int pe) _WUR;
 
-SHMEM_DECL_AMO2(fetch_or, ulong, unsigned long)
-SHMEM_DECL_AMO2(fetch_or, uint, unsigned int)
-SHMEM_DECL_AMO2(fetch_or, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2(fetch_or, int32, int32_t)
-SHMEM_DECL_AMO2(fetch_or, int64, int64_t)
-SHMEM_DECL_AMO2(fetch_or, uint32, uint32_t)
-SHMEM_DECL_AMO2(fetch_or, uint64, uint64_t)
+#define DECL_ATOMIC_FETCH_OR(_type, _typename)                                 \
+  API_DECL_ATOMIC_FETCH_OR(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_OR)
+#undef DECL_ATOMIC_FETCH_OR
+#undef API_DECL_ATOMIC_FETCH_OR
 
-SHMEM_DECL_AMO2_NBI(fetch_or, ulong, unsigned long)
-SHMEM_DECL_AMO2_NBI(fetch_or, uint, unsigned int)
-SHMEM_DECL_AMO2_NBI(fetch_or, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2_NBI(fetch_or, int32, int32_t)
-SHMEM_DECL_AMO2_NBI(fetch_or, int64, int64_t)
-SHMEM_DECL_AMO2_NBI(fetch_or, uint32, uint32_t)
-SHMEM_DECL_AMO2_NBI(fetch_or, uint64, uint64_t)
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief These routines perform a non-blocking atomic fetch-or operation
+ * @page shmem_atomic_fetch_or_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_atomic_fetch_or_nbi(TYPE *fetch, TYPE *target, TYPE value, int
+ * pe); void shmem_ctx_atomic_fetch_or_nbi(shmem_ctx_t ctx, TYPE *fetch, TYPE
+ * *target, TYPE value, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param target   Address of symmetric data object on target PE
+ * @param value    Value to be combined with target
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically performs a non-blocking fetch of the old value at target on PE pe
+ * and performs a bitwise OR with value. The old value from target is returned
+ * in fetch. The operation must be completed without the possibility of another
+ * process updating target between the fetch and the OR.
+ */
+#define API_DECL_FETCH_OR_NBI(_typename, _type)                                \
+  void shmem_##_typename##_atomic_fetch_or_nbi(_type *fetch, _type *target,    \
+                                               _type value, int pe);           \
+  void shmem_ctx_##_typename##_atomic_fetch_or_nbi(                            \
+      shmem_ctx_t ctx, _type *fetch, _type *target, _type value, int pe);
+
+#define DECL_FETCH_OR_NBI(_type, _typename)                                    \
+  API_DECL_FETCH_OR_NBI(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_FETCH_OR_NBI)
+#undef DECL_FETCH_OR_NBI
+#undef API_DECL_FETCH_OR_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2168,21 +2526,15 @@ SHMEM_DECL_AMO2_NBI(fetch_or, uint64, uint64_t)
  *
  */
 
-SHMEM_DECL_VOID_AMO2(and, ulong, unsigned long)
-SHMEM_DECL_VOID_AMO2(and, uint, unsigned int)
-SHMEM_DECL_VOID_AMO2(and, ulonglong, unsigned long long)
-SHMEM_DECL_VOID_AMO2(and, int32, int32_t)
-SHMEM_DECL_VOID_AMO2(and, int64, int64_t)
-SHMEM_DECL_VOID_AMO2(and, uint32, uint32_t)
-SHMEM_DECL_VOID_AMO2(and, uint64, uint64_t)
+#define API_DECL_ATOMIC_AND(_typename, _type)                                  \
+  void shmem_##_typename##_atomic_and(_type *dest, _type value, int pe);       \
+  void shmem_ctx_##_typename##_atomic_and(shmem_ctx_t ctx, _type *dest,        \
+                                          _type value, int pe);
 
-SHMEM_DECL_AMO2_NBI(fetch_and, ulong, unsigned long)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint, unsigned int)
-SHMEM_DECL_AMO2_NBI(fetch_and, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2_NBI(fetch_and, int32, int32_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, int64, int64_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint32, uint32_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
+#define DECL_ATOMIC_AND(_type, _typename) API_DECL_ATOMIC_AND(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_AND)
+#undef DECL_ATOMIC_AND
+#undef API_DECL_ATOMIC_AND
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2226,21 +2578,56 @@ SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
  *
  */
 
-SHMEM_DECL_AMO2(fetch_and, ulong, unsigned long)
-SHMEM_DECL_AMO2(fetch_and, uint, unsigned int)
-SHMEM_DECL_AMO2(fetch_and, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2(fetch_and, int32, int32_t)
-SHMEM_DECL_AMO2(fetch_and, int64, int64_t)
-SHMEM_DECL_AMO2(fetch_and, uint32, uint32_t)
-SHMEM_DECL_AMO2(fetch_and, uint64, uint64_t)
+#define API_DECL_ATOMIC_FETCH_AND(_typename, _type)                            \
+  _type shmem_##_typename##_atomic_fetch_and(_type *dest, _type value, int pe) \
+      _WUR;                                                                    \
+  _type shmem_ctx_##_typename##_atomic_fetch_and(shmem_ctx_t ctx, _type *dest, \
+                                                 _type value, int pe) _WUR;
 
-SHMEM_DECL_AMO2_NBI(fetch_and, ulong, unsigned long)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint, unsigned int)
-SHMEM_DECL_AMO2_NBI(fetch_and, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2_NBI(fetch_and, int32, int32_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, int64, int64_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint32, uint32_t)
-SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
+#define DECL_ATOMIC_FETCH_AND(_type, _typename)                                \
+  API_DECL_ATOMIC_FETCH_AND(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_AND)
+#undef DECL_ATOMIC_FETCH_AND
+#undef API_DECL_ATOMIC_FETCH_AND
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Non-blocking atomic fetch-and-and operation
+ * @page shmem_atomic_fetch_and_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_ctx_long_atomic_fetch_and_nbi(shmem_ctx_t ctx, long *fetch,
+ *                                         long *dest, long value, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address where to store the old value from the target PE
+ * @param dest     Address of the symmetric data object to be updated on the
+ * target PE
+ * @param value    Value to be atomically ANDed with the value at dest
+ * @param pe       PE number of the target PE
+ *
+ * @section Effect
+ * Performs a non-blocking atomic fetch-and-and operation. The old value at dest
+ * on PE pe is returned in fetch and atomically ANDed with value. The operation
+ * is non-blocking in that it may return before the operation is completed at
+ * the target PE.
+ *
+ * @section Return
+ * None.
+ */
+#define API_DECL_FETCH_AND_NBI(_typename, _type)                               \
+  void shmem_##_typename##_atomic_fetch_and_nbi(_type *fetch, _type *dest,     \
+                                                _type value, int pe);          \
+  void shmem_ctx_##_typename##_atomic_fetch_and_nbi(                           \
+      shmem_ctx_t ctx, _type *fetch, _type *dest, _type value, int pe);
+
+#define DECL_FETCH_AND_NBI(_type, _typename)                                   \
+  API_DECL_FETCH_AND_NBI(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_FETCH_AND_NBI)
+#undef DECL_FETCH_AND_NBI
+#undef API_DECL_FETCH_AND_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2281,22 +2668,51 @@ SHMEM_DECL_AMO2_NBI(fetch_and, uint64, uint64_t)
  * None.
  *
  */
+#define API_DECL_ATOMIC_XOR(_typename, _type)                                  \
+  void shmem_##_typename##_atomic_xor(_type *dest, _type value, int pe);       \
+  void shmem_ctx_##_typename##_atomic_xor(shmem_ctx_t ctx, _type *dest,        \
+                                          _type value, int pe);
 
-SHMEM_DECL_VOID_AMO2(xor, ulong, unsigned long)
-SHMEM_DECL_VOID_AMO2(xor, uint, unsigned int)
-SHMEM_DECL_VOID_AMO2(xor, ulonglong, unsigned long long)
-SHMEM_DECL_VOID_AMO2(xor, int32, int32_t)
-SHMEM_DECL_VOID_AMO2(xor, int64, int64_t)
-SHMEM_DECL_VOID_AMO2(xor, uint32, uint32_t)
-SHMEM_DECL_VOID_AMO2(xor, uint64, uint64_t)
+#define DECL_ATOMIC_XOR(_type, _typename) API_DECL_ATOMIC_XOR(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_XOR)
+#undef DECL_ATOMIC_XOR
+#undef API_DECL_ATOMIC_XOR
 
-SHMEM_DECL_AMO2_NBI(fetch_xor, ulong, unsigned long)
-SHMEM_DECL_AMO2_NBI(fetch_xor, uint, unsigned int)
-SHMEM_DECL_AMO2_NBI(fetch_xor, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2_NBI(fetch_xor, int32, int32_t)
-SHMEM_DECL_AMO2_NBI(fetch_xor, int64, int64_t)
-SHMEM_DECL_AMO2_NBI(fetch_xor, uint32, uint32_t)
-SHMEM_DECL_AMO2_NBI(fetch_xor, uint64, uint64_t)
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief These routines perform a non-blocking atomic xor operation
+ * @page shmem_atomic_xor_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_atomic_xor_nbi(TYPE *fetch, TYPE *target, TYPE value, int pe);
+ * void shmem_ctx_atomic_xor_nbi(shmem_ctx_t ctx, TYPE *fetch, TYPE *target,
+ *                               TYPE value, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param dest     Address of symmetric data object on target PE
+ * @param value    Value to be combined with target
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically performs a non-blocking fetch of the old value at dest on PE pe
+ * and performs a bitwise XOR with value. The old value from dest is returned
+ * in fetch. The operation must be completed without the possibility of another
+ * process updating dest between the fetch and the XOR.
+ */
+#define API_DECL_ATOMIC_XOR_NBI(_typename, _type)                              \
+  void shmem_##_typename##_atomic_xor_nbi(_type *fetch, _type *dest,           \
+                                          _type value, int pe);                \
+  void shmem_ctx_##_typename##_atomic_xor_nbi(                                 \
+      shmem_ctx_t ctx, _type *fetch, _type *dest, _type value, int pe);
+
+#define DECL_ATOMIC_XOR_NBI(_type, _typename)                                  \
+  API_DECL_ATOMIC_XOR_NBI(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_XOR_NBI)
+#undef DECL_ATOMIC_XOR_NBI
+#undef API_DECL_ATOMIC_XOR_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2340,19 +2756,53 @@ SHMEM_DECL_AMO2_NBI(fetch_xor, uint64, uint64_t)
  * Value stored previously in remote location.
  *
  */
+#define API_DECL_ATOMIC_FETCH_XOR(_typename, _type)                            \
+  _type shmem_##_typename##_atomic_fetch_xor(_type *dest, _type value, int pe) \
+      _WUR;                                                                    \
+  _type shmem_ctx_##_typename##_atomic_fetch_xor(shmem_ctx_t ctx, _type *dest, \
+                                                 _type value, int pe) _WUR;
 
-SHMEM_DECL_AMO2(fetch_xor, int, int)
-SHMEM_DECL_AMO2(fetch_xor, long, long)
-SHMEM_DECL_AMO2(fetch_xor, longlong, long long)
-SHMEM_DECL_AMO2(fetch_xor, uint, unsigned int)
-SHMEM_DECL_AMO2(fetch_xor, ulong, unsigned long)
-SHMEM_DECL_AMO2(fetch_xor, ulonglong, unsigned long long)
-SHMEM_DECL_AMO2(fetch_xor, int32, int32_t)
-SHMEM_DECL_AMO2(fetch_xor, int64, int64_t)
-SHMEM_DECL_AMO2(fetch_xor, uint32, uint32_t)
-SHMEM_DECL_AMO2(fetch_xor, uint64, uint64_t)
-SHMEM_DECL_AMO2(fetch_xor, size, size_t)
-SHMEM_DECL_AMO2(fetch_xor, ptrdiff, ptrdiff_t)
+#define DECL_ATOMIC_FETCH_XOR(_type, _typename)                                \
+  API_DECL_ATOMIC_FETCH_XOR(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_XOR)
+#undef DECL_ATOMIC_FETCH_XOR
+#undef API_DECL_ATOMIC_FETCH_XOR
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief These routines perform a non-blocking atomic fetch-xor operation
+ * @page shmem_atomic_fetch_xor_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_atomic_fetch_xor_nbi(TYPE *fetch, TYPE *target, TYPE value, int
+ * pe); void shmem_ctx_atomic_fetch_xor_nbi(shmem_ctx_t ctx, TYPE *fetch, TYPE
+ * *target, TYPE value, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param dest     Address of symmetric data object on target PE
+ * @param value    Value to be combined with target
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically performs a non-blocking fetch of the old value at dest on PE pe
+ * and performs a bitwise XOR with value. The old value from dest is returned
+ * in fetch. The operation must be completed without the possibility of another
+ * process updating dest between the fetch and the XOR.
+ */
+#define API_DECL_ATOMIC_FETCH_XOR_NBI(_typename, _type)                        \
+  void shmem_##_typename##_atomic_fetch_xor_nbi(_type *fetch, _type *dest,     \
+                                                _type value, int pe);          \
+  void shmem_ctx_##_typename##_atomic_fetch_xor_nbi(                           \
+      shmem_ctx_t ctx, _type *fetch, _type *dest, _type value, int pe);
+
+#define DECL_ATOMIC_FETCH_XOR_NBI(_type, _typename)                            \
+  API_DECL_ATOMIC_FETCH_XOR_NBI(_typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_XOR_NBI)
+#undef DECL_ATOMIC_FETCH_XOR_NBI
+#undef API_DECL_ATOMIC_FETCH_XOR_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2373,20 +2823,14 @@ SHMEM_DECL_AMO2(fetch_xor, ptrdiff, ptrdiff_t)
  * None.
  *
  */
-SHMEM_DECL_VOID_AMO1(inc, float, float)
-SHMEM_DECL_VOID_AMO1(inc, double, double)
-SHMEM_DECL_VOID_AMO1(inc, long, long)
-SHMEM_DECL_VOID_AMO1(inc, int, int)
-SHMEM_DECL_VOID_AMO1(inc, longlong, long long)
-SHMEM_DECL_VOID_AMO1(inc, uint, unsigned int)
-SHMEM_DECL_VOID_AMO1(inc, ulong, unsigned long)
-SHMEM_DECL_VOID_AMO1(inc, ulonglong, unsigned long long)
-SHMEM_DECL_VOID_AMO1(inc, int32, int32_t)
-SHMEM_DECL_VOID_AMO1(inc, int64, int64_t)
-SHMEM_DECL_VOID_AMO1(inc, uint32, uint32_t)
-SHMEM_DECL_VOID_AMO1(inc, uint64, uint64_t)
-SHMEM_DECL_VOID_AMO1(inc, size, size_t)
-SHMEM_DECL_VOID_AMO1(inc, ptrdiff, ptrdiff_t)
+#define API_DECL_ATOMIC_INC(_typename, _type)                                  \
+  void shmem_##_typename##_atomic_inc(_type *dest, int pe);                    \
+  void shmem_ctx_##_typename##_atomic_inc(shmem_ctx_t ctx, _type *dest, int pe);
+
+#define DECL_ATOMIC_INC(_type, _typename) API_DECL_ATOMIC_INC(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(DECL_ATOMIC_INC)
+#undef DECL_ATOMIC_INC
+#undef API_DECL_ATOMIC_INC
 
 void shmem_long_inc(long *target, int pe)
     _DEPRECATED_BY(shmem_long_atomic_inc, 1.4);
@@ -2431,46 +2875,64 @@ void shmem_longlong_inc(long long *target, int pe)
  * The value stored at address "dest" on PE pe.
  *
  */
-SHMEM_DECL_CONST_AMO1(fetch, long, long)
-SHMEM_DECL_CONST_AMO1(fetch, int, int)
-SHMEM_DECL_CONST_AMO1(fetch, float, float)
-SHMEM_DECL_CONST_AMO1(fetch, double, double)
-SHMEM_DECL_CONST_AMO1(fetch, longlong, long long)
-SHMEM_DECL_CONST_AMO1(fetch, uint, unsigned int)
-SHMEM_DECL_CONST_AMO1(fetch, ulong, unsigned long)
-SHMEM_DECL_CONST_AMO1(fetch, ulonglong, unsigned long long)
-SHMEM_DECL_CONST_AMO1(fetch, int32, int32_t)
-SHMEM_DECL_CONST_AMO1(fetch, int64, int64_t)
-SHMEM_DECL_CONST_AMO1(fetch, uint32, uint32_t)
-SHMEM_DECL_CONST_AMO1(fetch, uint64, uint64_t)
-SHMEM_DECL_CONST_AMO1(fetch, size, size_t)
-SHMEM_DECL_CONST_AMO1(fetch, ptrdiff, ptrdiff_t)
+#define API_DECL_ATOMIC_FETCH(_typename, _type)                                \
+  _type shmem_##_typename##_atomic_fetch(const _type *source, int pe) _WUR;    \
+  _type shmem_ctx_##_typename##_atomic_fetch(                                  \
+      shmem_ctx_t ctx, const _type *source, int pe) _WUR;
 
-SHMEM_DECL_CONST_AMO1_NBI(fetch, long, long)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, int, int)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, float, float)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, double, double)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, longlong, long long)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, uint, unsigned int)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, ulong, unsigned long)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, ulonglong, unsigned long long)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, int32, int32_t)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, int64, int64_t)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, uint32, uint32_t)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, uint64, uint64_t)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, size, size_t)
-SHMEM_DECL_CONST_AMO1_NBI(fetch, ptrdiff, ptrdiff_t)
+#define DECL_ATOMIC_FETCH(_type, _typename)                                    \
+  API_DECL_ATOMIC_FETCH(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH)
+#undef DECL_ATOMIC_FETCH
+#undef API_DECL_ATOMIC_FETCH
 
-int shmem_int_fetch(const int *dest, int pe)
+int shmem_int_fetch(const int *source, int pe)
     _DEPRECATED_BY(shmem_int_atomic_fetch, 1.4) _WUR;
-long shmem_long_fetch(const long *dest, int pe)
+long shmem_long_fetch(const long *source, int pe)
     _DEPRECATED_BY(shmem_long_atomic_fetch, 1.4) _WUR;
-long long shmem_longlong_fetch(const long long *dest, int pe)
+long long shmem_longlong_fetch(const long long *source, int pe)
     _DEPRECATED_BY(shmem_longlong_atomic_fetch, 1.4) _WUR;
-float shmem_float_fetch(const float *dest, int pe)
+float shmem_float_fetch(const float *source, int pe)
     _DEPRECATED_BY(shmem_float_atomic_fetch, 1.4) _WUR;
-double shmem_double_fetch(const double *dest, int pe)
+double shmem_double_fetch(const double *source, int pe)
     _DEPRECATED_BY(shmem_double_atomic_fetch, 1.4) _WUR;
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief These routines perform a non-blocking atomic fetch operation
+ * @page shmem_atomic_fetch_nbi
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ * @code
+ * void shmem_atomic_fetch_nbi(TYPE *fetch, const TYPE *source, int pe);
+ * void shmem_ctx_atomic_fetch_nbi(shmem_ctx_t ctx, TYPE *fetch, const TYPE
+ * *source, int pe);
+ * @endcode
+ *
+ * @param fetch    Local address to store fetched value
+ * @param source   Address of symmetric data object on target PE
+ * @param pe       PE number of target PE
+ *
+ * @section Effect
+ * Atomically performs a non-blocking fetch of the value at source on PE pe. The
+ * value from source is returned in fetch. The operation must be completed
+ * without the possibility of another process updating source between the fetch.
+ *
+ * @section Return
+ * None.
+ */
+#define API_DECL_ATOMIC_FETCH_NBI(_typename, _type)                            \
+  void shmem_##_typename##_atomic_fetch_nbi(_type *fetch, const _type *source, \
+                                            int pe);                           \
+  void shmem_ctx_##_typename##_atomic_fetch_nbi(shmem_ctx_t ctx, _type *fetch, \
+                                                const _type *source, int pe);
+
+#define DECL_ATOMIC_FETCH_NBI(_type, _typename)                                \
+  API_DECL_ATOMIC_FETCH_NBI(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_ATOMIC_FETCH_NBI)
+#undef DECL_ATOMIC_FETCH_NBI
+#undef API_DECL_ATOMIC_FETCH_NBI
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -2513,20 +2975,15 @@ double shmem_double_fetch(const double *dest, int pe)
  * None.
  *
  */
-SHMEM_DECL_VOID_AMO2(set, long, long)
-SHMEM_DECL_VOID_AMO2(set, int, int)
-SHMEM_DECL_VOID_AMO2(set, float, float)
-SHMEM_DECL_VOID_AMO2(set, double, double)
-SHMEM_DECL_VOID_AMO2(set, longlong, long long)
-SHMEM_DECL_VOID_AMO2(set, uint, unsigned int)
-SHMEM_DECL_VOID_AMO2(set, ulong, unsigned long)
-SHMEM_DECL_VOID_AMO2(set, ulonglong, unsigned long long)
-SHMEM_DECL_VOID_AMO2(set, int32, int32_t)
-SHMEM_DECL_VOID_AMO2(set, int64, int64_t)
-SHMEM_DECL_VOID_AMO2(set, uint32, uint32_t)
-SHMEM_DECL_VOID_AMO2(set, uint64, uint64_t)
-SHMEM_DECL_VOID_AMO2(set, size, size_t)
-SHMEM_DECL_VOID_AMO2(set, ptrdiff, ptrdiff_t)
+#define API_DECL_ATOMIC_SET(_typename, _type)                                  \
+  void shmem_##_typename##_atomic_set(_type *dest, _type value, int pe);       \
+  void shmem_ctx_##_typename##_atomic_set(shmem_ctx_t ctx, _type *dest,        \
+                                          _type value, int pe);
+
+#define DECL_ATOMIC_SET(_type, _typename) API_DECL_ATOMIC_SET(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(DECL_ATOMIC_SET)
+#undef DECL_ATOMIC_SET
+#undef API_DECL_ATOMIC_SET
 
 void shmem_int_set(int *dest, int value, int pe)
     _DEPRECATED_BY(shmem_int_atomic_set, 1.4);
@@ -2634,25 +3091,10 @@ int shmem_test_lock(long *lock) _WUR;
   int shmem_##_typename##_and_reduce(shmem_team_t team, _type *dest,           \
                                      const _type *source, size_t nreduce);
 
-API_AND_REDUCE_TYPE(unsigned char, uchar)
-API_AND_REDUCE_TYPE(unsigned short, ushort)
-API_AND_REDUCE_TYPE(unsigned int, uint)
-API_AND_REDUCE_TYPE(unsigned long, ulong)
-API_AND_REDUCE_TYPE(unsigned long long, ulonglong)
-API_AND_REDUCE_TYPE(int8_t, int8)
-API_AND_REDUCE_TYPE(int16_t, int16)
-API_AND_REDUCE_TYPE(int32_t, int32)
-API_AND_REDUCE_TYPE(int64_t, int64)
-API_AND_REDUCE_TYPE(uint8_t, uint8)
-API_AND_REDUCE_TYPE(uint16_t, uint16)
-API_AND_REDUCE_TYPE(uint32_t, uint32)
-API_AND_REDUCE_TYPE(uint64_t, uint64)
-API_AND_REDUCE_TYPE(size_t, size)
-
-// API_AND_REDUCE_TYPE(short, short)
-// API_AND_REDUCE_TYPE(int, int)
-// API_AND_REDUCE_TYPE(long, long)
-// API_AND_REDUCE_TYPE(long long, longlong)
+#define DECL_AND_REDUCE(_type, _typename) API_AND_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_AND_REDUCE)
+#undef DECL_AND_REDUCE
+#undef API_AND_REDUCE_TYPE
 
 /**
  * @brief Performs a bitwise OR reduction across a team
@@ -2676,25 +3118,10 @@ API_AND_REDUCE_TYPE(size_t, size)
   int shmem_##_typename##_or_reduce(shmem_team_t team, _type *dest,            \
                                     const _type *source, size_t nreduce);
 
-API_OR_REDUCE_TYPE(unsigned char, uchar)
-API_OR_REDUCE_TYPE(unsigned short, ushort)
-API_OR_REDUCE_TYPE(unsigned int, uint)
-API_OR_REDUCE_TYPE(unsigned long, ulong)
-API_OR_REDUCE_TYPE(unsigned long long, ulonglong)
-API_OR_REDUCE_TYPE(int8_t, int8)
-API_OR_REDUCE_TYPE(int16_t, int16)
-API_OR_REDUCE_TYPE(int32_t, int32)
-API_OR_REDUCE_TYPE(int64_t, int64)
-API_OR_REDUCE_TYPE(uint8_t, uint8)
-API_OR_REDUCE_TYPE(uint16_t, uint16)
-API_OR_REDUCE_TYPE(uint32_t, uint32)
-API_OR_REDUCE_TYPE(uint64_t, uint64)
-API_OR_REDUCE_TYPE(size_t, size)
-
-// API_OR_REDUCE_TYPE(short, short)
-// API_OR_REDUCE_TYPE(int, int)
-// API_OR_REDUCE_TYPE(long, long)
-// API_OR_REDUCE_TYPE(long long, longlong)
+#define DECL_OR_REDUCE(_type, _typename) API_OR_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_OR_REDUCE)
+#undef DECL_OR_REDUCE
+#undef API_OR_REDUCE_TYPE
 
 /**
  * @brief Performs a bitwise XOR reduction across a team
@@ -2718,25 +3145,10 @@ API_OR_REDUCE_TYPE(size_t, size)
   int shmem_##_typename##_xor_reduce(shmem_team_t team, _type *dest,           \
                                      const _type *source, size_t nreduce);
 
-API_XOR_REDUCE_TYPE(unsigned char, uchar)
-API_XOR_REDUCE_TYPE(unsigned short, ushort)
-API_XOR_REDUCE_TYPE(unsigned int, uint)
-API_XOR_REDUCE_TYPE(unsigned long, ulong)
-API_XOR_REDUCE_TYPE(unsigned long long, ulonglong)
-API_XOR_REDUCE_TYPE(int8_t, int8)
-API_XOR_REDUCE_TYPE(int16_t, int16)
-API_XOR_REDUCE_TYPE(int32_t, int32)
-API_XOR_REDUCE_TYPE(int64_t, int64)
-API_XOR_REDUCE_TYPE(uint8_t, uint8)
-API_XOR_REDUCE_TYPE(uint16_t, uint16)
-API_XOR_REDUCE_TYPE(uint32_t, uint32)
-API_XOR_REDUCE_TYPE(uint64_t, uint64)
-API_XOR_REDUCE_TYPE(size_t, size)
-
-// API_XOR_REDUCE_TYPE(short, short)
-// API_XOR_REDUCE_TYPE(int, int)
-// API_XOR_REDUCE_TYPE(long, long)
-// API_XOR_REDUCE_TYPE(long long, longlong)
+#define DECL_XOR_REDUCE(_type, _typename) API_XOR_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_XOR_REDUCE)
+#undef DECL_XOR_REDUCE
+#undef API_XOR_REDUCE_TYPE
 
 /**
  * @brief Performs a maximum value reduction across a team
@@ -2760,30 +3172,10 @@ API_XOR_REDUCE_TYPE(size_t, size)
   int shmem_##_typename##_max_reduce(shmem_team_t team, _type *dest,           \
                                      const _type *source, size_t nreduce);
 
-API_MAX_REDUCE_TYPE(char, char)
-API_MAX_REDUCE_TYPE(signed char, schar)
-API_MAX_REDUCE_TYPE(short, short)
-API_MAX_REDUCE_TYPE(int, int)
-API_MAX_REDUCE_TYPE(long, long)
-API_MAX_REDUCE_TYPE(long long, longlong)
-API_MAX_REDUCE_TYPE(ptrdiff_t, ptrdiff)
-API_MAX_REDUCE_TYPE(unsigned char, uchar)
-API_MAX_REDUCE_TYPE(unsigned short, ushort)
-API_MAX_REDUCE_TYPE(unsigned int, uint)
-API_MAX_REDUCE_TYPE(unsigned long, ulong)
-API_MAX_REDUCE_TYPE(unsigned long long, ulonglong)
-API_MAX_REDUCE_TYPE(int8_t, int8)
-API_MAX_REDUCE_TYPE(int16_t, int16)
-API_MAX_REDUCE_TYPE(int32_t, int32)
-API_MAX_REDUCE_TYPE(int64_t, int64)
-API_MAX_REDUCE_TYPE(uint8_t, uint8)
-API_MAX_REDUCE_TYPE(uint16_t, uint16)
-API_MAX_REDUCE_TYPE(uint32_t, uint32)
-API_MAX_REDUCE_TYPE(uint64_t, uint64)
-API_MAX_REDUCE_TYPE(size_t, size)
-API_MAX_REDUCE_TYPE(float, float)
-API_MAX_REDUCE_TYPE(double, double)
-API_MAX_REDUCE_TYPE(long double, longdouble)
+#define DECL_MAX_REDUCE(_type, _typename) API_MAX_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_MINMAX_TYPE_TABLE(DECL_MAX_REDUCE)
+#undef DECL_MAX_REDUCE
+#undef API_MAX_REDUCE_TYPE
 
 /**
  * @brief Performs a minimum value reduction across a team
@@ -2807,30 +3199,10 @@ API_MAX_REDUCE_TYPE(long double, longdouble)
   int shmem_##_typename##_min_reduce(shmem_team_t team, _type *dest,           \
                                      const _type *source, size_t nreduce);
 
-API_MIN_REDUCE_TYPE(char, char)
-API_MIN_REDUCE_TYPE(signed char, schar)
-API_MIN_REDUCE_TYPE(short, short)
-API_MIN_REDUCE_TYPE(int, int)
-API_MIN_REDUCE_TYPE(long, long)
-API_MIN_REDUCE_TYPE(long long, longlong)
-API_MIN_REDUCE_TYPE(ptrdiff_t, ptrdiff)
-API_MIN_REDUCE_TYPE(unsigned char, uchar)
-API_MIN_REDUCE_TYPE(unsigned short, ushort)
-API_MIN_REDUCE_TYPE(unsigned int, uint)
-API_MIN_REDUCE_TYPE(unsigned long, ulong)
-API_MIN_REDUCE_TYPE(unsigned long long, ulonglong)
-API_MIN_REDUCE_TYPE(int8_t, int8)
-API_MIN_REDUCE_TYPE(int16_t, int16)
-API_MIN_REDUCE_TYPE(int32_t, int32)
-API_MIN_REDUCE_TYPE(int64_t, int64)
-API_MIN_REDUCE_TYPE(uint8_t, uint8)
-API_MIN_REDUCE_TYPE(uint16_t, uint16)
-API_MIN_REDUCE_TYPE(uint32_t, uint32)
-API_MIN_REDUCE_TYPE(uint64_t, uint64)
-API_MIN_REDUCE_TYPE(size_t, size)
-API_MIN_REDUCE_TYPE(float, float)
-API_MIN_REDUCE_TYPE(double, double)
-API_MIN_REDUCE_TYPE(long double, longdouble)
+#define DECL_MIN_REDUCE(_type, _typename) API_MIN_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_MINMAX_TYPE_TABLE(DECL_MIN_REDUCE)
+#undef DECL_MIN_REDUCE
+#undef API_MIN_REDUCE_TYPE
 
 /**
  * @brief Performs a sum reduction across a team
@@ -2854,32 +3226,10 @@ API_MIN_REDUCE_TYPE(long double, longdouble)
   int shmem_##_typename##_sum_reduce(shmem_team_t team, _type *dest,           \
                                      const _type *source, size_t nreduce);
 
-API_SUM_REDUCE_TYPE(char, char)
-API_SUM_REDUCE_TYPE(signed char, schar)
-API_SUM_REDUCE_TYPE(short, short)
-API_SUM_REDUCE_TYPE(int, int)
-API_SUM_REDUCE_TYPE(long, long)
-API_SUM_REDUCE_TYPE(long long, longlong)
-API_SUM_REDUCE_TYPE(ptrdiff_t, ptrdiff)
-API_SUM_REDUCE_TYPE(unsigned char, uchar)
-API_SUM_REDUCE_TYPE(unsigned short, ushort)
-API_SUM_REDUCE_TYPE(unsigned int, uint)
-API_SUM_REDUCE_TYPE(unsigned long, ulong)
-API_SUM_REDUCE_TYPE(unsigned long long, ulonglong)
-API_SUM_REDUCE_TYPE(int8_t, int8)
-API_SUM_REDUCE_TYPE(int16_t, int16)
-API_SUM_REDUCE_TYPE(int32_t, int32)
-API_SUM_REDUCE_TYPE(int64_t, int64)
-API_SUM_REDUCE_TYPE(uint8_t, uint8)
-API_SUM_REDUCE_TYPE(uint16_t, uint16)
-API_SUM_REDUCE_TYPE(uint32_t, uint32)
-API_SUM_REDUCE_TYPE(uint64_t, uint64)
-API_SUM_REDUCE_TYPE(size_t, size)
-API_SUM_REDUCE_TYPE(float, float)
-API_SUM_REDUCE_TYPE(double, double)
-API_SUM_REDUCE_TYPE(long double, longdouble)
-API_SUM_REDUCE_TYPE(COMPLEXIFY(double), complexd)
-API_SUM_REDUCE_TYPE(COMPLEXIFY(float), complexf)
+#define DECL_SUM_REDUCE(_type, _typename) API_SUM_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_SUM_REDUCE)
+#undef DECL_SUM_REDUCE
+#undef API_SUM_REDUCE_TYPE
 
 /**
  * @brief Performs a product reduction across a team
@@ -2903,100 +3253,59 @@ API_SUM_REDUCE_TYPE(COMPLEXIFY(float), complexf)
   int shmem_##_typename##_prod_reduce(shmem_team_t team, _type *dest,          \
                                       const _type *source, size_t nreduce);
 
-API_PROD_REDUCE_TYPE(char, char)
-API_PROD_REDUCE_TYPE(signed char, schar)
-API_PROD_REDUCE_TYPE(short, short)
-API_PROD_REDUCE_TYPE(int, int)
-API_PROD_REDUCE_TYPE(long, long)
-API_PROD_REDUCE_TYPE(long long, longlong)
-API_PROD_REDUCE_TYPE(ptrdiff_t, ptrdiff)
-API_PROD_REDUCE_TYPE(unsigned char, uchar)
-API_PROD_REDUCE_TYPE(unsigned short, ushort)
-API_PROD_REDUCE_TYPE(unsigned int, uint)
-API_PROD_REDUCE_TYPE(unsigned long, ulong)
-API_PROD_REDUCE_TYPE(unsigned long long, ulonglong)
-API_PROD_REDUCE_TYPE(int8_t, int8)
-API_PROD_REDUCE_TYPE(int16_t, int16)
-API_PROD_REDUCE_TYPE(int32_t, int32)
-API_PROD_REDUCE_TYPE(int64_t, int64)
-API_PROD_REDUCE_TYPE(uint8_t, uint8)
-API_PROD_REDUCE_TYPE(uint16_t, uint16)
-API_PROD_REDUCE_TYPE(uint32_t, uint32)
-API_PROD_REDUCE_TYPE(uint64_t, uint64)
-API_PROD_REDUCE_TYPE(size_t, size)
-API_PROD_REDUCE_TYPE(float, float)
-API_PROD_REDUCE_TYPE(double, double)
-API_PROD_REDUCE_TYPE(long double, longdouble)
-API_PROD_REDUCE_TYPE(COMPLEXIFY(double), complexd)
-API_PROD_REDUCE_TYPE(COMPLEXIFY(float), complexf)
+#define DECL_PROD_REDUCE(_type, _typename)                                     \
+  API_PROD_REDUCE_TYPE(_type, _typename)
+SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_PROD_REDUCE)
+#undef DECL_PROD_REDUCE
+#undef API_PROD_REDUCE_TYPE
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief Macro to declare legacy reduction operations (deprecated)
  */
-#define SHMEM_REDUCE_TO_ALL_DECL(_type, _typename, _op)                        \
+#define API_TO_ALL_TYPE(_type, _typename, _op)                                 \
   void shmem_##_typename##_##_op##_to_all(                                     \
       _type *target, const _type *source, int nreduce, int PE_start,           \
       int logPE_stride, int PE_size, _type *pWrk, long *pSync)                 \
-      _DEPRECATED_BY(shmem_##_typename##_##_op##_reduce, 1.5)
+      _DEPRECATED_BY(shmem_##_typename##_##_op##_reduce, 1.5);
 
 /* Declare SUM reductions */
-SHMEM_REDUCE_TO_ALL_DECL(long, long, sum);
-SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(double), complexd, sum);
-SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(float), complexf, sum);
-SHMEM_REDUCE_TO_ALL_DECL(double, double, sum);
-SHMEM_REDUCE_TO_ALL_DECL(float, float, sum);
-SHMEM_REDUCE_TO_ALL_DECL(int, int, sum);
-SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, sum);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, sum);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, sum);
+#define DECL_SUM_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, sum)
+SHMEM_TO_ALL_ARITH_TYPE_TABLE(DECL_SUM_TO_ALL)
+#undef DECL_SUM_TO_ALL
 
 /* Declare PROD reductions */
-SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(double), complexd, prod);
-SHMEM_REDUCE_TO_ALL_DECL(COMPLEXIFY(float), complexf, prod);
-SHMEM_REDUCE_TO_ALL_DECL(double, double, prod);
-SHMEM_REDUCE_TO_ALL_DECL(float, float, prod);
-SHMEM_REDUCE_TO_ALL_DECL(int, int, prod);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, prod);
-SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, prod);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, prod);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, prod);
+#define DECL_PROD_TO_ALL(_type, _typename)                                     \
+  API_TO_ALL_TYPE(_type, _typename, prod)
+SHMEM_TO_ALL_ARITH_TYPE_TABLE(DECL_PROD_TO_ALL)
+#undef DECL_PROD_TO_ALL
 
 /* Declare AND reductions */
-SHMEM_REDUCE_TO_ALL_DECL(int, int, and);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, and);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, and);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, and);
+#define DECL_AND_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, and)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_AND_TO_ALL)
+#undef DECL_AND_TO_ALL
 
 /* Declare OR reductions */
-SHMEM_REDUCE_TO_ALL_DECL(int, int, or);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, or);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, or);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, or);
+#define DECL_OR_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, or)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_OR_TO_ALL)
+#undef DECL_OR_TO_ALL
 
 /* Declare XOR reductions */
-SHMEM_REDUCE_TO_ALL_DECL(int, int, xor);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, xor);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, xor);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, xor);
+#define DECL_XOR_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, xor)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_XOR_TO_ALL)
+#undef DECL_XOR_TO_ALL
 
 /* Declare MAX reductions */
-SHMEM_REDUCE_TO_ALL_DECL(int, int, max);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, max);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, max);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, max);
-SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, max);
-SHMEM_REDUCE_TO_ALL_DECL(float, float, max);
-SHMEM_REDUCE_TO_ALL_DECL(double, double, max);
+#define DECL_MAX_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, max)
+SHMEM_TO_ALL_MINMAX_TYPE_TABLE(DECL_MAX_TO_ALL)
+#undef DECL_MAX_TO_ALL
 
 /* Declare MIN reductions */
-SHMEM_REDUCE_TO_ALL_DECL(int, int, min);
-SHMEM_REDUCE_TO_ALL_DECL(long, long, min);
-SHMEM_REDUCE_TO_ALL_DECL(long long, longlong, min);
-SHMEM_REDUCE_TO_ALL_DECL(short, short, min);
-SHMEM_REDUCE_TO_ALL_DECL(long double, longdouble, min);
-SHMEM_REDUCE_TO_ALL_DECL(float, float, min);
-SHMEM_REDUCE_TO_ALL_DECL(double, double, min);
+#define DECL_MIN_TO_ALL(_type, _typename) API_TO_ALL_TYPE(_type, _typename, min)
+SHMEM_TO_ALL_MINMAX_TYPE_TABLE(DECL_MIN_TO_ALL)
+#undef DECL_MIN_TO_ALL
+
+#undef API_TO_ALL_TYPE
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -3017,30 +3326,10 @@ SHMEM_REDUCE_TO_ALL_DECL(double, double, min);
                                     const _type *source, size_t nelems,        \
                                     int PE_root);
 
-API_BROADCAST_TYPE(float, float)
-API_BROADCAST_TYPE(double, double)
-API_BROADCAST_TYPE(long double, longdouble)
-API_BROADCAST_TYPE(char, char)
-API_BROADCAST_TYPE(signed char, schar)
-API_BROADCAST_TYPE(short, short)
-API_BROADCAST_TYPE(int, int)
-API_BROADCAST_TYPE(long, long)
-API_BROADCAST_TYPE(long long, longlong)
-API_BROADCAST_TYPE(unsigned char, uchar)
-API_BROADCAST_TYPE(unsigned short, ushort)
-API_BROADCAST_TYPE(unsigned int, uint)
-API_BROADCAST_TYPE(unsigned long, ulong)
-API_BROADCAST_TYPE(unsigned long long, ulonglong)
-API_BROADCAST_TYPE(int8_t, int8)
-API_BROADCAST_TYPE(int16_t, int16)
-API_BROADCAST_TYPE(int32_t, int32)
-API_BROADCAST_TYPE(int64_t, int64)
-API_BROADCAST_TYPE(uint8_t, uint8)
-API_BROADCAST_TYPE(uint16_t, uint16)
-API_BROADCAST_TYPE(uint32_t, uint32)
-API_BROADCAST_TYPE(uint64_t, uint64)
-API_BROADCAST_TYPE(size_t, size)
-API_BROADCAST_TYPE(ptrdiff_t, ptrdiff)
+#define DECL_BROADCAST(_type, _typename) API_BROADCAST_TYPE(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_BROADCAST)
+#undef DECL_BROADCAST
+#undef API_BROADCAST_TYPE
 
 /**
  * Generic memory broadcast routine
@@ -3107,30 +3396,10 @@ API_BROADCAST_SIZE(64)
   int shmem_##_typename##_collect(shmem_team_t team, _type *dest,              \
                                   const _type *source, size_t nelems);
 
-API_COLLECT_TYPE(float, float)
-API_COLLECT_TYPE(double, double)
-API_COLLECT_TYPE(long double, longdouble)
-API_COLLECT_TYPE(char, char)
-API_COLLECT_TYPE(signed char, schar)
-API_COLLECT_TYPE(short, short)
-API_COLLECT_TYPE(int, int)
-API_COLLECT_TYPE(long, long)
-API_COLLECT_TYPE(long long, longlong)
-API_COLLECT_TYPE(unsigned char, uchar)
-API_COLLECT_TYPE(unsigned short, ushort)
-API_COLLECT_TYPE(unsigned int, uint)
-API_COLLECT_TYPE(unsigned long, ulong)
-API_COLLECT_TYPE(unsigned long long, ulonglong)
-API_COLLECT_TYPE(int8_t, int8)
-API_COLLECT_TYPE(int16_t, int16)
-API_COLLECT_TYPE(int32_t, int32)
-API_COLLECT_TYPE(int64_t, int64)
-API_COLLECT_TYPE(uint8_t, uint8)
-API_COLLECT_TYPE(uint16_t, uint16)
-API_COLLECT_TYPE(uint32_t, uint32)
-API_COLLECT_TYPE(uint64_t, uint64)
-API_COLLECT_TYPE(size_t, size)
-API_COLLECT_TYPE(ptrdiff_t, ptrdiff)
+#define DECL_COLLECT(_type, _typename) API_COLLECT_TYPE(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_COLLECT)
+#undef DECL_COLLECT
+#undef API_COLLECT_TYPE
 
 /**
  * @brief Generic memory collect routine
@@ -3180,30 +3449,10 @@ API_COLLECT_SIZE(collect, 64)
   int shmem_##_typename##_fcollect(shmem_team_t team, _type *dest,             \
                                    const _type *source, size_t nelems);
 
-API_FCOLLECT_TYPE(float, float)
-API_FCOLLECT_TYPE(double, double)
-API_FCOLLECT_TYPE(long double, longdouble)
-API_FCOLLECT_TYPE(char, char)
-API_FCOLLECT_TYPE(signed char, schar)
-API_FCOLLECT_TYPE(short, short)
-API_FCOLLECT_TYPE(int, int)
-API_FCOLLECT_TYPE(long, long)
-API_FCOLLECT_TYPE(long long, longlong)
-API_FCOLLECT_TYPE(unsigned char, uchar)
-API_FCOLLECT_TYPE(unsigned short, ushort)
-API_FCOLLECT_TYPE(unsigned int, uint)
-API_FCOLLECT_TYPE(unsigned long, ulong)
-API_FCOLLECT_TYPE(unsigned long long, ulonglong)
-API_FCOLLECT_TYPE(int8_t, int8)
-API_FCOLLECT_TYPE(int16_t, int16)
-API_FCOLLECT_TYPE(int32_t, int32)
-API_FCOLLECT_TYPE(int64_t, int64)
-API_FCOLLECT_TYPE(uint8_t, uint8)
-API_FCOLLECT_TYPE(uint16_t, uint16)
-API_FCOLLECT_TYPE(uint32_t, uint32)
-API_FCOLLECT_TYPE(uint64_t, uint64)
-API_FCOLLECT_TYPE(size_t, size)
-API_FCOLLECT_TYPE(ptrdiff_t, ptrdiff)
+#define DECL_FCOLLECT(_type, _typename) API_FCOLLECT_TYPE(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_FCOLLECT)
+#undef DECL_FCOLLECT
+#undef API_FCOLLECT_TYPE
 
 /**
  * @brief Generic memory fcollect routine
@@ -3264,30 +3513,10 @@ API_FCOLLECT_SIZE(fcollect, 64)
   int shmem_##_typename##_alltoall(shmem_team_t team, _type *dest,             \
                                    const _type *source, size_t nelems);
 
-API_ALLTOALL_TYPE(float, float)
-API_ALLTOALL_TYPE(double, double)
-API_ALLTOALL_TYPE(long double, longdouble)
-API_ALLTOALL_TYPE(char, char)
-API_ALLTOALL_TYPE(signed char, schar)
-API_ALLTOALL_TYPE(short, short)
-API_ALLTOALL_TYPE(int, int)
-API_ALLTOALL_TYPE(long, long)
-API_ALLTOALL_TYPE(long long, longlong)
-API_ALLTOALL_TYPE(unsigned char, uchar)
-API_ALLTOALL_TYPE(unsigned short, ushort)
-API_ALLTOALL_TYPE(unsigned int, uint)
-API_ALLTOALL_TYPE(unsigned long, ulong)
-API_ALLTOALL_TYPE(unsigned long long, ulonglong)
-API_ALLTOALL_TYPE(int8_t, int8)
-API_ALLTOALL_TYPE(int16_t, int16)
-API_ALLTOALL_TYPE(int32_t, int32)
-API_ALLTOALL_TYPE(int64_t, int64)
-API_ALLTOALL_TYPE(uint8_t, uint8)
-API_ALLTOALL_TYPE(uint16_t, uint16)
-API_ALLTOALL_TYPE(uint32_t, uint32)
-API_ALLTOALL_TYPE(uint64_t, uint64)
-API_ALLTOALL_TYPE(size_t, size)
-API_ALLTOALL_TYPE(ptrdiff_t, ptrdiff)
+#define DECL_ALLTOALL(_type, _typename) API_ALLTOALL_TYPE(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_ALLTOALL)
+#undef DECL_ALLTOALL
+#undef API_ALLTOALL_TYPE
 
 /**
  * Generic memory alltoall routine
@@ -3338,30 +3567,10 @@ API_ALLTOALL_SIZE(64)
                                     const _type *source, ptrdiff_t dst,        \
                                     ptrdiff_t sst, size_t nelems);
 
-API_ALLTOALLS_TYPE(float, float)
-API_ALLTOALLS_TYPE(double, double)
-API_ALLTOALLS_TYPE(long double, longdouble)
-API_ALLTOALLS_TYPE(char, char)
-API_ALLTOALLS_TYPE(signed char, schar)
-API_ALLTOALLS_TYPE(short, short)
-API_ALLTOALLS_TYPE(int, int)
-API_ALLTOALLS_TYPE(long, long)
-API_ALLTOALLS_TYPE(long long, longlong)
-API_ALLTOALLS_TYPE(unsigned char, uchar)
-API_ALLTOALLS_TYPE(unsigned short, ushort)
-API_ALLTOALLS_TYPE(unsigned int, uint)
-API_ALLTOALLS_TYPE(unsigned long, ulong)
-API_ALLTOALLS_TYPE(unsigned long long, ulonglong)
-API_ALLTOALLS_TYPE(int8_t, int8)
-API_ALLTOALLS_TYPE(int16_t, int16)
-API_ALLTOALLS_TYPE(int32_t, int32)
-API_ALLTOALLS_TYPE(int64_t, int64)
-API_ALLTOALLS_TYPE(uint8_t, uint8)
-API_ALLTOALLS_TYPE(uint16_t, uint16)
-API_ALLTOALLS_TYPE(uint32_t, uint32)
-API_ALLTOALLS_TYPE(uint64_t, uint64)
-API_ALLTOALLS_TYPE(size_t, size)
-API_ALLTOALLS_TYPE(ptrdiff_t, ptrdiff)
+#define DECL_ALLTOALLS(_type, _typename) API_ALLTOALLS_TYPE(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_ALLTOALLS)
+#undef DECL_ALLTOALLS
+#undef API_ALLTOALLS_TYPE
 
 /**
  * @brief Generic memory alltoall routine (deprecated)
@@ -3512,6 +3721,7 @@ void shmem_ctx_destroy(shmem_ctx_t ctx);
    - If one argument is provided, it expands to _SHMEM_SYNC_1(team)
    - If four arguments are provided, it expands to _SHMEM_SYNC_4(...)
 */
+
 #define shmem_sync(...)                                                        \
   _GET_5TH_ARG(__VA_ARGS__, _SHMEM_SYNC_4, _SHMEM_SYNC_4, _SHMEM_SYNC_4,       \
                _SHMEM_SYNC_1)                                                  \

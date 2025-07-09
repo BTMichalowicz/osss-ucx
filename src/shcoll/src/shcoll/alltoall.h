@@ -18,6 +18,7 @@
 #define _SHCOLL_ALLTOALL_H 1
 
 #include <shmem/teams.h>
+#include <shmem/api_types.h>
 #include "shmemu.h"
 
 /**
@@ -36,42 +37,25 @@
  *
  * @param _algo Algorithm name to generate declarations for
  */
-#define DECLARE_ALLTOALL_TYPES(_algo)                                          \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, float, float)                       \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, double, double)                     \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, long double, longdouble)            \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, char, char)                         \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, signed char, schar)                 \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, short, short)                       \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, int, int)                           \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, long, long)                         \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, long long, longlong)                \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, unsigned char, uchar)               \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, unsigned short, ushort)             \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, unsigned int, uint)                 \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, unsigned long, ulong)               \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, unsigned long long, ulonglong)      \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, int8_t, int8)                       \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, int16_t, int16)                     \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, int32_t, int32)                     \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, int64_t, int64)                     \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, uint8_t, uint8)                     \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, uint16_t, uint16)                   \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, uint32_t, uint32)                   \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, uint64_t, uint64)                   \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, size_t, size)                       \
-  SHCOLL_TYPED_ALLTOALL_DECLARATION(_algo, ptrdiff_t, ptrdiff)
+#define DECLARE_ALLTOALL_TYPES(_type, _typename)                               \
+  SHCOLL_TYPED_ALLTOALL_DECLARATION(shift_exchange_barrier, _type, _typename)  \
+  SHCOLL_TYPED_ALLTOALL_DECLARATION(shift_exchange_counter, _type, _typename)  \
+  SHCOLL_TYPED_ALLTOALL_DECLARATION(shift_exchange_signal, _type, _typename)   \
+  SHCOLL_TYPED_ALLTOALL_DECLARATION(xor_pairwise_exchange_barrier, _type,      \
+                                    _typename)                                 \
+  SHCOLL_TYPED_ALLTOALL_DECLARATION(xor_pairwise_exchange_counter, _type,      \
+                                    _typename)                                 \
+  SHCOLL_TYPED_ALLTOALL_DECLARATION(xor_pairwise_exchange_signal, _type,       \
+                                    _typename)                                 \
+  SHCOLL_TYPED_ALLTOALL_DECLARATION(color_pairwise_exchange_barrier, _type,    \
+                                    _typename)                                 \
+  SHCOLL_TYPED_ALLTOALL_DECLARATION(color_pairwise_exchange_counter, _type,    \
+                                    _typename)                                 \
+  SHCOLL_TYPED_ALLTOALL_DECLARATION(color_pairwise_exchange_signal, _type,     \
+                                    _typename)
 
-/* Declare all algorithm variants */
-DECLARE_ALLTOALL_TYPES(shift_exchange_barrier)
-DECLARE_ALLTOALL_TYPES(shift_exchange_counter)
-DECLARE_ALLTOALL_TYPES(shift_exchange_signal)
-DECLARE_ALLTOALL_TYPES(xor_pairwise_exchange_barrier)
-DECLARE_ALLTOALL_TYPES(xor_pairwise_exchange_counter)
-DECLARE_ALLTOALL_TYPES(xor_pairwise_exchange_signal)
-DECLARE_ALLTOALL_TYPES(color_pairwise_exchange_barrier)
-DECLARE_ALLTOALL_TYPES(color_pairwise_exchange_counter)
-DECLARE_ALLTOALL_TYPES(color_pairwise_exchange_signal)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECLARE_ALLTOALL_TYPES)
+#undef DECLARE_ALLTOALL_TYPES
 
 /**
  * @brief Macro to declare generic alltoallmem implementations

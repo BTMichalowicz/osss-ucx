@@ -6,14 +6,14 @@ SOURCES = alltoall.c \
 				broadcast.c \
 				collect.c \
 				fcollect.c \
-				reduce.c \
-				psync_pool.c
+				reduce.c
 
 SOURCES += util/bithacks.c \
 				util/broadcast-size.c \
 				util/rotate.c \
 				util/scan.c \
-				util/trees.c
+				util/trees.c \
+				util/psync_pool.c
 
 FIND_SHMEM_H = -I$(top_srcdir)/include \
 				-I../../../include
@@ -38,7 +38,6 @@ nobase_include_HEADERS  = shcoll.h \
 				shcoll/collect.h \
 				shcoll/common.h \
 				shcoll/fcollect.h \
-				shcoll/reduce.h \
-				shcoll/psync_pool.h
+				shcoll/reduce.h
 
 EXTRA_DIST              = shcoll/compat.h

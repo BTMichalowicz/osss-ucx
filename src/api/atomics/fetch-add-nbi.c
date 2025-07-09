@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_int_atomic_fetch_add_nbi = pshmem_int_atomic_fetch_add_nbi
@@ -67,28 +68,16 @@
         shmemc_ctx_fadd_nbi(ctx, target, &value, sizeof(value), pe, fetch));   \
   }
 
-SHMEM_CTX_TYPE_FADD_NBI(int, int)
-SHMEM_CTX_TYPE_FADD_NBI(long, long)
-SHMEM_CTX_TYPE_FADD_NBI(longlong, long long)
-SHMEM_CTX_TYPE_FADD_NBI(uint, unsigned int)
-SHMEM_CTX_TYPE_FADD_NBI(ulong, unsigned long)
-SHMEM_CTX_TYPE_FADD_NBI(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_FADD_NBI(int32, int32_t)
-SHMEM_CTX_TYPE_FADD_NBI(int64, int64_t)
-SHMEM_CTX_TYPE_FADD_NBI(uint32, uint32_t)
-SHMEM_CTX_TYPE_FADD_NBI(uint64, uint64_t)
-SHMEM_CTX_TYPE_FADD_NBI(size, size_t)
-SHMEM_CTX_TYPE_FADD_NBI(ptrdiff, ptrdiff_t)
+/* Define context-based non-blocking atomic fetch-and-add operations using the
+ * type table */
+#define SHMEM_CTX_TYPE_FADD_NBI_HELPER(_type, _typename)                       \
+  SHMEM_CTX_TYPE_FADD_NBI(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_FADD_NBI_HELPER)
+#undef SHMEM_CTX_TYPE_FADD_NBI_HELPER
 
-API_DEF_AMO2_NBI(fetch_add, int, int)
-API_DEF_AMO2_NBI(fetch_add, long, long)
-API_DEF_AMO2_NBI(fetch_add, longlong, long long)
-API_DEF_AMO2_NBI(fetch_add, uint, unsigned int)
-API_DEF_AMO2_NBI(fetch_add, ulong, unsigned long)
-API_DEF_AMO2_NBI(fetch_add, ulonglong, unsigned long long)
-API_DEF_AMO2_NBI(fetch_add, int32, int32_t)
-API_DEF_AMO2_NBI(fetch_add, int64, int64_t)
-API_DEF_AMO2_NBI(fetch_add, uint32, uint32_t)
-API_DEF_AMO2_NBI(fetch_add, uint64, uint64_t)
-API_DEF_AMO2_NBI(fetch_add, size, size_t)
-API_DEF_AMO2_NBI(fetch_add, ptrdiff, ptrdiff_t)
+/* Define non-context non-blocking atomic fetch-and-add operations using the
+ * type table */
+#define API_DEF_AMO2_NBI_HELPER(_type, _typename)                              \
+  API_DEF_AMO2_NBI(fetch_add, _typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(API_DEF_AMO2_NBI_HELPER)
+#undef API_DEF_AMO2_NBI_HELPER

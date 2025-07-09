@@ -1,4 +1,0 @@
-- Add internal psync pool to:
-  - collect
-  - fcollect
-  - reductions

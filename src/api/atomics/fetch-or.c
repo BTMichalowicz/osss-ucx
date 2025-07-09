@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_uint_atomic_fetch_or = pshmem_ctx_uint_atomic_fetch_or
@@ -42,13 +43,11 @@
  * remote variable. The operations are performed without protecting the mutex.
  */
 
-SHMEM_CTX_TYPE_FETCH_BITWISE(or, uint, unsigned int)
-SHMEM_CTX_TYPE_FETCH_BITWISE(or, ulong, unsigned long)
-SHMEM_CTX_TYPE_FETCH_BITWISE(or, ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_FETCH_BITWISE(or, int32, int32_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE(or, int64, int64_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE(or, uint32, uint32_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE(or, uint64, uint64_t)
+/* Define context-based atomic fetch-or operations using the type table */
+#define SHMEM_CTX_TYPE_FETCH_BITWISE_HELPER(_type, _typename)                  \
+  SHMEM_CTX_TYPE_FETCH_BITWISE(or, _typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_FETCH_BITWISE_HELPER)
+#undef SHMEM_CTX_TYPE_FETCH_BITWISE_HELPER
 
 /**
  * @brief Defines the API for atomic fetch-or operations
@@ -57,11 +56,8 @@ SHMEM_CTX_TYPE_FETCH_BITWISE(or, uint64, uint64_t)
  * for different integer types. Each function performs a fetch-or operation
  * without a context.
  */
-
-API_DEF_AMO2(fetch_or, uint, unsigned int)
-API_DEF_AMO2(fetch_or, ulong, unsigned long)
-API_DEF_AMO2(fetch_or, ulonglong, unsigned long long)
-API_DEF_AMO2(fetch_or, int32, int32_t)
-API_DEF_AMO2(fetch_or, int64, int64_t)
-API_DEF_AMO2(fetch_or, uint32, uint32_t)
-API_DEF_AMO2(fetch_or, uint64, uint64_t)
+/* Define non-context atomic fetch-or operations using the type table */
+#define API_DEF_AMO2_HELPER(_type, _typename)                                  \
+  API_DEF_AMO2(fetch_or, _typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(API_DEF_AMO2_HELPER)
+#undef API_DEF_AMO2_HELPER

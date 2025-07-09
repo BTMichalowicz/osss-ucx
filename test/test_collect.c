@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 /* shmem_collect.c */
 
-#include "../build/build/include/shmem.h"
+#include "../build/install/include/shmem.h"
 #include <stdio.h>
 #include <stdlib.h>
 

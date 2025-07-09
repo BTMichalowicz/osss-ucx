@@ -14,6 +14,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_int_atomic_fetch_inc_nbi = pshmem_int_atomic_fetch_inc_nbi
@@ -70,28 +71,16 @@
         shmemc_ctx_fadd(ctx, target, &one, sizeof(one), pe, fetch));           \
   }
 
-SHMEM_CTX_TYPE_FINC_NBI(int, int)
-SHMEM_CTX_TYPE_FINC_NBI(long, long)
-SHMEM_CTX_TYPE_FINC_NBI(longlong, long long)
-SHMEM_CTX_TYPE_FINC_NBI(uint, unsigned int)
-SHMEM_CTX_TYPE_FINC_NBI(ulong, unsigned long)
-SHMEM_CTX_TYPE_FINC_NBI(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_FINC_NBI(int32, int32_t)
-SHMEM_CTX_TYPE_FINC_NBI(int64, int64_t)
-SHMEM_CTX_TYPE_FINC_NBI(uint32, uint32_t)
-SHMEM_CTX_TYPE_FINC_NBI(uint64, uint64_t)
-SHMEM_CTX_TYPE_FINC_NBI(size, size_t)
-SHMEM_CTX_TYPE_FINC_NBI(ptrdiff, ptrdiff_t)
+/* Define context-based non-blocking atomic fetch-and-increment operations using
+ * the type table */
+#define SHMEM_CTX_TYPE_FINC_NBI_HELPER(_type, _typename)                       \
+  SHMEM_CTX_TYPE_FINC_NBI(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_FINC_NBI_HELPER)
+#undef SHMEM_CTX_TYPE_FINC_NBI_HELPER
 
-API_DEF_AMO1_NBI(fetch_inc, int, int)
-API_DEF_AMO1_NBI(fetch_inc, long, long)
-API_DEF_AMO1_NBI(fetch_inc, longlong, long long)
-API_DEF_AMO1_NBI(fetch_inc, uint, unsigned int)
-API_DEF_AMO1_NBI(fetch_inc, ulong, unsigned long)
-API_DEF_AMO1_NBI(fetch_inc, ulonglong, unsigned long long)
-API_DEF_AMO1_NBI(fetch_inc, int32, int32_t)
-API_DEF_AMO1_NBI(fetch_inc, int64, int64_t)
-API_DEF_AMO1_NBI(fetch_inc, uint32, uint32_t)
-API_DEF_AMO1_NBI(fetch_inc, uint64, uint64_t)
-API_DEF_AMO1_NBI(fetch_inc, size, size_t)
-API_DEF_AMO1_NBI(fetch_inc, ptrdiff, ptrdiff_t)
+/* Define non-context non-blocking atomic fetch-and-increment operations using
+ * the type table */
+#define API_DEF_AMO1_NBI_HELPER(_type, _typename)                              \
+  API_DEF_AMO1_NBI(fetch_inc, _typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(API_DEF_AMO1_NBI_HELPER)
+#undef API_DEF_AMO1_NBI_HELPER

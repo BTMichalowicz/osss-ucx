@@ -275,8 +275,6 @@ inline static void barrier_sync_helper_dissemination(int PE_start,
  * - sync_all: Global barrier without memory ordering
  *
  * @param _algo Algorithm name to generate functions for
- *
- * TODO: Double check sanity checks
  */
 #define SHCOLL_BARRIER_SYNC_DEFINITION(_algo)                                  \
   void shcoll_barrier_##_algo(int PE_start, int logPE_stride, int PE_size,     \
@@ -312,7 +310,7 @@ inline static void barrier_sync_helper_dissemination(int PE_start,
     SHMEMU_CHECK_ACTIVE_SET_RANGE(PE_start, logPE_stride, PE_size);            \
     SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
     SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_BARRIER_SYNC_SIZE);    \
-    /* TODO: memory fence */                                                   \
+    /* TODO: memory fence? */                                                   \
     barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
   }                                                                            \
                                                                                \
@@ -321,7 +319,7 @@ inline static void barrier_sync_helper_dissemination(int PE_start,
     SHMEMU_CHECK_INIT();                                                       \
     SHMEMU_CHECK_NULL(pSync, "pSync");                                         \
     SHMEMU_CHECK_SYMMETRIC(pSync, sizeof(long) * SHCOLL_BARRIER_SYNC_SIZE);    \
-    /* TODO: memory fence */                                                   \
+    /* TODO: memory fence? */                                                   \
     barrier_sync_helper_##_algo(0, 0, shmem_n_pes(), pSync);                   \
   }
 
@@ -345,26 +343,19 @@ SHCOLL_BARRIER_SYNC_DEFINITION(dissemination)
  */
 #define SHCOLL_TEAM_SYNC_DEFINITION(_algo)                                     \
   int shcoll_team_sync_##_algo(shmem_team_t team) {                            \
-    /* Sanity Checks */                                                        \
     SHMEMU_CHECK_INIT();                                                       \
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
-                                                                               \
-    /* Get team parameters */                                                  \
     shmemc_team_h team_h = (shmemc_team_h)team;                                \
-    const int PE_start = team_h->start;                                        \
-    const int stride = team_h->stride;                                         \
-    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
-    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
-    const int PE_size = team_h->nranks;                                        \
+    SHMEMU_CHECK_TEAM_STRIDE(team_h->stride, __func__);                        \
+    SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_BARRIER),     \
+                      "team_h->pSyncs[BARRIER]");                              \
                                                                                \
-    /* Use the team's pre-allocated pSync */                                   \
-    long *pSync = team_h->pSyncs[0];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[0]");                             \
+    barrier_sync_helper_##_algo(                                               \
+        team_h->start,                                                         \
+        (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,          \
+        team_h->nranks, shmemc_team_get_psync(team_h, SHMEMC_PSYNC_BARRIER));  \
                                                                                \
-    /* Call the internal barrier helper */                                     \
-    barrier_sync_helper_##_algo(PE_start, logPE_stride, PE_size, pSync);       \
-    /* Reset the pSync buffer */                                               \
-    shmemc_team_reset_psync(team_h, 0);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_BARRIER);                     \
     return 0;                                                                  \
   }
 

@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_float_atomic_swap = pshmem_ctx_float_atomic_swap
@@ -68,20 +69,11 @@
     return v;                                                                  \
   }
 
-SHMEM_CTX_TYPE_SWAP(int, int)
-SHMEM_CTX_TYPE_SWAP(long, long)
-SHMEM_CTX_TYPE_SWAP(longlong, long long)
-SHMEM_CTX_TYPE_SWAP(float, float)
-SHMEM_CTX_TYPE_SWAP(double, double)
-SHMEM_CTX_TYPE_SWAP(uint, unsigned int)
-SHMEM_CTX_TYPE_SWAP(ulong, unsigned long)
-SHMEM_CTX_TYPE_SWAP(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_SWAP(int32, int32_t)
-SHMEM_CTX_TYPE_SWAP(int64, int64_t)
-SHMEM_CTX_TYPE_SWAP(uint32, uint32_t)
-SHMEM_CTX_TYPE_SWAP(uint64, uint64_t)
-SHMEM_CTX_TYPE_SWAP(size, size_t)
-SHMEM_CTX_TYPE_SWAP(ptrdiff, ptrdiff_t)
+/* Define context-based atomic swap operations using the type table */
+#define SHMEM_CTX_TYPE_SWAP_HELPER(_type, _typename)                           \
+  SHMEM_CTX_TYPE_SWAP(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_SWAP_HELPER)
+#undef SHMEM_CTX_TYPE_SWAP_HELPER
 
 /**
  * @brief Defines the API for atomic swap operations
@@ -90,17 +82,8 @@ SHMEM_CTX_TYPE_SWAP(ptrdiff, ptrdiff_t)
  * for different types. Each function performs a swap operation without a
  * context.
  */
-API_DEF_AMO2(swap, float, float)
-API_DEF_AMO2(swap, double, double)
-API_DEF_AMO2(swap, int, int)
-API_DEF_AMO2(swap, long, long)
-API_DEF_AMO2(swap, longlong, long long)
-API_DEF_AMO2(swap, uint, unsigned int)
-API_DEF_AMO2(swap, ulong, unsigned long)
-API_DEF_AMO2(swap, ulonglong, unsigned long long)
-API_DEF_AMO2(swap, int32, int32_t)
-API_DEF_AMO2(swap, int64, int64_t)
-API_DEF_AMO2(swap, uint32, uint32_t)
-API_DEF_AMO2(swap, uint64, uint64_t)
-API_DEF_AMO2(swap, size, size_t)
-API_DEF_AMO2(swap, ptrdiff, ptrdiff_t)
+/* Define non-context atomic swap operations using the type table */
+#define API_DEF_AMO2_HELPER(_type, _typename)                                  \
+  API_DEF_AMO2(swap, _typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(API_DEF_AMO2_HELPER)
+#undef API_DEF_AMO2_HELPER

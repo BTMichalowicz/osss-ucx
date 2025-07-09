@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_int_atomic_fetch = pshmem_ctx_int_atomic_fetch
@@ -66,32 +67,14 @@
     return v;                                                                  \
   }
 
-SHMEM_CTX_TYPE_FETCH(float, float)
-SHMEM_CTX_TYPE_FETCH(double, double)
-SHMEM_CTX_TYPE_FETCH(int, int)
-SHMEM_CTX_TYPE_FETCH(long, long)
-SHMEM_CTX_TYPE_FETCH(longlong, long long)
-SHMEM_CTX_TYPE_FETCH(uint, unsigned int)
-SHMEM_CTX_TYPE_FETCH(ulong, unsigned long)
-SHMEM_CTX_TYPE_FETCH(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_FETCH(int32, int32_t)
-SHMEM_CTX_TYPE_FETCH(int64, int64_t)
-SHMEM_CTX_TYPE_FETCH(uint32, uint32_t)
-SHMEM_CTX_TYPE_FETCH(uint64, uint64_t)
-SHMEM_CTX_TYPE_FETCH(size, size_t)
-SHMEM_CTX_TYPE_FETCH(ptrdiff, ptrdiff_t)
+/* Define context-based atomic fetch operations using the type table */
+#define SHMEM_CTX_TYPE_FETCH_HELPER(_type, _typename)                          \
+  SHMEM_CTX_TYPE_FETCH(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_FETCH_HELPER)
+#undef SHMEM_CTX_TYPE_FETCH_HELPER
 
-API_DEF_CONST_AMO1(fetch, float, float)
-API_DEF_CONST_AMO1(fetch, double, double)
-API_DEF_CONST_AMO1(fetch, int, int)
-API_DEF_CONST_AMO1(fetch, long, long)
-API_DEF_CONST_AMO1(fetch, longlong, long long)
-API_DEF_CONST_AMO1(fetch, uint, unsigned int)
-API_DEF_CONST_AMO1(fetch, ulong, unsigned long)
-API_DEF_CONST_AMO1(fetch, ulonglong, unsigned long long)
-API_DEF_CONST_AMO1(fetch, int32, int32_t)
-API_DEF_CONST_AMO1(fetch, int64, int64_t)
-API_DEF_CONST_AMO1(fetch, uint32, uint32_t)
-API_DEF_CONST_AMO1(fetch, uint64, uint64_t)
-API_DEF_CONST_AMO1(fetch, size, size_t)
-API_DEF_CONST_AMO1(fetch, ptrdiff, ptrdiff_t)
+/* Define non-context atomic fetch operations using the type table */
+#define API_DEF_CONST_AMO1_HELPER(_type, _typename)                            \
+  API_DEF_CONST_AMO1(fetch, _typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(API_DEF_CONST_AMO1_HELPER)
+#undef API_DEF_CONST_AMO1_HELPER

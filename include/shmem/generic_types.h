@@ -71,21 +71,6 @@
  * - shmem_atomic_fetch_inc_nbi()
  * - shmem_atomic_fetch_add_nbi()
  *
- * - shmem_wait_until() (FIXME: also need `short` and `ushort`, which are
- * deprecated)
- * - shmem_wait_until_all()
- * - shmem_wait_until_any()
- * - shmem_wait_until_some()
- * - shmem_wait_until_all_vector()
- * - shmem_wait_until_any_vector()
- * - shmem_wait_until_some_vector()
- * - shmem_test() (FIXME: also need `short` and `ushort`, which are deprecated)
- * - shmmem_test_all()
- * - shmem_test_any()
- * - shmem_test_some()
- * - shmem_test_all_vector()
- * - shmem_test_any_vector()
- * - shmem_test_some_vector()
  *
  * NOTE: Only canonical C types are included below to avoid _Generic
  * duplicate/compatible type errors.
@@ -145,16 +130,8 @@
   X(int32_t, int32)                                                            \
   X(int64_t, int64)
 
-// #define C11_SHMEM_BITWISE_AMO_TYPE_TABLE(X)                                    \
-//   X(unsigned int, uint)                                                        \
-//   X(unsigned long, ulong)                                                      \
-//   X(unsigned long long, ulonglong)                                             \
-//   X(int32_t, int32)                                                            \
-//   X(int64_t, int64)                                                            \
-//   X(uint32_t, uint32)                                                          \
-//   X(uint64_t, uint64)
 /*
- * Bitwise to_all types (Table 9)
+ * Bitwise to_all types (Table 11)
  *
  * Used by:
  * - shmem_and_to_all()
@@ -165,18 +142,13 @@
  * duplicate/compatible type errors.
  */
 #define C11_SHMEM_TOALL_BITWISE_TYPE_TABLE(X)                                  \
-  X(unsigned char, uchar)                                                      \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
-  X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)
+  X(long long, longlong)
 
 /*
- * Minmax to_all types (Table 9)
+ * Minmax to_all types (Table 11)
  *
  * Used by:
  * - shmem_min_to_all()
@@ -186,21 +158,16 @@
  * duplicate/compatible type errors.
  */
 #define C11_SHMEM_TOALL_MINMAX_TYPE_TABLE(X)                                   \
-  X(unsigned char, uchar)                                                      \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
   X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)                                             \
   X(float, float)                                                              \
   X(double, double)                                                            \
   X(long double, longdouble)
 
 /*
- * Arithmetic to_all types (Table 9)
+ * Arithmetic to_all types (Table 11)
  *
  * Used by:
  * - shmem_sum_to_all()
@@ -210,15 +177,10 @@
  * duplicate/compatible type errors.
  */
 #define C11_SHMEM_TOALL_ARITH_TYPE_TABLE(X)                                    \
-  X(unsigned char, uchar)                                                      \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
   X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)                                             \
   X(float, float)                                                              \
   X(double, double)                                                            \
   X(long double, longdouble)                                                   \
@@ -233,18 +195,41 @@
  * - shmem_or_reduce()
  * - shmem_xor_reduce()
  *
- * NOTE: Only canonical C types are included below to avoid _Generic
- * duplicate/compatible type errors.
+ * NOTE: Full OpenSHMEM 1.5 specification compliance.
+ * We use chained _Generic to handle conflicts between canonical C types
+ * and stdint.h types on systems where they may be aliases.
  */
-#define C11_SHMEM_REDUCE_BITWISE_TYPE_TABLE(X)                                 \
+
+/* Primary canonical C types for bitwise reductions */
+#define C11_SHMEM_REDUCE_BITWISE_CANONICAL_TYPES(X)                            \
   X(unsigned char, uchar)                                                      \
   X(unsigned short, ushort)                                                    \
   X(unsigned int, uint)                                                        \
   X(unsigned long, ulong)                                                      \
-  X(unsigned long long, ulonglong)                                             \
-  X(int, int)                                                                  \
-  X(long, long)                                                                \
-  X(long long, longlong)
+  X(unsigned long long, ulonglong)
+
+/* Extended stdint.h types for bitwise reductions - Group 1 (smaller types) */
+#define C11_SHMEM_REDUCE_BITWISE_STDINT_SMALL_TYPES(X)                         \
+  X(int8_t, int8)                                                              \
+  X(int16_t, int16)                                                            \
+  X(int32_t, int32)                                                            \
+  X(uint8_t, uint8)                                                            \
+  X(uint16_t, uint16)                                                          \
+  X(uint32_t, uint32)
+
+/* Extended stdint.h types for bitwise reductions - Group 2 (64-bit types) */
+#define C11_SHMEM_REDUCE_BITWISE_STDINT_64BIT_TYPES(X)                         \
+  X(int64_t, int64)                                                            \
+  X(uint64_t, uint64)
+
+/* Extended stdint.h types for bitwise reductions - Group 3 (size_t) */
+#define C11_SHMEM_REDUCE_BITWISE_STDINT_SIZE_TYPES(X) X(size_t, size)
+
+/* Legacy combined table for API compatibility */
+#define C11_SHMEM_REDUCE_BITWISE_STDINT_TYPES(X)                               \
+  C11_SHMEM_REDUCE_BITWISE_STDINT_SMALL_TYPES(X)                               \
+  C11_SHMEM_REDUCE_BITWISE_STDINT_64BIT_TYPES(X)                               \
+  C11_SHMEM_REDUCE_BITWISE_STDINT_SIZE_TYPES(X)
 
 /*
  * Team-based reduce minmax operations (Table 10)
@@ -299,6 +284,62 @@
   X(long double, longdouble)                                                   \
   X(double _Complex, complexd)                                                 \
   X(float _Complex, complexf)
+
+/*
+ * Pt2pt synchronization types. While specification states
+ * these should be the standard AMO types, we support several
+ * depreciated ones, so we keep them in a separate table.
+ *
+ * Used by:
+ * - shmem_wait_until() (FIXME: also need `short` and `ushort`, which are
+ * deprecated)
+ * - shmem_wait_until_all()
+ * - shmem_wait_until_any()
+ * - shmem_wait_until_some()
+ * - shmem_wait_until_all_vector()
+ * - shmem_wait_until_any_vector()
+ * - shmem_wait_until_some_vector()
+ * - shmem_test() (FIXME: also need `short` and `ushort`, which are deprecated)
+ * - shmem_test_all()
+ * - shmem_test_any()
+ * - shmem_test_some()
+ * - shmem_test_all_vector()
+ * - shmem_test_any_vector()
+ * - shmem_test_some_vector()
+ */
+#define C11_SHMEM_PT2PT_SYNC_TYPE_TABLE(X)                                     \
+  X(short, short)                                                              \
+  X(int, int)                                                                  \
+  X(long, long)                                                                \
+  X(long long, longlong)                                                       \
+  X(int32_t, int32)                                                            \
+  X(int64_t, int64)                                                            \
+  X(unsigned short, ushort)                                                    \
+  X(unsigned int, uint)                                                        \
+  X(unsigned long, ulong)                                                      \
+  X(unsigned long long, ulonglong)                                             \
+  X(uint32_t, uint32)                                                          \
+  X(uint64_t, uint64)                                                          \
+  X(size_t, size)                                                              \
+  X(ptrdiff_t, ptrdiff)
+
+/* Preprocesser hack used for implementation of typed routines
+ * that need the operand size.
+ */
+#define SHMEM_TYPE_BITSOF_short 16
+#define SHMEM_TYPE_BITSOF_ushort 16
+#define SHMEM_TYPE_BITSOF_int 32
+#define SHMEM_TYPE_BITSOF_long 64
+#define SHMEM_TYPE_BITSOF_longlong 64
+#define SHMEM_TYPE_BITSOF_uint 32
+#define SHMEM_TYPE_BITSOF_ulong 64
+#define SHMEM_TYPE_BITSOF_ulonglong 64
+#define SHMEM_TYPE_BITSOF_int32 32
+#define SHMEM_TYPE_BITSOF_int64 64
+#define SHMEM_TYPE_BITSOF_uint32 32
+#define SHMEM_TYPE_BITSOF_uint64 64
+#define SHMEM_TYPE_BITSOF_size 64
+#define SHMEM_TYPE_BITSOF_ptrdiff 64
 
 #endif /* SHMEM_HAS_C11 */
 

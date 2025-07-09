@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_uint_atomic_and = pshmem_ctx_uint_atomic_and
@@ -32,30 +33,29 @@
 #endif /* ENABLE_PSHMEM */
 
 /**
- * @brief Define atomic AND operations for different integer types using
- * contexts
+ * @brief Macro to define atomic AND operations for different types
  *
- * Implements atomic bitwise AND operations for unsigned integers, long,
- * long long and fixed-width integer types
+ * @param _typename Type name string
+ * @param _type Data type
+ *
+ * Defines a function that atomically performs AND operation on a remote
+ * variable
  */
-SHMEM_CTX_TYPE_BITWISE(and, uint, unsigned int)
-SHMEM_CTX_TYPE_BITWISE(and, ulong, unsigned long)
-SHMEM_CTX_TYPE_BITWISE(and, ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_BITWISE(and, int32, int32_t)
-SHMEM_CTX_TYPE_BITWISE(and, int64, int64_t)
-SHMEM_CTX_TYPE_BITWISE(and, uint32, uint32_t)
-SHMEM_CTX_TYPE_BITWISE(and, uint64, uint64_t)
+#define SHMEM_CTX_TYPE_AND(_typename, _type)                                   \
+  void shmem_ctx_##_typename##_atomic_and(shmem_ctx_t ctx, _type *target,      \
+                                          _type value, int pe) {               \
+    SHMEMT_MUTEX_NOPROTECT(                                                    \
+        shmemc_ctx_and(ctx, target, &value, sizeof(value), pe));               \
+  }
 
-/**
- * @brief Define non-context atomic AND operations for different integer types
- *
- * Implements atomic bitwise AND operations without contexts for unsigned
- * integers, long, long long and fixed-width integer types
- */
-API_DEF_VOID_AMO2(and, uint, unsigned int)
-API_DEF_VOID_AMO2(and, ulong, unsigned long)
-API_DEF_VOID_AMO2(and, ulonglong, unsigned long long)
-API_DEF_VOID_AMO2(and, int32, int32_t)
-API_DEF_VOID_AMO2(and, int64, int64_t)
-API_DEF_VOID_AMO2(and, uint32, uint32_t)
-API_DEF_VOID_AMO2(and, uint64, uint64_t)
+/* Define atomic AND operations for different types using the type table */
+#define SHMEM_CTX_TYPE_AND_HELPER(_type, _typename)                            \
+  SHMEM_CTX_TYPE_AND(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_AND_HELPER)
+#undef SHMEM_CTX_TYPE_AND_HELPER
+
+/* Define non-context atomic AND operations */
+#define API_DEF_VOID_AMO2_HELPER(_type, _typename)                             \
+  API_DEF_VOID_AMO2(and, _typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(API_DEF_VOID_AMO2_HELPER)
+#undef API_DEF_VOID_AMO2_HELPER

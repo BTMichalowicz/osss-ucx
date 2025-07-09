@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_float_atomic_swap_nbi = pshmem_ctx_float_atomic_swap_nbi
@@ -72,20 +73,12 @@
         shmemc_ctx_swap(ctx, target, &value, sizeof(value), pe, fetch));       \
   }
 
-SHMEM_CTX_TYPE_SWAP_NBI(int, int)
-SHMEM_CTX_TYPE_SWAP_NBI(long, long)
-SHMEM_CTX_TYPE_SWAP_NBI(longlong, long long)
-SHMEM_CTX_TYPE_SWAP_NBI(float, float)
-SHMEM_CTX_TYPE_SWAP_NBI(double, double)
-SHMEM_CTX_TYPE_SWAP_NBI(uint, unsigned int)
-SHMEM_CTX_TYPE_SWAP_NBI(ulong, unsigned long)
-SHMEM_CTX_TYPE_SWAP_NBI(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_SWAP_NBI(int32, int32_t)
-SHMEM_CTX_TYPE_SWAP_NBI(int64, int64_t)
-SHMEM_CTX_TYPE_SWAP_NBI(uint32, uint32_t)
-SHMEM_CTX_TYPE_SWAP_NBI(uint64, uint64_t)
-SHMEM_CTX_TYPE_SWAP_NBI(size, size_t)
-SHMEM_CTX_TYPE_SWAP_NBI(ptrdiff, ptrdiff_t)
+/* Define context-based non-blocking atomic swap operations using the type table
+ */
+#define SHMEM_CTX_TYPE_SWAP_NBI_HELPER(_type, _typename)                       \
+  SHMEM_CTX_TYPE_SWAP_NBI(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_SWAP_NBI_HELPER)
+#undef SHMEM_CTX_TYPE_SWAP_NBI_HELPER
 
 /**
  * @brief Defines the API for non-blocking atomic swap operations
@@ -94,17 +87,9 @@ SHMEM_CTX_TYPE_SWAP_NBI(ptrdiff, ptrdiff_t)
  * operations for different types. Each function performs a swap operation
  * without a context.
  */
-API_DEF_AMO2_NBI(swap, float, float)
-API_DEF_AMO2_NBI(swap, double, double)
-API_DEF_AMO2_NBI(swap, int, int)
-API_DEF_AMO2_NBI(swap, long, long)
-API_DEF_AMO2_NBI(swap, longlong, long long)
-API_DEF_AMO2_NBI(swap, uint, unsigned int)
-API_DEF_AMO2_NBI(swap, ulong, unsigned long)
-API_DEF_AMO2_NBI(swap, ulonglong, unsigned long long)
-API_DEF_AMO2_NBI(swap, int32, int32_t)
-API_DEF_AMO2_NBI(swap, int64, int64_t)
-API_DEF_AMO2_NBI(swap, uint32, uint32_t)
-API_DEF_AMO2_NBI(swap, uint64, uint64_t)
-API_DEF_AMO2_NBI(swap, size, size_t)
-API_DEF_AMO2_NBI(swap, ptrdiff, ptrdiff_t)
+/* Define non-context non-blocking atomic swap operations using the type table
+ */
+#define API_DEF_AMO2_NBI_HELPER(_type, _typename)                              \
+  API_DEF_AMO2_NBI(swap, _typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(API_DEF_AMO2_NBI_HELPER)
+#undef API_DEF_AMO2_NBI_HELPER

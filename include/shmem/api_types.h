@@ -154,62 +154,47 @@
   X(uint64_t, uint64)
 
 /*
- * Bitwise to_all types (Table 9)
+ * Bitwise to_all types (Table 11)
  *
  * User by:
  * - shmem_and_to_all()
  * - shmem_or_to_all()
  * - shmem_xor_to_all()
  */
-#define SHMEM_TOALL_BITWISE_TYPE_TABLE(X)                                      \
-  X(unsigned char, uchar)                                                      \
+#define SHMEM_TO_ALL_BITWISE_TYPE_TABLE(X)                                      \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
-  X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)
+  X(long long, longlong)
 
 /*
- * Minmax to_all types (Table 9)
+ * Minmax to_all types (Table 11)
  *
  * User by:
  * - shmem_min_to_all()
  * - shmem_max_to_all()
  */
-#define SHMEM_TOALL_MINMAX_TYPE_TABLE(X)                                       \
-  X(unsigned char, uchar)                                                      \
+#define SHMEM_TO_ALL_MINMAX_TYPE_TABLE(X)                                       \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
   X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)                                             \
   X(float, float)                                                              \
   X(double, double)                                                            \
   X(long double, longdouble)
 
 /*
- * Arithmetic to_all types (Table 9)
+ * Arithmetic to_all types (Table 11)
  *
  * User by:
  * - shmem_sum_to_all()
  * - shmem_prod_to_all()
  */
-#define SHMEM_TOALL_ARITH_TYPE_TABLE(X)                                        \
-  X(unsigned char, uchar)                                                      \
+#define SHMEM_TO_ALL_ARITH_TYPE_TABLE(X)                                        \
   X(short, short)                                                              \
-  X(unsigned short, ushort)                                                    \
   X(int, int)                                                                  \
-  X(unsigned int, uint)                                                        \
   X(long, long)                                                                \
-  X(unsigned long, ulong)                                                      \
   X(long long, longlong)                                                       \
-  X(unsigned long long, ulonglong)                                             \
   X(float, float)                                                              \
   X(double, double)                                                            \
   X(long double, longdouble)                                                   \
@@ -307,5 +292,27 @@
   X(long double, longdouble)                                                   \
   X(double _Complex, complexd)                                                 \
   X(float _Complex, complexf)
+
+/*
+ * Deprecated point-to-point synchronization types (Table 12)
+ *
+ * Used by:
+ * - shmem_wait()
+ */
+#define SHMEM_DEPR_PT2PT_SYNC_TYPE_TABLE(X)                                    \
+  X(short, short)                                                              \
+  X(int, int)                                                                  \
+  X(long, long)                                                                \
+  X(long long, longlong)                                                       \
+  X(unsigned short, ushort)                                                    \
+  X(unsigned int, uint)                                                        \
+  X(unsigned long, ulong)                                                      \
+  X(unsigned long long, ulonglong)                                             \
+  X(int32_t, int32)                                                            \
+  X(int64_t, int64)                                                            \
+  X(uint32_t, uint32)                                                          \
+  X(uint64_t, uint64)                                                          \
+  X(size_t, size)                                                              \
+  X(ptrdiff_t, ptrdiff)
 
 #endif /* _SHMEM_API_TYPES_H */

@@ -29,16 +29,17 @@
 #include "shcoll/compat.h"
 
 #include "shmem.h"
-#include "shmemc.h"         /* For shmemc_team_h */
-#include "shmemu.h"         /* For SHMEMU_CHECK_* macros */
-#include "shcoll/barrier.h" /* For shcoll_barrier_binomial_tree */
+#include "shmemc.h"
+#include "shmemu.h"
+#include "shcoll/barrier.h" 
 
 #include <limits.h>
 #include <assert.h>
 #include <string.h>
-#include <math.h> /* For log2 */
+#include <math.h> 
 
 #include <stdio.h>
+#include <shmem/api_types.h>
 
 /**
  * @brief Calculate edge color for color-based exchange algorithm
@@ -270,48 +271,52 @@ SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
                                  shift_exchange, SHIFT_PEER, 1, _nbi)
 
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION,
-                                 xor_pairwise_exchange, SHIFT_PEER, XOR_COND, )
+                                 xor_pairwise_exchange, XOR_PEER, XOR_COND, )
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION,
-                                 xor_pairwise_exchange, SHIFT_PEER, XOR_COND,
+                                 xor_pairwise_exchange, XOR_PEER, XOR_COND,
                                  _nbi)
 
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
-                                 xor_pairwise_exchange, SHIFT_PEER, XOR_COND, )
+                                 xor_pairwise_exchange, XOR_PEER, XOR_COND, )
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
-                                 xor_pairwise_exchange, SHIFT_PEER, XOR_COND,
+                                 xor_pairwise_exchange, XOR_PEER, XOR_COND,
                                  _nbi)
 
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION,
-                                 color_pairwise_exchange, SHIFT_PEER, 1, )
+                                 color_pairwise_exchange, COLOR_PEER,
+                                 COLOR_COND, )
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION,
-                                 color_pairwise_exchange, SHIFT_PEER, 1, _nbi)
+                                 color_pairwise_exchange, COLOR_PEER,
+                                 COLOR_COND, _nbi)
 
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
-                                 color_pairwise_exchange, SHIFT_PEER, 1, )
+                                 color_pairwise_exchange, COLOR_PEER,
+                                 COLOR_COND, )
 SHCOLL_ALLTOALLS_SIZE_DEFINITION(ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION,
-                                 color_pairwise_exchange, SHIFT_PEER, 1, _nbi)
+                                 color_pairwise_exchange, COLOR_PEER,
+                                 COLOR_COND, _nbi)
 
 /* Generate 8-bit versions specifically for _mem functions */
 ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(shift_exchange, 8, SHIFT_PEER, 1, )
 ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(shift_exchange, 8, SHIFT_PEER, 1, )
-ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, 8, SHIFT_PEER,
+ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, 8, XOR_PEER,
                                          XOR_COND, )
-ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, 8, SHIFT_PEER,
+ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, 8, XOR_PEER,
                                          XOR_COND, )
-ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
-                                         1, )
-ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
-                                         1, )
+ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, 8, COLOR_PEER,
+                                         COLOR_COND, )
+ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, COLOR_PEER,
+                                         COLOR_COND, )
 ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(shift_exchange, 8, SHIFT_PEER, 1, _nbi)
 ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(shift_exchange, 8, SHIFT_PEER, 1, _nbi)
-ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, 8, SHIFT_PEER,
+ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(xor_pairwise_exchange, 8, XOR_PEER,
                                          XOR_COND, _nbi)
-ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, 8, SHIFT_PEER,
+ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(xor_pairwise_exchange, 8, XOR_PEER,
                                          XOR_COND, _nbi)
-ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
-                                         1, _nbi)
-ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
-                                         1, _nbi)
+ALLTOALLS_SIZE_HELPER_BARRIER_DEFINITION(color_pairwise_exchange, 8, COLOR_PEER,
+                                         COLOR_COND, _nbi)
+ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, COLOR_PEER,
+                                         COLOR_COND, _nbi)
 
 /**
  * @brief Helper macro to define type-specific alltoalls implementation
@@ -319,6 +324,8 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
  * @param _algo Algorithm name
  * @param _type Data type
  * @param _typename Type name string
+ *
+ * TODO: this sucks. make it better.
  */
 #define SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, _type, _typename)               \
   int shcoll_##_typename##_alltoalls_##_algo(                                   \
@@ -340,18 +347,16 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
     /* Calculate log2 stride */                                                 \
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;            \
     const size_t element_size_bytes = sizeof(_type);                            \
-    const size_t total_extent_bytes = element_size_bytes * nelems * PE_size;    \
+    const size_t total_extent_bytes =                                           \
+        element_size_bytes * nelems * team_h->nranks;                           \
     SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                           \
     SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                         \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes,               \
                                 total_extent_bytes);                            \
                                                                                 \
     /* Allocate pSync from symmetric heap */                                    \
-    long *pSync = team_h->pSyncs[3];                                            \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[3]");                              \
-                                                                                \
-    /* Ensure pSync is initialized and previous ops are complete */             \
-    shmem_team_sync(team); /* Barrier before starting */                        \
+    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL);         \
+    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[ALLTOALL]");                       \
                                                                                 \
     /* Call the appropriate size-specific helper */ /* Determine size and call  \
                                                      * the correct              \
@@ -360,21 +365,16 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
                                                      */                         \
     if (element_size_bytes == 8) {                                              \
       shcoll_alltoalls64_##_algo(dest, source, dst, sst, nelems, PE_start,      \
-                                 logPE_stride, PE_size, pSync);                 \
+                                 logPE_stride, team_h->nranks, pSync);          \
     } else if (element_size_bytes == 4) {                                       \
       shcoll_alltoalls32_##_algo(dest, source, dst, sst, nelems, PE_start,      \
-                                 logPE_stride, PE_size, pSync);                 \
+                                 logPE_stride, team_h->nranks, pSync);          \
     } else {                                                                    \
-      /* Fallback: Byte-wise operation for other sizes                          \
-      (e.g., long double) */ /* Needs careful implementation
-      based on _algo for sync */                    \
       const char *src_bytes = (const char *)source;                             \
       char *dest_bytes = (char *)dest;                                          \
       const ptrdiff_t sst_bytes = sst * element_size_bytes;                     \
-      const ptrdiff_t dst_bytes =                                               \
-          dst * element_size_bytes; /* const int me_as = (shmem_my_pe() -       \
-                                       PE_start) / stride; */                   \
-      const int me_as = shmem_team_my_pe(team);                                 \
+      const ptrdiff_t dst_bytes = dst * element_size_bytes;                     \
+      const int me_as = team_h->rank;                                           \
                                                                                 \
       /* 1. Local Copy (byte by byte respecting strides) */                     \
       for (size_t k = 0; k < nelems; ++k) {                                     \
@@ -405,11 +405,9 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
       shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);     \
     }                                                                           \
                                                                                 \
-    /* Ensure completion across the team */                                     \
-    shmem_team_sync(team); /* Barrier after finishing */                        \
     /* Reset the pSync buffer */                                                \
-    shmemc_team_reset_psync(team_h, 3);                                         \
-    return SHMEM_SUCCESS;                                                       \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_ALLTOALL);                     \
+    return 0;                                                                   \
   }
 
 /**
@@ -417,38 +415,20 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
  *
  * @param _algo Algorithm name to generate implementations for
  */
-#define DEFINE_SHCOLL_ALLTOALLS_TYPES(_algo)                                   \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, float, float)                        \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, double, double)                      \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, long double, longdouble)             \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, char, char)                          \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, signed char, schar)                  \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, short, short)                        \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int, int)                            \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, long, long)                          \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, long long, longlong)                 \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned char, uchar)                \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned short, ushort)              \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned int, uint)                  \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned long, ulong)                \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, unsigned long long, ulonglong)       \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int8_t, int8)                        \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int16_t, int16)                      \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int32_t, int32)                      \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, int64_t, int64)                      \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint8_t, uint8)                      \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint16_t, uint16)                    \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint32_t, uint32)                    \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, uint64_t, uint64)                    \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, size_t, size)                        \
-  SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, ptrdiff_t, ptrdiff)
+#define DEFINE_ALLTOALLS_TYPES(_type, _typename)                               \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(shift_exchange_barrier, _type, _typename)   \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(shift_exchange_counter, _type, _typename)   \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(xor_pairwise_exchange_barrier, _type,       \
+                                   _typename)                                  \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(xor_pairwise_exchange_counter, _type,       \
+                                   _typename)                                  \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(color_pairwise_exchange_barrier, _type,     \
+                                   _typename)                                  \
+  SHCOLL_ALLTOALLS_TYPE_DEFINITION(color_pairwise_exchange_counter, _type,     \
+                                   _typename)
 
-DEFINE_SHCOLL_ALLTOALLS_TYPES(shift_exchange_barrier)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(shift_exchange_counter)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(xor_pairwise_exchange_barrier)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(xor_pairwise_exchange_counter)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_barrier)
-DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_ALLTOALLS_TYPES)
+#undef DEFINE_ALLTOALLS_TYPES
 
 /**
  * @brief Define generic memory alltoalls implementations
@@ -460,74 +440,50 @@ DEFINE_SHCOLL_ALLTOALLS_TYPES(color_pairwise_exchange_counter)
   int shcoll_alltoallsmem_##_algo(shmem_team_t team, void *dest,               \
                                   const void *source, ptrdiff_t dst,           \
                                   ptrdiff_t sst, size_t nelems) {              \
-    /* Check initialization */                                                 \
     SHMEMU_CHECK_INIT();                                                       \
-                                                                               \
-    /* Check team validity and cast to internal handle */                      \
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
-    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
-                                                                               \
-    /* Check for NULL pointers */                                              \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
     SHMEMU_CHECK_NULL(source, "source");                                       \
+    SHMEMU_CHECK_TEAM_STRIDE(team_h->stride, __func__);                        \
                                                                                \
-    /* Get team parameters */                                                  \
-    const int PE_size = team_h->nranks;                                        \
-    const int PE_start = team_h->start;         /* Use stored start */         \
-    const int stride = team_h->stride;          /* Use stored stride */        \
-    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__); /* Check stride if DEBUG */    \
-                                                                               \
-    /* Check buffer symmetry */                                                \
     size_t element_size_bytes = 0;                                             \
     if (dst != 0 && sst != 0) {                                                \
-      /* Calculate element size from strides */                                \
       element_size_bytes = (dst > 0) ? dst : -dst;                             \
     } else {                                                                   \
-      /* Default to byte-wise operation */                                     \
       element_size_bytes = 1;                                                  \
     }                                                                          \
                                                                                \
-    /* Validate symmetric memory */                                            \
-    SHMEMU_CHECK_SYMMETRIC(dest, nelems *element_size_bytes *PE_size);         \
-    SHMEMU_CHECK_SYMMETRIC(source, nelems *element_size_bytes *PE_size);       \
-                                                                               \
-    /* Check for overlap between source and destination */                     \
+    SHMEMU_CHECK_SYMMETRIC(dest,                                               \
+                           nelems * element_size_bytes * team_h->nranks);      \
+    SHMEMU_CHECK_SYMMETRIC(source,                                             \
+                           nelems * element_size_bytes * team_h->nranks);      \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
-                                nelems *element_size_bytes *PE_size,           \
-                                nelems *element_size_bytes *PE_size);          \
-                                                                               \
-    /* Use the pre-allocated pSync buffer from the team structure */           \
-    long *pSync = team_h->pSyncs[3];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[3]");                             \
-                                                                               \
-    /* Ensure pSync is initialized (potentially redundant but safe) */         \
-    shmem_team_sync(team); /* Barrier before starting */                       \
-                                                                               \
-    /* Calculate log2 stride, assuming stride is valid */                      \
-    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
-                                                                               \
-    /* Call the appropriate sized implementation based on element size */      \
+                                nelems * element_size_bytes * team_h->nranks,  \
+                                nelems * element_size_bytes * team_h->nranks); \
+    SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL),    \
+                      "team_h->pSyncs[ALLTOALL]");                             \
     if (element_size_bytes == 8) {                                             \
-      shcoll_alltoalls64_##_algo(dest, source, dst, sst, nelems, PE_start,     \
-                                 logPE_stride, PE_size, pSync);                \
+      shcoll_alltoalls64_##_algo(                                              \
+          dest, source, dst, sst, nelems, team_h->start,                       \
+          (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,        \
+          team_h->nranks,                                                      \
+          shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL));               \
     } else if (element_size_bytes == 4) {                                      \
-      shcoll_alltoalls32_##_algo(dest, source, dst, sst, nelems, PE_start,     \
-                                 logPE_stride, PE_size, pSync);                \
+      shcoll_alltoalls32_##_algo(                                              \
+          dest, source, dst, sst, nelems, team_h->start,                       \
+          (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,        \
+          team_h->nranks,                                                      \
+          shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL));               \
     } else {                                                                   \
-      /* Fallback: Byte-wise operation for other sizes (e.g., long double) */  \
-      /* Needs careful implementation based on _algo for sync */               \
-      /* For simplicity, we'll use the 8-bit version and adjust nelems */      \
-      /* This is less efficient but handles arbitrary element sizes */         \
-      shcoll_alltoalls8_##_algo(dest, source, dst, sst, nelems, PE_start,      \
-                                logPE_stride, PE_size, pSync);                 \
+      shcoll_alltoalls8_##_algo(                                               \
+          dest, source, dst, sst, nelems, team_h->start,                       \
+          (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,        \
+          team_h->nranks,                                                      \
+          shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL));               \
     }                                                                          \
-                                                                               \
-    /* Final barrier to ensure completion */                                   \
-    shmem_team_sync(team); /* Barrier after finishing */                       \
-    /* Reset the pSync buffer */                                               \
-    shmemc_team_reset_psync(team_h, 3);                                        \
-                                                                               \
-    return SHMEM_SUCCESS;                                                      \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_ALLTOALL);                    \
+    return 0;                                                                  \
   }
 
 /* Define the actual functions */

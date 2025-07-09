@@ -14,6 +14,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_int_atomic_compare_swap_nbi =                               \
@@ -81,18 +82,12 @@
                                             sizeof(value), pe, fetch));        \
   }
 
-SHMEM_CTX_TYPE_CSWAP_NBI(int, int)
-SHMEM_CTX_TYPE_CSWAP_NBI(long, long)
-SHMEM_CTX_TYPE_CSWAP_NBI(longlong, long long)
-SHMEM_CTX_TYPE_CSWAP_NBI(uint, unsigned int)
-SHMEM_CTX_TYPE_CSWAP_NBI(ulong, unsigned long)
-SHMEM_CTX_TYPE_CSWAP_NBI(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_CSWAP_NBI(int32, int32_t)
-SHMEM_CTX_TYPE_CSWAP_NBI(int64, int64_t)
-SHMEM_CTX_TYPE_CSWAP_NBI(uint32, uint32_t)
-SHMEM_CTX_TYPE_CSWAP_NBI(uint64, uint64_t)
-SHMEM_CTX_TYPE_CSWAP_NBI(size, size_t)
-SHMEM_CTX_TYPE_CSWAP_NBI(ptrdiff, ptrdiff_t)
+/* Define context-based non-blocking atomic compare-and-swap operations using
+ * the type table */
+#define SHMEM_CTX_TYPE_CSWAP_NBI_HELPER(_type, _typename)                      \
+  SHMEM_CTX_TYPE_CSWAP_NBI(_typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_CSWAP_NBI_HELPER)
+#undef SHMEM_CTX_TYPE_CSWAP_NBI_HELPER
 
 /**
  * @brief Define non-blocking atomic compare-and-swap operations without
@@ -102,15 +97,7 @@ SHMEM_CTX_TYPE_CSWAP_NBI(ptrdiff, ptrdiff_t)
  * integer types using the default context. These operations atomically compare
  * a value with a remote variable and swap it with a new value if they match.
  */
-API_DEF_AMO3_NBI(compare_swap, int, int)
-API_DEF_AMO3_NBI(compare_swap, long, long)
-API_DEF_AMO3_NBI(compare_swap, longlong, long long)
-API_DEF_AMO3_NBI(compare_swap, uint, unsigned int)
-API_DEF_AMO3_NBI(compare_swap, ulong, unsigned long)
-API_DEF_AMO3_NBI(compare_swap, ulonglong, unsigned long long)
-API_DEF_AMO3_NBI(compare_swap, int32, int32_t)
-API_DEF_AMO3_NBI(compare_swap, int64, int64_t)
-API_DEF_AMO3_NBI(compare_swap, uint32, uint32_t)
-API_DEF_AMO3_NBI(compare_swap, uint64, uint64_t)
-API_DEF_AMO3_NBI(compare_swap, size, size_t)
-API_DEF_AMO3_NBI(compare_swap, ptrdiff, ptrdiff_t)
+#define API_DEF_AMO3_NBI_HELPER(_type, _typename)                              \
+  API_DEF_AMO3_NBI(compare_swap, _typename, _type)
+SHMEM_STANDARD_AMO_TYPE_TABLE(API_DEF_AMO3_NBI_HELPER)
+#undef API_DEF_AMO3_NBI_HELPER

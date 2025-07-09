@@ -108,7 +108,7 @@ static void dump_team(shmemc_team_h th) {
 static void initialize_psync_buffers(shmemc_team_h th) {
   unsigned nsync;
 
-  /* 
+  /*
    * Use appropriate sync sizes for different collective operations:
    * pSyncs[0]: For team sync/barrier (SHMEM_BARRIER_SYNC_SIZE)
    * pSyncs[1]: For broadcast operations (SHMEM_BCAST_SYNC_SIZE)
@@ -117,11 +117,12 @@ static void initialize_psync_buffers(shmemc_team_h th) {
    * pSyncs[4]: For reduction operations (SHMEM_REDUCE_SYNC_SIZE)
    */
   const size_t sync_sizes[SHMEMC_NUM_PSYNCS] = {
-    SHMEM_BARRIER_SYNC_SIZE,    /* pSyncs[0] for team sync/barrier */
-    SHMEM_BCAST_SYNC_SIZE,      /* pSyncs[1] for broadcast operations */
-    SHMEM_COLLECT_SYNC_SIZE,    /* pSyncs[2] for collect/fcollect operations */
-    SHMEM_ALLTOALL_SYNC_SIZE,   /* pSyncs[3] for alltoall/alltoalls operations */
-    SHMEM_REDUCE_SYNC_SIZE      /* pSyncs[4] for reduction operations */
+      SHMEM_BARRIER_SYNC_SIZE,  /* pSyncs[0] for team sync/barrier */
+      SHMEM_BCAST_SYNC_SIZE,    /* pSyncs[1] for broadcast operations */
+      SHMEM_COLLECT_SYNC_SIZE,  /* pSyncs[2] for collect/fcollect operations */
+      SHMEM_ALLTOALL_SYNC_SIZE, /* pSyncs[3] for alltoall/alltoalls operations
+                                 */
+      SHMEM_REDUCE_SYNC_SIZE    /* pSyncs[4] for reduction operations */
   };
 
   for (nsync = 0; nsync < SHMEMC_NUM_PSYNCS; ++nsync) {
@@ -131,15 +132,14 @@ static void initialize_psync_buffers(shmemc_team_h th) {
     th->pSyncs[nsync] = (long *)shmema_malloc(nbytes);
 
     shmemu_assert(th->pSyncs[nsync] != NULL,
-                 MODULE ": can't allocate sync memory "
-                        "#%u in %s team (%p)",
-                 nsync, th->parent == NULL ? th->name : "created", th);
+                  MODULE ": can't allocate sync memory "
+                         "#%u in %s team (%p)",
+                  nsync, th->parent == NULL ? th->name : "created", th);
 
     for (i = 0; i < sync_sizes[nsync]; ++i) {
       th->pSyncs[nsync][i] = SHMEM_SYNC_VALUE;
     }
   }
-
 }
 
 /**
@@ -159,33 +159,34 @@ int shmemc_team_reset_psync(shmemc_team_h th, unsigned psync_idx) {
     shmemu_warn("shmemc_team_reset_psync: Invalid team handle (NULL)");
     return -1;
   }
-  
+
   if (psync_idx >= SHMEMC_NUM_PSYNCS) {
     shmemu_warn("shmemc_team_reset_psync: Invalid pSync index %u (max %u)",
                 psync_idx, SHMEMC_NUM_PSYNCS - 1);
     return -1;
   }
-  
+
   if (th->pSyncs[psync_idx] == NULL) {
-    shmemu_warn("shmemc_team_reset_psync: pSync buffer at index %u is NULL", 
+    shmemu_warn("shmemc_team_reset_psync: pSync buffer at index %u is NULL",
                 psync_idx);
     return -1;
   }
-  
+
   /* Get the appropriate size for this pSync buffer */
   const size_t sync_sizes[SHMEMC_NUM_PSYNCS] = {
-    SHMEM_BARRIER_SYNC_SIZE,    /* pSyncs[0] for team sync/barrier */
-    SHMEM_BCAST_SYNC_SIZE,      /* pSyncs[1] for broadcast operations */
-    SHMEM_COLLECT_SYNC_SIZE,    /* pSyncs[2] for collect/fcollect operations */
-    SHMEM_ALLTOALL_SYNC_SIZE,   /* pSyncs[3] for alltoall/alltoalls operations */
-    SHMEM_REDUCE_SYNC_SIZE      /* pSyncs[4] for reduction operations */
+      SHMEM_BARRIER_SYNC_SIZE,  /* pSyncs[0] for team sync/barrier */
+      SHMEM_BCAST_SYNC_SIZE,    /* pSyncs[1] for broadcast operations */
+      SHMEM_COLLECT_SYNC_SIZE,  /* pSyncs[2] for collect/fcollect operations */
+      SHMEM_ALLTOALL_SYNC_SIZE, /* pSyncs[3] for alltoall/alltoalls operations
+                                 */
+      SHMEM_REDUCE_SYNC_SIZE    /* pSyncs[4] for reduction operations */
   };
-  
+
   /* Reset all elements to SHMEM_SYNC_VALUE */
   for (size_t i = 0; i < sync_sizes[psync_idx]; i++) {
     th->pSyncs[psync_idx][i] = SHMEM_SYNC_VALUE;
   }
-  
+
   return 0;
 }
 
@@ -202,6 +203,39 @@ static void finalize_psync_buffers(shmemc_team_h th) {
   for (nsync = 0; nsync < SHMEMC_NUM_PSYNCS; ++nsync) {
     shmema_free(th->pSyncs[nsync]);
   }
+}
+
+/**
+ * @brief Get the appropriate pSync buffer for a collective operation
+ *
+ * Returns a pointer to the pSync buffer associated with the specified
+ * collective operation type for the given team.
+ *
+ * @param th Team handle
+ * @param psync_type Type of collective operation (SHMEMC_PSYNC_*)
+ * @return Pointer to pSync buffer, or NULL if invalid
+ */
+long *shmemc_team_get_psync(shmemc_team_h th, int psync_type) {
+  /* Validate parameters */
+  if (th == NULL) {
+    shmemu_warn("shmemc_team_get_psync: Invalid team handle (NULL)");
+    return NULL;
+  }
+
+  if (psync_type < 0 || psync_type >= SHMEMC_NUM_PSYNCS) {
+    shmemu_warn(
+        "shmemc_team_get_psync: Invalid pSync type %d (valid range: 0-%d)",
+        psync_type, SHMEMC_NUM_PSYNCS - 1);
+    return NULL;
+  }
+
+  if (th->pSyncs[psync_type] == NULL) {
+    shmemu_warn("shmemc_team_get_psync: pSync buffer for type %d is NULL",
+                psync_type);
+    return NULL;
+  }
+
+  return th->pSyncs[psync_type];
 }
 
 /**
@@ -483,21 +517,28 @@ int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,
   for (i = 0; i < size; ++i) {
     khint_t k;
 
+    /* Get the parent PE at position 'walk' */
     k = kh_get(map, parh->fwd, walk);
-    const int up = kh_val(parh->fwd, k);
+    if (k == kh_end(parh->fwd)) {
+      /* This shouldn't happen if parameters are valid */
+      shmemu_warn("Parent PE %d not found in forward map", walk);
+      free(newt);
+      *newh = SHMEM_TEAM_INVALID;
+      return -1;
+    }
 
-    /* Check if this PE is part of the team */
-    if (is_member(up, start, size)) {
-      k = kh_put(map, newt->fwd, i, &absent);
-      kh_val(newt->fwd, k) = up;
+    const int global_pe = kh_val(parh->fwd, k);
 
-      k = kh_put(map, newt->rev, up, &absent);
-      kh_val(newt->rev, k) = i;
+    /* Add this PE to the new team mapping */
+    k = kh_put(map, newt->fwd, i, &absent);
+    kh_val(newt->fwd, k) = global_pe;
 
-      /* If this is me, set my rank in the team */
-      if (up == proc.li.rank) {
-        newt->rank = i;
-      }
+    k = kh_put(map, newt->rev, global_pe, &absent);
+    kh_val(newt->rev, k) = i;
+
+    /* If this global PE is me, set my rank in the team */
+    if (global_pe == proc.li.rank) {
+      newt->rank = i;
     }
 
     walk += stride;

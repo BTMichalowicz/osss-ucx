@@ -17,6 +17,8 @@
 #include "collectives/table.h"
 #include "shmem/teams.h"
 
+#include "shmem/api_types.h"
+
 /**
  * @brief Helper macro to register collective operations
  * @param _cname Name of the collective operation to register
@@ -188,30 +190,11 @@ void collectives_finalize(void) { return; }
     TYPED_CALL(alltoall_type, #_typename, team, dest, source, nelems);         \
   }
 
-SHMEM_TYPENAME_ALLTOALL(float, float)
-SHMEM_TYPENAME_ALLTOALL(double, double)
-SHMEM_TYPENAME_ALLTOALL(long double, longdouble)
-SHMEM_TYPENAME_ALLTOALL(char, char)
-SHMEM_TYPENAME_ALLTOALL(signed char, schar)
-SHMEM_TYPENAME_ALLTOALL(short, short)
-SHMEM_TYPENAME_ALLTOALL(int, int)
-SHMEM_TYPENAME_ALLTOALL(long, long)
-SHMEM_TYPENAME_ALLTOALL(long long, longlong)
-SHMEM_TYPENAME_ALLTOALL(unsigned char, uchar)
-SHMEM_TYPENAME_ALLTOALL(unsigned short, ushort)
-SHMEM_TYPENAME_ALLTOALL(unsigned int, uint)
-SHMEM_TYPENAME_ALLTOALL(unsigned long, ulong)
-SHMEM_TYPENAME_ALLTOALL(unsigned long long, ulonglong)
-SHMEM_TYPENAME_ALLTOALL(int8_t, int8)
-SHMEM_TYPENAME_ALLTOALL(int16_t, int16)
-SHMEM_TYPENAME_ALLTOALL(int32_t, int32)
-SHMEM_TYPENAME_ALLTOALL(int64_t, int64)
-SHMEM_TYPENAME_ALLTOALL(uint8_t, uint8)
-SHMEM_TYPENAME_ALLTOALL(uint16_t, uint16)
-SHMEM_TYPENAME_ALLTOALL(uint32_t, uint32)
-SHMEM_TYPENAME_ALLTOALL(uint64_t, uint64)
-SHMEM_TYPENAME_ALLTOALL(size_t, size)
-SHMEM_TYPENAME_ALLTOALL(ptrdiff_t, ptrdiff)
+#define DECL_SHIM_ALLTOALL(_type, _typename)                                   \
+  SHMEM_TYPENAME_ALLTOALL(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_ALLTOALL)
+#undef DECL_SHIM_ALLTOALL
+#undef SHMEM_TYPENAME_ALLTOALL
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_alltoallmem = pshmem_alltoallmem
@@ -338,30 +321,11 @@ void shmem_alltoall64(void *target, const void *source, size_t nelems,
                nelems);                                                        \
   }
 
-SHMEM_TYPENAME_ALLTOALLS(float, float)
-SHMEM_TYPENAME_ALLTOALLS(double, double)
-SHMEM_TYPENAME_ALLTOALLS(long double, longdouble)
-SHMEM_TYPENAME_ALLTOALLS(char, char)
-SHMEM_TYPENAME_ALLTOALLS(signed char, schar)
-SHMEM_TYPENAME_ALLTOALLS(short, short)
-SHMEM_TYPENAME_ALLTOALLS(int, int)
-SHMEM_TYPENAME_ALLTOALLS(long, long)
-SHMEM_TYPENAME_ALLTOALLS(long long, longlong)
-SHMEM_TYPENAME_ALLTOALLS(unsigned char, uchar)
-SHMEM_TYPENAME_ALLTOALLS(unsigned short, ushort)
-SHMEM_TYPENAME_ALLTOALLS(unsigned int, uint)
-SHMEM_TYPENAME_ALLTOALLS(unsigned long, ulong)
-SHMEM_TYPENAME_ALLTOALLS(unsigned long long, ulonglong)
-SHMEM_TYPENAME_ALLTOALLS(int8_t, int8)
-SHMEM_TYPENAME_ALLTOALLS(int16_t, int16)
-SHMEM_TYPENAME_ALLTOALLS(int32_t, int32)
-SHMEM_TYPENAME_ALLTOALLS(int64_t, int64)
-SHMEM_TYPENAME_ALLTOALLS(uint8_t, uint8)
-SHMEM_TYPENAME_ALLTOALLS(uint16_t, uint16)
-SHMEM_TYPENAME_ALLTOALLS(uint32_t, uint32)
-SHMEM_TYPENAME_ALLTOALLS(uint64_t, uint64)
-SHMEM_TYPENAME_ALLTOALLS(size_t, size)
-SHMEM_TYPENAME_ALLTOALLS(ptrdiff_t, ptrdiff)
+#define DECL_SHIM_ALLTOALLS(_type, _typename)                                  \
+  SHMEM_TYPENAME_ALLTOALLS(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_ALLTOALLS)
+#undef DECL_SHIM_ALLTOALLS
+#undef SHMEM_TYPENAME_ALLTOALLS
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_alltoallsmem = pshmem_alltoallsmem
@@ -512,30 +476,11 @@ void shmem_alltoalls64(void *target, const void *source, ptrdiff_t dst,
     TYPED_CALL(collect_type, #_typename, team, dest, source, nelems);          \
   }
 
-SHMEM_TYPENAME_COLLECT(float, float)
-SHMEM_TYPENAME_COLLECT(double, double)
-SHMEM_TYPENAME_COLLECT(long double, longdouble)
-SHMEM_TYPENAME_COLLECT(char, char)
-SHMEM_TYPENAME_COLLECT(signed char, schar)
-SHMEM_TYPENAME_COLLECT(short, short)
-SHMEM_TYPENAME_COLLECT(int, int)
-SHMEM_TYPENAME_COLLECT(long, long)
-SHMEM_TYPENAME_COLLECT(long long, longlong)
-SHMEM_TYPENAME_COLLECT(unsigned char, uchar)
-SHMEM_TYPENAME_COLLECT(unsigned short, ushort)
-SHMEM_TYPENAME_COLLECT(unsigned int, uint)
-SHMEM_TYPENAME_COLLECT(unsigned long, ulong)
-SHMEM_TYPENAME_COLLECT(unsigned long long, ulonglong)
-SHMEM_TYPENAME_COLLECT(int8_t, int8)
-SHMEM_TYPENAME_COLLECT(int16_t, int16)
-SHMEM_TYPENAME_COLLECT(int32_t, int32)
-SHMEM_TYPENAME_COLLECT(int64_t, int64)
-SHMEM_TYPENAME_COLLECT(uint8_t, uint8)
-SHMEM_TYPENAME_COLLECT(uint16_t, uint16)
-SHMEM_TYPENAME_COLLECT(uint32_t, uint32)
-SHMEM_TYPENAME_COLLECT(uint64_t, uint64)
-SHMEM_TYPENAME_COLLECT(size_t, size)
-SHMEM_TYPENAME_COLLECT(ptrdiff_t, ptrdiff)
+#define DECL_SHIM_COLLECT(_type, _typename)                                    \
+  SHMEM_TYPENAME_COLLECT(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_COLLECT)
+#undef DECL_SHIM_COLLECT
+#undef SHMEM_TYPENAME_COLLECT
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_collectmem = pshmem_collectmem
@@ -678,30 +623,11 @@ void shmem_collect64(void *target, const void *source, size_t nelems,
     TYPED_CALL(fcollect_type, #_typename, team, dest, source, nelems);         \
   }
 
-SHMEM_TYPENAME_FCOLLECT(float, float)
-SHMEM_TYPENAME_FCOLLECT(double, double)
-SHMEM_TYPENAME_FCOLLECT(long double, longdouble)
-SHMEM_TYPENAME_FCOLLECT(char, char)
-SHMEM_TYPENAME_FCOLLECT(signed char, schar)
-SHMEM_TYPENAME_FCOLLECT(short, short)
-SHMEM_TYPENAME_FCOLLECT(int, int)
-SHMEM_TYPENAME_FCOLLECT(long, long)
-SHMEM_TYPENAME_FCOLLECT(long long, longlong)
-SHMEM_TYPENAME_FCOLLECT(unsigned char, uchar)
-SHMEM_TYPENAME_FCOLLECT(unsigned short, ushort)
-SHMEM_TYPENAME_FCOLLECT(unsigned int, uint)
-SHMEM_TYPENAME_FCOLLECT(unsigned long, ulong)
-SHMEM_TYPENAME_FCOLLECT(unsigned long long, ulonglong)
-SHMEM_TYPENAME_FCOLLECT(int8_t, int8)
-SHMEM_TYPENAME_FCOLLECT(int16_t, int16)
-SHMEM_TYPENAME_FCOLLECT(int32_t, int32)
-SHMEM_TYPENAME_FCOLLECT(int64_t, int64)
-SHMEM_TYPENAME_FCOLLECT(uint8_t, uint8)
-SHMEM_TYPENAME_FCOLLECT(uint16_t, uint16)
-SHMEM_TYPENAME_FCOLLECT(uint32_t, uint32)
-SHMEM_TYPENAME_FCOLLECT(uint64_t, uint64)
-SHMEM_TYPENAME_FCOLLECT(size_t, size)
-SHMEM_TYPENAME_FCOLLECT(ptrdiff_t, ptrdiff)
+#define DECL_SHIM_FCOLLECT(_type, _typename)                                   \
+  SHMEM_TYPENAME_FCOLLECT(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_FCOLLECT)
+#undef DECL_SHIM_FCOLLECT
+#undef SHMEM_TYPENAME_FCOLLECT
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_fcollectmem = pshmem_fcollectmem
@@ -848,30 +774,11 @@ void shmem_fcollect64(void *target, const void *source, size_t nelems,
                PE_root);                                                       \
   }
 
-SHMEM_TYPENAME_BROADCAST(float, float)
-SHMEM_TYPENAME_BROADCAST(double, double)
-SHMEM_TYPENAME_BROADCAST(long double, longdouble)
-SHMEM_TYPENAME_BROADCAST(char, char)
-SHMEM_TYPENAME_BROADCAST(signed char, schar)
-SHMEM_TYPENAME_BROADCAST(short, short)
-SHMEM_TYPENAME_BROADCAST(int, int)
-SHMEM_TYPENAME_BROADCAST(long, long)
-SHMEM_TYPENAME_BROADCAST(long long, longlong)
-SHMEM_TYPENAME_BROADCAST(unsigned char, uchar)
-SHMEM_TYPENAME_BROADCAST(unsigned short, ushort)
-SHMEM_TYPENAME_BROADCAST(unsigned int, uint)
-SHMEM_TYPENAME_BROADCAST(unsigned long, ulong)
-SHMEM_TYPENAME_BROADCAST(unsigned long long, ulonglong)
-SHMEM_TYPENAME_BROADCAST(int8_t, int8)
-SHMEM_TYPENAME_BROADCAST(int16_t, int16)
-SHMEM_TYPENAME_BROADCAST(int32_t, int32)
-SHMEM_TYPENAME_BROADCAST(int64_t, int64)
-SHMEM_TYPENAME_BROADCAST(uint8_t, uint8)
-SHMEM_TYPENAME_BROADCAST(uint16_t, uint16)
-SHMEM_TYPENAME_BROADCAST(uint32_t, uint32)
-SHMEM_TYPENAME_BROADCAST(uint64_t, uint64)
-SHMEM_TYPENAME_BROADCAST(size_t, size)
-SHMEM_TYPENAME_BROADCAST(ptrdiff_t, ptrdiff)
+#define DECL_SHIM_BROADCAST(_type, _typename)                                  \
+  SHMEM_TYPENAME_BROADCAST(_type, _typename)
+SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_BROADCAST)
+#undef DECL_SHIM_BROADCAST
+#undef SHMEM_TYPENAME_BROADCAST
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_broadcastmem = pshmem_broadcastmem
@@ -994,15 +901,23 @@ void shmem_broadcast64(void *target, const void *source, size_t nelems,
 #define shmem_short_xor_to_all pshmem_short_xor_to_all
 #endif /* ENABLE_PSHMEM */
 
-#define SHIM_TO_ALL_BITWISE_TYPES(_op)                                         \
-  SHMEM_TYPENAME_OP_TO_ALL(short, short, _op)                                  \
-  SHMEM_TYPENAME_OP_TO_ALL(int, int, _op)                                      \
-  SHMEM_TYPENAME_OP_TO_ALL(long, long, _op)                                    \
-  SHMEM_TYPENAME_OP_TO_ALL(longlong, long long, _op)
+/* shmem_and_to_all */
+#define DECL_SHIM_AND_TO_ALL(_typename, _type)                                 \
+  SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, and)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_SHIM_AND_TO_ALL)
+#undef DECL_SHIM_AND_TO_ALL
 
-SHIM_TO_ALL_BITWISE_TYPES(and)
-SHIM_TO_ALL_BITWISE_TYPES(or)
-SHIM_TO_ALL_BITWISE_TYPES(xor)
+/* shmem_or_to_all */
+#define DECL_SHIM_OR_TO_ALL(_typename, _type)                                  \
+  SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, or)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_SHIM_OR_TO_ALL)
+#undef DECL_SHIM_OR_TO_ALL
+
+/* shmem_xor_to_all */
+#define DECL_SHIM_XOR_TO_ALL(_typename, _type)                                 \
+  SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, xor)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECL_SHIM_XOR_TO_ALL)
+#undef DECL_SHIM_XOR_TO_ALL
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_int_max_to_all = pshmem_int_max_to_all
@@ -1035,23 +950,23 @@ SHIM_TO_ALL_BITWISE_TYPES(xor)
 #define shmem_double_min_to_all pshmem_double_min_to_all
 #endif /* ENABLE_PSHMEM */
 
-#define SHIM_TO_ALL_MINMAX_TYPES(_op)                                          \
-  SHMEM_TYPENAME_OP_TO_ALL(short, short, _op)                                  \
-  SHMEM_TYPENAME_OP_TO_ALL(int, int, _op)                                      \
-  SHMEM_TYPENAME_OP_TO_ALL(long, long, _op)                                    \
-  SHMEM_TYPENAME_OP_TO_ALL(longlong, long long, _op)                           \
-  SHMEM_TYPENAME_OP_TO_ALL(double, double, _op)                                \
-  SHMEM_TYPENAME_OP_TO_ALL(float, float, _op)                                  \
-  SHMEM_TYPENAME_OP_TO_ALL(longdouble, long double, _op)
+/* shmem_min_to_all */
+#define DECL_SHIM_MIN_TO_ALL(_typename, _type)                                 \
+  SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, min)
+SHMEM_TO_ALL_MINMAX_TYPE_TABLE(DECL_SHIM_MIN_TO_ALL)
+#undef DECL_SHIM_MIN_TO_ALL
 
-SHIM_TO_ALL_MINMAX_TYPES(max)
-SHIM_TO_ALL_MINMAX_TYPES(min)
+/* shmem_max_to_all */
+#define DECL_SHIM_MAX_TO_ALL(_typename, _type)                                 \
+  SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, max)
+SHMEM_TO_ALL_MINMAX_TYPE_TABLE(DECL_SHIM_MAX_TO_ALL)
+#undef DECL_SHIM_MAX_TO_ALL
 
 #ifdef ENABLE_PSHMEM
-#pragma weak shmem_complexd_sum_to_all = pshmem_complexd_sum_to_all
-#define shmem_complexd_sum_to_all pshmem_complexd_sum_to_all
-#pragma weak shmem_complexf_sum_to_all = pshmem_complexf_sum_to_all
-#define shmem_complexf_sum_to_all pshmem_complexf_sum_to_all
+// #pragma weak shmem_complexd_sum_to_all = pshmem_complexd_sum_to_all
+// #define shmem_complexd_sum_to_all pshmem_complexd_sum_to_all
+// #pragma weak shmem_complexf_sum_to_all = pshmem_complexf_sum_to_all
+// #define shmem_complexf_sum_to_all pshmem_complexf_sum_to_all
 #pragma weak shmem_double_sum_to_all = pshmem_double_sum_to_all
 #define shmem_double_sum_to_all pshmem_double_sum_to_all
 #pragma weak shmem_float_sum_to_all = pshmem_float_sum_to_all
@@ -1066,10 +981,10 @@ SHIM_TO_ALL_MINMAX_TYPES(min)
 #define shmem_longlong_sum_to_all pshmem_longlong_sum_to_all
 #pragma weak shmem_short_sum_to_all = pshmem_short_sum_to_all
 #define shmem_short_sum_to_all pshmem_short_sum_to_all
-#pragma weak shmem_complexd_prod_to_all = pshmem_complexd_prod_to_all
-#define shmem_complexd_prod_to_all pshmem_complexd_prod_to_all
-#pragma weak shmem_complexf_prod_to_all = pshmem_complexf_prod_to_all
-#define shmem_complexf_prod_to_all pshmem_complexf_prod_to_all
+// #pragma weak shmem_complexd_prod_to_all = pshmem_complexd_prod_to_all
+// #define shmem_complexd_prod_to_all pshmem_complexd_prod_to_all
+// #pragma weak shmem_complexf_prod_to_all = pshmem_complexf_prod_to_all
+// #define shmem_complexf_prod_to_all pshmem_complexf_prod_to_all
 #pragma weak shmem_double_prod_to_all = pshmem_double_prod_to_all
 #define shmem_double_prod_to_all pshmem_double_prod_to_all
 #pragma weak shmem_float_prod_to_all = pshmem_float_prod_to_all
@@ -1086,19 +1001,19 @@ SHIM_TO_ALL_MINMAX_TYPES(min)
 #define shmem_short_prod_to_all pshmem_short_prod_to_all
 #endif /* ENABLE_PSHMEM */
 
-#define SHIM_TO_ALL_ARITH_TYPES(_op)                                           \
-  SHMEM_TYPENAME_OP_TO_ALL(short, short, _op)                                  \
-  SHMEM_TYPENAME_OP_TO_ALL(int, int, _op)                                      \
-  SHMEM_TYPENAME_OP_TO_ALL(long, long, _op)                                    \
-  SHMEM_TYPENAME_OP_TO_ALL(longlong, long long, _op)                           \
-  SHMEM_TYPENAME_OP_TO_ALL(double, double, _op)                                \
-  SHMEM_TYPENAME_OP_TO_ALL(float, float, _op)                                  \
-  SHMEM_TYPENAME_OP_TO_ALL(longdouble, long double, _op)                       \
-  SHMEM_TYPENAME_OP_TO_ALL(size_t, size_t, _op)                                \
-  SHMEM_TYPENAME_OP_TO_ALL(ptrdiff_t, ptrdiff_t, _op)
+/* shmem_sum_to_all */
+#define DECL_SHIM_SUM_TO_ALL(_typename, _type)                                 \
+  SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, sum)
+SHMEM_TO_ALL_ARITH_TYPE_TABLE(DECL_SHIM_SUM_TO_ALL)
+#undef DECL_SHIM_SUM_TO_ALL
 
-SHIM_TO_ALL_ARITH_TYPES(sum)
-SHIM_TO_ALL_ARITH_TYPES(prod)
+/* shmem_prod_to_all */
+#define DECL_SHIM_PROD_TO_ALL(_typename, _type)                                \
+  SHMEM_TYPENAME_OP_TO_ALL(_type, _typename, prod)
+SHMEM_TO_ALL_ARITH_TYPE_TABLE(DECL_SHIM_PROD_TO_ALL)
+#undef DECL_SHIM_PROD_TO_ALL
+
+#undef SHMEM_TYPENAME_OP_TO_ALL
 
 /**
  * @brief Declares a reduce operation for a given type and operation
@@ -1204,25 +1119,23 @@ SHIM_TO_ALL_ARITH_TYPES(prod)
 
 #endif /* ENABLE_PSHMEM */
 
-#define SHIM_REDUCE_BITWISE_TYPES(_op)                                         \
-  SHMEM_TYPENAME_OP_REDUCE(uchar, unsigned char, _op)                          \
-  SHMEM_TYPENAME_OP_REDUCE(ushort, unsigned short, _op)                        \
-  SHMEM_TYPENAME_OP_REDUCE(uint, unsigned int, _op)                            \
-  SHMEM_TYPENAME_OP_REDUCE(ulong, unsigned long, _op)                          \
-  SHMEM_TYPENAME_OP_REDUCE(ulonglong, unsigned long long, _op)                 \
-  SHMEM_TYPENAME_OP_REDUCE(int8, int8_t, _op)                                  \
-  SHMEM_TYPENAME_OP_REDUCE(int16, int16_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(int32, int32_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(int64, int64_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(uint8, uint8_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(uint16, uint16_t, _op)                              \
-  SHMEM_TYPENAME_OP_REDUCE(uint32, uint32_t, _op)                              \
-  SHMEM_TYPENAME_OP_REDUCE(uint64, uint64_t, _op)                              \
-  SHMEM_TYPENAME_OP_REDUCE(size, size_t, _op)
+/* shmem_and_reduce */
+#define DECL_SHIM_AND_REDUCE(_typename, _type)                                 \
+  SHMEM_TYPENAME_OP_REDUCE(_type, _typename, and)
+SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_SHIM_AND_REDUCE)
+#undef DECL_SHIM_AND_REDUCE
 
-SHIM_REDUCE_BITWISE_TYPES(and)
-SHIM_REDUCE_BITWISE_TYPES(or)
-SHIM_REDUCE_BITWISE_TYPES(xor)
+/* shmem_or_reduce */
+#define DECL_SHIM_OR_REDUCE(_typename, _type)                                  \
+  SHMEM_TYPENAME_OP_REDUCE(_type, _typename, or)
+SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_SHIM_OR_REDUCE)
+#undef DECL_SHIM_OR_REDUCE
+
+/* shmem_xor_reduce */
+#define DECL_SHIM_XOR_REDUCE(_typename, _type)                                 \
+  SHMEM_TYPENAME_OP_REDUCE(_type, _typename, xor)
+SHMEM_REDUCE_BITWISE_TYPE_TABLE(DECL_SHIM_XOR_REDUCE)
+#undef DECL_SHIM_XOR_REDUCE
 
 #ifdef ENABLE_PSHMEM
 /* max */
@@ -1326,34 +1239,15 @@ SHIM_REDUCE_BITWISE_TYPES(xor)
 
 #endif /* ENABLE_PSHMEM */
 
-#define SHIM_REDUCE_MINMAX_TYPES(_op)                                          \
-  SHMEM_TYPENAME_OP_REDUCE(char, char, _op)                                    \
-  SHMEM_TYPENAME_OP_REDUCE(schar, signed char, _op)                            \
-  SHMEM_TYPENAME_OP_REDUCE(short, short, _op)                                  \
-  SHMEM_TYPENAME_OP_REDUCE(int, int, _op)                                      \
-  SHMEM_TYPENAME_OP_REDUCE(long, long, _op)                                    \
-  SHMEM_TYPENAME_OP_REDUCE(longlong, long long, _op)                           \
-  SHMEM_TYPENAME_OP_REDUCE(ptrdiff, ptrdiff_t, _op)                            \
-  SHMEM_TYPENAME_OP_REDUCE(uchar, unsigned char, _op)                          \
-  SHMEM_TYPENAME_OP_REDUCE(ushort, unsigned short, _op)                        \
-  SHMEM_TYPENAME_OP_REDUCE(uint, unsigned int, _op)                            \
-  SHMEM_TYPENAME_OP_REDUCE(ulong, unsigned long, _op)                          \
-  SHMEM_TYPENAME_OP_REDUCE(ulonglong, unsigned long long, _op)                 \
-  SHMEM_TYPENAME_OP_REDUCE(int8, int8_t, _op)                                  \
-  SHMEM_TYPENAME_OP_REDUCE(int16, int16_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(int32, int32_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(int64, int64_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(uint8, uint8_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(uint16, uint16_t, _op)                              \
-  SHMEM_TYPENAME_OP_REDUCE(uint32, uint32_t, _op)                              \
-  SHMEM_TYPENAME_OP_REDUCE(uint64, uint64_t, _op)                              \
-  SHMEM_TYPENAME_OP_REDUCE(size, size_t, _op)                                  \
-  SHMEM_TYPENAME_OP_REDUCE(float, float, _op)                                  \
-  SHMEM_TYPENAME_OP_REDUCE(double, double, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(longdouble, long double, _op)
+#define DECL_SHIM_MAX_REDUCE(_typename, _type)                                 \
+  SHMEM_TYPENAME_OP_REDUCE(_type, _typename, max)
+SHMEM_REDUCE_MINMAX_TYPE_TABLE(DECL_SHIM_MAX_REDUCE)
+#undef DECL_SHIM_MAX_REDUCE
 
-SHIM_REDUCE_MINMAX_TYPES(max)
-SHIM_REDUCE_MINMAX_TYPES(min)
+#define DECL_SHIM_MIN_REDUCE(_typename, _type)                                 \
+  SHMEM_TYPENAME_OP_REDUCE(_type, _typename, min)
+SHMEM_REDUCE_MINMAX_TYPE_TABLE(DECL_SHIM_MIN_REDUCE)
+#undef DECL_SHIM_MIN_REDUCE
 
 #ifdef ENABLE_PSHMEM
 /* sum */
@@ -1465,36 +1359,15 @@ SHIM_REDUCE_MINMAX_TYPES(min)
 
 #endif /* ENABLE_PSHMEM */
 
-#define SHIM_REDUCE_ARITH_TYPES(_op)                                           \
-  SHMEM_TYPENAME_OP_REDUCE(char, char, _op)                                    \
-  SHMEM_TYPENAME_OP_REDUCE(schar, signed char, _op)                            \
-  SHMEM_TYPENAME_OP_REDUCE(short, short, _op)                                  \
-  SHMEM_TYPENAME_OP_REDUCE(int, int, _op)                                      \
-  SHMEM_TYPENAME_OP_REDUCE(long, long, _op)                                    \
-  SHMEM_TYPENAME_OP_REDUCE(longlong, long long, _op)                           \
-  SHMEM_TYPENAME_OP_REDUCE(ptrdiff, ptrdiff_t, _op)                            \
-  SHMEM_TYPENAME_OP_REDUCE(uchar, unsigned char, _op)                          \
-  SHMEM_TYPENAME_OP_REDUCE(ushort, unsigned short, _op)                        \
-  SHMEM_TYPENAME_OP_REDUCE(uint, unsigned int, _op)                            \
-  SHMEM_TYPENAME_OP_REDUCE(ulong, unsigned long, _op)                          \
-  SHMEM_TYPENAME_OP_REDUCE(ulonglong, unsigned long long, _op)                 \
-  SHMEM_TYPENAME_OP_REDUCE(int8, int8_t, _op)                                  \
-  SHMEM_TYPENAME_OP_REDUCE(int16, int16_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(int32, int32_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(int64, int64_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(uint8, uint8_t, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(uint16, uint16_t, _op)                              \
-  SHMEM_TYPENAME_OP_REDUCE(uint32, uint32_t, _op)                              \
-  SHMEM_TYPENAME_OP_REDUCE(uint64, uint64_t, _op)                              \
-  SHMEM_TYPENAME_OP_REDUCE(size, size_t, _op)                                  \
-  SHMEM_TYPENAME_OP_REDUCE(float, float, _op)                                  \
-  SHMEM_TYPENAME_OP_REDUCE(double, double, _op)                                \
-  SHMEM_TYPENAME_OP_REDUCE(longdouble, long double, _op)                       \
-  SHMEM_TYPENAME_OP_REDUCE(complexd, double _Complex, _op)                     \
-  SHMEM_TYPENAME_OP_REDUCE(complexf, float _Complex, _op)
+#define DECL_SHIM_SUM_REDUCE(_typename, _type)                                 \
+  SHMEM_TYPENAME_OP_REDUCE(_type, _typename, sum)
+SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_SHIM_SUM_REDUCE)
+#undef DECL_SHIM_SUM_REDUCE
 
-SHIM_REDUCE_ARITH_TYPES(sum)
-SHIM_REDUCE_ARITH_TYPES(prod)
+#define DECL_SHIM_PROD_REDUCE(_typename, _type)                                \
+  SHMEM_TYPENAME_OP_REDUCE(_type, _typename, prod)
+SHMEM_REDUCE_ARITH_TYPE_TABLE(DECL_SHIM_PROD_REDUCE)
+#undef DECL_SHIM_PROD_REDUCE
 
 /** @} */
 
@@ -1553,10 +1426,10 @@ void shmem_sync_all(void) {
  * @{
  */
 
-#ifdef ENABLE_PSHMEM
-#pragma weak shmem_sync = pshmem_sync
-#define shmem_sync pshmem_sync
-#endif /* ENABLE_PSHMEM */
+// #ifdef ENABLE_PSHMEM
+// #pragma weak shmem_sync = pshmem_sync
+// #define shmem_sync pshmem_sync
+// #endif /* ENABLE_PSHMEM */
 
 /**
  * @brief Synchronizes a subset of PEs

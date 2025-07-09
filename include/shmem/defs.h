@@ -50,6 +50,12 @@
 #endif
 
 /**
+ * @brief Indirection for macro expansion.
+ */
+#define SHMEM_APPLY_INTERNAL(_macro, ...) _macro(__VA_ARGS__)
+#define SHMEM_APPLY(_macro, ...) SHMEM_APPLY_INTERNAL(_macro, __VA_ARGS__)
+
+/**
  * @brief Constants for comparison operations
  */
 enum shmem_cmp_constants {

@@ -13,6 +13,7 @@
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_uint_atomic_fetch_and_nbi = pshmem_uint_atomic_fetch_and_nbi
@@ -48,13 +49,12 @@
  * The old value is returned asynchronously.
  */
 
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, uint, unsigned int)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, ulong, unsigned long)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, int32, int32_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, int64, int64_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, uint32, uint32_t)
-SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, uint64, uint64_t)
+/* Define context-based non-blocking atomic fetch-and operations using the type
+ * table */
+#define SHMEM_CTX_TYPE_FETCH_BITWISE_NBI_HELPER(_type, _typename)              \
+  SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, _typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_FETCH_BITWISE_NBI_HELPER)
+#undef SHMEM_CTX_TYPE_FETCH_BITWISE_NBI_HELPER
 
 /**
  * @brief Default context non-blocking atomic fetch-and-and operations
@@ -63,10 +63,9 @@ SHMEM_CTX_TYPE_FETCH_BITWISE_NBI(and, uint64, uint64_t)
  * operations above but use the default SHMEM context.
  */
 
-API_DEF_AMO2_NBI(fetch_and, uint, unsigned int)
-API_DEF_AMO2_NBI(fetch_and, ulong, unsigned long)
-API_DEF_AMO2_NBI(fetch_and, ulonglong, unsigned long long)
-API_DEF_AMO2_NBI(fetch_and, int32, int32_t)
-API_DEF_AMO2_NBI(fetch_and, int64, int64_t)
-API_DEF_AMO2_NBI(fetch_and, uint32, uint32_t)
-API_DEF_AMO2_NBI(fetch_and, uint64, uint64_t)
+/* Define non-context non-blocking atomic fetch-and operations using the type
+ * table */
+#define API_DEF_AMO2_NBI_HELPER(_type, _typename)                              \
+  API_DEF_AMO2_NBI(fetch_and, _typename, _type)
+SHMEM_BITWISE_AMO_TYPE_TABLE(API_DEF_AMO2_NBI_HELPER)
+#undef API_DEF_AMO2_NBI_HELPER
