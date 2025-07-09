@@ -1082,15 +1082,9 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
     SHMEMU_CHECK_SYMMETRIC(dest, "dest");                                      \
     SHMEMU_CHECK_SYMMETRIC(source, "source");                                  \
     shmemc_team_h team_h = (shmemc_team_h)team;                                \
-    int PE_start = team_h->start;                                              \
-    int PE_size = team_h->nranks;                                              \
-    int stride = team_h->stride;                                               \
-    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
-    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
-                                                                               \
-    /* Use the team's pSync buffer for reduction operations */                 \
-    long *pSync = team_h->pSyncs[4];                                           \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[4]");                             \
+    SHMEMU_CHECK_TEAM_STRIDE(team_h->stride, __func__);                        \
+    SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_REDUCE),      \
+                      "team_h->pSyncs[REDUCE]");                               \
                                                                                \
     /* Allocate work buffer */                                                 \
     _type *pWrk =                                                              \
@@ -1101,12 +1095,14 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
                                                                                \
     shmem_team_sync(team);                                                     \
                                                                                \
-    /* call the helper function directly */                                    \
     reduce_helper_##_typename##_##_op##_##_algo(                               \
-        dest, source, nreduce, PE_start, logPE_stride, PE_size, pWrk, pSync);  \
+        dest, source, nreduce, team_h->start,                                  \
+        (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,          \
+        team_h->nranks, pWrk,                                                  \
+        shmemc_team_get_psync(team_h, SHMEMC_PSYNC_REDUCE));                   \
                                                                                \
     shmem_team_sync(team);                                                     \
-    shmemc_team_reset_psync(team_h, 4);                                        \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_REDUCE);                      \
     shmem_free(pWrk);                                                          \
     return 0;                                                                  \
   }

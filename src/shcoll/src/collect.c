@@ -653,39 +653,25 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
     SHMEMU_CHECK_NULL(source, "source");                                       \
-                                                                               \
-    /* Get team parameters */                                                  \
     shmemc_team_h team_h = (shmemc_team_h)team;                                \
-    const int PE_size = team_h->nranks;                                        \
-    const int PE_start = team_h->start;                                        \
-    const int stride = team_h->stride;                                         \
-    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
-    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
-                                                                               \
-    /* Buffer Checks */                                                        \
-    SHMEMU_CHECK_SYMMETRIC(dest, sizeof(_type) * nelems * PE_size);            \
+    SHMEMU_CHECK_TEAM_STRIDE(team_h->stride, __func__);                        \
+    SHMEMU_CHECK_SYMMETRIC(dest, sizeof(_type) * nelems * team_h->nranks);     \
     SHMEMU_CHECK_SYMMETRIC(source, sizeof(_type) * nelems);                    \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
-                                sizeof(_type) * nelems * PE_size,              \
+                                sizeof(_type) * nelems * team_h->nranks,       \
                                 sizeof(_type) * nelems);                       \
-                                                                               \
-    /* Allocate pSync from symmetric heap */                                   \
-    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT);         \
     SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[COLLECT]");                       \
                                                                                \
-    /* Ensure all PEs have initialized pSync */                                \
-    /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
+    memset(dest, 0, sizeof(_type) * nelems * team_h->nranks);                  \
+                                                                               \
     shmem_team_sync(team_h);                                                   \
                                                                                \
-    /* Zero out destination buffer */                                          \
-    memset(dest, 0, sizeof(_type) * nelems * PE_size);                         \
+    collect_helper_##_algo(                                                    \
+        dest, source, sizeof(_type) * nelems, /* total bytes per PE */         \
+        team_h->start,                                                         \
+        (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,          \
+        team_h->nranks, shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT));  \
                                                                                \
-    /* Perform collect */                                                      \
-    collect_helper_##_algo(dest, source,                                       \
-                           sizeof(_type) * nelems, /* total bytes per PE */    \
-                           PE_start, logPE_stride, PE_size, pSync);            \
-                                                                               \
-    /* Reset the pSync buffer */                                               \
     shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_COLLECT);                     \
                                                                                \
     return 0;                                                                  \
@@ -713,41 +699,30 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_COLLECT_TYPES)
 #define SHCOLL_COLLECTMEM_DEFINITION(_algo)                                    \
   int shcoll_collectmem_##_algo(shmem_team_t team, void *dest,                 \
                                 const void *source, size_t nelems) {           \
-    /* Sanity Checks */                                                        \
     SHMEMU_CHECK_INIT();                                                       \
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
     SHMEMU_CHECK_NULL(source, "source");                                       \
-                                                                               \
-    /* Get team parameters */                                                  \
     shmemc_team_h team_h = (shmemc_team_h)team;                                \
-    const int PE_size = team_h->nranks;                                        \
-    const int PE_start = team_h->start;                                        \
-    const int stride = team_h->stride;                                         \
-    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__);                                \
-    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
-                                                                               \
-    /* Buffer Checks */                                                        \
-    SHMEMU_CHECK_SYMMETRIC(dest, nelems * PE_size);                            \
+    SHMEMU_CHECK_TEAM_STRIDE(team_h->stride, __func__);                        \
+    SHMEMU_CHECK_SYMMETRIC(dest, nelems * team_h->nranks);                     \
     SHMEMU_CHECK_SYMMETRIC(source, nelems);                                    \
-    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems * PE_size, nelems);       \
+    SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, nelems * team_h->nranks,         \
+                                nelems);                                       \
                                                                                \
-    /* Allocate pSync from symmetric heap */                                   \
-    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT);         \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[COLLECT]");                       \
+    SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT),     \
+                      "team_h->pSyncs[COLLECT]");                              \
                                                                                \
-    /* Ensure all PEs have initialized pSync */                                \
-    /* FIXME: this is a hack to ensure all PEs have initialized pSync */       \
+    memset(dest, 0, nelems * team_h->nranks);                                  \
+                                                                               \
     shmem_team_sync(team_h);                                                   \
                                                                                \
-    /* Zero out destination buffer */                                          \
-    memset(dest, 0, nelems * PE_size);                                         \
+    collect_helper_##_algo(                                                    \
+        dest, source, nelems, /* total bytes per PE */                         \
+        team_h->start,                                                         \
+        (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,          \
+        team_h->nranks, shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT));  \
                                                                                \
-    /* Perform collect using extracted geometry */                             \
-    collect_helper_##_algo(dest, source, nelems, PE_start, logPE_stride,       \
-                           PE_size, pSync);                                    \
-                                                                               \
-    /* Reset the pSync buffer */                                               \
     shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_COLLECT);                     \
                                                                                \
     return 0;                                                                  \

@@ -320,6 +320,8 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
  * @param _algo Algorithm name
  * @param _type Data type
  * @param _typename Type name string
+ *
+ * TODO: this sucks. make it better.
  */
 #define SHCOLL_ALLTOALLS_TYPE_DEFINITION(_algo, _type, _typename)               \
   int shcoll_##_typename##_alltoalls_##_algo(                                   \
@@ -341,7 +343,8 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
     /* Calculate log2 stride */                                                 \
     int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;            \
     const size_t element_size_bytes = sizeof(_type);                            \
-    const size_t total_extent_bytes = element_size_bytes * nelems * PE_size;    \
+    const size_t total_extent_bytes =                                           \
+        element_size_bytes * nelems * team_h->nranks;                           \
     SHMEMU_CHECK_SYMMETRIC(dest, total_extent_bytes);                           \
     SHMEMU_CHECK_SYMMETRIC(source, total_extent_bytes);                         \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source, total_extent_bytes,               \
@@ -358,21 +361,16 @@ ALLTOALLS_SIZE_HELPER_COUNTER_DEFINITION(color_pairwise_exchange, 8, SHIFT_PEER,
                                                      */                         \
     if (element_size_bytes == 8) {                                              \
       shcoll_alltoalls64_##_algo(dest, source, dst, sst, nelems, PE_start,      \
-                                 logPE_stride, PE_size, pSync);                 \
+                                 logPE_stride, team_h->nranks, pSync);          \
     } else if (element_size_bytes == 4) {                                       \
       shcoll_alltoalls32_##_algo(dest, source, dst, sst, nelems, PE_start,      \
-                                 logPE_stride, PE_size, pSync);                 \
+                                 logPE_stride, team_h->nranks, pSync);          \
     } else {                                                                    \
-      /* Fallback: Byte-wise operation for other sizes                          \
-      (e.g., long double) */ /* Needs careful implementation
-      based on _algo for sync */                    \
       const char *src_bytes = (const char *)source;                             \
       char *dest_bytes = (char *)dest;                                          \
       const ptrdiff_t sst_bytes = sst * element_size_bytes;                     \
-      const ptrdiff_t dst_bytes =                                               \
-          dst * element_size_bytes; /* const int me_as = (shmem_my_pe() -       \
-                                       PE_start) / stride; */                   \
-      const int me_as = shmem_team_my_pe(team);                                 \
+      const ptrdiff_t dst_bytes = dst * element_size_bytes;                     \
+      const int me_as = team_h->rank;                                           \
                                                                                 \
       /* 1. Local Copy (byte by byte respecting strides) */                     \
       for (size_t k = 0; k < nelems; ++k) {                                     \
@@ -438,68 +436,49 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_ALLTOALLS_TYPES)
   int shcoll_alltoallsmem_##_algo(shmem_team_t team, void *dest,               \
                                   const void *source, ptrdiff_t dst,           \
                                   ptrdiff_t sst, size_t nelems) {              \
-    /* Check initialization */                                                 \
     SHMEMU_CHECK_INIT();                                                       \
-                                                                               \
-    /* Check team validity and cast to internal handle */                      \
     SHMEMU_CHECK_TEAM_VALID(team);                                             \
-    shmemc_team_h team_h = (shmemc_team_h)team; /* Cast to internal handle */  \
-                                                                               \
-    /* Check for NULL pointers */                                              \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
     SHMEMU_CHECK_NULL(dest, "dest");                                           \
     SHMEMU_CHECK_NULL(source, "source");                                       \
+    SHMEMU_CHECK_TEAM_STRIDE(team_h->stride, __func__);                        \
                                                                                \
-    /* Get team parameters */                                                  \
-    const int PE_size = team_h->nranks;                                        \
-    const int PE_start = team_h->start;         /* Use stored start */         \
-    const int stride = team_h->stride;          /* Use stored stride */        \
-    SHMEMU_CHECK_TEAM_STRIDE(stride, __func__); /* Check stride if DEBUG */    \
-                                                                               \
-    /* Check buffer symmetry */                                                \
     size_t element_size_bytes = 0;                                             \
     if (dst != 0 && sst != 0) {                                                \
-      /* Calculate element size from strides */                                \
       element_size_bytes = (dst > 0) ? dst : -dst;                             \
     } else {                                                                   \
-      /* Default to byte-wise operation */                                     \
       element_size_bytes = 1;                                                  \
     }                                                                          \
                                                                                \
-    /* Validate symmetric memory */                                            \
-    SHMEMU_CHECK_SYMMETRIC(dest, nelems * element_size_bytes * PE_size);       \
-    SHMEMU_CHECK_SYMMETRIC(source, nelems * element_size_bytes * PE_size);     \
-                                                                               \
-    /* Check for overlap between source and destination */                     \
+    SHMEMU_CHECK_SYMMETRIC(dest,                                               \
+                           nelems * element_size_bytes * team_h->nranks);      \
+    SHMEMU_CHECK_SYMMETRIC(source,                                             \
+                           nelems * element_size_bytes * team_h->nranks);      \
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
-                                nelems * element_size_bytes * PE_size,         \
-                                nelems * element_size_bytes * PE_size);        \
-                                                                               \
-    /* Use the pre-allocated pSync buffer from the team structure */           \
-    long *pSync = shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL);        \
-    SHMEMU_CHECK_NULL(pSync, "team_h->pSyncs[ALLTOALL]");                      \
-                                                                               \
-    /* Calculate log2 stride, assuming stride is valid */                      \
-    int logPE_stride = (stride > 0) ? (int)log2((double)stride) : 0;           \
-                                                                               \
-    /* Call the appropriate sized implementation based on element size */      \
+                                nelems * element_size_bytes * team_h->nranks,  \
+                                nelems * element_size_bytes * team_h->nranks); \
+    SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL),    \
+                      "team_h->pSyncs[ALLTOALL]");                             \
     if (element_size_bytes == 8) {                                             \
-      shcoll_alltoalls64_##_algo(dest, source, dst, sst, nelems, PE_start,     \
-                                 logPE_stride, PE_size, pSync);                \
+      shcoll_alltoalls64_##_algo(                                              \
+          dest, source, dst, sst, nelems, team_h->start,                       \
+          (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,        \
+          team_h->nranks,                                                      \
+          shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL));               \
     } else if (element_size_bytes == 4) {                                      \
-      shcoll_alltoalls32_##_algo(dest, source, dst, sst, nelems, PE_start,     \
-                                 logPE_stride, PE_size, pSync);                \
+      shcoll_alltoalls32_##_algo(                                              \
+          dest, source, dst, sst, nelems, team_h->start,                       \
+          (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,        \
+          team_h->nranks,                                                      \
+          shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL));               \
     } else {                                                                   \
-      /* Fallback: Byte-wise operation for other sizes (e.g., long double) */  \
-      /* Needs careful implementation based on _algo for sync */               \
-      /* For simplicity, we'll use the 8-bit version and adjust nelems */      \
-      /* This is less efficient but handles arbitrary element sizes */         \
-      shcoll_alltoalls8_##_algo(dest, source, dst, sst, nelems, PE_start,      \
-                                logPE_stride, PE_size, pSync);                 \
+      shcoll_alltoalls8_##_algo(                                               \
+          dest, source, dst, sst, nelems, team_h->start,                       \
+          (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,        \
+          team_h->nranks,                                                      \
+          shmemc_team_get_psync(team_h, SHMEMC_PSYNC_ALLTOALL));               \
     }                                                                          \
-                                                                               \
-    /* Reset the pSync buffer */                                               \
     shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_ALLTOALL);                    \
-                                                                               \
     return 0;                                                                  \
   }
 
