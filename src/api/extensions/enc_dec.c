@@ -232,11 +232,11 @@ static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
 
 //    DEBUG_SHMEM("Decryption time!\n");
 
-    if (is_nonblocking == 1){
-        shmemx_decrypt_single_buffer((unsigned char *)r_dest_ciphertext, pe, (void *)dest, source_rank, og_size -AES_TAG_LEN, (int)cipher_len);
-    }else{
+//    if (is_nonblocking == 1){
+//        shmemx_decrypt_single_buffer((unsigned char *)r_dest_ciphertext, pe, (void *)dest, source_rank, og_size -AES_TAG_LEN, (int)cipher_len);
+  //  }else{
         shmemx_decrypt_single_buffer((unsigned char *)r_dest_ciphertext, pe, (void *)dest, source_rank, og_size + AES_RAND_BYTES, (int)cipher_len);
-    }
+ //   }
    /* Hopefully the above is "it" for the 
     * decryption. Would need to see in an actual application
     */
@@ -694,7 +694,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
     shmemc_ctx_get_nbi(ctx, 
             ((unsigned char *)nbi_get_ciphertext[nbget_count]),
             src,
-            cipherlen, pe);
+            nbytes+AES_TAG_LEN+AES_RAND_BYTES, pe);
 
     nb_get_ctr[nbget_count].src_pe = pe;
     nb_get_ctr[nbget_count].dst_pe = proc.li.rank;
@@ -702,7 +702,18 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
     nb_get_ctr[nbget_count].encrypted_size = nbytes+AES_TAG_LEN+AES_RAND_BYTES;
     nb_get_ctr[nbget_count].local_buf_addr = (uintptr_t) dest;
     nb_get_ctr[nbget_count].local_buf = dest;
-    nbget_count++; 
+    nbget_count++;
+
+    int res_bytes = nbytes+AES_RAND_BYTES;
+    PMIX_INFO_CONSTRUCT(&si[2]);
+    PMIX_LOAD_KEY(si[2].key, "Remote_buffer_enc_size");
+    si[2].value.type = PMIX_INT;
+    si[2].value.data.integer = res_bytes; 
+
+    ps = PMIx_Notify_event(DEC_SUCCESS, procs, PMIX_RANGE_CUSTOM, &(si[0]),
+          6, notif_cb_callback, NULL);
+
+
 
     /*TODO: SIGNAL DECRYPTION IN WAIT!! */
 
@@ -792,14 +803,14 @@ int shmemx_secure_quiet(void){
       int cipher_text = 0;
 
       if (shmemx_decrypt_single_buffer(nbi_get_ciphertext[ctr], get_data.res_pe, 
-            (void *)(get_data.local_buf),get_data.dst_pe, get_data.plaintext_size,
+            (void *)(get_data.local_buf),get_data.dst_pe, get_data.plaintext_size + AES_RAND_BYTES,
             get_data.encrypted_size) != 0){
          ERROR_SHMEM("Failed to decrypt on buffer %p with ciphertext %p, counter %d\n",
                (void *)get_data.local_buf, nbi_get_ciphertext[ctr], ctr);
       }
       free(nbi_get_ciphertext[ctr]);
 
-      shmem_secure_attr_t put_data = nb_get_ctr[ctr];
+    /*  shmem_secure_attr_t put_data = nb_get_ctr[ctr];
       PMIX_LOAD_PROCID(&put_proc, my_second_pmix->nspace, put_data.dst_pe);
 
       memcpy(pmix_darray.array, &put_proc, sizeof(pmix_proc_t));
@@ -841,7 +852,8 @@ int shmemx_secure_quiet(void){
          shmemu_assert(ps == PMIX_SUCCESS,
                " shmem_ctx_secure_get_nbi quiet: PMIx can't notify decryption: %s",
                PMIx_Error_string(ps));
-      };
+      };*/ 
+      // We don't need any of the above if we're doing an asynchronous setup
 
 //      DEBUG_SHMEM( "Signaling success? %s\n", ps == PMIX_SUCCESS ? "yes" : "no");
 
@@ -965,7 +977,7 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
     si[2].value.data.integer = res_bytes; 
     double dec2_t1 = shmemx_wtime();
     ps = PMIx_Notify_event(DEC_SUCCESS, procs, PMIX_RANGE_CUSTOM, &(si[0]),
-          6, NULL, NULL);
+          6, notif_cb_callback, NULL);
     double dec2_t2 = (shmemx_wtime()-dec2_t1)*1e6;
     if (ps != PMIX_SUCCESS){
        shmemu_assert(ps == PMIX_SUCCESS,
