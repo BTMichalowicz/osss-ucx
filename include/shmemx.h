@@ -346,6 +346,7 @@ void shmemx_sec_init(void);
 typedef struct shmem_secure_attr {
     int src_pe;
     int dst_pe;
+    int res_pe; /* Hack for non-blocking operations */
     size_t plaintext_size;
     size_t encrypted_size;
     uintptr_t remote_buf_addr;
@@ -389,25 +390,29 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 extern pmix_proc_t *my_second_pmix;
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-#if 0
+#if 1
 #define DEBUG_SHMEM(fmt, args...)                       \
    do {                                                 \
       fflush(stdout);                                   \
+      fflush(stderr);                                   \
       fprintf(stdout, "[rank_%d][%s:%d][%s] "fmt,       \
             proc.li.rank, __FILE__, __LINE__, __func__, \
             ##args);                                    \
       fflush(stdout);                                   \
+      fflush(stderr);                                   \
    } while(0);
 #else
 #define DEBUG_SHMEM(...)
 #endif /* 1/0 for DEBUG PRINTS */
 #define ERROR_SHMEM(fmt, args...)                       \
    do {                                                 \
+      fflush(stdout);                                   \
       fflush(stderr);                                   \
       fprintf(stderr, "[rank_%d][%s:%d][%s][ERROR] "fmt,       \
             proc.li.rank, __FILE__, __LINE__, __func__, \
             ##args);                                    \
       fflush(stderr);                                   \
+      fflush(stdout);                                   \
    } while(0);
 
 
