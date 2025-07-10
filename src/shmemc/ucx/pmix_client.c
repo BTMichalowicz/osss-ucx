@@ -20,6 +20,10 @@
 
 #include <ucp/api/ucp.h>
 
+#if ENABLE_SHMEM_ENCRYPTION
+#include "shmemx.h"
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 /* -------------------------------------------------------------- */
 
 /*
@@ -34,6 +38,10 @@ static pmix_key_t k1; /* re-usable key spaces */
 #ifndef ENABLE_ALIGNED_ADDRESSES
 static pmix_key_t k2;
 #endif /* ENABLE_ALIGNED_ADDRESSES */
+
+#if ENABLE_SHMEM_ENCRYPTION
+pmix_prox_t *my_second_pmix = &mypmix;
+#endif /* ENABLE_SHMEM_ENCRYPTION */
 
 /*
  * Make local info available to PMIx

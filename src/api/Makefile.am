@@ -28,7 +28,6 @@ all_cppflags           = $(atomics_cppflags) \
 				$(shmemt_cppflags) \
 				$(MY_INCLUDE)
 
-# Core API files (remaining in top-level)
 MY_SOURCES             = \
 				accessible.c \
 				contexts.c \
@@ -39,39 +38,37 @@ MY_SOURCES             = \
 				lock.c \
 				profiling.c \
 				ptr.c \
+				putget.c \
+				put_signal.c \
 				quiet.c \
 				ranks.c	 \
 				shmalloc.c \
+				teams.c \
 				tl_query.c \
 				version.c
 
-# Point-to-point synchronization files
 MY_SOURCES            += \
-				pt2pt_synch/test.c \
-				pt2pt_synch/testall.c \
-				pt2pt_synch/testany.c \
-				pt2pt_synch/testsome.c \
-				pt2pt_synch/testall_vector.c \
-				pt2pt_synch/testany_vector.c \
-				pt2pt_synch/testsome_vector.c \
-				pt2pt_synch/waituntil.c \
-				pt2pt_synch/waitall.c \
-				pt2pt_synch/waitany.c \
-				pt2pt_synch/waitsome.c \
-				pt2pt_synch/waitall_vector.c \
-				pt2pt_synch/waitany_vector.c \
-				pt2pt_synch/waitsome_vector.c
+				test.c \
+				testall.c \
+				testany.c \
+				testsome.c
 
-# RMA files
 MY_SOURCES            += \
-				rma/putget.c \
-				rma/put_signal.c
+				waituntil.c \
+				waitall.c \
+				waitany.c \
+				waitsome.c
 
-# Teams files
 MY_SOURCES            += \
-				teams/teams.c
+				testall_vector.c \
+				testany_vector.c \
+				testsome_vector.c
 
-# Deprecated files
+MY_SOURCES            += \
+				waitall_vector.c \
+				waitany_vector.c \
+				waitsome_vector.c
+
 MY_SOURCES            += \
 				deprecated/atomics.c \
 				deprecated/cache.c \
@@ -80,11 +77,6 @@ MY_SOURCES            += \
 				deprecated/shmalloc.c \
 				deprecated/waituntil.c \
 				deprecated/collectives.c
-
-# Collectives files
-MY_SOURCES            += \
-				collectives/shcoll-shim.c \
-				collectives/table.c
 
 SUBDIRS                = 	atomics
 
@@ -104,6 +96,10 @@ endif
 #
 # -- end: SHCOLL --
 #
+# But we need the shim no matter what
+
+MY_SOURCES            += collectives/shcoll-shim.c
+MY_SOURCES            += collectives/table.c
 
 #
 # separate out the memory allocation routines
@@ -144,6 +140,11 @@ MY_SOURCES            += \
 			extensions/wtime.c \
 			extensions/interop.c
 
+if ENABLE_SHMEM_ENCRYPTION
+MY_SOURCES			  +=	\
+			extensions/enc_dec.c
+endif # ENABLE_SHMEM_ENCRYPTION
+
 all_cppflags          += -I$(srcdir)/extensions
 
 endif # experimental
@@ -153,6 +154,10 @@ LIBSHMEM_SOURCES       = $(MY_SOURCES)
 lib_LTLIBRARIES        = libshmem.la
 libshmem_la_SOURCES    = $(LIBSHMEM_SOURCES)
 libshmem_la_CFLAGS     = $(AM_CFLAGS)
+if ENABLE_SHMEM_ENCRYPTION
+libshmem_la_CFLAGS	  += -DENABLE_SHMEM_ENCRYPTION
+liballocator_la_CFLAGS += -DENABLE_SHMEM_ENCRYPTION 
+endif # ENABLE_SHMEM_ENCRYPTION
 libshmem_la_CPPFLAGS   = $(all_cppflags)
 libshmem_la_LDFLAGS    = -version-info 0:0:0
 libshmem_la_LIBADD     = liballocator.la

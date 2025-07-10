@@ -40,6 +40,11 @@ lib_LTLIBRARIES           = libshmemc-ucx.la
 libshmemc_ucx_la_SOURCES  = $(LIBSHMEMC_SOURCES)
 libshmemc_ucx_la_CFLAGS   = $(UCX_CFLAGS) $(EXTRA_CFLAGS) $(OTHER_CPPFLAGS)
 
+if ENABLE_SHMEM_ENCRYPTION
+libshmemc_ucx_la_CFLAGS  += -DENABLE_SHMEM_ENCRYPTION
+endif # ENABLE_SHMEM_ENCRYPTION
+
+
 # support C by default, plus something to run it with
 
 MY_WRAPPERS               = oshcc oshrun
