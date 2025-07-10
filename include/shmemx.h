@@ -323,7 +323,7 @@ int shmemx_query_interoperability(int property);
 #define AES_RAND_BYTES 12
 #define NON_BLOCKING_OP_COUNT 1024
 
-
+#include <pmix.h>
 /**
  * @brief Initializes the default contexts for encryption based on the default ctx
  * @return void return type, or crash
@@ -385,7 +385,7 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe);
 
-//extern pmix_proc_t *my_second_pmix;
+extern pmix_proc_t *my_second_pmix;
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 #if 1

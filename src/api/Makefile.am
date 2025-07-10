@@ -113,11 +113,6 @@ liballocator_a_SOURCES    = ../ptmalloc/ptmalloc.c allocator/memalloc.c
 
 if ENABLE_EXPERIMENTAL
 liballocator_a_SOURCES   += allocator/xmemalloc.c
-
-if ENABLE_SHMEM_ENCRYPTION
-libshmem_la_CFLAGS		 += -DENABLE_SHMEM_ENCRYPTION
-liballocator_la_CFLAGS	 += -DENABLE_SHMEM_ENCRYPTION
-endif # ENABLE_SHMEM_ENCRYPTION
 endif # experimental
 
 liballocator_a_CPPFLAGS   = -I$(srcdir)/allocator
@@ -149,6 +144,11 @@ MY_SOURCES            += \
 			extensions/wtime.c \
 			extensions/interop.c
 
+if ENABLE_SHMEM_ENCRYPTION
+MY_SOURCES			  +=	\
+			extensions/enc_dec.c
+endif # ENABLE_SHMEM_ENCRYPTION
+
 all_cppflags          += -I$(srcdir)/extensions
 
 endif # experimental
@@ -158,6 +158,10 @@ LIBSHMEM_SOURCES       = $(MY_SOURCES)
 lib_LTLIBRARIES        = libshmem.la
 libshmem_la_SOURCES    = $(LIBSHMEM_SOURCES)
 libshmem_la_CFLAGS     = $(AM_CFLAGS)
+if ENABLE_SHMEM_ENCRYPTION
+libshmem_la_CFLAGS		 += -DENABLE_SHMEM_ENCRYPTION
+liballocator_la_CFLAGS	 += -DENABLE_SHMEM_ENCRYPTION
+endif # ENABLE_SHMEM_ENCRYPTION
 libshmem_la_CPPFLAGS   = $(all_cppflags)
 libshmem_la_LDFLAGS    = -version-info 0:0:0
 libshmem_la_LIBADD     = liballocator.la
