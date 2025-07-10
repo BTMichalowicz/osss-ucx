@@ -40,7 +40,7 @@ static pmix_key_t k2;
 #endif /* ENABLE_ALIGNED_ADDRESSES */
 
 #if ENABLE_SHMEM_ENCRYPTION
-pmix_prox_t *my_second_pmix = &mypmix;
+pmix_proc_t *my_second_pmix = &my_pmix;
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 
 /*
