@@ -37,7 +37,9 @@ AC_ARG_ENABLE([experimental],
 AS_IF([test "x$enable_experimental" = "xyes"],
 	[AC_DEFINE([ENABLE_EXPERIMENTAL], [1], [Enable non-standard extensions])
 	AC_SUBST([ENABLE_EXPERIMENTAL], [1])],
-	[AC_SUBST([ENABLE_EXPERIMENTAL], [0])]
+	[AC_SUBST([ENABLE_EXPERIMENTAL], [0])
+     AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [0])
+    ]
 	)
 AM_CONDITIONAL([ENABLE_EXPERIMENTAL], [test "x$enable_experimental" = "xyes"])
 
@@ -57,6 +59,31 @@ AS_IF([test "x$enable_pshmem" = "xyes"],
 AM_CONDITIONAL([ENABLE_PSHMEM], [test "x$enable_pshmem" = "xyes"])
 
 AS_IF([test "x$enable_pshmem" != "xyes"], [enable_pshmem=no])
+
+#
+# encryption API: disabled by default
+#
+AC_ARG_ENABLE([encryption],
+    AS_HELP_STRING([--enable-encryption],
+            [Enable encryption/decryption -- requires experimental api to be turned on, @<:@default=no@:>@]))
+
+AS_IF([test "x$enable_experimental" = "xyes"],
+    [AS_IF([test "x$enable_encryption" = "xyes"],
+        [
+            AC_DEFINE([ENABLE_SHMEM_ENCRYPTION], [1], [Enable encrypted communication])
+            AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [1])
+            LDFLAGS="-lssl -lcrypto $LDFLAGS"
+        ],
+        [AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [0])]
+        )
+ 
+    ],
+    [AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [0])]
+    )
+
+AM_CONDITIONAL([ENABLE_SHMEM_ENCRYPTION], [test "x$enable_encryption" = "xyes"])
+AS_IF([test "x$enable_encryption" != "xyes"], [enable_encryption=no])
+
 
 #
 # addresses are aligned everywhere: disabled by default

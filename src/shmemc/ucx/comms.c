@@ -16,7 +16,10 @@
 
 #include <unistd.h>
 #include <string.h>
-
+#if ENABLE_SHMEM_ENCRYPTION
+#include "shmemx.h"
+#include "shmem_enc.h"
+#endif /* ENABLE_SHMEM_ENCRYPTION */
 #include <ucp/api/ucp.h>
 
 /*
@@ -223,6 +226,9 @@ void shmemc_ctx_quiet(shmem_ctx_t ctx) {
       shmemu_assert(s == UCS_OK, MODULE ": %s() failed (status: %s)", __func__,
                     ucs_status_string(s));
     }
+#if ENABLE_SHMEM_ENCRYPTION
+    shmemx_secure_quiet();
+#endif /* ENABLE_SHMEM_ENCRYPTION */
   }
 }
 

@@ -304,6 +304,121 @@ int shmemx_query_interoperability(int property);
 
 /** @} */
 
+
+/* BEGINNING SHMEM ENCRYPTION ADDITIONS: BTM */
+#if ENABLE_SHMEM_ENCRYPTION
+
+#define KILO 1024
+#define MEGA KILO*KILO
+#define GIGA KILO*MGEA
+
+/* Constant items */
+#define MAX_MSG_SIZE (4*MEGA)
+//const unsigned long long max_msg_size = 2<<27ul;
+#define OFFSET 400
+//const unsigned long long pt2pt_size = max_msg_size + OFFSET;
+#define COLL_OFFSET 400
+#define GCM_KEY_SIZE 32
+#define AES_TAG_LEN 16
+#define AES_RAND_BYTES 12
+#define NON_BLOCKING_OP_COUNT 1024
+
+
+/**
+ * @brief Initializes the default contexts for encryption based on the default ctx
+ * @return void return type, or crash
+ */
+
+void shmemx_sec_init(void);
+
+
+/** @brief A structure for metadata for commanding the peer process do perform
+ * encryption or decryption
+ */
+
+
+/* TODO: Do we send the below in the encrypted section? alongside buffer
+ * addresses and the like?  */
+/* ANSWER: Yes, for non-blocking put/get */
+
+typedef struct shmem_secure_attr {
+    int src_pe;
+    int dst_pe;
+    int res_pe; /* Hack for non-blocking operations */
+    size_t plaintext_size;
+    size_t encrypted_size;
+    uintptr_t remote_buf_addr;
+    uintptr_t local_buf_addr;
+    uintptr_t local_buf;
+} shmem_secure_attr_t;
+
+/**
+ * @brief Encrypt single-pe-put/get buffers on the user side before sending them
+ * across the network or through intra-node shared memory. Uses GCM
+ * (galois_counter mode)
+ * @param src_pe PE of source
+ * @param dst_pe PE of dst
+ * @param src address of src buffer
+ * @param enc_src address of encrypted src buffer
+ * @param key encryption key 
+ * @param shmem_ctx OSHMEM ctx -- modified to contain ciphertext ctx
+ * @return length of ciphertext
+ */
+
+
+
+int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipher_len);
+
+int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
+
+int shmemx_secure_quiet(void);
+
+void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe);
+
+void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe);
+
+void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe);
+
+void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe);
+
+//extern pmix_proc_t *my_second_pmix;
+
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+#if 1
+#define DEBUG_SHMEM(fmt, args...)                       \
+   do {                                                 \
+      fflush(stdout);                                   \
+      fflush(stderr);                                   \
+      fprintf(stdout, "[rank_%d][%s:%d][%s] "fmt,       \
+            proc.li.rank, __FILE__, __LINE__, __func__, \
+            ##args);                                    \
+      fflush(stdout);                                   \
+      fflush(stderr);                                   \
+   } while(0);
+#else
+#define DEBUG_SHMEM(...)
+#endif /* 1/0 for DEBUG PRINTS */
+#define ERROR_SHMEM(fmt, args...)                       \
+   do {                                                 \
+      fflush(stdout);                                   \
+      fflush(stderr);                                   \
+      fprintf(stderr, "[rank_%d][%s:%d][%s][ERROR] "fmt,       \
+            proc.li.rank, __FILE__, __LINE__, __func__, \
+            ##args);                                    \
+      fflush(stderr);                                   \
+      fflush(stdout);                                   \
+   } while(0);
+
+
+
+
+/* ENDING SHMEM ENCRYPTION ADDITIONS: BTM */
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

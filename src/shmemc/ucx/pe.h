@@ -20,6 +20,10 @@
 
 #include <sys/types.h>
 #include <ucp/api/ucp.h>
+#if ENABLE_SHMEM_ENCRYPTION
+#include "shmem_enc.h"
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 
 /**
  * @brief Information exchanged between PEs at startup
@@ -156,6 +160,11 @@ typedef struct shmemc_context {
   mem_region_access_t *racc; /* for endpoint remote access */
 
   shmemc_team_h team; /* team we belong to */
+
+#if ENABLE_SHMEM_ENCRYPTION
+  EVP_CIPHER_CTX *enc_ctx;
+  EVP_CIPHER_CTX *dec_ctx;
+#endif /* ENABLE_SHMEM_ENCRYPTION */
 
   /*
    * possibly other things

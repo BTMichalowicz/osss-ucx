@@ -27,6 +27,9 @@ endif
 lib_LTLIBRARIES           = libshmemu.la
 libshmemu_la_SOURCES      = $(LIBSHMEMU_SOURCES)
 libshmemu_la_CFLAGS       = $(OTHER_CPPFLAGS)
+if ENABLE_SHMEM_ENCRYPTION
+libshmemu_la_CFLAGS	     += -DENABLE_SHMEM_ENCRYPTION
+endif
 
 # lib_LIBRARIES             = libshmemu.a
 # libshmemu_a_SOURCES       = $(LIBSHMEMU_SOURCES)
