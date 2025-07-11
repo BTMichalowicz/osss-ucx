@@ -352,6 +352,29 @@ typedef struct shmem_secure_attr {
     uintptr_t local_buf;
 } shmem_secure_attr_t;
 
+
+#define AM_PUT_HANDLER 101
+#define AM_GET_ENC_HANDLER 102
+#define AM_GET_ENC_RESPONSE 103
+#define AM_GET_DEC_HANDLER 104
+#define AM_GET_DEC_RESPONSE 105
+
+typedef enum PUT_GET_COLLECTIVE {
+    PT2PT = 1,
+    COLL = 2
+} op_type_t;
+
+typedef __attribute__((__packed__)) struct func_args {
+    op_type_t optype;
+    int src_pe,
+        dst_pe;
+    int local_size;
+    int encrypted_size;
+    uint64_t remote_buffer; /* For get and put operations */
+    void *local_buffer; /* for get operations */
+} func_args_t;
+
+
 /**
  * @brief Encrypt single-pe-put/get buffers on the user side before sending them
  * across the network or through intra-node shared memory. Uses GCM
@@ -364,7 +387,6 @@ typedef struct shmem_secure_attr {
  * @param shmem_ctx OSHMEM ctx -- modified to contain ciphertext ctx
  * @return length of ciphertext
  */
-
 
 
 int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipher_len);

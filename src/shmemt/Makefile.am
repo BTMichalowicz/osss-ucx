@@ -13,6 +13,9 @@ endif # threads
 lib_LTLIBRARIES        = libshmemt.la
 libshmemt_la_SOURCES   = $(MY_SOURCES)
 libshmemt_la_CFLAGS    = $(AM_CFLAGS)
+if ENABLE_SHMEM_ENCRYPTION
+libshmemt_la_CFLAGS	  += -DENABLE_SHMEM_ENCRYPTION
+endif
 libshmemt_la_CPPFLAGS  = $(MY_INCLUDE)
 libshmemt_la_LDFLAGS   = -version-info 0:0:0
 
