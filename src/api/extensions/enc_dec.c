@@ -95,8 +95,6 @@ inline static long lookup_region(uint64_t addr) {
   return -1L;
 }
 
-
-
 /*
  * where the heap lives on PE "pe"
  */
@@ -145,6 +143,115 @@ inline static void get_remote_key_and_addr(shmemc_context_h ch,
   *rkey_p = lookup_rkey(ch, r, pe);
   *raddr_p = translate_region_address(local_addr, r, pe);
 }
+
+ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
+        void *data, size_t len, const ucp_am_recv_param_t *param){
+
+    NO_WARN_UNUSED(arg);
+    NO_WARN_UNUSED(header);
+    NO_WARN_UNUSED(h_size);
+
+    int rank = proc.li.rank;
+    func_args_t *func_data = (func_args_t *)data;
+    uint64_t dest = (uint64_t)(func_data->local_buffer);
+    uint64_t r_dest = func_data->remote_buffer;
+//    const long r = lookup_region(r_dest);
+//    r_dest = translate_region_address(dest, r, rank);
+    shmemu_assert (r_dest >= 0, "put_handler: rdest is 0, can't find region of %p", (void *) dest);
+   // memcpy((void *)r_dest, (void *)dest, func_data->local_size+AES_TAG_LEN+AES_RAND_BYTES);
+
+    switch (func_data->optype){
+        case PT2PT:
+            shmemx_decrypt_single_buffer(dest, 0, r_dest, 0, func_data->local_size + AES_TAG_LEN, ((size_t)(func_data->local_size)));
+            break;
+        case COLL:
+            shmemx_decrypt_single_buffer(dest, func_data->src_pe, r_dest, func_data->dst_pe, func_data->local_size + AES_TAG_LEN, ((size_t)(func_data->local_size)));
+        default:
+            ERROR_SHMEM("You goofball!\n");
+            shmemu_assert(0, "Error in decryption setup");
+    }
+    return UCS_OK;
+}
+
+ucs_status_t get_enc_handler(void *arg, const void *header, size_t h_size,
+        void *data, size_t len, const ucp_am_recv_param_t *param){
+
+    int rank = proc.li.rank;
+    func_args_t *func_data = (func_args_t *)data;
+    uint64_t dest = (uint64_t)(func_data->remote_buffer);
+    uint64_t r_dest;
+    const long r = lookup_region(dest);
+    r_dest = translate_region_address(dest, r, rank);
+    shmemu_assert (r_dest >= 0, "put_handler: rdest is 0, can't find region of %p", (void *) dest);
+    //memcpy((void *)r_dest, (void *)dest, func_data->local_size+AES_TAG_LEN+AES_RAND_BYTES);
+
+    switch (func_data->optype){
+        case PT2PT:
+            shmemx_encrypt_single_buffer((unsigned char *)r_dest, 0, (void *)r_dest, 0, func_data->local_size + AES_TAG_LEN, ((size_t *)(&func_data->encrypted_size)));
+            break;
+        case COLL:
+            shmemx_encrypt_single_buffer((unsigned char *)r_dest, func_data->src_pe, (void *)r_dest, func_data->dst_pe, func_data->local_size + AES_TAG_LEN, ((size_t)(func_data->local_size)));
+        default:
+            ERROR_SHMEM("You goofball!\n");
+            shmemu_assert(0, "Error in decryption setup");
+    }
+
+    size_t res_size = func_data->local_size+AES_TAG_LEN+AES_RAND_BYTES;
+
+    func_args_t *response = (func_args_t *)malloc(sizeof(func_args_t) + res_size); //func_data->local_size+AES_TAG_LEN+AES_RAND_BYTES);
+    response->local_size = func_data->local_size;
+    memcpy(response->remote_buffer, r_dest, res_size);// func_data->local_size+AES_TAG_LEN+AES_RAND_BYTES);
+    response->optype = func_data->optype;
+
+
+    ucp_request_param_t ack_param = {
+        .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
+        .cb.send = NULL,
+        .datatype = ucp_dt_make_contig(1)
+    };
+    ucp_am_send_nbx(param->reply_ep, AM_GET_DEC_RESPONSE, NULL, 0, response, sizeof(func_args_t)+res_size, &ack_param);
+
+    return UCS_OK;
+}
+
+
+ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
+        void *data, size_t len, const ucp_am_recv_param_t *param){
+
+    int rank = proc.li.rank;
+    func_args_t *func_data = (func_args_t *)data;
+    uint64_t dest = (uint64_t)(func_data->remote_buffer);
+    uint64_t r_dest;
+    const long r = lookup_region(r_dest);
+    r_dest = translate_region_address(dest, r, rank);
+    shmemu_assert (r_dest >= 0, "put_handler: rdest is 0, can't find region of %p", (void *) dest);
+    //memcpy((void *)r_dest, (void *)dest, func_data->local_size+AES_TAG_LEN+AES_RAND_BYTES);
+
+    switch (func_data->optype){
+        case PT2PT:
+            shmemx_decrypt_single_buffer((unsigned char *)dest, 0, (void *)r_dest, 0, func_data->local_size + AES_TAG_LEN, ((size_t)(func_data->local_size)));
+            break;
+        case COLL:
+            shmemx_decrypt_single_buffer((unsigned char *)dest, func_data->src_pe, (void *)r_dest, func_data->dst_pe, func_data->local_size + AES_TAG_LEN, ((size_t)(func_data->local_size)));
+        default:
+            ERROR_SHMEM("You goofball!\n");
+            shmemu_assert(0, "Error in decryption setup");
+    }
+
+    ucp_request_param_t ack_param = {
+        .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
+        .cb.send = NULL,
+        .datatype = ucp_dt_make_contig(1)
+    };
+    ucp_am_send_nbx(param->reply_ep, AM_GET_DEC_RESPONSE, NULL, 0, 1, sizeof(int), &ack_param);
+
+    return UCS_OK;
+}
+
+
+
+/* OLD STUFF BELOW!!! NEW STUFF ABOVE!!! */
+
 
 
 static const pmix_status_t ENC_SUCCESS = PMIX_EXTERNAL_ERR_BASE-1;
@@ -230,20 +337,11 @@ static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
 
     size_t cipher_len = cipherlen;
 
-//    DEBUG_SHMEM("Decryption time!\n");
+    shmemx_decrypt_single_buffer((unsigned char *)r_dest_ciphertext, pe, (void *)dest, source_rank, og_size + AES_RAND_BYTES, (int)cipher_len);
 
-//    if (is_nonblocking == 1){
-//        shmemx_decrypt_single_buffer((unsigned char *)r_dest_ciphertext, pe, (void *)dest, source_rank, og_size -AES_TAG_LEN, (int)cipher_len);
-  //  }else{
-        shmemx_decrypt_single_buffer((unsigned char *)r_dest_ciphertext, pe, (void *)dest, source_rank, og_size + AES_RAND_BYTES, (int)cipher_len);
- //   }
-   /* Hopefully the above is "it" for the 
-    * decryption. Would need to see in an actual application
-    */
-    
-    //shmem_global_exit(-1);
+
     if (cbfunc){
-       cbfunc(PMIX_SUCCESS, NULL, 0, NULL, NULL, cbdata);
+        cbfunc(PMIX_SUCCESS, NULL, 0, NULL, NULL, cbdata);
     }
     free(r_dest_ciphertext);
 }
@@ -309,6 +407,8 @@ void shmemx_sec_init(){
     nb_put_ctr = (shmem_secure_attr_t *)malloc(sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2);
     nb_get_ctr = (shmem_secure_attr_t *)malloc(sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2);
 
+
+    /* TODO: REGISTER HANDLERS */
     pmix_status_t sp = ENC_SUCCESS;
     active = -1;
 
@@ -613,14 +713,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
     size_t cipherlen = 0;
 
-    /* TODO: HOW TO GET BUFFER APPROPRIATELY FROM DEST SIDE FIXME  */
-    /* signal_dest_encrypt ();  */
-
-   // int res = shmemx_encrypt_single_buffer(
-   //         ((unsigned char *)&(nbi_get_ciphertext[nbget_count][0])),
-  //          0, src, 0, nbytes, ctx, &cipherlen);
-
-    
+     
     shmemc_context_h ch = (shmemc_context_h) ctx; 
     uint64_t r_dest;  /* address on other PE */
     ucp_rkey_h r_key; /* rkey for remote address */
@@ -715,8 +808,6 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
 
 
-    /*TODO: SIGNAL DECRYPTION IN WAIT!! */
-
 }
 
 
@@ -785,11 +876,6 @@ int shmemx_secure_quiet(void){
                PMIx_Error_string(ps));
       };
 
-//      DEBUG_SHMEM( "Signaling success? %s\n", ps == PMIX_SUCCESS ? "yes" : "no");
-
-
-
-
       free(nbi_put_ciphertext[ctr]);
       ctr++;
    }
@@ -810,54 +896,7 @@ int shmemx_secure_quiet(void){
       }
       free(nbi_get_ciphertext[ctr]);
 
-    /*  shmem_secure_attr_t put_data = nb_get_ctr[ctr];
-      PMIX_LOAD_PROCID(&put_proc, my_second_pmix->nspace, put_data.dst_pe);
-
-      memcpy(pmix_darray.array, &put_proc, sizeof(pmix_proc_t));
-
-      PMIX_INFO_CONSTRUCT(&si[0]);
-      PMIX_INFO_LOAD(&si[0], PMIX_EVENT_CUSTOM_RANGE, &pmix_darray, PMIX_DATA_ARRAY);
-
-      PMIX_INFO_CONSTRUCT(&si[1]);
-      PMIX_LOAD_KEY(si[1].key, "Remote_secure_buffer");
-      si[1].value.type = PMIX_UINT64;
-      si[1].value.data.uint64 = (uint64_t)put_data.remote_buf_addr;
-      // PMIX_INFO_LOAD(&si, PMIX_GRANK, &success, PMIX_INT);
-      PMIX_INFO_CONSTRUCT(&si[2]);
-      PMIX_LOAD_KEY(si[2].key, "Remote_buffer_enc_size");
-      si[2].value.type = PMIX_INT;
-      si[2].value.data.integer = put_data.encrypted_size;
-
-      PMIX_INFO_CONSTRUCT(&si[3]);
-      PMIX_LOAD_KEY(si[3].key, "Destination_rank");
-      si[3].value.type = PMIX_UINT32;
-      si[3].value.data.uint32 = put_data.dst_pe;
-
-      PMIX_INFO_CONSTRUCT(&si[4]);
-      PMIX_LOAD_KEY(si[4].key, "is_nonblocking");
-      si[4].value.type = PMIX_INT;
-      si[4].value.data.integer = 1;
-
-      PMIX_INFO_CONSTRUCT(&si[5]);
-      PMIX_LOAD_KEY(si[5].key, "og_bytes");
-      si[5].value.type = PMIX_UINT32;
-      si[5].value.data.uint32 = put_data.plaintext_size;
-
-
-      DEBUG_SHMEM( "Starting signaling (Non-blocking get decryption)\n");
-      ps = PMIx_Notify_event(DEC_SUCCESS, &put_proc, PMIX_RANGE_CUSTOM, &(si[0]),
-            6, NULL, NULL);
-
-      if (ps != PMIX_SUCCESS){
-         shmemu_assert(ps == PMIX_SUCCESS,
-               " shmem_ctx_secure_get_nbi quiet: PMIx can't notify decryption: %s",
-               PMIx_Error_string(ps));
-      };*/ 
-      // We don't need any of the above if we're doing an asynchronous setup
-
-//      DEBUG_SHMEM( "Signaling success? %s\n", ps == PMIX_SUCCESS ? "yes" : "no");
-
-      nbi_get_ciphertext[ctr] = NULL;
+        nbi_get_ciphertext[ctr] = NULL;
       ctr++;
    }
    nbget_count = 0;
