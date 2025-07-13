@@ -18,54 +18,44 @@
 
 #include <string.h>
 
-static void *shmem_calloc(size_t count, size_t size)
-{
-    void *mem = shmem_malloc(count * size);
+static void *shmem_calloc(size_t count, size_t size) {
+  void *mem = shmem_malloc(count * size);
 
-    memset(mem, 0, count * size);
-    return mem;
+  memset(mem, 0, count * size);
+  return mem;
 }
 
-#endif  /* version check */
+#endif /* version check */
 
 #ifndef CRAY_SHMEM_NUMVERSION
 
-static void shmem_putmem_signal_nb(void *dest,
-                                   const void *source,
-                                   size_t nelems,
-                                   uint64_t *sig_addr,
-                                   uint64_t sig_value,
-                                   int pe,
-                                   void **transfer_handle)
-{
-    shmem_putmem_nbi(dest, source, nelems, pe);
-    shmem_fence();
-    shmem_uint64_p(sig_addr, sig_value, pe);
+static void shmem_putmem_signal_nb(void *dest, const void *source,
+                                   size_t nelems, uint64_t *sig_addr,
+                                   uint64_t sig_value, int pe,
+                                   void **transfer_handle) {
+  shmem_putmem_nbi(dest, source, nelems, pe);
+  shmem_fence();
+  shmem_uint64_p(sig_addr, sig_value, pe);
 }
 
-#endif  /* CRAY_SHMEM_NUMVERSION */
+#endif /* CRAY_SHMEM_NUMVERSION */
 
-#define SHMEM_IPUT_NBI_DEFINITION(_size)                            \
-    inline static void shmem_iput##_size##_nbi(void *dest,          \
-                                               const void *source,  \
-                                               ptrdiff_t dst,       \
-                                               ptrdiff_t sst,       \
-                                               size_t nelems,       \
-                                               int pe)              \
-    {                                                               \
-        size_t i;                                                   \
-        uint##_size##_t *dest_ptr =  (uint##_size##_t *) dest;      \
-        const uint##_size##_t *source_ptr =                         \
-            (const uint##_size##_t *) source;                       \
-                                                                    \
-        for (i = 0; i < nelems; i++) {                              \
-            shmem_put##_size##_nbi(dest_ptr, source_ptr, 1, pe);    \
-            dest_ptr += dst;                                        \
-            source_ptr += sst;                                      \
-        }                                                           \
-    }                                                               \
+#define SHMEM_IPUT_NBI_DEFINITION(_size)                                       \
+  inline static void shmem_iput##_size##_nbi(void *dest, const void *source,   \
+                                             ptrdiff_t dst, ptrdiff_t sst,     \
+                                             size_t nelems, int pe) {          \
+    size_t i;                                                                  \
+    uint##_size##_t *dest_ptr = (uint##_size##_t *)dest;                       \
+    const uint##_size##_t *source_ptr = (const uint##_size##_t *)source;       \
+                                                                               \
+    for (i = 0; i < nelems; i++) {                                             \
+      shmem_put##_size##_nbi(dest_ptr, source_ptr, 1, pe);                     \
+      dest_ptr += dst;                                                         \
+      source_ptr += sst;                                                       \
+    }                                                                          \
+  }
 
 SHMEM_IPUT_NBI_DEFINITION(32)
 SHMEM_IPUT_NBI_DEFINITION(64)
 
-#endif  /* ! _SHCOLL_COMPAT_H */
+#endif /* ! _SHCOLL_COMPAT_H */

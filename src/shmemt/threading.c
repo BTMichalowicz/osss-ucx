@@ -1,89 +1,136 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file threading.c
+ * @brief Threading wrapper implementation for OpenSHMEM
+ *
+ * This file provides a wrapper layer around pthread functionality for
+ * thread management and synchronization in OpenSHMEM.
+ *
+ * @copyright See LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "threading.h"
 
 #include <pthread.h>
 
+/** Type alias for pthread mutex */
 typedef pthread_mutex_t thr_mutex_t;
 
-int
-threadwrap_mutex_init(threadwrap_mutex_t *mp)
-{
-    thr_mutex_t *tp = (thr_mutex_t *) mp;
+/**
+ * @brief Initialize a mutex
+ *
+ * @param mp Pointer to mutex to initialize
+ * @return 0 on success, non-zero on error
+ */
+int threadwrap_mutex_init(threadwrap_mutex_t *mp) {
+  thr_mutex_t *tp = (thr_mutex_t *)mp;
 
-    return pthread_mutex_init(tp, NULL);
+  return pthread_mutex_init(tp, NULL);
 }
 
-int
-threadwrap_mutex_destroy(threadwrap_mutex_t *mp)
-{
-    thr_mutex_t *tp = (thr_mutex_t *) mp;
+/**
+ * @brief Destroy a mutex
+ *
+ * @param mp Pointer to mutex to destroy
+ * @return 0 on success, non-zero on error
+ */
+int threadwrap_mutex_destroy(threadwrap_mutex_t *mp) {
+  thr_mutex_t *tp = (thr_mutex_t *)mp;
 
-    return pthread_mutex_destroy(tp);
+  return pthread_mutex_destroy(tp);
 }
 
-int
-threadwrap_mutex_lock(threadwrap_mutex_t *mp)
-{
-    thr_mutex_t *tp = (thr_mutex_t *) mp;
+/**
+ * @brief Lock a mutex
+ *
+ * @param mp Pointer to mutex to lock
+ * @return 0 on success, non-zero on error
+ */
+int threadwrap_mutex_lock(threadwrap_mutex_t *mp) {
+  thr_mutex_t *tp = (thr_mutex_t *)mp;
 
-    return pthread_mutex_lock(tp);
+  return pthread_mutex_lock(tp);
 }
 
-int
-threadwrap_mutex_unlock(threadwrap_mutex_t *mp)
-{
-    thr_mutex_t *tp = (thr_mutex_t *) mp;
+/**
+ * @brief Unlock a mutex
+ *
+ * @param mp Pointer to mutex to unlock
+ * @return 0 on success, non-zero on error
+ */
+int threadwrap_mutex_unlock(threadwrap_mutex_t *mp) {
+  thr_mutex_t *tp = (thr_mutex_t *)mp;
 
-    return pthread_mutex_unlock(tp);
+  return pthread_mutex_unlock(tp);
 }
 
-int
-threadwrap_mutex_trylock(threadwrap_mutex_t *mp)
-{
-    thr_mutex_t *tp = (thr_mutex_t *) mp;
+/**
+ * @brief Try to lock a mutex without blocking
+ *
+ * @param mp Pointer to mutex to try locking
+ * @return 0 on success, non-zero on error or if mutex is already locked
+ */
+int threadwrap_mutex_trylock(threadwrap_mutex_t *mp) {
+  thr_mutex_t *tp = (thr_mutex_t *)mp;
 
-    return pthread_mutex_trylock(tp);
+  return pthread_mutex_trylock(tp);
 }
 
+/** Type alias for pthread thread handle */
 typedef pthread_t thr_thread_t;
 
-int
-threadwrap_thread_create(threadwrap_thread_t *threadp,
-                         void *(*start_routine)(void *),
-                         void *args)
-{
-    thr_thread_t *tp = (thr_thread_t *) threadp;
+/**
+ * @brief Create a new thread
+ *
+ * @param threadp Pointer to store new thread handle
+ * @param start_routine Function pointer to thread entry point
+ * @param args Arguments to pass to thread function
+ * @return 0 on success, non-zero on error
+ */
+int threadwrap_thread_create(threadwrap_thread_t *threadp,
+                             void *(*start_routine)(void *), void *args) {
+  thr_thread_t *tp = (thr_thread_t *)threadp;
 
-    return pthread_create(tp, NULL /* attr */, start_routine, args);
+  return pthread_create(tp, NULL /* attr */, start_routine, args);
 }
 
-int
-threadwrap_thread_join(threadwrap_thread_t thread,
-                       void **retval)
-{
-    thr_thread_t t = (thr_thread_t) thread;
+/**
+ * @brief Wait for a thread to complete
+ *
+ * @param thread Thread handle to join
+ * @param retval Pointer to store thread return value
+ * @return 0 on success, non-zero on error
+ */
+int threadwrap_thread_join(threadwrap_thread_t thread, void **retval) {
+  thr_thread_t t = (thr_thread_t)thread;
 
-    return pthread_join(t, retval);
+  return pthread_join(t, retval);
 }
 
-threadwrap_thread_t
-threadwrap_thread_id(void)
-{
-    thr_thread_t id = (thr_thread_t) pthread_self();
+/**
+ * @brief Get current thread ID
+ *
+ * @return Thread handle for calling thread
+ */
+threadwrap_thread_t threadwrap_thread_id(void) {
+  thr_thread_t id = (thr_thread_t)pthread_self();
 
-    return (threadwrap_thread_t) id;
+  return (threadwrap_thread_t)id;
 }
 
-int
-threadwrap_thread_equal(threadwrap_thread_t t1, threadwrap_thread_t t2)
-{
-    thr_thread_t tt1 = (thr_thread_t) t1;
-    thr_thread_t tt2 = (thr_thread_t) t2;
+/**
+ * @brief Compare two thread handles for equality
+ *
+ * @param t1 First thread handle
+ * @param t2 Second thread handle
+ * @return Non-zero if threads are equal, 0 if different
+ */
+int threadwrap_thread_equal(threadwrap_thread_t t1, threadwrap_thread_t t2) {
+  thr_thread_t tt1 = (thr_thread_t)t1;
+  thr_thread_t tt2 = (thr_thread_t)t2;
 
-    return pthread_equal(tt1, tt2);
+  return pthread_equal(tt1, tt2);
 }

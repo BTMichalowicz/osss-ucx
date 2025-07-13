@@ -32,9 +32,7 @@ void shmemc_ucx_disconnect_all_eps(shmemc_context_h ch);
 
 ucs_status_t shmemc_ucx_worker_wireup(shmemc_context_h ch);
 
-ucs_status_t shmemc_ucx_rkey_pack(ucp_mem_h mh,
-                                  void **packed_rkey_p,
+ucs_status_t shmemc_ucx_rkey_pack(ucp_mem_h mh, void **packed_rkey_p,
                                   size_t *len_p);
-
 
 #endif /* ! _SHMEMC_UCX_H */

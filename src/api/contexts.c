@@ -1,7 +1,17 @@
 /* For license: see LICENSE file at top-level */
 
+/**
+ * @file contexts.c
+ * @brief Implementation of OpenSHMEM context management routines
+ *
+ * This file contains implementations of routines to create and destroy
+ * OpenSHMEM communication contexts, which provide separate logical
+ * communication channels that can be used to organize and isolate
+ * communication operations.
+ */
+
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -22,74 +32,78 @@
  * instantiated at all times
  */
 
-shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t) &shmemc_default_context;
+shmem_ctx_t SHMEM_CTX_DEFAULT = (shmem_ctx_t)&shmemc_default_context;
 
-/*
- * create new context with supplied options
+/**
+ * @brief Create a new communication context with specified options
  *
- * Return 1 on success, 0 on failure
+ * @param options Context creation options
+ * @param ctxp Pointer to store the created context
+ * @return 1 on success, 0 on failure
+ *
+ * Creates a new communication context with the supplied options. The context
+ * provides a separate logical communication channel that can be used to
+ * organize and isolate communication operations.
  */
+int shmem_ctx_create(long options, shmem_ctx_t *ctxp) {
+  int s;
 
-int
-shmem_ctx_create(long options, shmem_ctx_t *ctxp)
-{
-    int s;
+  SHMEMU_CHECK_INIT();
 
-    SHMEMU_CHECK_INIT();
+  /* defaults to world team */
+  SHMEMT_MUTEX_PROTECT(s = shmemc_context_create(SHMEM_TEAM_WORLD, options,
+                                                 (shmemc_context_h *)ctxp));
 
-    /* defaults to world team */
-    SHMEMT_MUTEX_PROTECT(s = shmemc_context_create(SHMEM_TEAM_WORLD,
-                                                   options,
-                                                   (shmemc_context_h *) ctxp));
+  logger(LOG_CONTEXTS, "%s(options=%#lx, ctxp->%p)", __func__, options, *ctxp);
 
-    logger(LOG_CONTEXTS,
-           "%s(options=%#lx, ctxp->%p)",
-           __func__,
-           options, *ctxp
-           );
-
-    return s;
+  return s;
 }
 
-/*
- * zap context
+/**
+ * @brief Destroy a communication context
+ *
+ * @param ctx Context to destroy
+ *
+ * Destroys the given communication context and releases associated resources.
+ * The context should not be used after calling this function.
  */
+void shmem_ctx_destroy(shmem_ctx_t ctx) {
+  SHMEMU_CHECK_INIT();
+  SHMEMU_CHECK_SAME_THREAD(ctx);
 
-void
-shmem_ctx_destroy(shmem_ctx_t ctx)
-{
-    SHMEMU_CHECK_INIT();
-    SHMEMU_CHECK_SAME_THREAD(ctx);
+  SHMEMT_MUTEX_PROTECT(shmemc_context_destroy(ctx));
 
-    SHMEMT_MUTEX_PROTECT(shmemc_context_destroy(ctx));
-
-    logger(LOG_CONTEXTS,
-           "%s(ctx=%p)",
-           __func__,
-           ctx
-           );
+  logger(LOG_CONTEXTS, "%s(ctx=%p)", __func__, ctx);
 }
 
 #ifdef ENABLE_EXPERIMENTAL
 
-/*
- * tell OpenSHMEM there's region of communication coming up
+/**
+ * @brief Signal the start of a communication session
+ *
+ * @param ctx Context for the communication session
+ *
+ * Notifies OpenSHMEM that a region of communication operations is beginning.
+ * This is an experimental feature.
  */
+void shmemx_ctx_session_start(shmem_ctx_t ctx) {
+  NO_WARN_UNUSED(ctx);
 
-void
-shmemx_ctx_session_start(shmem_ctx_t ctx)
-{
-    NO_WARN_UNUSED(ctx);
-
-    SHMEMU_CHECK_INIT();
+  SHMEMU_CHECK_INIT();
 }
 
-void
-shmemx_ctx_session_estop(shmem_ctx_t ctx)
-{
-    NO_WARN_UNUSED(ctx);
+/**
+ * @brief Signal the end of a communication session
+ *
+ * @param ctx Context for the communication session
+ *
+ * Notifies OpenSHMEM that a region of communication operations is ending.
+ * This is an experimental feature.
+ */
+void shmemx_ctx_session_estop(shmem_ctx_t ctx) {
+  NO_WARN_UNUSED(ctx);
 
-    SHMEMU_CHECK_INIT();
+  SHMEMU_CHECK_INIT();
 }
 
-#endif  /* ENABLE_EXPERIMENTAL */
+#endif /* ENABLE_EXPERIMENTAL */

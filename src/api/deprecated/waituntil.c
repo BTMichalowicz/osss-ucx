@@ -1,7 +1,7 @@
 /* For license: see LICENSE file at top-level */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
@@ -13,7 +13,7 @@
  * wait is just wait_until with inequality/change test
  */
 
-static const shmemu_version_t v = { .major = 1, .minor = 4 };
+static const shmemu_version_t v = {.major = 1, .minor = 4};
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_short_wait = pshmem_short_wait
@@ -44,17 +44,14 @@ static const shmemu_version_t v = { .major = 1, .minor = 4 };
 #define shmem_size_wait pshmem_size_wait
 #pragma weak shmem_ptrdiff_wait = pshmem_ptrdiff_wait
 #define shmem_ptrdiff_wait pshmem_ptrdiff_wait
-#endif  /* ENABLE_PSHMEM */
+#endif /* ENABLE_PSHMEM */
 
-#define SHMEM_TYPE_WAIT(_name, _type, _size)                        \
-    void                                                            \
-    shmem_##_name##_wait(_type *ivar, _type cmp_value)              \
-    {                                                               \
-        deprecate(__func__, &v);                                    \
-        shmemc_ctx_wait_until_ne##_size(SHMEM_CTX_DEFAULT,          \
-                                        (int##_size##_t *) ivar,    \
-                                        cmp_value);                 \
-    }
+#define SHMEM_TYPE_WAIT(_name, _type, _size)                                   \
+  void shmem_##_name##_wait(_type *ivar, _type cmp_value) {                    \
+    deprecate(__func__, &v);                                                   \
+    shmemc_ctx_wait_until_ne##_size(SHMEM_CTX_DEFAULT, (int##_size##_t *)ivar, \
+                                    cmp_value);                                \
+  }
 
 SHMEM_TYPE_WAIT(short, short, 16)
 SHMEM_TYPE_WAIT(int, int, 32)

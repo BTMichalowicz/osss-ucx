@@ -5,14 +5,16 @@
 
 m4_define([pkg_name],       [osss-ucx])
 m4_define([pkg_major],      [1])
-m4_define([pkg_minor],      [0])
+m4_define([pkg_minor],      [5])
 m4_define([pkg_patch],      [0])
 m4_define([pkg_version],    [pkg_major.pkg_minor.pkg_patch])
 m4_define([pkg_bugreport],  [anthony.curtis@stonybrook.edu])
+m4_define([pkg_bugreport],  [michaelbeebe@zohomail.com])
 m4_define([pkg_url],        [https://github.com/openshmem-org/osss-ucx.git])
 
 m4_define([spec_major_version],     [1])
-m4_define([spec_minor_version],     [4])
+# m4_define([spec_minor_version],     [4])
+m4_define([spec_minor_version],     [5])
 m4_define([spec_max_name_len],      [64])
 # quoted to make C string literal
 m4_define([spec_vendor_string],     ["pkg_name"])

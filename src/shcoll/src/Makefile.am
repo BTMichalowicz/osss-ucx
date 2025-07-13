@@ -1,25 +1,30 @@
 # For license: see LICENSE file at top-level
 
-SOURCES                 = alltoall.c \
+SOURCES = alltoall.c \
 				alltoalls.c \
 				barrier.c \
 				broadcast.c \
 				collect.c \
 				fcollect.c \
-				reduction.c
-SOURCES                += util/bithacks.c \
+				reduce.c
+
+SOURCES += util/bithacks.c \
 				util/broadcast-size.c \
 				util/rotate.c \
 				util/scan.c \
-				util/trees.c
+				util/trees.c \
+				util/psync_pool.c
 
-FIND_SHMEM_H            = -I$(top_srcdir)/include \
+FIND_SHMEM_H = -I$(top_srcdir)/include \
 				-I../../../include
 
 # disable warnings here (should detect how to do this)
 # BUILD_CFLAGS            = -w
 BUILD_CFLAGS            =
 BUILD_CFLAGS           += -I.. $(FIND_SHMEM_H)
+BUILD_CFLAGS           += -I$(top_srcdir)/src/shmemu \
+                         -I$(top_srcdir)/src/shmemc \
+                         -I$(top_srcdir)/src/shmemt
 
 lib_LTLIBRARIES         = libshcoll.la
 libshcoll_la_SOURCES    = $(SOURCES)
@@ -33,6 +38,6 @@ nobase_include_HEADERS  = shcoll.h \
 				shcoll/collect.h \
 				shcoll/common.h \
 				shcoll/fcollect.h \
-				shcoll/reduction.h
+				shcoll/reduce.h
 
 EXTRA_DIST              = shcoll/compat.h

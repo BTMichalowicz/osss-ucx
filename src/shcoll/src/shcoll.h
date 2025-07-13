@@ -3,7 +3,10 @@
 
 /* #include <shmem.h> */
 
+#define SHMEM_SUCCESS 0
+
 #include <shcoll/common.h>
+#include <shmemc.h>
 /* #include <shcoll/compat.h> */
 
 #include <shcoll/alltoall.h>
@@ -12,6 +15,6 @@
 #include <shcoll/broadcast.h>
 #include <shcoll/collect.h>
 #include <shcoll/fcollect.h>
-#include <shcoll/reduction.h>
+#include <shcoll/reduce.h>
 
 #endif /* ! _SHCOLL_H */

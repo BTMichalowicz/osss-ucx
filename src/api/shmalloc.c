@@ -1,7 +1,12 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file shmalloc.c
+ * @brief Implementation of OpenSHMEM symmetric memory allocation routines
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmemu.h"
@@ -33,90 +38,101 @@
 #define shmem_align pshmem_align
 #endif /* ENABLE_PSHMEM */
 
-inline static void *
-shmem_malloc_private(size_t s)
-{
-    void *addr;
+/**
+ * @brief Private helper function for symmetric memory allocation
+ *
+ * @param s Size in bytes to allocate
+ * @return Pointer to allocated memory, or NULL if size is 0
+ */
+inline static void *shmem_malloc_private(size_t s) {
+  void *addr;
 
-    if (shmemu_unlikely(s == 0)) {
-        return NULL;
-    }
+  if (shmemu_unlikely(s == 0)) {
+    return NULL;
+  }
 
-    SHMEMT_MUTEX_PROTECT(addr = shmema_malloc(s));
+  SHMEMT_MUTEX_PROTECT(addr = shmema_malloc(s));
 
-    shmem_barrier_all();
+  shmem_barrier_all();
 
-    SHMEMU_CHECK_ALLOC(addr, s);
+  SHMEMU_CHECK_ALLOC(addr, s);
 
-    return addr;
+  return addr;
 }
 
-void *
-shmem_malloc(size_t s)
-{
-    void *addr;
+/**
+ * @brief Allocates symmetric memory that is accessible by all PEs
+ *
+ * @param s Size in bytes to allocate
+ * @return Pointer to allocated memory, or NULL if size is 0
+ */
+void *shmem_malloc(size_t s) {
+  void *addr;
 
-    addr = shmem_malloc_private(s);
+  addr = shmem_malloc_private(s);
 
-    logger(LOG_MEMORY,
-           "%s(size=%lu) -> %p",
-           __func__,
-           (unsigned long) s, addr
-           );
+  logger(LOG_MEMORY, "%s(size=%lu) -> %p", __func__, (unsigned long)s, addr);
 
-    return addr;
+  return addr;
 }
 
-void *
-shmem_malloc_with_hints(size_t s, long hints)
-{
-    void *addr;
+/**
+ * @brief Allocates symmetric memory with hints about memory usage
+ *
+ * @param s Size in bytes to allocate
+ * @param hints Hints about how memory will be used (currently unused)
+ * @return Pointer to allocated memory, or NULL if size is 0
+ */
+void *shmem_malloc_with_hints(size_t s, long hints) {
+  void *addr;
 
-    NO_WARN_UNUSED(hints);
+  NO_WARN_UNUSED(hints);
 
-    addr = shmem_malloc_private(s);
+  addr = shmem_malloc_private(s);
 
-    logger(LOG_MEMORY,
-           "%s(size=%lu) -> %p",
-           __func__,
-           (unsigned long) s, addr
-           );
+  logger(LOG_MEMORY, "%s(size=%lu) -> %p", __func__, (unsigned long)s, addr);
 
-    return addr;
+  return addr;
 }
 
-void *
-shmem_calloc(size_t n, size_t s)
-{
-    void *addr;
+/**
+ * @brief Allocates zero-initialized symmetric memory
+ *
+ * @param n Number of elements to allocate
+ * @param s Size in bytes of each element
+ * @return Pointer to allocated memory, or NULL if n or s is 0
+ */
+void *shmem_calloc(size_t n, size_t s) {
+  void *addr;
 
-    if (shmemu_unlikely((n == 0) || (s == 0))) {
-        return NULL;
-    }
+  if (shmemu_unlikely((n == 0) || (s == 0))) {
+    return NULL;
+  }
 
-    SHMEMT_MUTEX_PROTECT(addr = shmema_calloc(n, s));
+  SHMEMT_MUTEX_PROTECT(addr = shmema_calloc(n, s));
 
-    shmem_barrier_all();
+  shmem_barrier_all();
 
-    logger(LOG_MEMORY,
-           "%s(count=%lu, size=%lu) -> %p",
-           __func__,
-           (unsigned long) n, (unsigned long) s, addr
-           );
+  logger(LOG_MEMORY, "%s(count=%lu, size=%lu) -> %p", __func__,
+         (unsigned long)n, (unsigned long)s, addr);
 
-    SHMEMU_CHECK_ALLOC(addr, s);
+  SHMEMU_CHECK_ALLOC(addr, s);
 
-    return addr;
+  return addr;
 }
 
-void
-shmem_free(void *p)
-{
-    shmem_barrier_all();
+/**
+ * @brief Frees memory previously allocated with shmem_malloc and related
+ * functions
+ *
+ * @param p Pointer to memory to free
+ */
+void shmem_free(void *p) {
+  shmem_barrier_all();
 
-    SHMEMT_MUTEX_PROTECT(shmema_free(p));
+  SHMEMT_MUTEX_PROTECT(shmema_free(p));
 
-    logger(LOG_MEMORY, "%s(addr=%p)", __func__, p);
+  logger(LOG_MEMORY, "%s(addr=%p)", __func__, p);
 }
 
 /*
@@ -124,52 +140,56 @@ shmem_free(void *p)
  * *and* after (spec 1.4, p. 25)
  */
 
-void *
-shmem_realloc(void *p, size_t s)
-{
-    void *addr;
+/**
+ * @brief Changes the size of previously allocated symmetric memory
+ *
+ * @param p Pointer to previously allocated memory
+ * @param s New size in bytes
+ * @return Pointer to reallocated memory, or NULL if size is 0
+ */
+void *shmem_realloc(void *p, size_t s) {
+  void *addr;
 
-    if (shmemu_unlikely(s == 0)) {
-        return NULL;
-    }
+  if (shmemu_unlikely(s == 0)) {
+    return NULL;
+  }
 
-    shmem_barrier_all();
+  shmem_barrier_all();
 
-    SHMEMT_MUTEX_PROTECT(addr = shmema_realloc(p, s));
+  SHMEMT_MUTEX_PROTECT(addr = shmema_realloc(p, s));
 
-    shmem_barrier_all();
+  shmem_barrier_all();
 
-    logger(LOG_MEMORY,
-           "%s(addr=%p, size=%lu) -> %p",
-           __func__,
-           p, (unsigned long) s, addr
-           );
+  logger(LOG_MEMORY, "%s(addr=%p, size=%lu) -> %p", __func__, p,
+         (unsigned long)s, addr);
 
-    SHMEMU_CHECK_ALLOC(addr, s);
+  SHMEMU_CHECK_ALLOC(addr, s);
 
-    return addr;
+  return addr;
 }
 
-void *
-shmem_align(size_t a, size_t s)
-{
-    void *addr;
+/**
+ * @brief Allocates aligned symmetric memory
+ *
+ * @param a Alignment in bytes (must be power of 2)
+ * @param s Size in bytes to allocate
+ * @return Pointer to allocated memory, or NULL if size is 0
+ */
+void *shmem_align(size_t a, size_t s) {
+  void *addr;
 
-    if (shmemu_unlikely(s == 0)) {
-        return NULL;
-    }
+  if (shmemu_unlikely(s == 0)) {
+    return NULL;
+  }
 
-    SHMEMT_MUTEX_PROTECT(addr = shmema_align(a, s));
+  SHMEMT_MUTEX_PROTECT(addr = shmema_align(a, s));
 
-    shmem_barrier_all();
+  shmem_barrier_all();
 
-    logger(LOG_MEMORY,
-           "%s(align=%lu, size=%lu) -> %p",
-           __func__,
-           (unsigned long) a, (unsigned long) s, addr
-           );
+  logger(LOG_MEMORY, "%s(align=%lu, size=%lu) -> %p", __func__,
+         (unsigned long)a, (unsigned long)s, addr);
 
-    SHMEMU_CHECK_ALLOC(addr, s);
+  SHMEMU_CHECK_ALLOC(addr, s);
 
-    return addr;
+  return addr;
 }

@@ -1,13 +1,19 @@
-/* For license: see LICENSE file at top-level */
+/**
+ * @file swap.c
+ * @brief Implementation of SHMEM atomic swap operations
+ *
+ * For license: see LICENSE file at top-level
+ */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include "shmem_mutex.h"
 #include "shmemu.h"
 #include "shmemc.h"
 #include "common.h"
+#include <shmem/api_types.h>
 
 #ifdef ENABLE_PSHMEM
 #pragma weak shmem_ctx_float_atomic_swap = pshmem_ctx_float_atomic_swap
@@ -40,49 +46,44 @@
 #define shmem_ctx_ptrdiff_atomic_swap pshmem_ctx_ptrdiff_atomic_swap
 #endif /* ENABLE_PSHMEM */
 
-#define SHMEM_CTX_TYPE_SWAP(_name, _type)                               \
-    _type                                                               \
-    shmem_ctx_##_name##_atomic_swap(shmem_ctx_t ctx,                    \
-                                    _type *target, _type value, int pe) \
-    {                                                                   \
-        _type v;                                                        \
-                                                                        \
-        SHMEMU_CHECK_INIT();                                            \
-        SHMEMU_CHECK_SYMMETRIC(target, 2);                              \
-                                                                        \
-        SHMEMT_MUTEX_NOPROTECT(shmemc_ctx_swap(ctx,                     \
-                                               target,                  \
-                                               &value, sizeof(value),   \
-                                               pe, &v));                \
-        return v;                                                       \
-    }
+/**
+ * @brief Atomic swap operations for different types
+ *
+ * These routines perform an atomic swap operation. An atomic swap writes
+ * the value to the target address on the specified PE and returns the
+ * previous contents of the target as an atomic operation.
+ *
+ * @param _name The type name suffix for the function
+ * @param _type The actual C type for the operation
+ */
+#define SHMEM_CTX_TYPE_SWAP(_name, _type)                                      \
+  _type shmem_ctx_##_name##_atomic_swap(shmem_ctx_t ctx, _type *target,        \
+                                        _type value, int pe) {                 \
+    _type v;                                                                   \
+                                                                               \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_SYMMETRIC(target, 2);                                         \
+                                                                               \
+    SHMEMT_MUTEX_NOPROTECT(                                                    \
+        shmemc_ctx_swap(ctx, target, &value, sizeof(value), pe, &v));          \
+    return v;                                                                  \
+  }
 
-SHMEM_CTX_TYPE_SWAP(int, int)
-SHMEM_CTX_TYPE_SWAP(long, long)
-SHMEM_CTX_TYPE_SWAP(longlong, long long)
-SHMEM_CTX_TYPE_SWAP(float, float)
-SHMEM_CTX_TYPE_SWAP(double, double)
-SHMEM_CTX_TYPE_SWAP(uint, unsigned int)
-SHMEM_CTX_TYPE_SWAP(ulong, unsigned long)
-SHMEM_CTX_TYPE_SWAP(ulonglong, unsigned long long)
-SHMEM_CTX_TYPE_SWAP(int32, int32_t)
-SHMEM_CTX_TYPE_SWAP(int64, int64_t)
-SHMEM_CTX_TYPE_SWAP(uint32, uint32_t)
-SHMEM_CTX_TYPE_SWAP(uint64, uint64_t)
-SHMEM_CTX_TYPE_SWAP(size, size_t)
-SHMEM_CTX_TYPE_SWAP(ptrdiff, ptrdiff_t)
+/* Define context-based atomic swap operations using the type table */
+#define SHMEM_CTX_TYPE_SWAP_HELPER(_type, _typename)                           \
+  SHMEM_CTX_TYPE_SWAP(_typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(SHMEM_CTX_TYPE_SWAP_HELPER)
+#undef SHMEM_CTX_TYPE_SWAP_HELPER
 
-API_DEF_AMO2(swap, float, float)
-API_DEF_AMO2(swap, double, double)
-API_DEF_AMO2(swap, int, int)
-API_DEF_AMO2(swap, long, long)
-API_DEF_AMO2(swap, longlong, long long)
-API_DEF_AMO2(swap, uint, unsigned int)
-API_DEF_AMO2(swap, ulong, unsigned long)
-API_DEF_AMO2(swap, ulonglong, unsigned long long)
-API_DEF_AMO2(swap, int32, int32_t)
-API_DEF_AMO2(swap, int64, int64_t)
-API_DEF_AMO2(swap, uint32, uint32_t)
-API_DEF_AMO2(swap, uint64, uint64_t)
-API_DEF_AMO2(swap, size, size_t)
-API_DEF_AMO2(swap, ptrdiff, ptrdiff_t)
+/**
+ * @brief Defines the API for atomic swap operations
+ *
+ * These macros create the public API functions for atomic swap operations
+ * for different types. Each function performs a swap operation without a
+ * context.
+ */
+/* Define non-context atomic swap operations using the type table */
+#define API_DEF_AMO2_HELPER(_type, _typename)                                  \
+  API_DEF_AMO2(swap, _typename, _type)
+SHMEM_EXTENDED_AMO_TYPE_TABLE(API_DEF_AMO2_HELPER)
+#undef API_DEF_AMO2_HELPER
