@@ -307,7 +307,7 @@ int shmemx_query_interoperability(int property);
 
 /* BEGINNING SHMEM ENCRYPTION ADDITIONS: BTM */
 #if ENABLE_SHMEM_ENCRYPTION
-
+#include <pmix.h>
 #define KILO 1024
 #define MEGA KILO*KILO
 #define GIGA KILO*MGEA
@@ -320,10 +320,34 @@ int shmemx_query_interoperability(int property);
 #define COLL_OFFSET 400
 #define GCM_KEY_SIZE 32
 #define AES_TAG_LEN 16
-#define AES_RAND_BYTES 12
+#define AES_RAND_BYTES 16
 #define NON_BLOCKING_OP_COUNT 1024
+#define PUT_TEMP_BUF_LEN 20
 
-#include <pmix.h>
+#define MAGIC 0xFF
+#define off_1 24
+#define off_2 16
+#define off_3 8
+
+
+#define 64K 64 * KILO
+#define 128K 128 * KILO
+#define 256K 256 * KILO
+#define 512K 512 * KILO
+#define 1M MEGA
+#define 2M 2 * MEGA
+#define 4M 4 * MEGA
+#define PIPELINE_SIZE 512K
+
+#define SUBKEY_GEN_START (2<<16) - 1 /* 64KB-1 */
+
+
+#define SEG_CTX_ID_LEN 100
+#define LOCAL_NONCE_LEN 50
+#define AEAD_KEY_SIZE 40
+#define V_SIZE 50
+
+
 /**
  * @brief Initializes the default contexts for encryption based on the default ctx
  * @return void return type, or crash
@@ -392,6 +416,10 @@ typedef __attribute__((__packed__)) struct func_args {
 int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipher_len);
 
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
+
+
+int shmemx_secure_put_omp_threaded(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe);
 
 int shmemx_secure_quiet(void);
 

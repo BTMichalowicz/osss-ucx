@@ -1039,4 +1039,48 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
     
 }
 
+
+int shmemx_secure_put_omp_threaded(shmem_ctx_t ctx, void *dest, const void *src,
+        size_t nbytes, int pe){
+
+    int err_check = 0; /* SUCCESS */
+    size_t ciphertext_len = 0, 
+           next_seg = 0;
+    volatile EVP_EAD_CTX *local_ead = NULL;
+    unsigned char local_nonce[LOCAL_NONCE_LEN];
+    EVP_EAD_CTX *segment_ctx[SEG_CTX_ID_LEN];
+    unsigned int my_rank, seg_counter, nonce_counter, d = pe;
+    int send_position, temp_chunk, base, j;
+    size_t max_bytes = nbytes + AES_TAG_LEN + AES_RAND_BYTES;
+    size_t temp_data = nbytes;
+    own_rank = proc.li.rank;
+
+    shmemc_context_h chp = (shemc_context_hi) ctx;
+
+    unsigned char *large_put_buffer = malloc(max_bytes);
+    assert(large_put_buffer);
+
+    int thread_num = 0;
+    int th_data, th_pos, th_start, th_sum, m;
+
+    large_put_buffer[0] = (temp_data >> off_1) & MAGIC;
+    large_put_buffer[1] = (temp_data >> off_2) & MAGIC;
+    large_put_buffer[2] = (temp_data >> off_3) & MAGIC;
+    large_put_buffer[3] = (temp_data) & MAGIC;
+    
+    /* The multi-threading aspect should at least be 
+     * suitable for Blocking put/get. I WILL have to re-invent the encryption
+     * aspects again 
+     * and make them more baked in compared to the original motivation.
+     * - BTMichalowicz
+     */
+    if (temp_data > SUBKEY_GEN_START) {
+
+
+
+
+
+    return err_check;
+}
+
 #endif /* ENABLE_SHMEM_ENCRYPTION */
