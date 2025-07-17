@@ -329,15 +329,15 @@ int shmemx_query_interoperability(int property);
 #define off_2 16
 #define off_3 8
 
-
-#define 64K 64 * KILO
-#define 128K 128 * KILO
-#define 256K 256 * KILO
-#define 512K 512 * KILO
-#define 1M MEGA
-#define 2M 2 * MEGA
-#define 4M 4 * MEGA
-#define PIPELINE_SIZE 512K
+#define THIRTY_TWO_K 32*KILO
+#define SIX_FOUR_K 64 * KILO
+#define ONE_TWO_EIGHT_K 128 * KILO
+#define TWO_FIVE_SIX_K 256 * KILO
+#define FIVE_TWELVE_K 512 * KILO
+#define ONE_M MEGA
+#define TWO_M 2 * MEGA
+#define FOUR_M 4 * MEGA
+#define PIPELINE_SIZE FIVE_TWELVE_K
 
 #define SUBKEY_GEN_START (2<<16) - 1 /* 64KB-1 */
 
@@ -388,7 +388,7 @@ typedef enum PUT_GET_COLLECTIVE {
     COLL = 2
 } op_type_t;
 
-typedef __attribute__((__packed__)) struct func_args {
+typedef struct func_args {
     op_type_t optype;
     int src_pe,
         dst_pe;
