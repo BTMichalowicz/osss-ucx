@@ -20,7 +20,6 @@
 
 const unsigned char gcm_key[GCM_KEY_SIZE] = {'a','b','c','d','e','f','g','a','b','c','d','f','e','a','c','b','d','e','f','0','1','2','3','4','5','6','7','8','9','a','d','c'};
 
-
 //unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 unsigned char **nbi_put_ciphertext = NULL; //[NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
 unsigned long long nbput_count = 0;
@@ -31,6 +30,9 @@ unsigned long long nbget_count = 0;
 
 shmem_secure_attr_t *nb_put_ctr = NULL;
 shmem_secure_attr_t *nb_get_ctr = NULL;
+
+EVP_CIPHER_CTX *openmp_ctx = NULL; /* Can I get around the AEAD limitation from BoringSSL? */
+
 
 
 static volatile int active = -1;
@@ -1046,16 +1048,16 @@ int shmemx_secure_put_omp_threaded(shmem_ctx_t ctx, void *dest, const void *src,
     int err_check = 0; /* SUCCESS */
     size_t ciphertext_len = 0, 
            next_seg = 0;
-    volatile EVP_EAD_CTX *local_ead = NULL;
+//    volatile EVP_AEAD_CTX *local_ead = NULL;
     unsigned char local_nonce[LOCAL_NONCE_LEN];
-    EVP_EAD_CTX *segment_ctx[SEG_CTX_ID_LEN];
+//    EVP_EAD_CTX *segment_ctx[SEG_CTX_ID_LEN];
     unsigned int my_rank, seg_counter, nonce_counter, d = pe;
     int send_position, temp_chunk, base, j;
     size_t max_bytes = nbytes + AES_TAG_LEN + AES_RAND_BYTES;
     size_t temp_data = nbytes;
-    own_rank = proc.li.rank;
+    my_rank = proc.li.rank;
 
-    shmemc_context_h chp = (shemc_context_hi) ctx;
+    shmemc_context_h chp = (shmemc_context_h) ctx;
 
     unsigned char *large_put_buffer = malloc(max_bytes);
     assert(large_put_buffer);
@@ -1075,6 +1077,9 @@ int shmemx_secure_put_omp_threaded(shmem_ctx_t ctx, void *dest, const void *src,
      * - BTMichalowicz
      */
     if (temp_data > SUBKEY_GEN_START) {
+    
+
+    }
 
 
 
