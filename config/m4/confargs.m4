@@ -73,6 +73,7 @@ AS_IF([test "x$enable_experimental" = "xyes"],
             AC_DEFINE([ENABLE_SHMEM_ENCRYPTION], [1], [Enable encrypted communication])
             AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [1])
             LDFLAGS="-lssl -lcrypto $LDFLAGS"
+            CFLAGS="-fopenmp $CFLAGS"
         ],
         [AC_SUBST([ENABLE_SHMEM_ENCRYPTION], [0])]
         )
