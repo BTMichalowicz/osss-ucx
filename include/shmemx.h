@@ -320,7 +320,7 @@ int shmemx_query_interoperability(int property);
 #define COLL_OFFSET 400
 #define GCM_KEY_SIZE 32
 #define AES_TAG_LEN 16
-#define AES_RAND_BYTES 16
+#define AES_RAND_BYTES 12
 #define NON_BLOCKING_OP_COUNT 1024
 #define PUT_TEMP_BUF_LEN 20
 
@@ -354,6 +354,7 @@ int shmemx_query_interoperability(int property);
  */
 
 void shmemx_sec_init(void);
+void shmemx_sec_ctx_init(shmem_ctx_t shmem_ctx);
 
 
 /** @brief A structure for metadata for commanding the peer process do perform

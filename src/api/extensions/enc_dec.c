@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <pmix.h>
+#include <omp.h>
 
 
 const unsigned char gcm_key[GCM_KEY_SIZE] = {'a','b','c','d','e','f','g','a','b','c','d','f','e','a','c','b','d','e','f','0','1','2','3','4','5','6','7','8','9','a','d','c'};
@@ -146,7 +147,7 @@ inline static void get_remote_key_and_addr(shmemc_context_h ch,
   *raddr_p = translate_region_address(local_addr, r, pe);
 }
 
-ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
+/*ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
         void *data, size_t len, const ucp_am_recv_param_t *param){
 
     NO_WARN_UNUSED(arg);
@@ -250,7 +251,7 @@ ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
     return UCS_OK;
 }
 
-
+*/
 
 /* OLD STUFF BELOW!!! NEW STUFF ABOVE!!! */
 
@@ -366,6 +367,42 @@ static inline void handleErrors(char *message){
     shmemu_fatal("shmem_enc_dec: %s\n", message);
 }
 
+
+
+void shmemx_ctx_sec_init(shmem_ctx_t shmem_ctx){
+   int res = 0;
+   shmemc_context_h ch = (shmemc_context_h)shmem_ctx;
+   
+   shmemu_assert(ch != NULL, "shmemx_ctx_sec_init : context is NULL!\n");
+   if (!(ch->enc_ctx = EVP_CIPHER_CTX_new())){
+      handleErrors("cipher failed to be created");
+   }
+   /* Begin using AES_256_gcm */
+   res = EVP_EncryptInit_ex(ch->enc_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+   if (res != 1){
+      handleErrors("failed to begin encryption portion");
+   }
+
+   res = EVP_CIPHER_CTX_ctrl(ch->enc_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+   if (res != 1){
+      handleErrors("Failed to set up the Initialization Vector Length");
+   }
+   if (!(ch->dec_ctx = EVP_CIPHER_CTX_new())){
+      handleErrors("cipher failed to be created");
+   }
+   /* Begin using AES_256_gcm */
+   res = EVP_DecryptInit_ex(ch->dec_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+   if (res != 1){
+      handleErrors("failed to begin Decryption portion");
+   }
+
+   res = EVP_CIPHER_CTX_ctrl(ch->dec_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+   if (res != 1){
+      handleErrors("Failed to set up the Initialization Vector Length");
+   }
+
+}
+
 void shmemx_sec_init(){
 
     char *enc_dec = NULL;
@@ -430,8 +467,88 @@ void shmemx_sec_init(){
     while(active == -1){}
     shmemu_assert(active == 0, "shmem_enc_init: PMIx_dec_handler reg failed");
     //DEBUG_SHMEM("Encrypion initialization has been completed\n");
+    //
+
+
+
+    if (!(openmp_ctx = EVP_CIPHER_CTX_new())){
+       handleErrors("OpenMP cipher failed to be created");
+    }
+    /* Begin using AES_256_gcm */
+    res = EVP_EncryptInit_ex(openmp_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+    if (res != 1){
+        handleErrors("failed to begin encryption portion");
+    }
+
+    res = EVP_CIPHER_CTX_ctrl(openmp_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+    if (res != 1){
+        handleErrors("Failed to set up the Initialization Vector Length");
+    }
+
     return;
 }
+
+
+int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long long src,
+      const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipherlen){
+
+   int res = 0;
+   int segment_count = 0, count = 0;
+   int local_cipherlen = 0;
+   int max_data = 0;
+   *cipherlen = 0; /* Just in case */
+
+   int thread_no = 1; // Starting thread point
+
+   if (bytes < SIX_FOUR_K){
+      thread_no = 1;
+   }else if (bytes < ONE_TWO_EIGHT_K){
+      thread_no = 2;
+   }else if (bytes < TWO_FIVE_SIX_K){
+      thread_no = 4;
+   }else if (bytes < FIVE_TWELVE_K){
+      thread_no = 8;
+   }else{
+      thread_no = 16;
+   }
+
+   int data = bytes / thread_no;
+   data++;
+
+   if (bytes <= 16){
+      segment_count = 1;
+      data = bytes;
+   }else{
+      segment_count = (bytes-1)/data + 1;
+   }
+
+   if (bytes < THIRTY_TWO_K/2){
+      data = bytes;
+      segment_count = 1;
+   }
+   int position = 0;
+   
+
+#pragma omp parallel for schedule(static) default (none) private (segment_count, count, local_cipherlen, cipherbuf, sbuf, openmp_ctx, stdout, stderr, max_data, bytes, data, position) num_threads(thread_no)
+   for (count = 0; count < segment_count ; count++){
+
+      RAND_bytes(cipherbuf + count * (data+AES_TAG_LEN+AES_RAND_BYTES), AES_RAND_BYTES);
+      EVP_CIPHER_CTX *local_ctx = openmp_ctx;
+
+      max_data = data+AES_TAG_LEN;
+      position = count * (data + AES_TAG_LEN + AES_RAND_BYTES);
+      int enc_data = data;
+
+      if (count == segment_count - 1){
+         enc_data = bytes - data * (segment_count - 1);
+         max_data = enc_data + AES_TAG_LEN;
+      }
+
+   }
+
+
+}
+
 
 int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, 
         const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipherlen){
@@ -596,11 +713,16 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     total_t1 = shmemx_wtime();
 
     enc_t1 = shmemx_wtime();
-    shmemx_encrypt_single_buffer(
-            blocking_put_ciphertext,
-            0, src, 0, nbytes, ((size_t *)(&block_put_cipherlen)));
-    enc_t2 = (shmemx_wtime() - enc_t1)*1e6;
+ //   shmemx_encrypt_single_buffer(
+ //           blocking_put_ciphertext,
+ //           0, src, 0, nbytes, ((size_t *)(&block_put_cipherlen)));
+ //   enc_t2 = (shmemx_wtime() - enc_t1)*1e6;
 
+
+    shmemx_encrypt_single_buffer_omp(
+          blocking_put_ciphertext,
+          0, src, 0, nbytes, ((size_t *)(&block_put_cipherlen)));
+    
     DEBUG_SHMEM( "Encryption end, ciphertext: %p, cipherlen: %d \n",
           blocking_put_ciphertext, block_put_cipherlen);
 
@@ -796,7 +918,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
     nb_get_ctr[nbget_count].plaintext_size = nbytes;
     nb_get_ctr[nbget_count].encrypted_size = nbytes+AES_TAG_LEN+AES_RAND_BYTES;
     nb_get_ctr[nbget_count].local_buf_addr = (uintptr_t) dest;
-    nb_get_ctr[nbget_count].local_buf = dest;
+    nb_get_ctr[nbget_count].local_buf = (uintptr_t) dest;
     nbget_count++;
 
     int res_bytes = nbytes+AES_RAND_BYTES;
@@ -1036,56 +1158,7 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
                 "Decrypt_time %.3f\nGet_time: %.3f\npmix_construct: %.3f\n"
                 "PMIX_notify_time: %.3f\n2nd_dec: %.3f\nTotal_time: %.3f\n",
                 nbytes, dec_t2, get_t2, pmix_construct_time,
-                pmix_t2, dec2_t2, total_t2); */
-
-    
-}
-
-
-int shmemx_secure_put_omp_threaded(shmem_ctx_t ctx, void *dest, const void *src,
-        size_t nbytes, int pe){
-
-    int err_check = 0; /* SUCCESS */
-    size_t ciphertext_len = 0, 
-           next_seg = 0;
-//    volatile EVP_AEAD_CTX *local_ead = NULL;
-    unsigned char local_nonce[LOCAL_NONCE_LEN];
-//    EVP_EAD_CTX *segment_ctx[SEG_CTX_ID_LEN];
-    unsigned int my_rank, seg_counter, nonce_counter, d = pe;
-    int send_position, temp_chunk, base, j;
-    size_t max_bytes = nbytes + AES_TAG_LEN + AES_RAND_BYTES;
-    size_t temp_data = nbytes;
-    my_rank = proc.li.rank;
-
-    shmemc_context_h chp = (shmemc_context_h) ctx;
-
-    unsigned char *large_put_buffer = malloc(max_bytes);
-    assert(large_put_buffer);
-
-    int thread_num = 0;
-    int th_data, th_pos, th_start, th_sum, m;
-
-    large_put_buffer[0] = (temp_data >> off_1) & MAGIC;
-    large_put_buffer[1] = (temp_data >> off_2) & MAGIC;
-    large_put_buffer[2] = (temp_data >> off_3) & MAGIC;
-    large_put_buffer[3] = (temp_data) & MAGIC;
-    
-    /* The multi-threading aspect should at least be 
-     * suitable for Blocking put/get. I WILL have to re-invent the encryption
-     * aspects again 
-     * and make them more baked in compared to the original motivation.
-     * - BTMichalowicz
-     */
-    if (temp_data > SUBKEY_GEN_START) {
-    
-
-    }
-
-
-
-
-
-    return err_check;
+                pmix_t2, dec2_t2, total_t2); */   
 }
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
