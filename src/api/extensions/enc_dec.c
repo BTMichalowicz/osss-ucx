@@ -32,8 +32,8 @@ unsigned long long nbget_count = 0;
 shmem_secure_attr_t *nb_put_ctr = NULL;
 shmem_secure_attr_t *nb_get_ctr = NULL;
 
-EVP_CIPHER_CTX *openmp_ctx = NULL; /* Can I get around the AEAD limitation from BoringSSL? */
-
+EVP_CIPHER_CTX *openmp_enc_ctx = NULL; /* Can I get around the AEAD limitation from BoringSSL? */
+EVP_CIPHER_CTX *openmp_dec_ctx = NULL; /* Answer to the above comment? Yes */
 
 
 static volatile int active = -1;
@@ -294,7 +294,7 @@ static void enc_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
     void *base = (void *) dest;
     size_t cipherlen = 0;
 
-    shmemx_encrypt_single_buffer(base, source_rank, (const void *)dest, rank, og_bytes, &cipherlen);
+    shmemx_encrypt_single_buffer_omp(base, source_rank, (const void *)dest, rank, og_bytes, &cipherlen);
 
     DEBUG_SHMEM("Remote encryption went successfully\n");
 
@@ -340,7 +340,7 @@ static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
 
     size_t cipher_len = cipherlen;
 
-    shmemx_decrypt_single_buffer((unsigned char *)r_dest_ciphertext, pe, (void *)dest, source_rank, og_size + AES_RAND_BYTES, (int)cipher_len);
+    shmemx_decrypt_single_buffer_omp((unsigned char *)r_dest_ciphertext, pe, (void *)dest, source_rank, og_size + AES_RAND_BYTES, (int)cipher_len);
 
 
     if (cbfunc){
@@ -471,19 +471,34 @@ void shmemx_sec_init(){
 
 
 
-    if (!(openmp_ctx = EVP_CIPHER_CTX_new())){
+    if (!(openmp_enc_ctx = EVP_CIPHER_CTX_new())){
        handleErrors("OpenMP cipher failed to be created");
     }
     /* Begin using AES_256_gcm */
-    res = EVP_EncryptInit_ex(openmp_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+    res = EVP_EncryptInit_ex(openmp_enc_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
     if (res != 1){
         handleErrors("failed to begin encryption portion");
     }
 
-    res = EVP_CIPHER_CTX_ctrl(openmp_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+    res = EVP_CIPHER_CTX_ctrl(openmp_enc_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
     if (res != 1){
         handleErrors("Failed to set up the Initialization Vector Length");
     }
+
+   if (!(openmp_dec_ctx = EVP_CIPHER_CTX_new())){
+       handleErrors("OpenMP cipher failed to be created");
+    }
+    /* Begin using AES_256_gcm */
+    res = EVP_EncryptInit_ex(openmp_dec_ctx, EVP_aes_256_gcm(), NULL, gcm_key, NULL);
+    if (res != 1){
+        handleErrors("failed to begin encryption portion");
+    }
+
+    res = EVP_CIPHER_CTX_ctrl(openmp_dec_ctx, EVP_CTRL_GCM_SET_IVLEN, (int)AES_RAND_BYTES, NULL);
+    if (res != 1){
+        handleErrors("Failed to set up the Initialization Vector Length");
+    }
+
 
     return;
 }
@@ -527,13 +542,30 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
       segment_count = 1;
    }
    int position = 0;
+
+   int temp_cipherlen = 0;
+
+   unsigned char *key = &(gcm_key[0]);
+   DEBUG_SHMEM("Segment_count %d, data = %d, max_thread_no %d\n", segment_count, data, thread_no);
+
+#pragma omp critical
+   {
+      for (count = 0; count < segment_count; count++){
+         RAND_bytes(cipherbuf + count * (data+AES_TAG_LEN+AES_RAND_BYTES), AES_RAND_BYTES);
+      }
+   }
    
 
-#pragma omp parallel for schedule(static) default (none) private (segment_count, count, local_cipherlen, cipherbuf, sbuf, openmp_ctx, stdout, stderr, max_data, bytes, data, position) num_threads(thread_no)
+#pragma omp parallel for schedule(static) default(none) private (segment_count, count, local_cipherlen, cipherbuf, sbuf, openmp_enc_ctx, stdout, stderr, max_data, bytes, data, position, src, dest,  proc, res, key) reduction(+:temp_cipherlen) num_threads(thread_no)
    for (count = 0; count < segment_count ; count++){
 
-      RAND_bytes(cipherbuf + count * (data+AES_TAG_LEN+AES_RAND_BYTES), AES_RAND_BYTES);
-      EVP_CIPHER_CTX *local_ctx = openmp_ctx;
+      int tn = omp_get_thread_num();
+      //int cipher_temp = 0;
+
+      void *tmp_buf = cipherbuf + count * (data+AES_TAG_LEN+AES_RAND_BYTES);
+      DEBUG_SHMEM("T_%d Starting RAND_bytes\n", tn);
+    //  RAND_bytes(tmp_buf, AES_RAND_BYTES);
+      EVP_CIPHER_CTX *local_ctx = openmp_enc_ctx;
 
       max_data = data+AES_TAG_LEN;
       position = count * (data + AES_TAG_LEN + AES_RAND_BYTES);
@@ -544,9 +576,33 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
          max_data = enc_data + AES_TAG_LEN;
       }
 
+      if ((res = EVP_EncryptInit_ex(local_ctx, EVP_aes_256_gcm(), NULL, key, tmp_buf+src)) != 1){
+         ERROR_SHMEM("[T_%d] EncryptInit_ex from error %d: %s\n",
+              tn, ERR_get_error(), ERR_error_string(res, NULL));
+            memset(NULL, 0, 10);
+      }
+
+     // DEBUG_SHMEM("[T_%d] EncryptInit_ex passed\n", tn);
+
+      if ((res = EVP_EncryptUpdate(local_ctx, tmp_buf+AES_RAND_BYTES, &local_cipherlen, ((const unsigned char *)(sbuf + dest)), (int) enc_data)) != 1){
+        ERROR_SHMEM("[T_%d] EncryptUpdate Failed: %d %s\n", 
+               tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
+         memset(NULL, 0, 10);
+      }
+
+     DEBUG_SHMEM("[T_%d] EncrypUpdate passed with cipherlen %d\n", tn, local_cipherlen);
+      temp_cipherlen += local_cipherlen; /* Adds to the global cipherlen length */
+
+      if ((res = EVP_EncryptFinal_ex(openmp_enc_ctx, tmp_buf+AES_TAG_LEN+src+local_cipherlen, &local_cipherlen)) != 1){
+         ERROR_SHMEM("[T_%d] EncryptFinal_ex failed: %d %s\n",
+               ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
+      }
+
+     DEBUG_SHMEM("[T_%d] EncrypFinal_ex passed\n", tn);
    }
 
-
+   *cipherlen = temp_cipherlen;
+   DEBUG_SHMEM("Final cipherlen: %u\n", *cipherlen);
 }
 
 
@@ -607,6 +663,97 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
     return 0;
 }
 
+
+int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long long src, 
+        void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len){
+
+   int res = 0;
+   int segment_count = 0, count = 0;
+   int local_cipherlen = 0;
+   int max_data = 0;
+
+   int other_cipherlen = 0;
+   int thread_no = 1; // Starting thread point
+
+   if (bytes < SIX_FOUR_K){
+      thread_no = 1;
+   }else if (bytes < ONE_TWO_EIGHT_K){
+      thread_no = 2;
+   }else if (bytes < TWO_FIVE_SIX_K){
+      thread_no = 4;
+   }else if (bytes < FIVE_TWELVE_K){
+      thread_no = 8;
+   }else{
+      thread_no = 16;
+   }
+
+   int data = bytes / thread_no;
+   data++;
+
+   if (bytes <= THIRTY_TWO_K/4){
+      segment_count = 1;
+      data = bytes;
+   }else{
+      segment_count = (bytes-1)/data + 1;
+   }
+
+   int position = 0;
+
+   int temp_cipherlen = 0;
+
+   unsigned char *key = &(gcm_key[0]);
+
+#pragma omp parallel for schedule(static) default(none) private (segment_count, count, local_cipherlen, cipherbuf, rbuf, openmp_dec_ctx, stdout, stderr, max_data, bytes, data, position, src, dest,  proc, res, key, cipher_len, temp_cipherlen)  num_threads(thread_no)
+   for (count = 0; count < segment_count ; count++){
+
+      int tn = omp_get_thread_num();
+      //int cipher_temp = 0;
+      void *tmp_buf = cipherbuf + count * (data+AES_TAG_LEN+AES_RAND_BYTES);
+      void *tmp_buf2 = rbuf + count * (data+AES_TAG_LEN+AES_RAND_BYTES);
+
+      EVP_CIPHER_CTX *local_ctx = openmp_dec_ctx;
+      int enc_data = data;
+
+      if (count == segment_count - 1){
+         enc_data = (max_data - data*(segment_count - 1));
+         max_data = enc_data + AES_TAG_LEN;
+      }
+
+      //DEBUG_SHMEM("T_%d Params: ctx %p, rbuf+(%d): %p, cipher_len ptr %p, cipherbuf %p + src %d + RAND BYTES %d, bytes %d - AES_RAND_BYTES %d\n", tn, local_ctx, dest, (rbuf+dest), (&cipher_len), cipherbuf, src, AES_RAND_BYTES, max_data, AES_RAND_BYTES);
+
+      if ((res = EVP_DecryptInit_ex(local_ctx, EVP_aes_256_gcm(), NULL, key, tmp_buf+src)) != 1){
+         ERROR_SHMEM("T_%d DecryptInit_ex failed: %d %s\n",tn, ERR_get_error(), ERR_error_string(res, NULL));
+         memset(NULL, 0, 10);
+      }
+
+
+      if ((res = EVP_DecryptUpdate(local_ctx, ((unsigned char *)(rbuf+dest)), (int *)(&cipher_len), tmp_buf+src+AES_RAND_BYTES, (max_data-AES_RAND_BYTES))) != 1){
+      ERROR_SHMEM("T_%d DecryptUpdate failed: %u %s\n", tn, ERR_get_error(), ERR_error_string(res, NULL));
+      memset(NULL, 0, 10);
+   }
+
+   //DEBUG_SHMEM("T_%d DecryptUpdated passed; cipherlen: %u\n", tn, cipher_len);
+
+
+    if ((res = EVP_CIPHER_CTX_ctrl(local_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, (tmp_buf+src+(cipher_len))))!= 1){
+       ERROR_SHMEM("T_%d CIPHER_CTX_ctrl failed: %u %s\n", tn, ERR_get_error(), ERR_error_string(res, NULL));
+       memset(NULL, 0, 10);
+
+    }
+ 
+   // DEBUG_SHMEM("T_%d CTX_ctrl passed \n", tn);
+    if ((res = EVP_DecryptFinal_ex(local_ctx, (rbuf+(count*data)+dest), (int *)( &cipher_len))) != 1){
+        /*handleErrors*/
+       ERROR_SHMEM("T_%d Decryption Tag Verification Failed\n", tn);
+    }
+
+    //DEBUG_SHMEM("T_%d DecryptFinal_ex passed\n", tn);
+
+   }
+
+   return res != 0 ? 0 : 0;
+}
+
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, 
         void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len){
 
@@ -643,7 +790,7 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
     int temp_len = cipher_len;
 
     DEBUG_SHMEM("CTX_ctrl passed \n");
-    if ((res = EVP_DecryptFinal_ex(defcp->dec_ctx, (rbuf+dest+temp_len), (int *)( &cipher_len))) != 1){
+    if ((res = EVP_DecryptFinal_ex(defcp->dec_ctx, (rbuf+dest+cipher_len), (int *)( &cipher_len))) != 1){
         /*handleErrors*/
        ERROR_SHMEM("Decryption Tag Verification Failed\n");
     }
@@ -658,7 +805,7 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
     size_t cipherlen = 0;
     nbi_put_ciphertext[nbput_count] = malloc(sizeof(char) * nbytes + AES_TAG_LEN+AES_RAND_BYTES);
-    shmemx_encrypt_single_buffer(
+    shmemx_encrypt_single_buffer_omp(
             ((unsigned char *)nbi_put_ciphertext[nbput_count]),
             0, src, 0, nbytes, ((size_t *)(&cipherlen)));
 
@@ -1012,7 +1159,7 @@ int shmemx_secure_quiet(void){
 
       int cipher_text = 0;
 
-      if (shmemx_decrypt_single_buffer(nbi_get_ciphertext[ctr], get_data.res_pe, 
+      if (shmemx_decrypt_single_buffer_omp(nbi_get_ciphertext[ctr], get_data.res_pe, 
             (void *)(get_data.local_buf),get_data.dst_pe, get_data.plaintext_size + AES_RAND_BYTES,
             get_data.encrypted_size) != 0){
          ERROR_SHMEM("Failed to decrypt on buffer %p with ciphertext %p, counter %d\n",
@@ -1129,7 +1276,7 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
     dec_t1 = shmemx_wtime();
 
     int res_bytes = nbytes+AES_RAND_BYTES;
-    shmemx_decrypt_single_buffer(blocking_get_ciphertext, 0, dest, 0, res_bytes+AES_TAG_LEN,  (size_t)res_bytes);
+    shmemx_decrypt_single_buffer_omp(blocking_get_ciphertext, 0, dest, 0, res_bytes+AES_TAG_LEN,  (size_t)res_bytes);
     dec_t2 = (shmemx_wtime()-dec_t1)*1e6;
 
    DEBUG_SHMEM("Second Decryption passing after first one. Need to talk to remote proc to do it there, too\n");
