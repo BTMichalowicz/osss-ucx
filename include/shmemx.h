@@ -459,13 +459,13 @@ extern pmix_proc_t *my_second_pmix;
 #endif /* 1/0 for DEBUG PRINTS */
 #define ERROR_SHMEM(fmt, args...)                       \
    do {                                                 \
-      fflush(stdout);                                   \
-      fflush(stderr);                                   \
+     /* fflush(stdout);                                   \
+      fflush(stderr);                               */    \
       fprintf(stderr, "[rank_%d][%s:%d][%s][ERROR] "fmt,       \
             proc.li.rank, __FILE__, __LINE__, __func__, \
             ##args);                                    \
-      fflush(stderr);                                   \
-      fflush(stdout);                                   \
+      /*fflush(stderr);                                   \
+      fflush(stdout);                              */     \
    } while(0);
 
 
