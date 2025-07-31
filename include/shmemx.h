@@ -324,10 +324,7 @@ int shmemx_query_interoperability(int property);
 #define NON_BLOCKING_OP_COUNT 1024
 #define PUT_TEMP_BUF_LEN 20
 
-#define MAGIC 0xFF
-#define off_1 24
-#define off_2 16
-#define off_3 8
+#define MAX_THREAD_COUNT 16
 
 #define THIRTY_TWO_K 32*KILO
 #define SIX_FOUR_K 64 * KILO
@@ -339,13 +336,7 @@ int shmemx_query_interoperability(int property);
 #define FOUR_M 4 * MEGA
 #define PIPELINE_SIZE FIVE_TWELVE_K
 
-#define SUBKEY_GEN_START (2<<16) - 1 /* 64KB-1 */
 
-
-#define SEG_CTX_ID_LEN 100
-#define LOCAL_NONCE_LEN 50
-#define AEAD_KEY_SIZE 40
-#define V_SIZE 50
 
 
 /**
