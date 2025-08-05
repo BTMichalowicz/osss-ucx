@@ -260,14 +260,15 @@ ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
 static const pmix_status_t ENC_SUCCESS = PMIX_EXTERNAL_ERR_BASE-1;
 static const pmix_status_t DEC_SUCCESS = PMIX_EXTERNAL_ERR_BASE-2;
 
-
+int put_thread_no = 0;
+int get_thread_no = 0;
 static void notif_cb_callback(pmix_status_t status,
             void *cbdata){
 
    //NO_WARN_UNUSED(status);
    NO_WARN_UNUSED(cbdata);
    shmemu_assert(status == PMIX_SUCCESS, "notif_cb_callback: PMIX_failed here\n");
-//   DEBUG_SHMEM("Reception complete\n");
+   DEBUG_SHMEM("Reception complete\n");
 
 }
 
@@ -295,6 +296,15 @@ static void enc_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
     size_t cipherlen = 0;
 
     shmemx_encrypt_single_buffer_omp(base, source_rank, (const void *)dest, rank, og_bytes, &cipherlen);
+
+    //pmix_proc_t procs = malloc(sizeof(pmix_proc_t) *2);
+    pmix_proc_t fence_proc[PROC_ENC_DEC_FENCE_COUNT];
+    
+//    PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
+//    PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, source->rank);
+
+    //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);
+
 
     DEBUG_SHMEM("Remote encryption went successfully\n");
 
@@ -328,24 +338,33 @@ static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
     shmemu_assert(source_rank != PMIX_RANK_UNDEF, "dec_notif_fn: source rank is undefined!");
 
    
-    DEBUG_SHMEM("decryption pe %d source rank %d address %p og_bytes %d; is_nonblocking %d,ciphertext_size %ld\n",
-          pe, source_rank, dest, og_size, is_nonblocking, cipherlen);
+    DEBUG_SHMEM("decryption pe %d source rank %d address %p og_bytes %lu; is_nonblocking %d,ciphertext_size %d\n",
+          pe, source_rank, (void *)dest, og_size, is_nonblocking, cipherlen);
 
     shmemu_assert(source != NULL, "dec_notif_fn: source proc struct is NULL\n");
 
  
-    void *r_dest_ciphertext = malloc(cipherlen + AES_RAND_BYTES+AES_TAG_LEN);
-    memcpy(r_dest_ciphertext, (void*)dest, cipherlen + AES_RAND_BYTES+AES_TAG_LEN);
+    //void *r_dest_ciphertext = malloc(cipherlen + AES_RAND_BYTES+AES_TAG_LEN);
+    //memcpy(r_dest_ciphertext, (void*)dest, cipherlen + AES_RAND_BYTES+AES_TAG_LEN);
 
     size_t cipher_len = cipherlen;
 
-    shmemx_decrypt_single_buffer_omp((unsigned char *)r_dest_ciphertext, pe, (void *)dest, source_rank, og_size/* + AES_RAND_BYTES*/, (int)cipher_len);
+    int thread_no = shmemx_decrypt_single_buffer_omp((unsigned char *)dest, pe, (void *)dest, source_rank, og_size, (int)cipher_len);
 
 
     if (cbfunc){
-        cbfunc(PMIX_SUCCESS, NULL, 0, NULL, NULL, cbdata);
+       cbfunc(PMIX_SUCCESS, NULL, 0, NULL, NULL, cbdata);
+
     }
-    free(r_dest_ciphertext);
+    //free(r_dest_ciphertext);
+
+
+    
+//    PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
+//    PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, source->rank);
+
+    //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);
+    //free(procs);
 }
 
 
@@ -526,6 +545,8 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
       thread_no = 16;
    }
 
+   put_thread_no = thread_no;
+
    int data = bytes / thread_no;
    //data++;
 
@@ -543,17 +564,18 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
    //unsigned char *key = &(gcm_key[0]);
    DEBUG_SHMEM("Segment_count %d, data = %d, max_thread_no %d\n", segment_count, data, thread_no);
 
-   // if (data <=SIX_FOUR_K){
-   //    return shmemx_encrypt_single_buffer(cipherbuf, src, sbuf, dest, bytes, cipherlen);
+ //   if (segment_count == 1){
+ //      return shmemx_encrypt_single_buffer(cipherbuf, src, sbuf, dest, bytes, cipherlen);
+ //   }
 
-   DEBUG_SHMEM("Starting parallel for...\n");
+//   DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for (plaintext: %s)\n", (char *)sbuf);
 #pragma omp parallel for schedule (dynamic) default(none) private(max_data, position, res, local_cipherlen) shared(src, dest, openmp_enc_ctx, stdout,stderr, segment_count, data, sbuf, cipherbuf, temp_cipherlen, proc, bytes, gcm_key) num_threads(thread_no)
    for (count = 0; count < segment_count ; count++){
 
       int tn = omp_get_thread_num();
       //int cipher_temp = 0;
 
-      void *tmp_buf = cipherbuf + count * (data+AES_TAG_LEN+AES_RAND_BYTES);
+      void *tmp_buf = cipherbuf + count * (data+AES_TAG_LEN+AES_RAND_BYTES)+src;
 
             //  RAND_bytes(tmp_buf, AES_RAND_BYTES);
       EVP_CIPHER_CTX *local_ctx = openmp_enc_ctx[tn];
@@ -567,11 +589,11 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
          enc_data = bytes - data * (segment_count - 1);
          max_data = enc_data + AES_TAG_LEN;
       }
-      DEBUG_SHMEM("[T_%d] local_ctx %p enc_data %d max_data %d tmp_buf: %p (cipher buf %p + count %d * (data %d + AES_TAG_LEN %d + AES_RAND_BYTES %d))\n", 
-            tn, local_ctx, enc_data, max_data, tmp_buf, (void *)cipherbuf, count, data, AES_TAG_LEN, AES_RAND_BYTES);
+   //   DEBUG_SHMEM("[T_%d] local_ctx %p enc_data %d max_data %d tmp_buf: %p (cipher buf %p + count %d * (data %d + AES_TAG_LEN %d + AES_RAND_BYTES %d))\n", 
+   //         tn, local_ctx, enc_data, max_data, tmp_buf, (void *)cipherbuf, count, data, AES_TAG_LEN, AES_RAND_BYTES);
 
       if ((res = EVP_EncryptInit_ex(local_ctx, EVP_aes_256_gcm(), NULL, gcm_key, tmp_buf+src)) != 1){
-         ERROR_SHMEM("[T_%d] EncryptInit_ex from error %d: %s\n",
+         ERROR_SHMEM("[T_%d] EncryptInit_ex from error %lu: %s\n",
                tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
          memset(NULL, 0, 10);
       }
@@ -579,7 +601,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
       DEBUG_SHMEM("[T_%d] EncryptInit_ex passed\n", tn);
 
       if ((res = EVP_EncryptUpdate(local_ctx, tmp_buf+src+AES_RAND_BYTES, &local_cipherlen, ((const unsigned char *)(sbuf + position+dest)), (int) enc_data)) != 1){
-         ERROR_SHMEM("[T_%d] EncryptUpdate Failed: %d %s\n", 
+         ERROR_SHMEM("[T_%d] EncryptUpdate Failed: %lu %s\n", 
                tn, ERR_get_error(), ERR_error_string(res, NULL));
          memset(NULL, 0, 10);
       }
@@ -587,14 +609,14 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 //      DEBUG_SHMEM("[T_%d] EncrypUpdate passed with cipherlen %d\n", tn, local_cipherlen);
       temp_cipherlen += local_cipherlen; /* Adds to the global cipherlen length */
 
-      DEBUG_SHMEM("[T_%d] Entering final with local_ctx %p tmp_buf %p + AES_TAG_LEN %d + src %d + local_cipherlen %d\n",
+      DEBUG_SHMEM("[T_%d] Entering final with local_ctx %p tmp_buf %p + AES_TAG_LEN %d + src %llu + local_cipherlen %d\n",
             tn, local_ctx, tmp_buf, AES_TAG_LEN, src, local_cipherlen);
 
 
 #pragma omp critical
       {
          if ((res = EVP_EncryptFinal_ex(local_ctx, tmp_buf+AES_TAG_LEN+src+local_cipherlen, &local_cipherlen)) != 1){
-            ERROR_SHMEM("[T_%d] EncryptFinal_ex failed: %d %s\n", tn,
+            ERROR_SHMEM("[T_%d] EncryptFinal_ex failed: %lu %s\n", tn,
                   ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
             memset(NULL, 0, 10);
          }
@@ -615,7 +637,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
 
    *cipherlen = temp_cipherlen;
-   DEBUG_SHMEM("Final cipherlen: %u\n", *cipherlen);
+//   DEBUG_SHMEM("[END_ENCRYPTION] Final cipherlen: %lu, CIPHERTEXT: %s\n", *cipherlen, cipherbuf);
 
    return segment_count;
 }
@@ -637,7 +659,7 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
     
 //    DEBUG_SHMEM("Byte count :%d \n", (int)bytes);
     if((res = EVP_EncryptInit_ex(defcp->enc_ctx, EVP_aes_256_gcm(), NULL, gcm_key, cipherbuf+src)) != 1){
-       ERROR_SHMEM("EncryptInit_ex from error %d: %s\n",
+       ERROR_SHMEM("EncryptInit_ex from error %lu: %s\n",
              ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
        memset(NULL, 0, 10);
     }
@@ -650,7 +672,7 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
        memset(NULL, 0, 10);
     }
 
-    DEBUG_SHMEM("EncryptUpdate passed; block_put_cipherlen: %u\n", (size_t) len);
+    DEBUG_SHMEM("EncryptUpdate passed; block_put_cipherlen: %lu\n", (size_t) len);
 
     shmemu_assert(len >0, "shmemx_encrypt_single_buffer: ciphertext is 0...\n");
 
@@ -718,19 +740,20 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
    //unsigned char *key = &(gcm_key[0]);
 
-  // if (data <= SIX_FOUR_K){
+  // if (segment_count == 1){
   //    return shmemx_decrypt_single_buffer(cipherbuf, src, rbuf, dest, bytes, cipher_len);
   // }
 
-   DEBUG_SHMEM("Segment_count %d, data = %d, max_thread_no %d\n", segment_count, data, thread_no);
-
+  // DEBUG_SHMEM("Segment_count %d, data = %d, max_thread_no %d\n", segment_count, data, thread_no);
+   
+//   DEBUG_SHMEM("[START_DECRYPTION] Ciphertext: %s\n", cipherbuf);
 //private (segment_count, count, local_cipherlen, cipherbuf, rbuf, openmp_dec_ctx, stdout, stderr, max_data, bytes, data, position, src, dest,  proc, res, key, cipher_len, temp_cipherlen)
 
 #pragma omp parallel for schedule(dynamic) default(none) private(count, max_data, position, res, local_cipherlen) shared(segment_count, stdout, stderr, openmp_dec_ctx, data, cipherbuf, rbuf, cipher_len, src, dest, bytes, proc, gcm_key) num_threads(thread_no)
    for (count = 0; count < segment_count ; count++){
 
       int tn = omp_get_thread_num();
-      DEBUG_SHMEM("[T_%d] start\n", tn);
+ //     DEBUG_SHMEM("[T_%d] start\n", tn);
       //int cipher_temp = 0;
       void *tmp_buf = cipherbuf + count * (data+AES_TAG_LEN+AES_RAND_BYTES);
       void *tmp_buf2 = rbuf + count * (data+AES_TAG_LEN+AES_RAND_BYTES);
@@ -743,39 +766,42 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
          max_data = enc_data + AES_TAG_LEN;
       }
 
-      //DEBUG_SHMEM("T_%d Params: ctx %p, rbuf+(%d): %p, cipher_len ptr %p, cipherbuf %p + src %d + RAND BYTES %d, bytes %d - AES_RAND_BYTES %d\n", tn, local_ctx, dest, (rbuf+dest), (&cipher_len), cipherbuf, src, AES_RAND_BYTES, max_data, AES_RAND_BYTES);
+      DEBUG_SHMEM("T_%d Params: ctx %p, rbuf+(%d): %p, cipher_len ptr %p, cipherbuf %p + src %d + RAND BYTES %d, bytes %d - AES_RAND_BYTES %d\n", tn, local_ctx, dest, (rbuf+dest), (&cipher_len), cipherbuf, src, AES_RAND_BYTES, max_data, AES_RAND_BYTES);
 
       if ((res = EVP_DecryptInit_ex(local_ctx, EVP_aes_256_gcm(), NULL, gcm_key, tmp_buf)) != 1){
-         ERROR_SHMEM("[T_%d] DecryptInit_ex failed: %d %s\n",tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
+         ERROR_SHMEM("[T_%d] DecryptInit_ex failed: %lu %s\n",tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
          memset(NULL, 0, 10);
       }
 
 
-      if ((res = EVP_DecryptUpdate(local_ctx, ((unsigned char *)(tmp_buf2+dest)), (int *)(&local_cipherlen), tmp_buf+AES_RAND_BYTES+src, (data-AES_RAND_BYTES))) != 1){
-      ERROR_SHMEM("[T_%d] DecryptUpdate failed: %u %s\n", tn, ERR_get_error(), ERR_error_string(res, NULL));
+      if ((res = EVP_DecryptUpdate(local_ctx, ((unsigned char *)(tmp_buf2+dest)), (int *)(&local_cipherlen), tmp_buf+AES_RAND_BYTES+src, (data-AES_TAG_LEN))) != 1){
+      ERROR_SHMEM("[T_%d] DecryptUpdate failed: %lu %s\n", tn, ERR_get_error(), ERR_error_string(res, NULL));
       memset(NULL, 0, 10);
    }
 
-   //DEBUG_SHMEM("T_%d DecryptUpdated passed; cipherlen: %u\n", tn, cipher_len);
+   DEBUG_SHMEM("T_%d DecryptUpdated passed; cipherlen: %u\n", tn, cipher_len);
 
 
-    if ((res = EVP_CIPHER_CTX_ctrl(local_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, tmp_buf+src+data))!= 1){
-       ERROR_SHMEM("[T_%d] CIPHER_CTX_ctrl failed: %u %s\n", tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
+    if ((res = EVP_CIPHER_CTX_ctrl(local_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, tmp_buf+src+data-AES_TAG_LEN))!= 1){
+       ERROR_SHMEM("[T_%d] CIPHER_CTX_ctrl failed: %lu %s\n", tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
        memset(NULL, 0, 10);
 
     }
  
-   // DEBUG_SHMEM("T_%d CTX_ctrl passed \n", tn);
+    DEBUG_SHMEM("T_%d CTX_ctrl passed \n", tn);
     if ((res = EVP_DecryptFinal_ex(local_ctx, (rbuf+(count*data)+dest+local_cipherlen), (int *)( &local_cipherlen))) != 1){
         /*handleErrors*/
-       ERROR_SHMEM("[T_%d] Decryption Tag Verification Failed %d %s\n", tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
+       ERROR_SHMEM("[T_%d] Decryption Tag Verification Failed %lu %s\n", tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
     }
 
-    //DEBUG_SHMEM("T_%d DecryptFinal_ex passed\n", tn);
+    DEBUG_SHMEM("T_%d DecryptFinal_ex passed\n", tn);
 
    }
 
-   return res != 0 ? 0 : 0;
+//   DEBUG_SHMEM("[END_DECRYPTION] plaintext: %s\n", (char *)rbuf);
+
+
+   return 0;
 }
 
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, 
@@ -785,28 +811,28 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
 
    int res = 0;
 
-   DEBUG_SHMEM("cipherbuf %p, src %llu, rbuf %p, dest %llu, bytes %u\n",
+   DEBUG_SHMEM("cipherbuf %p, src %llu, rbuf %p, dest %llu, bytes %lu\n",
          cipherbuf, src, (void *)rbuf, dest, bytes);
 
 
    if ((res = EVP_DecryptInit_ex(defcp->dec_ctx, EVP_aes_256_gcm(), NULL, gcm_key, cipherbuf+src)) != 1){
-      ERROR_SHMEM("DecryptInit_ex failed: %d %s\n", ERR_get_error(), ERR_error_string(res, NULL));
+      ERROR_SHMEM("DecryptInit_ex failed: %lu %s\n", ERR_get_error(), ERR_error_string(res, NULL));
       memset(NULL, 0, 10);
    }
 
  //  DEBUG_SHMEM("DecryptInit_ex passed \n");
-   DEBUG_SHMEM("Params: ctx %p, rbuf+(%d): %p, cipher_len ptr %p, cipherbuf %p + src %d + RAND BYTES %d, bytes %d - AES_RAND_BYTES %d\n", defcp->dec_ctx, dest, (rbuf+dest), (&cipher_len), cipherbuf, src, AES_RAND_BYTES, bytes, AES_RAND_BYTES);
+   DEBUG_SHMEM("Params: ctx %p, rbuf+(%llu): %p, cipher_len ptr %p, cipherbuf %p + src %llu + RAND BYTES %d, bytes %lu - AES_RAND_BYTES %d\n", defcp->dec_ctx, dest, (rbuf+dest), (&cipher_len), cipherbuf, src, AES_RAND_BYTES, bytes, AES_RAND_BYTES);
 
    if ((res = EVP_DecryptUpdate(defcp->dec_ctx, ((unsigned char *)(rbuf+dest)), (int *)(&cipher_len), cipherbuf+src+AES_RAND_BYTES, (bytes-AES_RAND_BYTES))) != 1){
-      ERROR_SHMEM("DecryptUpdate failed: %u %s\n", ERR_get_error(), ERR_error_string(res, NULL));
+      ERROR_SHMEM("DecryptUpdate failed: %lu %s\n", ERR_get_error(), ERR_error_string(res, NULL));
       memset(NULL, 0, 10);
    }
 
-   DEBUG_SHMEM("DecryptUpdated passed; cipherlen: %u\n", cipher_len);
+   DEBUG_SHMEM("DecryptUpdated passed; cipherlen: %lu\n", cipher_len);
 
 
     if ((res = EVP_CIPHER_CTX_ctrl(defcp->dec_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, (cipherbuf+dest+(bytes))))!= 1){
-       ERROR_SHMEM("CIPHER_CTX_ctrl failed: %u %s\n", ERR_get_error(), ERR_error_string(res, NULL));
+       ERROR_SHMEM("CIPHER_CTX_ctrl failed: %lu %s\n", ERR_get_error(), ERR_error_string(res, NULL));
        memset(NULL, 0, 10);
 
     }
@@ -843,8 +869,10 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
     shmemc_context_h ch = (shmemc_context_h) ctx; 
     uint64_t r_dest;  /* address on other PE */
     ucp_rkey_h r_key; /* rkey for remote address */
-    DEBUG_SHMEM("Getting rkey and addr\n");
     get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
+
+    DEBUG_SHMEM("Getting rkey and addr: %p\n", (void *)r_dest);
+
 
     uint64_t local_dest;
     ucp_rkey_h local_rkey;
@@ -854,7 +882,8 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
     nb_put_ctr[nbput_count].src_pe = 0; //proc.li.rank;
     nb_put_ctr[nbput_count].dst_pe = 0;
-    nb_put_ctr[nbput_count].plaintext_size = nbytes;
+    nb_put_ctr[nbput_count].res_pe = pe;
+    nb_put_ctr[nbput_count].plaintext_size = nbytes + AES_RAND_BYTES;
     nb_put_ctr[nbput_count].encrypted_size = cipherlen;
     nb_put_ctr[nbput_count].remote_buf_addr = r_dest;
     nb_put_ctr[nbput_count].local_buf_addr = (uintptr_t) src;
@@ -879,7 +908,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
           pmix_t1, pmix_t2; /* These last 2 would be for decrypting/encrypting */
 
 
-    int res  = 0;
+    //int res  = 0;
     unsigned char *blocking_put_ciphertext = calloc(1, nbytes+(AES_TAG_LEN+AES_RAND_BYTES));
     total_t1 = shmemx_wtime();
 
@@ -900,7 +929,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     put_t1 = shmemx_wtime();
     shmemc_ctx_put(ctx, dest, 
             blocking_put_ciphertext,
-            block_put_cipherlen+(segment_count * (AES_TAG_LEN+AES_RAND_BYTES)) /*nbytes+AES_TAG_LEN+AES_RAND_BYTES*/, 
+            block_put_cipherlen+(AES_TAG_LEN+AES_RAND_BYTES) /*nbytes+AES_TAG_LEN+AES_RAND_BYTES*/, 
             pe);
     put_t2 = (shmemx_wtime() - put_t1)*1e6;
 
@@ -942,7 +971,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
    
     PMIX_INFO_CONSTRUCT(&si[0]);
     PMIX_INFO_LOAD(&si[0], PMIX_EVENT_CUSTOM_RANGE, &pmix_darray, PMIX_DATA_ARRAY);
-    DEBUG_SHMEM("dest ptr, one passed in 0x%x: %p\n", r_dest, dest);
+    DEBUG_SHMEM("dest ptr, one passed in 0x%lx: %p\n", r_dest, dest);
 
     PMIX_INFO_CONSTRUCT(&si[1]);
     PMIX_LOAD_KEY(si[1].key, "Remote_secure_buffer");
@@ -974,7 +1003,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     PMIX_INFO_CONSTRUCT(&si[6]);
     PMIX_LOAD_KEY(si[5].key, "og_bytes");
     si[6].value.type = PMIX_UINT32;
-    si[6].value.data.uint32 = nbytes;
+    si[6].value.data.uint32 = nbytes+AES_TAG_LEN;
     double pmix_construct_time = (shmemx_wtime()-pmix_t1)*1e6;
 
 
@@ -996,6 +1025,12 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 
     PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
     free(procs);
+    pmix_proc_t fence_proc[PROC_ENC_DEC_FENCE_COUNT];
+    
+    //PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
+    //PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, pe);
+
+    //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);    
     free (blocking_put_ciphertext);
     total_t2 = (shmemx_wtime()-total_t1)*1e6;
 
@@ -1081,7 +1116,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
     if (ps != PMIX_SUCCESS){
         shmemu_assert(ps == PMIX_SUCCESS,
-                " shmem_ctx_secure_get: PMIx can't notify decryption: %s",
+                " shmem_ctx_secure_get_nbi: PMIx can't notify decryption: %s",
                 PMIx_Error_string(ps));
     };
 
@@ -1089,6 +1124,15 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
     PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
     free(procs);
+
+    procs = NULL;
+    nprocs = 2;
+    pmix_proc_t fence_proc[PROC_ENC_DEC_FENCE_COUNT];
+    
+ //   PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
+ //   PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, pe);
+
+   // PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);    
 
     
     shmemc_ctx_get_nbi(ctx, 
@@ -1098,7 +1142,8 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
     nb_get_ctr[nbget_count].src_pe = si[4].value.data.uint32;
     nb_get_ctr[nbget_count].dst_pe = si[3].value.data.uint32;
-    nb_get_ctr[nbget_count].plaintext_size = nbytes;
+    nb_get_ctr[nbget_count].res_pe = pe;
+    nb_get_ctr[nbget_count].plaintext_size = nbytes+AES_TAG_LEN;
     nb_get_ctr[nbget_count].encrypted_size = nbytes+AES_TAG_LEN+AES_RAND_BYTES;
     nb_get_ctr[nbget_count].local_buf_addr = (uintptr_t) dest;
     nb_get_ctr[nbget_count].local_buf = (uintptr_t) dest;
@@ -1108,19 +1153,25 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
     PMIX_INFO_CONSTRUCT(&si[2]);
     PMIX_LOAD_KEY(si[2].key, "Remote_buffer_enc_size");
     si[2].value.type = PMIX_INT;
-    si[2].value.data.integer = res_bytes; 
+   si[2].value.data.integer = nbytes; 
 
     ps = PMIx_Notify_event(DEC_SUCCESS, procs, PMIX_RANGE_CUSTOM, &(si[0]),
           7, notif_cb_callback, NULL);
 
+    //pmix_proc_t fence_proc[PROC_ENC_DEC_FENCE_COUNT];
+    
+   // PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
+   // PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, pe);
 
+    //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);    
 
+    free(procs);
 }
 
 
 int shmemx_secure_quiet(void){
 
-   int shmem_errno = 0; /* SUCCESS */
+   //int shmem_errno = 0;
    pmix_status_t ps;
    pmix_info_t si[7]; 
    pmix_proc_t put_proc = {};
@@ -1135,10 +1186,15 @@ int shmemx_secure_quiet(void){
     * okay... I think
     */
 
+//   DEBUG_SHMEM("nbput_count: %llu, nbget_count: %llu\n",
+//         nbput_count, nbget_count);
+
    int ctr = 0;
+   pmix_proc_t fence_proc[PROC_ENC_DEC_FENCE_COUNT];
+
    while (ctr < nbput_count){
       shmem_secure_attr_t put_data = nb_put_ctr[ctr];
-      PMIX_LOAD_PROCID(&put_proc, my_second_pmix->nspace, put_data.dst_pe);
+      PMIX_LOAD_PROCID(&put_proc, my_second_pmix->nspace, put_data.res_pe);
 
       memcpy(pmix_darray.array, &put_proc, sizeof(pmix_proc_t));
 
@@ -1173,14 +1229,21 @@ int shmemx_secure_quiet(void){
       PMIX_INFO_CONSTRUCT(&si[6]);
       PMIX_LOAD_KEY(si[6].key, "og_bytes");
       si[6].value.type = PMIX_UINT32;
-      si[6].value.data.uint32 = put_data.plaintext_size;
+      si[6].value.data.uint32 = put_data.plaintext_size+AES_RAND_BYTES;
 
 
-      DEBUG_SHMEM( "Starting signaling with r_dest %p, og_bytes %u, dest_rank %u \n",
-              (void *)put_data.remote_buf_addr, put_data.plaintext_size, put_data.dst_pe);
+      DEBUG_SHMEM( "Starting signaling with r_dest %p, og_bytes %lu, dest_rank %u \n",
+              (void *)put_data.remote_buf_addr, put_data.plaintext_size, put_data.res_pe);
       ps = PMIx_Notify_event(DEC_SUCCESS, &put_proc, PMIX_RANGE_CUSTOM, &(si[0]),
             7, //notif_cb_callback 
              NULL, NULL);
+
+
+//      PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
+//      PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, put_data.res_pe);
+
+      //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);    
+
 
       if (ps != PMIX_SUCCESS){
          shmemu_assert(ps == PMIX_SUCCESS,
@@ -1197,16 +1260,69 @@ int shmemx_secure_quiet(void){
 
    while (ctr < nbget_count){
       shmem_secure_attr_t get_data = nb_get_ctr[ctr];
+      
 
-      int cipher_text = 0;
-
-      if (shmemx_decrypt_single_buffer_omp(nbi_get_ciphertext[ctr], get_data.res_pe, 
+      DEBUG_SHMEM("Local_decryption\n");
+      if (shmemx_decrypt_single_buffer_omp(nbi_get_ciphertext[ctr], get_data.src_pe, 
                (void *)(get_data.local_buf),get_data.dst_pe, get_data.plaintext_size,
                get_data.encrypted_size) != 0){
          ERROR_SHMEM("Failed to decrypt on buffer %p with ciphertext %p, counter %d\n",
                (void *)get_data.local_buf, nbi_get_ciphertext[ctr], ctr);
+         memset(NULL, 0, 10);
       }
-      free(nbi_get_ciphertext[ctr]);
+
+      PMIX_LOAD_PROCID(&put_proc, my_second_pmix->nspace, get_data.res_pe);
+
+      memcpy(pmix_darray.array, &put_proc, sizeof(pmix_proc_t));
+
+      PMIX_INFO_CONSTRUCT(&si[0]);
+      PMIX_INFO_LOAD(&si[0], PMIX_EVENT_CUSTOM_RANGE, &pmix_darray, PMIX_DATA_ARRAY);
+
+      PMIX_INFO_CONSTRUCT(&si[1]);
+      PMIX_LOAD_KEY(si[1].key, "Remote_secure_buffer");
+      si[1].value.type = PMIX_UINT64;
+      si[1].value.data.uint64 = (uint64_t)get_data.remote_buf_addr;
+      // PMIX_INFO_LOAD(&si, PMIX_GRANK, &success, PMIX_INT);
+      PMIX_INFO_CONSTRUCT(&si[2]);
+      PMIX_LOAD_KEY(si[2].key, "Remote_buffer_enc_size");
+      si[2].value.type = PMIX_INT;
+      si[2].value.data.integer = get_data.encrypted_size;
+
+      PMIX_INFO_CONSTRUCT(&si[3]);
+      PMIX_LOAD_KEY(si[3].key, "Destination_rank");
+      si[3].value.type = PMIX_UINT32;
+      si[3].value.data.uint32 = get_data.dst_pe;
+
+      PMIX_INFO_CONSTRUCT(&si[4]);
+      PMIX_LOAD_KEY(si[4].key, "Source_rank");
+      si[4].value.type = PMIX_UINT32;
+      si[4].value.data.uint32 = get_data.src_pe;
+
+      PMIX_INFO_CONSTRUCT(&si[5]);
+      PMIX_LOAD_KEY(si[5].key, "is_nonblocking");
+      si[5].value.type = PMIX_INT;
+      si[5].value.data.integer = 1;
+
+      PMIX_INFO_CONSTRUCT(&si[6]);
+      PMIX_LOAD_KEY(si[6].key, "og_bytes");
+      si[6].value.type = PMIX_UINT32;
+      si[6].value.data.uint32 = get_data.plaintext_size;
+
+    //  DEBUG_SHMEM( "Starting signaling with r_dest %p, og_bytes %lu, dest_rank %u \n",
+    //        (void *)get_data.remote_buf_addr, get_data.plaintext_size, get_data.res_pe);
+    //  ps = PMIx_Notify_event(DEC_SUCCESS, &put_proc, PMIX_RANGE_CUSTOM, &(si[0]),
+    //        7, notif_cb_callback , NULL);
+
+    free(nbi_get_ciphertext[ctr]);
+/*      PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
+      PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, ge_data.res_pe);
+
+      PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);    */
+
+
+
+
+      /* Need to perform the decryption on the remote side HERE */
 
       nbi_get_ciphertext[ctr] = NULL;
       ctr++;
@@ -1215,6 +1331,7 @@ int shmemx_secure_quiet(void){
 
    memset(nb_put_ctr, 0, (sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2));
    memset(nb_get_ctr, 0, (sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2));
+
 
    return 0;
 }
@@ -1308,6 +1425,15 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
 
     PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
     free(procs);
+    
+    pmix_proc_t fence_proc[PROC_ENC_DEC_FENCE_COUNT];
+    
+//    PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
+//    PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, pe);
+
+    //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);    
+/* Technically, this SHOULD be feasible after a notify? */
+    //free(procs);
 
 
     get_t1 = shmemx_wtime();
@@ -1323,7 +1449,7 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
     dec_t1 = shmemx_wtime();
 
     int res_bytes = nbytes+AES_RAND_BYTES;
-    shmemx_decrypt_single_buffer_omp(blocking_get_ciphertext, 0, dest, 0, res_bytes+AES_TAG_LEN,  (size_t)res_bytes);
+    shmemx_decrypt_single_buffer_omp(blocking_get_ciphertext, 0, dest, 0, res_bytes,  (size_t)res_bytes);
     dec_t2 = (shmemx_wtime()-dec_t1)*1e6;
 
    DEBUG_SHMEM("Second Decryption passing after first one. Need to talk to remote proc to do it there, too\n");
@@ -1342,7 +1468,14 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
              PMIx_Error_string(ps));
     };
 
+  //  free (procs);
 
+    //pmix_proc_t fence_proc[PROC_ENC_DEC_FENCE_COUNT];
+    
+    //PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
+    //PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, pe);
+
+    //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);    
 
     
     free(blocking_get_ciphertext);

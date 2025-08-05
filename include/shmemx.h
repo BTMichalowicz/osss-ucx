@@ -433,8 +433,10 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
 extern pmix_proc_t *my_second_pmix;
 
+#define PROC_ENC_DEC_FENCE_COUNT 2
+
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-#if 1
+#if 0
 #define DEBUG_SHMEM(fmt, args...)                       \
    do {                                                 \
       fflush(stdout);                                   \
