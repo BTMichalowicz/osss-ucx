@@ -20,6 +20,117 @@
 #include <string.h>
 #include <math.h>
 
+#if ENABLE_SHMEM_ENCRYPTION
+#include "shmemx.h"
+#include "shmem_enc.h"
+
+/*
+ * -- helpers ----------------------------------------------------------------
+ */
+
+/*
+ * shortcut to look up the UCP endpoint of a context
+ */
+inline static ucp_ep_h lookup_ucp_ep(shmemc_context_h ch, int pe) {
+  return ch->eps[pe];
+}
+
+/*
+ * find rkey for memory "region" on PE "pe"
+ */
+inline static ucp_rkey_h lookup_rkey(shmemc_context_h ch, size_t region,
+                                     int pe) {
+  return ch->racc[region].rinfo[pe].rkey;
+}
+
+/*
+ * -- translation helpers ---------------------------------------------------
+ */
+
+/*
+ * is the given address in this memory region?  Non-zero if yes, 0 if
+ * not.
+ */
+inline static int in_region(uint64_t addr, size_t region) {
+  const mem_info_t *mip = &proc.comms.regions[region].minfo[proc.li.rank];
+
+  return (mip->base <= addr) && (addr < mip->end);
+}
+
+/*
+ * find memory region that ADDR is in, or -1 if none
+ */
+inline static long lookup_region(uint64_t addr) {
+  long r;
+
+  /*
+   * Let's search down from top heap to globals (#0) under
+   * assumption most data in heaps and newest one is most likely
+   * (may need to revisit)
+   */
+  for (r = proc.comms.nregions - 1; r >= 0; --r) {
+    if (in_region(addr, (size_t)r)) {
+      return r;
+      /* NOT REACHED */
+    }
+  }
+
+  return -1L;
+}
+
+/*
+ * where the heap lives on PE "pe"
+ */
+
+inline static size_t get_base(size_t region, int pe) {
+  return proc.comms.regions[region].minfo[pe].base;
+}
+
+inline static uint64_t translate_region_address(uint64_t local_addr,
+                                                size_t region, int pe) {
+  if (region == 0) {
+    return local_addr;
+  } else {
+    const long my_offset = local_addr - get_base(region, proc.li.rank);
+
+    if (my_offset < 0) {
+      return 0;
+    }
+
+    return my_offset + get_base(region, pe);
+  }
+}
+
+inline static uint64_t translate_address(uint64_t local_addr, int pe) {
+  long r = lookup_region(local_addr);
+
+  if (r < 0) {
+    return 0;
+  }
+
+  return translate_region_address(local_addr, r, pe);
+}
+
+/*
+ * All ops here need to find remote keys and addresses
+ */
+inline static void get_remote_key_and_addr(shmemc_context_h ch,
+                                           uint64_t local_addr, int pe,
+                                           ucp_rkey_h *rkey_p,
+                                           uint64_t *raddr_p) {
+  const long r = lookup_region(local_addr);
+
+  shmemu_assert(r >= 0, "shmem_enc/dec, get_rkey/addr: can't find memory region for %p",
+                (void *)local_addr);
+
+  *rkey_p = lookup_rkey(ch, r, pe);
+  *raddr_p = translate_region_address(local_addr, r, pe);
+}
+
+
+
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 /** Default tree degree for broadcast operations */
 static int tree_degree_broadcast = 2;
 
@@ -64,9 +175,40 @@ inline static void broadcast_helper_linear(void *target, const void *source,
   const int me = shmem_my_pe();
 
   shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
-  if (me != root) {
-    shmem_getmem(target, source, nbytes, root);
+
+#if ENABLE_SHMEM_ENCRYPTION
+  size_t encrypt_size = 0;
+  uint64_t enc_src = 0;
+  ucp_rkey_h r_key;
+  int segment_count = 0;
+  size_t temp_size = 0;
+  if (proc.env.shmem_encryption && me == root){
+     get_remote_key_and_addr(defcp, (uint64_t)source, me, &r_key, &enc_src);
+     shmemu_assert(enc_src, "linear_broadcast: Buffer is NULL!\n");
+     segment_count = shmemx_encrypt_single_buffer_omp((unsigned char*)(enc_src), 0,
+           source, 0, nbytes, &encrypt_size);
+     temp_size = encrypt_size;
   }
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
+  if (me != root) {
+#if ENABLE_SHMEM_ENCRYPTION
+     if (proc.env.shmem_encryption){
+        encrypt_size = nbytes + AES_RAND_BYTES;
+        shmemc_ctx_get(SHMEM_CTX_DEFAULT, target, source, nbytes + AES_TAG_LEN + AES_RAND_BYTES, root);
+        shmemx_decrypt_single_buffer_omp((unsigned char *)(target), 0, target, 0, nbytes+AES_RAND_BYTES, encrypt_size);
+     }else
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+        shmem_getmem(target, source, nbytes, root);
+  }
+#if ENABLE_SHMEM_ENCRYPTION
+  else{
+     if (proc.env.shmem_encryption){
+        shmemx_decrypt_single_buffer_omp((unsigned char *)(enc_src), 0,(void *) source, 0, nbytes+AES_RAND_BYTES, temp_size);
+
+     }
+  }
+#endif /* ENABLE_SHMEM_ENCRYPTION */
   shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync);
 }
 
@@ -171,11 +313,12 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
     shmem_long_atomic_inc(pSync, PE_start + parent * stride);
   }
 
+
   /* Send data to children */
   if (node.children_num != 0) {
     for (i = 0; i < node.children_num; i++) {
       dst = PE_start + node.children[i] * stride;
-      shmem_putmem_nbi(target, source, nbytes, dst);
+      shmem_putmem(target, source, nbytes, dst);
       shmem_fence();
       shmem_long_atomic_inc(pSync, dst);
     }

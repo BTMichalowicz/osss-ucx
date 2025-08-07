@@ -31,7 +31,7 @@
 #define COLLECTIVES_DEFAULT_SYNC_ALL "binomial_tree"
 
 /** Default algorithm for broadcast operations */
-#define COLLECTIVES_DEFAULT_BROADCAST "binomial_tree"
+#define COLLECTIVES_DEFAULT_BROADCAST "linear"
 
 /** Default algorithm for collect operations */
 #define COLLECTIVES_DEFAULT_COLLECT "bruck"
