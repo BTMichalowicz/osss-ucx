@@ -300,6 +300,14 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
   /* Get my index in the active set */
   int me_as = (me - PE_start) / stride;
 
+#if ENABLE_SHMEM_ENCRYPTION
+  size_t encrypt_size = 0, temp_size = 0;
+  uint64_t enc_src = 0;
+  uint64_t dec_src = 0;
+  ucp_rkey_h r_key = 0;
+  int segment_count = 0;
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
   /* Get information about children */
   get_node_info_binomial_root(PE_size, PE_root, me_as, &node);
 
@@ -316,29 +324,58 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
 
   /* Send data to children */
   if (node.children_num != 0) {
+#if ENABLE_SHMEM_ENCRYPTION
+      if(proc.env.shmem_encryption){
+          get_remote_key_and_addr(defcp, (uint64_t) source, me_as, &r_key, &enc_src);
+          shmemu_assert(enc_src, "Binomial tree bscast: Buffer is NULL\n");
+          segment_count = shmemx_encrypt_single_buffer_omp((unsigned char*)enc_src,
+                  0, source, 0, nbytes, &encrypt_size);
+          temp_size = encrypt_size;
+      }
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
     for (i = 0; i < node.children_num; i++) {
       dst = PE_start + node.children[i] * stride;
-#if ENABLE_SHMEM_ENCRYPTION
-      if (proc.env.shmem_encryption){
-         shmemx_secure_put_nbi(SHMEM_CTX_DEFAULT, target, source, nbytes, dst);
-         shmem_quiet();
+//#if ENABLE_SHMEM_ENCRYPTION
+//      if (proc.env.shmem_encryption){
+//         shmemx_secure_put_nbi(SHMEM_CTX_DEFAULT, target, source, nbytes, dst);
+//         shmem_quiet();
+//         shmem_fence();
+//         shmem_long_atomic_inc(pSync, dst);
+//      }else{
+//#endif /* ENABLE_SHMEM_ENCRYPTION */
+         shmem_putmem_nbi(target, source, nbytes, dst);
          shmem_fence();
          shmem_long_atomic_inc(pSync, dst);
-      }else{
-#endif /* ENABLE_SHMEM_ENCRYPTION */
-         shmem_putmem(target, source, nbytes, dst);
-         shmem_quiet();
-         shmem_fence();
-         shmem_long_atomic_inc(pSync, dst);
-#if ENABLE_SHMEM_ENCRYPTION
-      }
-#endif
+//#if ENABLE_SHMEM_ENCRYPTION
+//      }
+//#endif
     }
+
+#if ENABLE_SHMEM_ENCRYPTION
+    if (proc.env.shmem_encryption)
+        shmem_quiet();
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 
     shmem_long_wait_until(pSync, SHMEM_CMP_EQ,
                           SHCOLL_SYNC_VALUE + node.children_num +
                               (me_as == PE_root ? 0 : 1));
   }
+
+#if ENABLE_SHMEM_ENCRYPTION
+  if (proc.env.shmem_encryption){
+      if (node.children_num != 0){
+          shmemx_decrypt_single_buffer_omp((unsigned char*)(enc_src), 0, (void *) source, 0,
+                  nbytes+AES_RAND_BYTES, temp_size);
+      }
+      //else{
+  //        get_remote_key_and_addr(defcp, (uint64_t) target, me_as, &r_key, &dec_src);
+  //        shmemx_decrypt_single_buffer_omp((unsigned char*)(dec_src), 0, (void *) source, 0,
+  //                nbytes + AES_RAND_BYTES, temp_size);
+  //    }
+  }
+#endif /* ENABLE_SHMEM_ENCRYPTION */
 
   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 }
