@@ -318,9 +318,21 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
   if (node.children_num != 0) {
     for (i = 0; i < node.children_num; i++) {
       dst = PE_start + node.children[i] * stride;
-      shmem_putmem(target, source, nbytes, dst);
-      shmem_fence();
-      shmem_long_atomic_inc(pSync, dst);
+#if ENABLE_SHMEM_ENCRYPTION
+      if (proc.env.shmem_encryption){
+         shmemx_secure_put_nbi(SHMEM_CTX_DEFAULT, target, source, nbytes, dst);
+         shmem_quiet();
+         shmem_fence();
+         shmem_long_atomic_inc(pSync, dst);
+      }else{
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+         shmem_putmem(target, source, nbytes, dst);
+         shmem_quiet();
+         shmem_fence();
+         shmem_long_atomic_inc(pSync, dst);
+#if ENABLE_SHMEM_ENCRYPTION
+      }
+#endif
     }
 
     shmem_long_wait_until(pSync, SHMEM_CMP_EQ,
