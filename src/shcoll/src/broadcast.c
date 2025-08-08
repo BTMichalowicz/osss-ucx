@@ -344,7 +344,7 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
 //         shmem_long_atomic_inc(pSync, dst);
 //      }else{
 //#endif /* ENABLE_SHMEM_ENCRYPTION */
-         shmem_putmem_nbi(target, source, nbytes, dst);
+         shmemc_ctx_put_nbi(SHMEM_CTX_DEFAULT, target, (void *)(enc_src), nbytes + AES_TAG_LEN + AES_RAND_BYTES, dst);
          shmem_fence();
          shmem_long_atomic_inc(pSync, dst);
 //#if ENABLE_SHMEM_ENCRYPTION
