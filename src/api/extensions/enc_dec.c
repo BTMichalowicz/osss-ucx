@@ -21,8 +21,8 @@
 
 const unsigned char gcm_key[GCM_KEY_SIZE] = {'a','b','c','d','e','f','g','a','b','c','d','f','e','a','c','b','d','e','f','0','1','2','3','4','5','6','7','8','9','a','d','c'};
 
-//unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
-unsigned char **nbi_put_ciphertext = NULL; //[NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
+unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+unsigned char nbi_put_ciphertext[NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
 unsigned long long nbput_count = 0;
 
 //unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
@@ -356,15 +356,7 @@ static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
        cbfunc(PMIX_SUCCESS, NULL, 0, NULL, NULL, cbdata);
 
     }
-    //free(r_dest_ciphertext);
-
-
     
-//    PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
-//    PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, source->rank);
-
-    //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);
-    //free(procs);
 }
 
 
@@ -459,7 +451,7 @@ void shmemx_sec_init(){
         handleErrors("Failed to set up the Initialization Vector Length");
     }
 
-    nbi_put_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT*2);
+    //nbi_put_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT*2);
     nbi_get_ciphertext = malloc(sizeof(unsigned char *)*NON_BLOCKING_OP_COUNT*2);
     nb_put_ctr = (shmem_secure_attr_t *)malloc(sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2);
     nb_get_ctr = (shmem_secure_attr_t *)malloc(sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2);
@@ -633,8 +625,6 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
       DEBUG_SHMEM("[T_%d] CIPHER_CTX_CTRL passed\n", tn);
 
    }
-
-
 
    *cipherlen = temp_cipherlen;
 //   DEBUG_SHMEM("[END_ENCRYPTION] Final cipherlen: %lu, CIPHERTEXT: %s\n", *cipherlen, cipherbuf);
@@ -854,9 +844,9 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe){
 
     size_t cipherlen = 0;
-    nbi_put_ciphertext[nbput_count] = malloc(sizeof(char) * nbytes + AES_TAG_LEN+AES_RAND_BYTES);
+    memset(nbi_put_ciphertext[nbput_count], 0, sizeof(char) * nbytes + AES_TAG_LEN+AES_RAND_BYTES);
     shmemx_encrypt_single_buffer_omp(
-            ((unsigned char *)nbi_put_ciphertext[nbput_count]),
+            ((unsigned char *)(&(nbi_put_ciphertext[nbput_count][0]))),
             0, src, 0, nbytes, ((size_t *)(&cipherlen)));
 
     DEBUG_SHMEM("Encryption successful\n");
@@ -907,9 +897,9 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
           put_t1, put_t2,
           pmix_t1, pmix_t2; /* These last 2 would be for decrypting/encrypting */
 
-
+   memset(blocking_put_ciphertext, 0, nbytes+AES_TAG_LEN+AES_RAND_BYTES+1);
     //int res  = 0;
-    unsigned char *blocking_put_ciphertext = calloc(1, nbytes+(AES_TAG_LEN+AES_RAND_BYTES));
+//    unsigned char *blocking_put_ciphertext = malloc( nbytes+(AES_TAG_LEN+AES_RAND_BYTES));
     total_t1 = shmemx_wtime();
 
     enc_t1 = shmemx_wtime();
@@ -920,11 +910,11 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 
 
     int segment_count = shmemx_encrypt_single_buffer_omp(
-          blocking_put_ciphertext,
+          &(blocking_put_ciphertext[0]),
           0, src, 0, nbytes, ((size_t *)(&block_put_cipherlen)));
     
     DEBUG_SHMEM( "Encryption end, ciphertext: %p, cipherlen: %d \n",
-          blocking_put_ciphertext, block_put_cipherlen);
+          &(blocking_put_ciphertext[0]), block_put_cipherlen);
 
     put_t1 = shmemx_wtime();
     shmemc_ctx_put(ctx, dest, 
@@ -932,8 +922,9 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
             block_put_cipherlen+(AES_TAG_LEN+AES_RAND_BYTES) /*nbytes+AES_TAG_LEN+AES_RAND_BYTES*/, 
             pe);
     put_t2 = (shmemx_wtime() - put_t1)*1e6;
-
     DEBUG_SHMEM( "Put end\n");
+
+//    free(blocking_put_ciphertext);
 
     /* Only begin PMIX Construction AFTER the put has been set up appropriately
      * */
@@ -1019,19 +1010,12 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
         shmemu_assert(ps == PMIX_SUCCESS,
                 " shmem_ctx_secure_put: PMIx can't notify decryption: %s",
                 PMIx_Error_string(ps));
-    };
+    }
 
 //    DEBUG_SHMEM( "Signaling success? %s\n", ps == PMIX_SUCCESS ? "yes" : "no");
 
     PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
-    free(procs);
-    pmix_proc_t fence_proc[PROC_ENC_DEC_FENCE_COUNT];
-    
-    //PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
-    //PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, pe);
-
-    //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);    
-    free (blocking_put_ciphertext);
+    //free(blocking_put_ciphertext);
     total_t2 = (shmemx_wtime()-total_t1)*1e6;
 
  /*  DEBUG_SHMEM("For %u bytes\n"
@@ -1123,7 +1107,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
     DEBUG_SHMEM( "Encryption Signaling success? %s\n", ps == PMIX_SUCCESS ? "yes" : "no");
 
     PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
-    free(procs);
+    //free(procs);
 
     procs = NULL;
     nprocs = 2;
@@ -1251,7 +1235,7 @@ int shmemx_secure_quiet(void){
                PMIx_Error_string(ps));
       };
 
-      free(nbi_put_ciphertext[ctr]);
+     // free(nbi_put_ciphertext[ctr]);
       ctr++;
    }
 
@@ -1339,7 +1323,7 @@ int shmemx_secure_quiet(void){
 
 void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe){
-    unsigned char *blocking_get_ciphertext = calloc(1, nbytes+(AES_TAG_LEN+AES_RAND_BYTES));
+    unsigned char *blocking_get_ciphertext = malloc( nbytes+(AES_TAG_LEN+AES_RAND_BYTES));
 
     size_t cipherlen = 0;
     double total_t1, total_t2,
