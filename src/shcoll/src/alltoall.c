@@ -26,6 +26,118 @@
 #include <stdio.h>
 #include <math.h>
 
+#if ENABLE_SHMEM_ENCRYPTION
+#include "shmemx.h"
+#include "shmem_enc.h"
+
+unsigned char put_ciphtext[MAX_MSG_SIZE*AES_TAG_LEN*4 + COLL_OFFSET], 
+              get_ciphtext[MAX_MSG_SIZE*AES_TAG_LEN*4 + COLL_OFFSET];
+/* 4MB * 16 * 4 */
+
+/*
+ * -- helpers ----------------------------------------------------------------
+ */
+
+/*
+ * shortcut to look up the UCP endpoint of a context
+ */
+inline static ucp_ep_h lookup_ucp_ep(shmemc_context_h ch, int pe) {
+  return ch->eps[pe];
+}
+
+/*
+ * find rkey for memory "region" on PE "pe"
+ */
+inline static ucp_rkey_h lookup_rkey(shmemc_context_h ch, size_t region,
+                                     int pe) {
+  return ch->racc[region].rinfo[pe].rkey;
+}
+
+/*
+ * -- translation helpers ---------------------------------------------------
+ */
+
+/*
+ * is the given address in this memory region?  Non-zero if yes, 0 if
+ * not.
+ */
+inline static int in_region(uint64_t addr, size_t region) {
+  const mem_info_t *mip = &proc.comms.regions[region].minfo[proc.li.rank];
+
+  return (mip->base <= addr) && (addr < mip->end);
+}
+
+/*
+ * find memory region that ADDR is in, or -1 if none
+ */
+inline static long lookup_region(uint64_t addr) {
+  long r;
+
+  /*
+   * Let's search down from top heap to globals (#0) under
+   * assumption most data in heaps and newest one is most likely
+   * (may need to revisit)
+   */
+  for (r = proc.comms.nregions - 1; r >= 0; --r) {
+    if (in_region(addr, (size_t)r)) {
+      return r;
+      /* NOT REACHED */
+    }
+  }
+
+  return -1L;
+}
+
+/*
+ * where the heap lives on PE "pe"
+ */
+
+inline static size_t get_base(size_t region, int pe) {
+  return proc.comms.regions[region].minfo[pe].base;
+}
+
+inline static uint64_t translate_region_address(uint64_t local_addr,
+                                                size_t region, int pe) {
+  if (region == 0) {
+    return local_addr;
+  } else {
+    const long my_offset = local_addr - get_base(region, proc.li.rank);
+
+    if (my_offset < 0) {
+      return 0;
+    }
+
+    return my_offset + get_base(region, pe);
+  }
+}
+
+inline static uint64_t translate_address(uint64_t local_addr, int pe) {
+  long r = lookup_region(local_addr);
+
+  if (r < 0) {
+    return 0;
+  }
+
+  return translate_region_address(local_addr, r, pe);
+}
+
+/*
+ * All ops here need to find remote keys and addresses
+ */
+inline static void get_remote_key_and_addr(shmemc_context_h ch,
+                                           uint64_t local_addr, int pe,
+                                           ucp_rkey_h *rkey_p,
+                                           uint64_t *raddr_p) {
+  const long r = lookup_region(local_addr);
+
+  shmemu_assert(r >= 0, "shmem_enc/dec, get_rkey/addr: can't find memory region for %p",
+                (void *)local_addr);
+
+  *rkey_p = lookup_rkey(ch, r, pe);
+  *raddr_p = translate_region_address(local_addr, r, pe);
+}
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 /**
  * @brief Calculate edge color for color pairwise exchange algorithm
  *
@@ -72,6 +184,76 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
  * @param _peer Function to calculate peer PE
  * @param _cond Condition that must be satisfied
  */
+
+#if ENABLE_SHMEM_ENCRYPTION
+#define ALLTOALL_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)                \
+  inline static void alltoall_helper_##_algo##_barrier(                        \
+      void *dest, const void *source, size_t nelems, int PE_start,             \
+      int logPE_stride, int PE_size, long *pSync) {                            \
+    const int stride = 1 << logPE_stride;                                      \
+    const int me = shmem_my_pe();                                              \
+                                                                               \
+    /* Get my index in the active set */                                       \
+    const int me_as = (me - PE_start) / stride;                                \
+                                                                               \
+    void *const dest_ptr = ((uint8_t *)dest) + me_as * nelems;                 \
+    void const *source_ptr = ((uint8_t *)source) + me_as * nelems;             \
+                                                                               \
+    int i;                                                                     \
+    int peer_as, dst, src;                                                     \
+    size_t enc_size[PE_size], dec_size[PE_size], temp_size = 0;                          \
+    uint64_t enc_src = 0, dec_src = 0;                                         \
+    ucp_rkey_h r_key = 0;                                                      \
+                                                                               \
+    assert(_cond);                                                             \
+    /* Right, this just copies the                                             \
+     * source buffer back to the dest buffer for ourselves */                  \
+    memcpy(dest_ptr, source_ptr, nelems);                                      \
+                                                                               \
+    if (proc.env.shmem_encryption){                                          \
+        get_remote_key_and_addr(defcp, (uint64_t) dest, me_as, &r_key, &dec_src);    \
+        for (i = 0; i < PE_size; i++){                                             \
+            dst = i*nelems;                                                        \
+            src = i*(nelems+AES_TAG_LEN+AES_RAND_BYTES);                           \
+            shmemx_encrypt_single_buffer_omp((unsigned char *) &(put_ciphtext[0]), src, source,\
+                    dst, nelems, &(enc_size[i]));                                                   \
+        }                                                                           \
+    }                                                                          \
+    for (i = 1; i < PE_size; i++) {                                            \
+      peer_as = _peer(i, me_as, PE_size);                                      \
+      source_ptr = ((uint8_t *)source) + peer_as * nelems;                     \
+                                                                               \
+      if (proc.env.shmem_encryption){                                           \
+          source_ptr = ((uint8_t *)&(put_ciphtext[0])) + peer_as * nelems;                 \
+          shmemc_ctx_put_nbi(SHMEM_CTX_DEFAULT, dest_ptr, source_ptr,           \
+                  nelems+AES_TAG_LEN+AES_RAND_BYTES,                            \
+                  PE_start + peer_as * stride);                                 \
+      } else {                                                                  \
+          shmem_putmem_nbi(dest_ptr, source_ptr, nelems,                           \
+                  PE_start + peer_as * stride);                           \
+      }                                                                        \
+                                                                               \
+      if (i % alltoall_rounds_sync == 0) {                                     \
+        /* TODO: change to auto shcoll barrier */                              \
+        shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);  \
+      }                                                                        \
+    }                                                                          \
+    shmem_quiet();                                                             \
+      if (proc.env.shmem_encryption){                                          \
+          for (i = 0; i< PE_size; i++){                                        \
+              dec_size[i] = enc_size[i];                                       \
+              dst = (i * nelems);                                              \
+              src = (i * (nelems+AES_TAG_LEN + AES_RAND_BYTES));               \
+              shmemx_decrypt_single_buffer_omp(dec_src, src, dest, dst,               \
+                      nelems+AES_RAND_BYTES, dec_size[i]);                                  \
+          }                                                                     \
+      }                                                                         \
+    /* TODO: change to auto shcoll barrier */                                  \
+    shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
+  }
+
+#else /* ENABLE_SHMEM_ENCRYPTION */
+
 #define ALLTOALL_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)                \
   inline static void alltoall_helper_##_algo##_barrier(                        \
       void *dest, const void *source, size_t nelems, int PE_start,             \
@@ -108,6 +290,10 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
     /* TODO: change to auto shcoll barrier */                                  \
     shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
   }
+
+
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 
 /**
  * @brief Helper macro to define counter-based alltoall implementations

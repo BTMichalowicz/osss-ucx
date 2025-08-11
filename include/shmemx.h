@@ -317,7 +317,7 @@ int shmemx_query_interoperability(int property);
 //const unsigned long long max_msg_size = 2<<27ul;
 #define OFFSET 400
 //const unsigned long long pt2pt_size = max_msg_size + OFFSET;
-#define COLL_OFFSET 400
+#define COLL_OFFSET 4000
 #define GCM_KEY_SIZE 32
 #define AES_TAG_LEN 16
 #define AES_RAND_BYTES 12
