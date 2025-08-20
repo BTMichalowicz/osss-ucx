@@ -527,12 +527,13 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
     SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_BROADCAST),   \
                       "team_h->pSyncs[BROADCAST]");                            \
                                                                                \
-    if (team_h->rank != PE_root)                                               \
-      memset(dest, 0, nelems * sizeof(_type));                                 \
-    else                                                                       \
+    /* Initialize dest: root PE copies source, others leave dest as-is */      \
+    /* The broadcast operation will overwrite dest on all PEs */               \
+    if (team_h->rank == PE_root) {                                             \
       memcpy(dest, source, nelems * sizeof(_type));                            \
+    }                                                                          \
                                                                                \
-    shmem_team_sync(team_h);                                                   \
+    /* Remove team_sync - not needed for broadcast operations */               \
                                                                                \
     broadcast_helper_##_algo(                                                  \
         dest, source, nelems * sizeof(_type), PE_root, team_h->start,          \
@@ -575,8 +576,8 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_BROADCAST_TYPES)
     SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_BROADCAST),   \
                       "team_h->pSyncs[BROADCAST]");                            \
                                                                                \
-    shmem_team_sync(team_h);                                                   \
-                                                                               \
+    /* Initialize dest: root PE copies source, others leave dest as-is */      \
+    /* The broadcast operation will overwrite dest on all PEs */               \
     if (team_h->rank == PE_root)                                               \
       memcpy(dest, source, nelems);                                            \
                                                                                \
@@ -587,6 +588,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_BROADCAST_TYPES)
         shmemc_team_get_psync(team_h, SHMEMC_PSYNC_BROADCAST));                \
                                                                                \
     shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_BROADCAST);                   \
+                                                                               \
     return 0;                                                                  \
   }
 

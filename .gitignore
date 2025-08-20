@@ -4,6 +4,7 @@ build
 scratch
 .vscode
 specifications
+*~
 
 .libs
 .deps
