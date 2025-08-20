@@ -570,10 +570,6 @@ SHCOLL_FCOLLECT_SIZE_DEFINITION(neighbor_exchange, 64)
     SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT),     \
                       "team_h->pSyncs[COLLECT]");                              \
                                                                                \
-    memset(dest, 0, sizeof(type) * nelems * team_h->nranks);                   \
-                                                                               \
-    shmem_team_sync(team_h);                                                   \
-                                                                               \
     fcollect_helper_##_algo(                                                   \
         dest, source, sizeof(type) * nelems, team_h->start,                    \
         (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,          \
@@ -628,10 +624,6 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_FCOLLECT_TYPES)
                                 nelems);                                       \
     SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT),     \
                       "team_h->pSyncs[COLLECT]");                              \
-                                                                               \
-    memset(dest, 0, nelems * team_h->nranks);                                  \
-                                                                               \
-    shmem_team_sync(team_h);                                                   \
                                                                                \
     fcollect_helper_##_algo(                                                   \
         dest, source, nelems, team_h->start,                                   \
