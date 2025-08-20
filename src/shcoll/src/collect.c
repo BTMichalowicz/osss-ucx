@@ -660,12 +660,8 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
     SHMEMU_CHECK_BUFFER_OVERLAP(dest, source,                                  \
                                 sizeof(_type) * nelems * team_h->nranks,       \
                                 sizeof(_type) * nelems);                       \
-    SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT),    \
-                      "team_h->pSyncs[COLLECT]");                             \
-                                                                               \
-    memset(dest, 0, sizeof(_type) * nelems * team_h->nranks);                  \
-                                                                               \
-    shmem_team_sync(team_h);                                                   \
+    SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT),     \
+                      "team_h->pSyncs[COLLECT]");                              \
                                                                                \
     collect_helper_##_algo(                                                    \
         dest, source, sizeof(_type) * nelems, /* total bytes per PE */         \
@@ -713,10 +709,6 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_COLLECT_TYPES)
                                                                                \
     SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT),     \
                       "team_h->pSyncs[COLLECT]");                              \
-                                                                               \
-    memset(dest, 0, nelems * team_h->nranks);                                  \
-                                                                               \
-    shmem_team_sync(team_h);                                                   \
                                                                                \
     collect_helper_##_algo(                                                    \
         dest, source, nelems, /* total bytes per PE */                         \
