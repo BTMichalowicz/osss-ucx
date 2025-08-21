@@ -1073,6 +1073,7 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
  * @param _algo Algorithm name (e.g. linear)
  *
  *
+ * FIXME: branch to check that pwrk is valid should only be done in debug mode
  */
 #define SHCOLL_REDUCE_DEFINITION(_typename, _type, _op, _algo)                 \
   int shcoll_##_typename##_##_op##_reduce_##_algo(                             \
@@ -1086,14 +1087,11 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
     SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_REDUCE),      \
                       "team_h->pSyncs[REDUCE]");                               \
                                                                                \
-    /* Allocate work buffer */                                                 \
     _type *pWrk =                                                              \
         shmem_malloc(SHCOLL_REDUCE_MIN_WRKDATA_SIZE * sizeof(_type));          \
     if (!pWrk) {                                                               \
       return -1;                                                               \
     }                                                                          \
-                                                                               \
-    shmem_team_sync(team);                                                     \
                                                                                \
     reduce_helper_##_typename##_##_op##_##_algo(                               \
         dest, source, nreduce, team_h->start,                                  \
@@ -1101,7 +1099,6 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
         team_h->nranks, pWrk,                                                  \
         shmemc_team_get_psync(team_h, SHMEMC_PSYNC_REDUCE));                   \
                                                                                \
-    shmem_team_sync(team);                                                     \
     shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_REDUCE);                      \
     shmem_free(pWrk);                                                          \
     return 0;                                                                  \
