@@ -1089,9 +1089,6 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
                                                                                \
     _type *pWrk =                                                              \
         shmem_malloc(SHCOLL_REDUCE_MIN_WRKDATA_SIZE * sizeof(_type));          \
-    if (!pWrk) {                                                               \
-      return -1;                                                               \
-    }                                                                          \
                                                                                \
     reduce_helper_##_typename##_##_op##_##_algo(                               \
         dest, source, nreduce, team_h->start,                                  \
