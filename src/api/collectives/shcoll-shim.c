@@ -212,7 +212,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_ALLTOALL)
  */
 int shmem_alltoallmem(shmem_team_t team, void *dest, const void *source,
                       size_t nelems) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %zu)", __func__, team, dest, source,
          nelems);
   colls.alltoall_mem.f(team, dest, source, nelems);
 }
@@ -238,7 +238,7 @@ int shmem_alltoallmem(shmem_team_t team, void *dest, const void *source,
 void shmem_alltoall32(void *target, const void *source, size_t nelems,
                       int PE_start, int logPE_stride, int PE_size,
                       long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %zu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
   colls.alltoall_size.f32(target, source, nelems, PE_start, logPE_stride,
@@ -259,7 +259,7 @@ void shmem_alltoall32(void *target, const void *source, size_t nelems,
 void shmem_alltoall64(void *target, const void *source, size_t nelems,
                       int PE_start, int logPE_stride, int PE_size,
                       long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %zu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
   colls.alltoall_size.f64(target, source, nelems, PE_start, logPE_stride,
@@ -315,8 +315,8 @@ void shmem_alltoall64(void *target, const void *source, size_t nelems,
   int shmem_##_typename##_alltoalls(shmem_team_t team, _type *dest,            \
                                     const _type *source, ptrdiff_t dst,        \
                                     ptrdiff_t sst, size_t nelems) {            \
-    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %p, %p, %d)", __func__, team,      \
-           source, dst, sst, nelems);                                          \
+    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %td, %td, %zu)", __func__, team,   \
+           dest, source, dst, sst, nelems);                                    \
     TYPED_CALL(alltoalls_type, #_typename, team, dest, source, dst, sst,       \
                nelems);                                                        \
   }
@@ -345,7 +345,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_ALLTOALLS)
  */
 int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
                        ptrdiff_t dst, ptrdiff_t sst, size_t nelems) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %td, %td, %d)", __func__, team, dest,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %td, %td, %zu)", __func__, team, dest,
          source, dst, sst, nelems);
   colls.alltoalls_mem.f(team, dest, source, dst, sst, nelems);
 }
@@ -373,7 +373,7 @@ int shmem_alltoallsmem(shmem_team_t team, void *dest, const void *source,
 void shmem_alltoalls32(void *target, const void *source, ptrdiff_t dst,
                        ptrdiff_t sst, size_t nelems, int PE_start,
                        int logPE_stride, int PE_size, long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %lu, %lu, %d, %d, %d, %p)", __func__,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %td, %td, %zu, %d, %d, %d, %p)", __func__,
          target, source, dst, sst, nelems, PE_start, logPE_stride, PE_size,
          pSync);
 
@@ -397,7 +397,7 @@ void shmem_alltoalls32(void *target, const void *source, ptrdiff_t dst,
 void shmem_alltoalls64(void *target, const void *source, ptrdiff_t dst,
                        ptrdiff_t sst, size_t nelems, int PE_start,
                        int logPE_stride, int PE_size, long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %lu, %lu, %d, %d, %d, %p)", __func__,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %td, %td, %zu, %d, %d, %d, %p)", __func__,
          target, source, dst, sst, nelems, PE_start, logPE_stride, PE_size,
          pSync);
 
@@ -471,7 +471,7 @@ void shmem_alltoalls64(void *target, const void *source, ptrdiff_t dst,
 #define SHMEM_TYPENAME_COLLECT(_type, _typename)                               \
   int shmem_##_typename##_collect(shmem_team_t team, _type *dest,              \
                                   const _type *source, size_t nelems) {        \
-    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, dest, source,      \
+    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %zu)", __func__, team, dest, source,      \
            nelems);                                                            \
     TYPED_CALL(collect_type, #_typename, team, dest, source, nelems);          \
   }
@@ -498,7 +498,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_COLLECT)
  */
 int shmem_collectmem(shmem_team_t team, void *dest, const void *source,
                      size_t nelems) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %zu)", __func__, team, dest, source,
          nelems);
   colls.collect_mem.f(team, dest, source, nelems);
 }
@@ -524,7 +524,7 @@ int shmem_collectmem(shmem_team_t team, void *dest, const void *source,
  */
 void shmem_collect32(void *target, const void *source, size_t nelems,
                      int PE_start, int logPE_stride, int PE_size, long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %zu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
   colls.collect_size.f32(target, source, nelems, PE_start, logPE_stride,
@@ -545,7 +545,7 @@ void shmem_collect32(void *target, const void *source, size_t nelems,
  */
 void shmem_collect64(void *target, const void *source, size_t nelems,
                      int PE_start, int logPE_stride, int PE_size, long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %zu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
   colls.collect_size.f64(target, source, nelems, PE_start, logPE_stride,
@@ -618,7 +618,7 @@ void shmem_collect64(void *target, const void *source, size_t nelems,
 #define SHMEM_TYPENAME_FCOLLECT(_type, _typename)                              \
   int shmem_##_typename##_fcollect(shmem_team_t team, _type *dest,             \
                                    const _type *source, size_t nelems) {       \
-    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, dest, source,      \
+    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %zu)", __func__, team, dest, source,      \
            nelems);                                                            \
     TYPED_CALL(fcollect_type, #_typename, team, dest, source, nelems);         \
   }
@@ -645,7 +645,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_FCOLLECT)
  */
 int shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
                       size_t nelems) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d)", __func__, team, dest, source,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %zu)", __func__, team, dest, source,
          nelems);
   colls.fcollect_mem.f(team, dest, source, nelems);
 }
@@ -672,7 +672,7 @@ int shmem_fcollectmem(shmem_team_t team, void *dest, const void *source,
 void shmem_fcollect32(void *target, const void *source, size_t nelems,
                       int PE_start, int logPE_stride, int PE_size,
                       long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %zu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
   colls.fcollect_size.f32(target, source, nelems, PE_start, logPE_stride,
@@ -694,7 +694,7 @@ void shmem_fcollect32(void *target, const void *source, size_t nelems,
 void shmem_fcollect64(void *target, const void *source, size_t nelems,
                       int PE_start, int logPE_stride, int PE_size,
                       long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %zu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
   colls.fcollect_size.f64(target, source, nelems, PE_start, logPE_stride,
@@ -768,7 +768,7 @@ void shmem_fcollect64(void *target, const void *source, size_t nelems,
   int shmem_##_typename##_broadcast(shmem_team_t team, _type *dest,            \
                                     const _type *source, size_t nelems,        \
                                     int PE_root) {                             \
-    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,  \
+    logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %zu, %d)", __func__, team, dest, source,  \
            nelems, PE_root);                                                   \
     TYPED_CALL(broadcast_type, #_typename, team, dest, source, nelems,         \
                PE_root);                                                       \
@@ -797,7 +797,7 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DECL_SHIM_BROADCAST)
  */
 int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
                        size_t nelems, int PE_root) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %d, %d)", __func__, dest, source,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %p, %zu, %d)", __func__, team, dest, source,
          nelems, PE_root);
   colls.broadcast_mem.f(team, dest, source, nelems, PE_root);
 }
@@ -824,7 +824,7 @@ int shmem_broadcastmem(shmem_team_t team, void *dest, const void *source,
 void shmem_broadcast32(void *target, const void *source, size_t nelems,
                        int PE_root, int PE_start, int logPE_stride, int PE_size,
                        long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %zu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
   colls.broadcast_size.f32(target, source, nelems, PE_root, PE_start,
@@ -846,7 +846,7 @@ void shmem_broadcast32(void *target, const void *source, size_t nelems,
 void shmem_broadcast64(void *target, const void *source, size_t nelems,
                        int PE_root, int PE_start, int logPE_stride, int PE_size,
                        long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%p, %p, %lu, %d, %d, %d, %p)", __func__, target,
+  logger(LOG_COLLECTIVES, "%s(%p, %p, %zu, %d, %d, %d, %p)", __func__, target,
          source, nelems, PE_start, logPE_stride, PE_size, pSync);
 
   colls.broadcast_size.f64(target, source, nelems, PE_root, PE_start,
@@ -1441,7 +1441,7 @@ void shmem_sync_all(void) {
  */
 void shmem_sync_deprecated(int PE_start, int logPE_stride, int PE_size,
                            long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
+  logger(LOG_COLLECTIVES, "%s(%d, %d, %zu, %p)", __func__, PE_start,
          logPE_stride, PE_size, pSync);
   colls.sync.f(PE_start, logPE_stride, PE_size, pSync);
 }
@@ -1460,7 +1460,7 @@ void shmem_sync_deprecated(int PE_start, int logPE_stride, int PE_size,
  * @param pSync Symmetric work array
  */
 void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync) {
-  logger(LOG_COLLECTIVES, "%s(%d, %d, %d, %p)", __func__, PE_start,
+  logger(LOG_COLLECTIVES, "%s(%d, %d, %zu, %p)", __func__, PE_start,
          logPE_stride, PE_size, pSync);
 
   colls.barrier.f(PE_start, logPE_stride, PE_size, pSync);

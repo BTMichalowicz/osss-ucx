@@ -180,7 +180,7 @@ static typed_op_t alltoalls_type_tab[] = {
 #undef ALLTOALLS_TYPE_REG
 
 /**
- * @brief Table of generic alltoalls (deprecated)
+ * @brief Table of generic alltoalls 
  */
 static untyped_op_t alltoalls_mem_tab[] = {
     UNTYPED_REG(alltoallsmem, shift_exchange_barrier),
@@ -221,7 +221,7 @@ static typed_op_t collect_type_tab[] = {
 #undef COLLECT_TYPE_REG
 
 /**
- * @brief Table of generic collectmem (deprecated)
+ * @brief Table of generic collectmem 
  */
 static untyped_op_t collect_mem_tab[] = {
     UNTYPED_REG(collectmem, linear),
@@ -267,7 +267,7 @@ static typed_op_t fcollect_type_tab[] = {
 #undef FCOLLECT_TYPE_REG
 
 /**
- * @brief Table of generic fcollectmem (deprecated)
+ * @brief Table of generic fcollectmem 
  */
 static untyped_op_t fcollect_mem_tab[] = {
     UNTYPED_REG(fcollectmem, linear),
@@ -313,7 +313,7 @@ static typed_op_t broadcast_type_tab[] = {
 #undef BROADCAST_TYPE_REG
 
 /**
- * @brief Table of generic broadcastmem (deprecated)
+ * @brief Table of generic broadcastmem 
  */
 static untyped_op_t broadcast_mem_tab[] = {
     UNTYPED_REG(broadcastmem, linear),
@@ -337,7 +337,7 @@ static sized_op_t broadcast_size_tab[] = {
     SIZED_LAST};
 
 /**
- * @brief Table of and_to_all collective algorithms
+ * @brief Table of and_to_all collective algorithms (deprecated)
  */
 #define AND_TO_ALL_REG(_type, _typename)                                       \
   TYPED_TO_ALL_REG(and, linear, _typename),                                    \
@@ -351,7 +351,7 @@ static typed_to_all_op_t and_to_all_tab[] = {
 #undef AND_TO_ALL_REG
 
 /**
- * @brief Table of or_to_all collective algorithms
+ * @brief Table of or_to_all collective algorithms (deprecated)
  */
 #define OR_TO_ALL_REG(_type, _typename)                                        \
   TYPED_TO_ALL_REG(or, linear, _typename),                                     \
@@ -365,7 +365,7 @@ static typed_to_all_op_t or_to_all_tab[] = {
 #undef OR_TO_ALL_REG
 
 /**
- * @brief Table of xor_to_all collective algorithms
+ * @brief Table of xor_to_all collective algorithms (deprecated)
  */
 #define XOR_TO_ALL_REG(_type, _typename)                                       \
   TYPED_TO_ALL_REG(xor, linear, _typename),                                    \
@@ -379,7 +379,7 @@ static typed_to_all_op_t xor_to_all_tab[] = {
 #undef XOR_TO_ALL_REG
 
 /**
- * @brief Table of max_to_all collective algorithms
+ * @brief Table of max_to_all collective algorithms (deprecated)
  */
 #define MAX_TO_ALL_REG(_type, _typename)                                       \
   TYPED_TO_ALL_REG(max, linear, _typename),                                    \
@@ -393,7 +393,7 @@ static typed_to_all_op_t max_to_all_tab[] = {
 #undef MAX_TO_ALL_REG
 
 /**
- * @brief Table of min_to_all collective algorithms
+ * @brief Table of min_to_all collective algorithms (deprecated)
  */
 #define MIN_TO_ALL_REG(_type, _typename)                                       \
   TYPED_TO_ALL_REG(min, linear, _typename),                                    \
@@ -407,7 +407,7 @@ static typed_to_all_op_t min_to_all_tab[] = {
 #undef MIN_TO_ALL_REG
 
 /**
- * @brief Table of sum_to_all collective algorithms
+ * @brief Table of sum_to_all collective algorithms (deprecated)
  */
 #define SUM_TO_ALL_REG(_type, _typename)                                       \
   TYPED_TO_ALL_REG(sum, linear, _typename),                                    \
@@ -421,7 +421,7 @@ static typed_to_all_op_t sum_to_all_tab[] = {
 #undef SUM_TO_ALL_REG
 
 /**
- * @brief Table of prod_to_all collective algorithms
+ * @brief Table of prod_to_all collective algorithms (deprecated)
  */
 #define PROD_TO_ALL_REG(_type, _typename)                                      \
   TYPED_TO_ALL_REG(prod, linear, _typename),                                   \
@@ -435,7 +435,7 @@ static typed_to_all_op_t prod_to_all_tab[] = {
 #undef PROD_TO_ALL_REG
 
 /**
- * @brief Table of and_reduce collective algorithms
+ * @brief Table of and_reduce collective algorithms (deprecated)
  */
 #define AND_REDUCE_REG(_type, _typename)                                       \
   TYPED_REDUCE_REG(and, linear, _typename),                                    \
@@ -552,7 +552,7 @@ static unsized_op_t sync_all_tab[] = {
     UNSIZED_REG(sync_all, dissemination), UNSIZED_LAST};
 
 /**
- * @brief Table of barrier collective algorithms
+ * @brief Table of barrier collective algorithms (deprecated)
  */
 static unsized_op_t barrier_tab[] = {
     UNSIZED_REG(barrier, linear),        UNSIZED_REG(barrier, complete_tree),
@@ -560,7 +560,7 @@ static unsized_op_t barrier_tab[] = {
     UNSIZED_REG(barrier, dissemination), UNSIZED_LAST};
 
 /**
- * @brief Table of sync collective algorithms
+ * @brief Table of sync collective algorithms (deprecated)
  */
 static unsized_op_t sync_tab[] = {
     UNSIZED_REG(sync, linear),        UNSIZED_REG(sync, complete_tree),
