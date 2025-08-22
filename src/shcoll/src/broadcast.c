@@ -533,8 +533,6 @@ SHCOLL_BROADCAST_SIZE_DEFINITION(scatter_collect, 64)
       memcpy(dest, source, nelems * sizeof(_type));                            \
     }                                                                          \
                                                                                \
-    /* Remove team_sync - not needed for broadcast operations */               \
-                                                                               \
     broadcast_helper_##_algo(                                                  \
         dest, source, nelems * sizeof(_type), PE_root, team_h->start,          \
         (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,          \
