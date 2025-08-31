@@ -663,6 +663,9 @@ SHCOLL_COLLECT_SIZE_DEFINITION(simple, 64)
     SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT),     \
                       "team_h->pSyncs[COLLECT]");                              \
                                                                                \
+    /* FIXME: WE DO NOT WANT THIS SYNC TO BE HERE */                           \
+    shmem_team_sync(team_h);                                                   \
+                                                                               \
     collect_helper_##_algo(                                                    \
         dest, source, sizeof(_type) * nelems, /* total bytes per PE */         \
         team_h->start,                                                         \
@@ -709,6 +712,9 @@ SHMEM_STANDARD_RMA_TYPE_TABLE(DEFINE_COLLECT_TYPES)
                                                                                \
     SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_COLLECT),     \
                       "team_h->pSyncs[COLLECT]");                              \
+                                                                               \
+    /* FIXME: WE DO NOT WANT THIS SYNC TO BE HERE */                           \
+    shmem_team_sync(team_h);                                                   \
                                                                                \
     collect_helper_##_algo(                                                    \
         dest, source, nelems, /* total bytes per PE */                         \
