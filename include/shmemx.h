@@ -436,7 +436,7 @@ extern pmix_proc_t *my_second_pmix;
 #define PROC_ENC_DEC_FENCE_COUNT 2
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-#if 0
+#if 1
 #define DEBUG_SHMEM(fmt, args...)                       \
    do {                                                 \
       fflush(stdout);                                   \

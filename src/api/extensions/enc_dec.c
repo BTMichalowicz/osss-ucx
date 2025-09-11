@@ -297,15 +297,6 @@ static void enc_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
 
     shmemx_encrypt_single_buffer_omp(base, source_rank, (const void *)dest, rank, og_bytes, &cipherlen);
 
-    //pmix_proc_t procs = malloc(sizeof(pmix_proc_t) *2);
-    //pmix_proc_t fence_proc[PROC_ENC_DEC_FENCE_COUNT];
-    
-//    PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
-//    PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, source->rank);
-
-    //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);
-
-
     DEBUG_SHMEM("Remote encryption went successfully\n");
 
 
@@ -566,7 +557,8 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
       int tn = omp_get_thread_num();
       //int cipher_temp = 0;
-
+      //
+      //cipherbuf[count*(data+AES_TAG_LEN+AES_RAND_BYTES)+src]
       void *tmp_buf = cipherbuf + (count * (data+AES_TAG_LEN+AES_RAND_BYTES))+src;
 
             //  RAND_bytes(tmp_buf, AES_RAND_BYTES);
@@ -586,7 +578,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
       DEBUG_SHMEM("[T_%d] local_ctx %p enc_data %d max_data %d tmp_buf: %p (cipher buf %p + count %d * (data %d + AES_TAG_LEN %d + AES_RAND_BYTES %d))\n", 
             tn, local_ctx, enc_data, max_data, tmp_buf, (void *)cipherbuf, count, enc_data, AES_TAG_LEN, AES_RAND_BYTES);
 
-      if ((res = EVP_EncryptInit_ex(local_ctx, NULL, NULL, NULL, tmp_buf+src)) != 1){
+      if ((res = EVP_EncryptInit_ex(local_ctx, NULL, NULL, NULL, tmp_buf)) != 1){
          ERROR_SHMEM("[T_%d] EncryptInit_ex from error %lu: %s\n",
                tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
          memset(NULL, 0, 10);
@@ -594,7 +586,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
       DEBUG_SHMEM("[T_%d] EncryptInit_ex passed\n", tn);
 
-      if ((res = EVP_EncryptUpdate(local_ctx, tmp_buf+src+AES_RAND_BYTES, &local_cipherlen, ((const unsigned char *)(sbuf + position+dest)), (int) enc_data)) != 1){
+      if ((res = EVP_EncryptUpdate(local_ctx, tmp_buf+AES_RAND_BYTES, &local_cipherlen, ((const unsigned char *)(sbuf + position+dest)), (int) enc_data)) != 1){
          ERROR_SHMEM("[T_%d] EncryptUpdate Failed: %lu %s\n", 
                tn, ERR_get_error(), ERR_error_string(res, NULL));
          memset(NULL, 0, 10);
@@ -607,19 +599,18 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
             tn, local_ctx, tmp_buf, AES_TAG_LEN, src, local_cipherlen);
 
 
-#pragma omp critical
-      {
-         if ((res = EVP_EncryptFinal_ex(local_ctx, tmp_buf+AES_TAG_LEN+src+local_cipherlen, &local_cipherlen)) != 1){
+
+         if ((res = EVP_EncryptFinal_ex(local_ctx, tmp_buf+AES_TAG_LEN+local_cipherlen, &local_cipherlen)) != 1){
             ERROR_SHMEM("[T_%d] EncryptFinal_ex failed: %lu %s\n", tn,
                   ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
             memset(NULL, 0, 10);
          }
-      }
+      
 
 //#pragma omp barrier
 
       DEBUG_SHMEM("[T_%d] EncrypFinal_ex passed\n", tn);
-      if ((res = EVP_CIPHER_CTX_ctrl(local_ctx, EVP_CTRL_GCM_GET_TAG, AES_TAG_LEN, tmp_buf+src+AES_RAND_BYTES+local_cipherlen))!= 1){
+      if ((res = EVP_CIPHER_CTX_ctrl(local_ctx, EVP_CTRL_GCM_GET_TAG, AES_TAG_LEN, tmp_buf+AES_RAND_BYTES+local_cipherlen))!= 1){
          ERROR_SHMEM("[T_%d]: CTX_CTRL: %s\n", tn,
                ERR_error_string(ERR_get_error(), NULL));
          memset(NULL, 0, 10);
@@ -798,7 +789,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
    }
 
-//   DEBUG_SHMEM("[END_DECRYPTION] plaintext: %s\n", (char *)rbuf);
+   DEBUG_SHMEM("[END_DECRYPTION] plaintext: %s\n", (char *)rbuf);
 
 
    return 0;
