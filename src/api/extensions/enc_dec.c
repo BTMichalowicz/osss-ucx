@@ -560,17 +560,20 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
       //int cipher_temp = 0;
       //
       //cipherbuf[count*(data+AES_TAG_LEN+AES_RAND_BYTES)+src]
-      void *tmp_buf = cipherbuf + (count * (data+AES_TAG_LEN+AES_RAND_BYTES))+src;
+   //   void *tmp_buf = cipherbuf + (count * (data+AES_TAG_LEN+AES_RAND_BYTES))+src;
+      position = count * (data + AES_TAG_LEN + AES_RAND_BYTES);
+      int pos2 = count * data;
+      void *tmp_buf = cipherbuf + position;
+      void *tmp_buf2 = sbuf + pos2;
+
+
 
             //  RAND_bytes(tmp_buf, AES_RAND_BYTES);
       EVP_CIPHER_CTX *local_ctx = openmp_enc_ctx[tn];
-      RAND_bytes(tmp_buf, AES_RAND_BYTES);
+      RAND_bytes(tmp_buf+src, AES_RAND_BYTES);
       enc_data = data;
       max_data = enc_data+AES_TAG_LEN;
-      position = count * (data + AES_TAG_LEN + AES_RAND_BYTES);
-      int pos2 = count * data;
-
-
+     
 
       if ((count == segment_count - 1) ){
          enc_data = bytes - (data * (segment_count - 1));
@@ -579,7 +582,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
                enc_data, max_data);
       }
       DEBUG_SHMEM("[T_%d] local_ctx %p enc_data %d max_data %d tmp_buf: %p (cipher buf %p + count %d * (data %d + AES_TAG_LEN %d + AES_RAND_BYTES %d))\n", 
-            tn, local_ctx, enc_data, max_data, tmp_buf, (void *)cipherbuf, count, enc_data, AES_TAG_LEN, AES_RAND_BYTES);
+            tn, local_ctx, enc_data, max_data, tmp_buf, (void *)cipherbuf+src, count, enc_data, AES_TAG_LEN, AES_RAND_BYTES);
 
       if ((res = EVP_EncryptInit_ex(local_ctx, NULL, NULL, NULL, tmp_buf)) != 1){
          ERROR_SHMEM("[T_%d] EncryptInit_ex from error %lu: %s\n",
@@ -589,7 +592,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
       DEBUG_SHMEM("[T_%d] EncryptInit_ex passed\n", tn);
 
-      if ((res = EVP_EncryptUpdate(local_ctx, tmp_buf+AES_RAND_BYTES, &local_cipherlen, ((const unsigned char *)(sbuf + pos2 + dest)), (int) enc_data)) != 1){
+      if ((res = EVP_EncryptUpdate(local_ctx, tmp_buf+src+AES_RAND_BYTES, &local_cipherlen, ((const unsigned char *)(tmp_buf2 + dest)), (int) enc_data)) != 1){
          ERROR_SHMEM("[T_%d] EncryptUpdate Failed: %lu %s\n", 
                tn, ERR_get_error(), ERR_error_string(res, NULL));
          memset(NULL, 0, 10);
@@ -601,9 +604,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
       DEBUG_SHMEM("[T_%d] Entering final with local_ctx %p tmp_buf %p + AES_TAG_LEN %d + src %llu + local_cipherlen %d\n",
             tn, local_ctx, tmp_buf, AES_TAG_LEN, src, local_cipherlen);
 
-
-
-         if ((res = EVP_EncryptFinal_ex(local_ctx, tmp_buf+AES_TAG_LEN+local_cipherlen, &local_cipherlen)) != 1){
+         if ((res = EVP_EncryptFinal_ex(local_ctx, tmp_buf+AES_RAND_BYTES+src+local_cipherlen, &local_cipherlen)) != 1){
             ERROR_SHMEM("[T_%d] EncryptFinal_ex failed: %lu %s\n", tn,
                   ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
             memset(NULL, 0, 10);
@@ -712,9 +713,9 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
    int data = bytes / thread_no;
    DEBUG_SHMEM("Data: %d\n", data);
    max_data = data + AES_RAND_BYTES;
-  // data++;
+   data++;
 
-   if (bytes <=256){
+   if (bytes <=16){
       segment_count = 1;
       data = bytes;
    }else{
@@ -758,7 +759,6 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
       if ((count == segment_count - 1)){
          enc_data = (bytes - data*(segment_count - 1));
          max_data = enc_data + AES_TAG_LEN;
-         DEBUG_SHMEM("(last count) enc_data: %d, max_data %d\n", enc_data, max_data);
       }
 
       DEBUG_SHMEM("T_%d Params: ctx %p, rbuf+(%d): %p, cipher_len ptr %p, cipherbuf %p + src %d + RAND BYTES %d, bytes %d - AES_RAND_BYTES %d\n", tn, local_ctx, dest, (rbuf+dest), (&cipher_len), cipherbuf, src, AES_RAND_BYTES, enc_data, AES_RAND_BYTES);
@@ -898,6 +898,19 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
           enc_t1, enc_t2,
           put_t1, put_t2,
           pmix_t1, pmix_t2; /* These last 2 would be for decrypting/encrypting */
+
+   int thread_no = 1;
+   if (nbytes < SIX_FOUR_K){
+      thread_no = 1;
+   }else if (nbytes < ONE_TWO_EIGHT_K){
+      thread_no = 2;
+   }else if (nbytes < TWO_FIVE_SIX_K){
+      thread_no = 4;
+   }else if (nbytes < FIVE_TWELVE_K){
+      thread_no = 8;
+   }else{
+      thread_no = 16;
+   }
 
    memset(blocking_put_ciphertext, 0, nbytes+AES_TAG_LEN+AES_RAND_BYTES+1);
     //int res  = 0;
