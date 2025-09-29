@@ -5,7 +5,7 @@
 
 m4_define([pkg_name],       [osss-ucx])
 m4_define([pkg_major],      [1])
-m4_define([pkg_minor],      [5])
+m4_define([pkg_minor],      [1])
 m4_define([pkg_patch],      [0])
 m4_define([pkg_version],    [pkg_major.pkg_minor.pkg_patch])
 m4_define([pkg_bugreport],  [anthony.curtis@stonybrook.edu])
