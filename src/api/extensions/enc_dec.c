@@ -147,6 +147,25 @@ inline static void get_remote_key_and_addr(shmemc_context_h ch,
   *raddr_p = translate_region_address(local_addr, r, pe);
 }
 
+
+inline static int get_thread_count(size_t bytes){
+   int thread_no = 1;
+
+   if (bytes < SIX_FOUR_K){
+      thread_no = 1;
+   }else if (bytes < ONE_TWO_EIGHT_K){
+      thread_no = 2;
+   }else if (bytes < TWO_FIVE_SIX_K){
+      thread_no = 4;
+   }else if (bytes < FIVE_TWELVE_K){
+      thread_no = 8;
+   }else{
+      thread_no = 16;
+   }
+
+   return thread_no;
+}
+
 /*ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
         void *data, size_t len, const ucp_am_recv_param_t *param){
 
@@ -512,21 +531,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
    int max_data = 0;
    *cipherlen = 0; /* Just in case */
 
-   int thread_no = 1; // Starting thread point
-
-   if (bytes < SIX_FOUR_K){
-      thread_no = 1;
-   }else if (bytes < ONE_TWO_EIGHT_K){
-      thread_no = 2;
-   }else if (bytes < TWO_FIVE_SIX_K){
-      thread_no = 4;
-   }else if (bytes < FIVE_TWELVE_K){
-      thread_no = 8;
-   }else{
-      thread_no = 16;
-   }
-
-   put_thread_no = thread_no;
+   int thread_no = get_thread_count(bytes); // Starting thread point
 
    int data = bytes / thread_no;
    //data++;
@@ -687,6 +692,7 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
     return 0;
 }
 
+
 int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long long src, 
         void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len){
 
@@ -696,19 +702,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
    int max_data = 0;
 
    int other_cipherlen = 0;
-   int thread_no = 1; // Starting thread point
-
-   if (bytes < SIX_FOUR_K){
-      thread_no = 1;
-   }else if (bytes < ONE_TWO_EIGHT_K){
-      thread_no = 2;
-   }else if (bytes < TWO_FIVE_SIX_K){
-      thread_no = 4;
-   }else if (bytes < FIVE_TWELVE_K){
-      thread_no = 8;
-   }else{
-      thread_no = 16;
-   }
+   int thread_no = get_thread_count(bytes); // Starting thread point
 
    int data = bytes / thread_no;
    DEBUG_SHMEM("Data: %d\n", data);
@@ -769,7 +763,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
       }
 
 
-      if ((res = EVP_DecryptUpdate(local_ctx, ((unsigned char *)(tmp_buf2+dest)), (int *)(&local_cipherlen), tmp_buf+AES_RAND_BYTES+src, (max_data-AES_TAG_LEN))) != 1){
+      if ((res = EVP_DecryptUpdate(local_ctx, ((unsigned char *)(tmp_buf2+dest)), (int *)(&local_cipherlen), tmp_buf+AES_RAND_BYTES+src, (enc_data-AES_TAG_LEN))) != 1){
       ERROR_SHMEM("[T_%d] DecryptUpdate failed: %lu %s\n", tn, ERR_get_error(), ERR_error_string(res, NULL));
       memset(NULL, 0, 10);
    }
@@ -899,18 +893,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
           put_t1, put_t2,
           pmix_t1, pmix_t2; /* These last 2 would be for decrypting/encrypting */
 
-   int thread_no = 1;
-   if (nbytes < SIX_FOUR_K){
-      thread_no = 1;
-   }else if (nbytes < ONE_TWO_EIGHT_K){
-      thread_no = 2;
-   }else if (nbytes < TWO_FIVE_SIX_K){
-      thread_no = 4;
-   }else if (nbytes < FIVE_TWELVE_K){
-      thread_no = 8;
-   }else{
-      thread_no = 16;
-   }
+   int thread_no = get_thread_count(nbytes);
 
    memset(blocking_put_ciphertext, 0, nbytes+AES_TAG_LEN+AES_RAND_BYTES+1);
     //int res  = 0;
@@ -934,7 +917,8 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     put_t1 = shmemx_wtime();
     shmemc_ctx_put(ctx, dest, 
             blocking_put_ciphertext,
-            block_put_cipherlen+(AES_TAG_LEN+AES_RAND_BYTES) /*nbytes+AES_TAG_LEN+AES_RAND_BYTES*/, 
+            block_put_cipherlen+(segment_count * AES_TAG_LEN+AES_RAND_BYTES),
+//            block_put_cipherlen+(AES_TAG_LEN+AES_RAND_BYTES), 
             pe);
     put_t2 = (shmemx_wtime() - put_t1)*1e6;
     DEBUG_SHMEM( "Put end\n");
@@ -1407,6 +1391,7 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
     si[6].value.data.uint32 = nbytes;
     pmix_construct_time = (shmemx_wtime()-pmix_t1)*1e6;
 
+    int thread_count = get_thread_count(nbytes);
 
       DEBUG_SHMEM("Starting signaling\n");
       pmix_t1 = shmemx_wtime();
@@ -1425,21 +1410,12 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
     PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
     free(procs);
     
-    pmix_proc_t fence_proc[PROC_ENC_DEC_FENCE_COUNT];
-    
-//    PMIX_LOAD_PROCID(&(fence_proc[0]), my_second_pmix->nspace, proc.li.rank);
-//    PMIX_LOAD_PROCID(&(fence_proc[1]), my_second_pmix->nspace, pe);
-
-    //PMIx_Fence(fence_proc, PROC_ENC_DEC_FENCE_COUNT, NULL, 0);    
-/* Technically, this SHOULD be feasible after a notify? */
-    //free(procs);
-
-
+   
     get_t1 = shmemx_wtime();
     shmemc_ctx_get(ctx, 
             (blocking_get_ciphertext),
             src,
-            nbytes+AES_TAG_LEN+AES_RAND_BYTES, 
+            nbytes+(thread_count * AES_TAG_LEN+AES_RAND_BYTES), 
             pe);
     get_t2 = (shmemx_wtime()-get_t1)*1e6;
 
