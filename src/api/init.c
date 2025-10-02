@@ -22,11 +22,12 @@
 #include "module.h"
 #include "shmem/api.h"
 
-#ifdef ENABLE_EXPERIMENTAL
-#include "allocator/xmemalloc.h"
 #if ENABLE_SHMEM_ENCRYPTION
 #include "shmemx.h"
 #endif /* ENABLE_SHMEM_ENCRYPTION */
+
+#ifdef ENABLE_EXPERIMENTAL
+#include "allocator/xmemalloc.h"
 #endif /* ENABLE_EXPERIMENTAL */
 
 #include <stdio.h>
