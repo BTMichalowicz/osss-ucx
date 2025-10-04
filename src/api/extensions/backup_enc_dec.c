@@ -578,7 +578,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
  //   if (segment_count == 1){
  //      return shmemx_encrypt_single_buffer(cipherbuf, src, sbuf, dest, bytes, cipherlen);
  //   }
-
+   int pos = 0;
    DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: \n\n");
    for (pos = 0; pos < segment_count; pos++){
       for (count  = 0; count <enc_data; count++)
@@ -663,8 +663,8 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
    *cipherlen = temp_cipherlen;
    DEBUG_SHMEM("[END_ENCRYPTION] Final cipherlen: %lu, Ciphertext: %s \n\n", *cipherlen, cipherbuf);
    for (pos = 0; pos < segment_count; pos++){
-      for (count  = 0; count <enc_data + AES_TAG_LEN + AES_RAND_BYTES; count++)
-         fprintf(stderr, "%c", enc_chunks[pos][count]);
+      //for (count  = 0; count <enc_data + AES_TAG_LEN + AES_RAND_BYTES; count++)
+         fprintf(stderr, "%%", enc_chunks[pos]);
       fprintf(stderr, "\n");
    }
 
@@ -783,23 +783,16 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
    DEBUG_SHMEM("Segment_count %d, data = %d, max_thread_no %d\n", segment_count, data, thread_no);
 
-   //unsigned char *key = &(gcm_key[0]);
-
-  // if (segment_count == 1){
-  //    return shmemx_decrypt_single_buffer(cipherbuf, src, rbuf, dest, bytes, cipher_len);
-  // }
-
   // DEBUG_SHMEM("Segment_count %d, data = %d, max_thread_no %d\n", segment_count, data, thread_no);
-   
+   int pos = 0; 
    DEBUG_SHMEM("[START_DECRYPTION] Ciphertext: %s\n\n", cipherbuf);
    fprintf(stdout,"\n\n");
    for (pos = 0; pos < segment_count; pos++){
       for (count  = 0; count <enc_data+AES_TAG_LEN+AES_RAND_BYTES; count++)
          fprintf(stderr, "%c", enc_chunks[pos][count]);
-      fprintf(stderr, "\n");
    }
-//private (segment_count, count, local_cipherlen, cipherbuf, rbuf, openmp_dec_ctx, stdout, stderr, max_data, bytes, data, position, src, dest,  proc, res, key, cipher_len, temp_cipherlen)
-//int position = 0;
+   fprintf(stderr, "\n");
+   fflush(stderr);
 #pragma omp parallel for schedule(dynamic) default(none) private(count, max_data, position, res, local_cipherlen, enc_data) shared(segment_count, stdout, stderr, openmp_dec_ctx, data, cipherbuf, rbuf, cipher_len, src, dest, bytes, proc, gcm_key, enc_chunks, dec_chunks, plain_chunks) num_threads(thread_no)
    for (count = 0; count < segment_count ; count++){
 
@@ -1060,7 +1053,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     PMIX_INFO_CONSTRUCT(&si[6]);
     PMIX_LOAD_KEY(si[5].key, "og_bytes");
     si[6].value.type = PMIX_UINT32;
-    si[6].value.data.uint32 = nbytes+AES_RAND_BYTES;
+    si[6].value.data.uint32 = nbytes;
     double pmix_construct_time = (shmemx_wtime()-pmix_t1)*1e6;
 
 
