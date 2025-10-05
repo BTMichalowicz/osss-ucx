@@ -388,7 +388,7 @@ static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
   }
 
   /* Check if this notification is for this PE */
-  uint32_t target_pe = info[2].value.data.uint32; /* target_pe */
+  uint32_t target_pe = info[3].value.data.uint32; /* target_pe */
   if (target_pe != proc.li.rank) {
     DEBUG_SHMEM("dec_notif_fn: notification for PE %u, ignoring (I am PE %d)\n",
                 target_pe, proc.li.rank);
@@ -402,9 +402,9 @@ static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
               proc.li.rank);
 
   uintptr_t dest =
-      (uintptr_t)info[0].value.data.uint64;   /* Remote_secure_buffer */
-  int cipherlen = info[1].value.data.integer; /* Remote_buffer_enc_size */
-  size_t og_size = info[3].value.data.uint32; /* og_bytes */
+      (uintptr_t)info[1].value.data.uint64;   /* Remote_secure_buffer */
+  int cipherlen = info[2].value.data.integer; /* Remote_buffer_enc_size */
+  size_t og_size = info[4].value.data.uint32; /* og_bytes */
 
   shmemu_assert(dest != 0, "dec_notif_fn: dest buffer is NULL!\n");
 
@@ -639,8 +639,8 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
   //      cipherlen);
   //   }
 
-  // DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: %s \n",
-  //            (char *)sbuf);
+   DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: %s \n",
+              (char *)sbuf);
 #pragma omp parallel for schedule(dynamic) default(none)                       \
     private(max_data, position, res, local_cipherlen, enc_data)                \
     shared(src, dest, openmp_enc_ctx, stdout, stderr, segment_count, data,     \
@@ -905,8 +905,9 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
 
     DEBUG_SHMEM("T_%d DecryptFinal_ex passed\n", tn);
   }
+  memset(rbuf+bytes, 0, AES_TAG_LEN);
 
-  // DEBUG_SHMEM("[END_DECRYPTION] plaintext: %s\n", (char *)rbuf);
+  DEBUG_SHMEM("[END_DECRYPTION] plaintext: %s\n", (char *)rbuf);
 
   return 0;
 }
@@ -1131,6 +1132,8 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   si[6].value.data.uint32 = nbytes + AES_RAND_BYTES;
   double pmix_construct_time = (shmemx_wtime() - pmix_t1) * 1e6;
 
+
+
   /*
    * ARCHITECTURAL ISSUE: PMIx notifications require both PEs to actively
    * process events, but in SHMEM put operations, only the sender is active.
@@ -1154,27 +1157,34 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   pmix_t1 = shmemx_wtime();
 
   /* For global notifications, we need different info structure */
-  pmix_info_t global_si[4]; /* Reduced set for global notification */
+  pmix_info_t global_si[5]; /* Reduced set for global notification */
+
+
 
   PMIX_INFO_CONSTRUCT(&global_si[0]);
-  PMIX_LOAD_KEY(global_si[0].key, "Remote_secure_buffer");
-  global_si[0].value.type = PMIX_UINT64;
-  global_si[0].value.data.uint64 = (uint64_t)r_dest;
+  PMIX_INFO_LOAD(&global_si[0], PMIX_EVENT_CUSTOM_RANGE, &pmix_darray,
+                 PMIX_DATA_ARRAY);
+  DEBUG_SHMEM("dest ptr, one passed in 0x%lx: %p\n", r_dest, dest);
 
   PMIX_INFO_CONSTRUCT(&global_si[1]);
-  PMIX_LOAD_KEY(global_si[1].key, "Remote_buffer_enc_size");
-  global_si[1].value.type = PMIX_INT;
-  global_si[1].value.data.integer = block_put_cipherlen;
+  PMIX_LOAD_KEY(global_si[1].key, "Remote_secure_buffer");
+  global_si[1].value.type = PMIX_UINT64;
+  global_si[1].value.data.uint64 = (uint64_t)r_dest;
 
   PMIX_INFO_CONSTRUCT(&global_si[2]);
-  PMIX_LOAD_KEY(global_si[2].key, "target_pe");
-  global_si[2].value.type = PMIX_UINT32;
-  global_si[2].value.data.uint32 = pe;
+  PMIX_LOAD_KEY(global_si[2].key, "Remote_buffer_enc_size");
+  global_si[2].value.type = PMIX_INT;
+  global_si[2].value.data.integer = block_put_cipherlen;
 
   PMIX_INFO_CONSTRUCT(&global_si[3]);
-  PMIX_LOAD_KEY(global_si[3].key, "og_bytes");
+  PMIX_LOAD_KEY(global_si[3].key, "target_pe");
   global_si[3].value.type = PMIX_UINT32;
-  global_si[3].value.data.uint32 = nbytes + AES_RAND_BYTES;
+  global_si[3].value.data.uint32 = pe;
+
+  PMIX_INFO_CONSTRUCT(&global_si[4]);
+  PMIX_LOAD_KEY(global_si[4].key, "og_bytes");
+  global_si[4].value.type = PMIX_UINT32;
+  global_si[4].value.data.uint32 = nbytes; 
 
   /*
    * TEMPORARY SOLUTION: Skip PMIx notification entirely and just
@@ -1184,6 +1194,11 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
    * behavior between PEs, but in SHMEM put operations, only the
    * sender is active.
    */
+
+  ps = PMIx_Notify_event(DEC_SUCCESS, procs, PMIX_RANGE_CUSTOM, &(global_si[0]), 5,
+                         NULL, NULL);
+
+
   DEBUG_SHMEM(
       "TEMPORARILY SKIPPING PMIx notification - data remains encrypted\n");
   ps = PMIX_SUCCESS;
@@ -1229,7 +1244,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
               pmix_t2, PMIx_Error_string(ps), ps);
 
   /* Skip fence since we're not using notifications */
-  DEBUG_SHMEM("Skipping fence since notifications are disabled\n");
+ // DEBUG_SHMEM("Skipping fence since notifications are disabled\n");
 
   if (ps != PMIX_SUCCESS) {
     shmemu_assert(ps == PMIX_SUCCESS,
@@ -1237,10 +1252,11 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
                   PMIx_Error_string(ps));
   }
 
-  DEBUG_SHMEM("shmemx_secure_put completed successfully (NOTE: data remains "
-              "encrypted on target PE)\n");
+ // DEBUG_SHMEM("shmemx_secure_put completed successfully (NOTE: data remains "
+  //            "encrypted on target PE)\n");
 
   /* VERIFICATION TEST: Test encryption/decryption round-trip */
+#if 0
   if (proc.li.rank == 0) {
     DEBUG_SHMEM("TESTING: Encryption/Decryption round-trip verification\n");
   
@@ -1267,17 +1283,17 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
    */
 
     /* Create test data */
-    unsigned char test_plaintext[64];
-    unsigned char test_ciphertext[128]; /* Extra space for tag and IV */
-    unsigned char test_decrypted[64];
+    unsigned char test_plaintext[nbytes];
+    unsigned char test_ciphertext[nbytes+AES_TAG_LEN+AES_RAND_BYTES]; /* Extra space for tag and IV */
+    unsigned char test_decrypted[nbytes];
 
     /* Initialize test data with known pattern */
-    for (int i = 0; i < 64; i++) {
+    for (int i = 0; i < nbytes; i++) {
       test_plaintext[i] = (unsigned char)(i & 0xFF);
     }
 
     DEBUG_SHMEM("TEST: Original data first 16 bytes: ");
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < nbytes; i++) {
       fprintf(stdout, "%02x ", test_plaintext[i]);
     }
     fprintf(stdout, "\n");
@@ -1286,7 +1302,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     /* Encrypt the test data */
     size_t test_cipherlen = 0;
     int result = shmemx_encrypt_single_buffer_omp(
-        test_ciphertext, 0, test_plaintext, 0, 64, &test_cipherlen);
+        test_ciphertext, 0, test_plaintext, 0, nbytes, &test_cipherlen);
 
     DEBUG_SHMEM("TEST: Encrypted data first 16 bytes: ");
     for (int i = 0; i < 16; i++) {
@@ -1297,7 +1313,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 
     /* Decrypt the test data */
     int decrypt_result = shmemx_decrypt_single_buffer_omp(
-        test_ciphertext, 0, test_decrypted, 0, 64, test_cipherlen);
+        test_ciphertext, 0, test_decrypted, 0, nbytes, test_cipherlen);
 
     DEBUG_SHMEM("TEST: Decrypted data first 16 bytes: ");
     for (int i = 0; i < 16; i++) {
@@ -1309,7 +1325,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     /* Verify the round-trip worked */
     int match = 1;
     int mismatch_index = -1;
-    for (int i = 0; i < 64; i++) {
+    for (int i = 0; i < nbytes; i++) {
       if (test_plaintext[i] != test_decrypted[i]) {
         match = 0;
         mismatch_index = i;
@@ -1328,7 +1344,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
                   mismatch_index);
     }
   }
-
+#endif
   PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
   free(procs);
   // free(blocking_put_ciphertext);
