@@ -146,7 +146,7 @@ MY_SOURCES            += \
 
 if ENABLE_SHMEM_ENCRYPTION
 MY_SOURCES			  +=	\
-			extensions/enc_dec.c
+			extensions/AM_enc_dec.c
 endif # ENABLE_SHMEM_ENCRYPTION
 
 all_cppflags          += -I$(srcdir)/extensions

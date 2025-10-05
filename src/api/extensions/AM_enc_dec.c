@@ -23,11 +23,6 @@ const unsigned char gcm_key[GCM_KEY_SIZE] = {'a','b','c','d','e','f','g','a','b'
 
 unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 unsigned char nbi_put_ciphertext[NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
-unsigned char enc_chunks[MAX_THREAD_COUNT][MAX_MSG_SIZE+OFFSET];
-unsigned char dec_chunks[MAX_THREAD_COUNT][MAX_MSG_SIZE+OFFSET];
-unsigned char plain_chunks[MAX_THREAD_COUNT][MAX_MSG_SIZE+OFFSET];
-//unsigned char dec_chunks[MAX_THREAD_COUNT][MAX_MSG_SIZE+OFFSET];
-
 unsigned long long nbput_count = 0;
 
 //unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
@@ -58,6 +53,34 @@ int block_get_cipheren = 0;
  */
 inline static ucp_ep_h lookup_ucp_ep(shmemc_context_h ch, int pe) {
   return ch->eps[pe];
+}
+
+
+#ifdef HAVE_UCP_REQUEST_CHECK_STATUS
+#define UCX_REQUEST_CHECK(_request) ucp_request_check_status(_request)
+#else
+#define UCX_REQUEST_CHECK(_request) ucp_request_test(_request, NULL)
+#endif /* HAVE_UCP_REQUEST_CHECK_STATUS */
+
+inline static ucs_status_t check_wait_for_request(shmemc_context_h ch,
+                                                  void *req) {
+  if (req == NULL) { /* completed */
+    return UCS_OK;
+  } else if (UCS_PTR_IS_ERR(req)) {
+    ucp_request_cancel(ch->w, req);
+    return UCS_PTR_STATUS(req);
+  } else { /* wait for completion */
+    ucs_status_t s;
+
+    do {
+      ucp_worker_progress(ch->w);
+
+      s = UCX_REQUEST_CHECK(req);
+    } while (s == UCS_INPROGRESS);
+    ucp_request_free(req);
+
+    return s;
+  }
 }
 
 /*
@@ -152,6 +175,16 @@ inline static void get_remote_key_and_addr(shmemc_context_h ch,
   *raddr_p = translate_region_address(local_addr, r, pe);
 }
 
+static void notif_cb_callback(pmix_status_t status,
+            void *cbdata){
+
+   //NO_WARN_UNUSED(status);
+   NO_WARN_UNUSED(cbdata);
+   shmemu_assert(status == PMIX_SUCCESS, "notif_cb_callback: PMIX_failed here\n");
+   DEBUG_SHMEM("Reception complete\n");
+
+}
+
 
 inline static int get_thread_count(size_t bytes){
    int thread_no = 1;
@@ -171,9 +204,10 @@ inline static int get_thread_count(size_t bytes){
    return thread_no;
 }
 
-/*ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
+ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
         void *data, size_t len, const ucp_am_recv_param_t *param){
 
+   DEBUG_SHMEM("Entering put_handler\n");
     NO_WARN_UNUSED(arg);
     NO_WARN_UNUSED(header);
     NO_WARN_UNUSED(h_size);
@@ -236,7 +270,14 @@ ucs_status_t get_enc_handler(void *arg, const void *header, size_t h_size,
         .cb.send = NULL,
         .datatype = ucp_dt_make_contig(1)
     };
-    ucp_am_send_nbx(param->reply_ep, AM_GET_DEC_RESPONSE, NULL, 0, response, sizeof(func_args_t)+res_size, &ack_param);
+    ucs_status_ptr_t sp = ucp_am_send_nbx(param->reply_ep, AM_GET_DEC_RESPONSE, NULL, 0, response, sizeof(func_args_t)+res_size, &ack_param);
+
+    ucs_status_t st = check_wait_for_request(defcp, sp);
+    shmemu_assert(st == UCS_OK, "%s: failed (status: %s)",
+          __func__, ucs_status_string(st));
+    free(response);
+
+    
 
     return UCS_OK;
 }
@@ -270,12 +311,19 @@ ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
         .cb.send = NULL,
         .datatype = ucp_dt_make_contig(1)
     };
-    ucp_am_send_nbx(param->reply_ep, AM_GET_DEC_RESPONSE, NULL, 0, 1, sizeof(int), &ack_param);
+    int flag = 1;
+    ucs_status_ptr_t sp = ucp_am_send_nbx(param->reply_ep, AM_GET_DEC_RESPONSE, NULL, 0, &flag, sizeof(int), &ack_param);
+
+    ucs_status_t st = check_wait_for_request(defcp, sp);
+    shmemu_assert(st == UCS_OK, "%s: put failed (status: %s)",
+          __func__, ucs_status_string(st));
+   // free(func_put);
+
 
     return UCS_OK;
 }
 
-*/
+
 
 /* OLD STUFF BELOW!!! NEW STUFF ABOVE!!! */
 
@@ -283,107 +331,6 @@ ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
 
 static const pmix_status_t ENC_SUCCESS = PMIX_EXTERNAL_ERR_BASE-1;
 static const pmix_status_t DEC_SUCCESS = PMIX_EXTERNAL_ERR_BASE-2;
-
-int put_thread_no = 0;
-int get_thread_no = 0;
-static void notif_cb_callback(pmix_status_t status,
-            void *cbdata){
-
-   //NO_WARN_UNUSED(status);
-   NO_WARN_UNUSED(cbdata);
-   shmemu_assert(status == PMIX_SUCCESS, "notif_cb_callback: PMIX_failed here\n");
-   DEBUG_SHMEM("Reception complete\n");
-
-}
-
-static void enc_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
-                  const pmix_proc_t *source, pmix_info_t info[],size_t ninfo,
-                  pmix_info_t results[], size_t nresults,
-                  pmix_event_notification_cbfunc_fn_t cbfunc, 
-                  void *cbdata){
-
-    NO_WARN_UNUSED(cbfunc);
-    NO_WARN_UNUSED(evhdlr_registration_id);
-    NO_WARN_UNUSED(status);
-
-    pmix_info_t buffer = info[1];
-    uintptr_t dest = (uintptr_t)buffer.value.data.uint64;
-    shmemu_assert(dest != 0, "enc_notif_fn: dest buffer is NULL!\n");
-    int rank = info[3].value.data.uint32;
-    //int is_nonblocking = info[4].value.data.integer;
-    size_t og_bytes = info[6].value.data.uint32;
-
-    int source_rank = source ? (int)(info[4].value.data.uint32) : PMIX_RANK_UNDEF;
-    shmemu_assert(source_rank != PMIX_RANK_UNDEF, "enc_notif_fn: source rank is undefined!");
-    
-    void *base = (void *) dest;
-    size_t cipherlen = 0;
-
-    shmemx_encrypt_single_buffer_omp(base, source_rank, (const void *)dest, rank, og_bytes, &cipherlen);
-
-    DEBUG_SHMEM("Remote encryption went successfully\n");
-
-
-}
-
-static void dec_notif_fn(size_t evhdlr_registration_id, pmix_status_t status,
-                  const pmix_proc_t *source, pmix_info_t info[],size_t ninfo,
-                  pmix_info_t results[], size_t nresults,
-                  pmix_event_notification_cbfunc_fn_t cbfunc, 
-                  void *cbdata){
-
-   // NO_WARN_UNUSED(cbfunc);
-    NO_WARN_UNUSED(evhdlr_registration_id);
-    NO_WARN_UNUSED(status);
-
-    pmix_info_t buffer = info[1];
-    uintptr_t dest = (uintptr_t)buffer.value.data.uint64;
-    shmemu_assert(dest != 0, "dec_notif_fn: dest buffer is NULL!\n");
-    pmix_info_t size = info[2];
-    int  cipherlen = size.value.data.integer;
-    pmix_info_t dest_rank = info[3];
-    uint32_t pe = dest_rank.value.data.uint32;
-    pmix_info_t non_blocking = info[5];
-    int is_nonblocking = non_blocking.value.data.integer;
-    pmix_info_t og_bytes = info[6];
-    size_t og_size = og_bytes.value.data.uint32;
- 
-    int source_rank = source ? (int)(info[4].value.data.uint32) : PMIX_RANK_UNDEF;
-
-    shmemu_assert(source_rank != PMIX_RANK_UNDEF, "dec_notif_fn: source rank is undefined!");
-
-   
-    DEBUG_SHMEM("decryption pe %d source rank %d address %p og_bytes %lu; is_nonblocking %d,ciphertext_size %d\n",
-          pe, source_rank, (void *)dest, og_size, is_nonblocking, cipherlen);
-
-    shmemu_assert(source != NULL, "dec_notif_fn: source proc struct is NULL\n");
-
- 
-    //void *r_dest_ciphertext = malloc(cipherlen + AES_RAND_BYTES+AES_TAG_LEN);
-    //memcpy(r_dest_ciphertext, (void*)dest, cipherlen + AES_RAND_BYTES+AES_TAG_LEN);
-
-    size_t cipher_len = cipherlen;
-
-    int thread_no = shmemx_decrypt_single_buffer_omp((unsigned char *)dest, pe, (void *)dest, source_rank, og_size, (int)cipher_len);
-
-
-    if (cbfunc){
-       cbfunc(PMIX_SUCCESS, NULL, 0, NULL, NULL, cbdata);
-
-    }
-    
-}
-
-static void enc_notif_callbk(pmix_status_t status, size_t evhandler_ref, void *cbdata){
-    volatile int *act = (volatile int *)cbdata;
-
-    NO_WARN_UNUSED(status);
-    NO_WARN_UNUSED(evhandler_ref);
-
-    shmemu_assert(status == PMIX_SUCCESS,
-            "shmem_enc_init_cb can't register event for encryption");
-    *act = status;
-}
 
 static inline void handleErrors(char *message){
     ERR_print_errors_fp(stderr);
@@ -470,27 +417,6 @@ void shmemx_sec_init(){
     nb_get_ctr = (shmem_secure_attr_t *)malloc(sizeof(shmem_secure_attr_t) * NON_BLOCKING_OP_COUNT*2);
 
 
-    pmix_status_t sp = ENC_SUCCESS;
-    active = -1;
-
-    PMIx_Register_event_handler(&sp, 1, NULL, 0, enc_notif_fn,
-            enc_notif_callbk, (void *)&active);
-    while(active == -1){}
-
-
-    shmemu_assert(active == 0, "shmem_enc_init: PMIx_enc_handler reg failed");
-
-    active = -1;
-
-    sp = DEC_SUCCESS;
-
-    PMIx_Register_event_handler(&sp, 1, NULL, 0, dec_notif_fn,
-            enc_notif_callbk, (void *)&active);
-    while(active == -1){}
-    shmemu_assert(active == 0, "shmem_enc_init: PMIx_dec_handler reg failed");
-    //DEBUG_SHMEM("Encrypion initialization has been completed\n");
-    //
-
 
     int i = 0;
     for(i = 0; i < MAX_THREAD_COUNT; i++){
@@ -523,6 +449,18 @@ void shmemx_sec_init(){
           handleErrors("Failed to set up the Initialization Vector Length");
        }
     }
+
+    ucp_am_handler_param_t recv_handler_param = {
+       .id = AM_PUT_HANDLER,
+       .flags = UCP_AM_FLAG_WHOLE_MSG,
+       .cb = put_handler,
+    };
+    DEBUG_SHMEM("Registering put handler\n");
+    ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
+    recv_handler_param.id = AM_GET_ENC_HANDLER;
+    DEBUG_SHMEM("Registering get_enc handler\n");
+    recv_handler_param.cb = get_enc_handler;
+    ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
     return;
 }
 
@@ -551,8 +489,6 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
    int enc_data = data;
 
-
-
    int position = 0;
 
    int temp_cipherlen = 0;
@@ -560,32 +496,12 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
    //unsigned char *key = &(gcm_key[0]);
    DEBUG_SHMEM("Segment_count %d, data = %d, bytes = %d  max_thread_no %d\n", segment_count, data, bytes, thread_no);
 
-
-//#pragma omp parallel for schedule (dynamic) default(none) private(max_data, position, res, local_cipherlen, enc_data) shared(src, dest, openmp_enc_ctx, stdout,stderr, segment_count, data, sbuf, cipherbuf, temp_cipherlen, proc, bytes, gcm_key, enc_chunks, dec_chunks, plain_chunks) num_threads(thread_no)
-   for (count = 0; count < segment_count; count++){
-      memset(enc_chunks[count], 0, MAX_MSG_SIZE+OFFSET);
-      memset(dec_chunks[count], 0, MAX_MSG_SIZE+OFFSET);
-      memset(plain_chunks[count], 0, MAX_MSG_SIZE+OFFSET);
-      
-   }
-
-
-//#pragma omp parallel for schedule (dynamic) default(none) private(max_data, position, res, local_cipherlen, enc_data) shared(src, dest, openmp_enc_ctx, stdout,stderr, segment_count, data, sbuf, cipherbuf, temp_cipherlen, proc, bytes, gcm_key, enc_chunks, dec_chunks, plain_chunks) num_threads(thread_no)
-   for (count = 0; count < segment_count; count++){
-      memcpy(plain_chunks[count], sbuf+(enc_data*count), enc_data);
-   }
-
  //   if (segment_count == 1){
  //      return shmemx_encrypt_single_buffer(cipherbuf, src, sbuf, dest, bytes, cipherlen);
  //   }
-   int pos = 0;
-   DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: \n\n");
-   for (pos = 0; pos < segment_count; pos++){
-      for (count  = 0; count <enc_data; count++)
-         fprintf(stderr, "%c", plain_chunks[pos][count]);
-      fprintf(stderr, "\n");
-   }
-#pragma omp parallel for schedule (dynamic) default(none) private(max_data, position, res, local_cipherlen, enc_data) shared(src, dest, openmp_enc_ctx, stdout,stderr, segment_count, data, sbuf, cipherbuf, temp_cipherlen, proc, bytes, gcm_key, enc_chunks, dec_chunks, plain_chunks) num_threads(thread_no)
+
+   DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: %*.*s \n", bytes-1, bytes, (char *)sbuf);
+#pragma omp parallel for schedule (dynamic) default(none) private(max_data, position, res, local_cipherlen, enc_data) shared(src, dest, openmp_enc_ctx, stdout,stderr, segment_count, data, sbuf, cipherbuf, temp_cipherlen, proc, bytes, gcm_key) num_threads(thread_no)
    for (count = 0; count < segment_count ; count++){
 
       int tn = omp_get_thread_num();
@@ -595,12 +511,14 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
    //   void *tmp_buf = cipherbuf + (count * (data+AES_TAG_LEN+AES_RAND_BYTES))+src;
       position = count * (data + AES_TAG_LEN + AES_RAND_BYTES);
       int pos2 = count * data;
-      unsigned char *temp_cipher_text = &(enc_chunks[count][0]); //malloc(sizeof(data+AES_TAG_LEN+AES_RAND_BYTES));;
-      unsigned char *temp_plain_text = &(plain_chunks[count][0]);
+      void *tmp_buf = cipherbuf + position;
+      void *tmp_buf2 = sbuf + pos2;
+
+
 
             //  RAND_bytes(tmp_buf, AES_RAND_BYTES);
       EVP_CIPHER_CTX *local_ctx = openmp_enc_ctx[tn];
-      RAND_bytes(temp_cipher_text+src, AES_RAND_BYTES);
+      RAND_bytes(tmp_buf+src, AES_RAND_BYTES);
       enc_data = data;
       max_data = enc_data+AES_TAG_LEN;
      
@@ -612,9 +530,9 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
                enc_data, max_data);
       }
       DEBUG_SHMEM("[T_%d] local_ctx %p enc_data %d max_data %d tmp_buf: %p (cipher buf %p + count %d * (data %d + AES_TAG_LEN %d + AES_RAND_BYTES %d))\n", 
-            tn, local_ctx, enc_data, max_data, temp_cipher_text, (void *)cipherbuf+src, count, enc_data, AES_TAG_LEN, AES_RAND_BYTES);
+            tn, local_ctx, enc_data, max_data, tmp_buf, (void *)cipherbuf+src, count, enc_data, AES_TAG_LEN, AES_RAND_BYTES);
 
-      if ((res = EVP_EncryptInit_ex(local_ctx, NULL, NULL, NULL, temp_cipher_text)) != 1){
+      if ((res = EVP_EncryptInit_ex(local_ctx, NULL, NULL, NULL, tmp_buf)) != 1){
          ERROR_SHMEM("[T_%d] EncryptInit_ex from error %lu: %s\n",
                tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
          memset(NULL, 0, 10);
@@ -622,7 +540,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
       DEBUG_SHMEM("[T_%d] EncryptInit_ex passed\n", tn);
 
-      if ((res = EVP_EncryptUpdate(local_ctx, temp_cipher_text+src+AES_RAND_BYTES, &local_cipherlen, ((const unsigned char *)(temp_plain_text+dest)), (int) enc_data)) != 1){
+      if ((res = EVP_EncryptUpdate(local_ctx, tmp_buf+src+AES_RAND_BYTES, &local_cipherlen, ((const unsigned char *)(tmp_buf2 + dest)), (int) enc_data)) != 1){
          ERROR_SHMEM("[T_%d] EncryptUpdate Failed: %lu %s\n", 
                tn, ERR_get_error(), ERR_error_string(res, NULL));
          memset(NULL, 0, 10);
@@ -632,9 +550,9 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
       temp_cipherlen += local_cipherlen; /* Adds to the global cipherlen length */
 
       DEBUG_SHMEM("[T_%d] Entering final with local_ctx %p tmp_buf %p + AES_TAG_LEN %d + src %llu + local_cipherlen %d\n",
-            tn, local_ctx, temp_cipher_text, AES_TAG_LEN, src, local_cipherlen);
+            tn, local_ctx, tmp_buf, AES_TAG_LEN, src, local_cipherlen);
 
-         if ((res = EVP_EncryptFinal_ex(local_ctx, temp_cipher_text+AES_RAND_BYTES+src+local_cipherlen, &local_cipherlen)) != 1){
+         if ((res = EVP_EncryptFinal_ex(local_ctx, tmp_buf+AES_RAND_BYTES+src+local_cipherlen, &local_cipherlen)) != 1){
             ERROR_SHMEM("[T_%d] EncryptFinal_ex failed: %lu %s\n", tn,
                   ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
             memset(NULL, 0, 10);
@@ -644,33 +562,17 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 //#pragma omp barrier
 
       DEBUG_SHMEM("[T_%d] EncrypFinal_ex passed\n", tn);
-      if ((res = EVP_CIPHER_CTX_ctrl(local_ctx, EVP_CTRL_GCM_GET_TAG, AES_TAG_LEN, temp_cipher_text+AES_RAND_BYTES+local_cipherlen+src))!= 1){
+      if ((res = EVP_CIPHER_CTX_ctrl(local_ctx, EVP_CTRL_GCM_GET_TAG, AES_TAG_LEN, tmp_buf+AES_RAND_BYTES+local_cipherlen))!= 1){
          ERROR_SHMEM("[T_%d]: CTX_CTRL: %s\n", tn,
                ERR_error_string(ERR_get_error(), NULL));
          memset(NULL, 0, 10);
       }
       DEBUG_SHMEM("[T_%d] CIPHER_CTX_CTRL passed\n", tn);
 
-           //free(temp_cipher_text);
-
    }
-   for (count = 0; count < segment_count; count++){
-      position = count *(data+AES_TAG_LEN+AES_RAND_BYTES);
-      memcpy(cipherbuf + position, enc_chunks[count], data+AES_RAND_BYTES+AES_TAG_LEN);
-   }
-
 
    *cipherlen = temp_cipherlen;
-   DEBUG_SHMEM("[END_ENCRYPTION] Final cipherlen: %lu, Ciphertext: %s \n\n", *cipherlen, cipherbuf);
-   for (pos = 0; pos < segment_count; pos++){
-      //for (count  = 0; count <enc_data + AES_TAG_LEN + AES_RAND_BYTES; count++)
-         fprintf(stderr, "%%", enc_chunks[pos]);
-      fprintf(stderr, "\n");
-   }
-
-//   for (count  = 0; count < cipherlen; count++)
-//      fprintf(stderr, "%c", cipherbuf[count]);
-//   fprintf(stderr, "\n");
+//   DEBUG_SHMEM("[END_ENCRYPTION] Final cipherlen: %lu, CIPHERTEXT: %s\n", *cipherlen, cipherbuf);
 
    return segment_count;
 }
@@ -748,7 +650,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
    int data = bytes / thread_no;
    DEBUG_SHMEM("Data: %d\n", data);
    max_data = data + AES_RAND_BYTES;
-   //data++;
+   data++;
 
    if (bytes <=16){
       segment_count = 1;
@@ -764,45 +666,28 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
    int temp_cipherlen = 0;
 
-//#pragma omp parallel for schedule (dynamic) default(none) private(max_data, position, res, local_cipherlen, enc_data) shared(src, dest, openmp_enc_ctx, stdout,stderr, segment_count, data, rbuf, cipherbuf, temp_cipherlen, proc, bytes, gcm_key, enc_chunks, dec_chunks, plain_chunks) num_threads(thread_no)
-   for (count = 0; count < segment_count; count++){
-      memset(enc_chunks[count], 0, MAX_MSG_SIZE+OFFSET);
-      memset(dec_chunks[count], 0, MAX_MSG_SIZE+OFFSET);
-      memset(plain_chunks[count], 0, MAX_MSG_SIZE+OFFSET);
-      
-   }
-
-//#pragma omp parallel for schedule (dynamic) default(none) private(max_data, position, res, local_cipherlen, enc_data) shared(src, dest, openmp_enc_ctx, stdout,stderr, segment_count, data, rbuf, cipherbuf, temp_cipherlen, proc, bytes, gcm_key, enc_chunks, dec_chunks, plain_chunks) num_threads(thread_no)
-   for (count = 0; count < segment_count; count++){
-      if (count == segment_count-1){
-         enc_data = (bytes-data*(count));
-      }
-      memcpy(enc_chunks[count], cipherbuf+(enc_data*count+AES_TAG_LEN+AES_RAND_BYTES), enc_data+AES_TAG_LEN+AES_RAND_BYTES);
-   }
-   enc_data = data;
-
    DEBUG_SHMEM("Segment_count %d, data = %d, max_thread_no %d\n", segment_count, data, thread_no);
 
+   //unsigned char *key = &(gcm_key[0]);
+
+  // if (segment_count == 1){
+  //    return shmemx_decrypt_single_buffer(cipherbuf, src, rbuf, dest, bytes, cipher_len);
+  // }
+
   // DEBUG_SHMEM("Segment_count %d, data = %d, max_thread_no %d\n", segment_count, data, thread_no);
-   int pos = 0; 
-   DEBUG_SHMEM("[START_DECRYPTION] Ciphertext: %s\n\n", cipherbuf);
-   fprintf(stdout,"\n\n");
-   for (pos = 0; pos < segment_count; pos++){
-      for (count  = 0; count <enc_data+AES_TAG_LEN+AES_RAND_BYTES; count++)
-         fprintf(stderr, "%c", enc_chunks[pos][count]);
-   }
-   fprintf(stderr, "\n");
-   fflush(stderr);
-#pragma omp parallel for schedule(dynamic) default(none) private(count, max_data, position, res, local_cipherlen, enc_data) shared(segment_count, stdout, stderr, openmp_dec_ctx, data, cipherbuf, rbuf, cipher_len, src, dest, bytes, proc, gcm_key, enc_chunks, dec_chunks, plain_chunks) num_threads(thread_no)
+   
+   DEBUG_SHMEM("[START_DECRYPTION] Ciphertext: %*.*s\n", data-1, data, cipherbuf);
+//private (segment_count, count, local_cipherlen, cipherbuf, rbuf, openmp_dec_ctx, stdout, stderr, max_data, bytes, data, position, src, dest,  proc, res, key, cipher_len, temp_cipherlen)
+//int position = 0;
+#pragma omp parallel for schedule(dynamic) default(none) private(count, max_data, position, res, local_cipherlen, enc_data) shared(segment_count, stdout, stderr, openmp_dec_ctx, data, cipherbuf, rbuf, cipher_len, src, dest, bytes, proc, gcm_key) num_threads(thread_no)
    for (count = 0; count < segment_count ; count++){
 
       int tn = omp_get_thread_num();
  //     DEBUG_SHMEM("[T_%d] start\n", tn);
       //int cipher_temp = 0;
       position = count * (data+AES_TAG_LEN+AES_RAND_BYTES);
-      int pos2 = count*data;
-      unsigned char *temp_cipher_text = &(enc_chunks[count][0]);
-      unsigned char *temp_decrypt_text = &(plain_chunks[count]); //+ (count * data);
+      void *tmp_buf = cipherbuf + position;
+      void *tmp_buf2 = rbuf + (count * data);
       enc_data = data;
       max_data = data + AES_TAG_LEN;
 
@@ -815,13 +700,13 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
       DEBUG_SHMEM("T_%d Params: ctx %p, rbuf+(%d): %p, cipher_len ptr %p, cipherbuf %p + src %d + RAND BYTES %d, bytes %d - AES_RAND_BYTES %d\n", tn, local_ctx, dest, (rbuf+dest), (&cipher_len), cipherbuf, src, AES_RAND_BYTES, enc_data, AES_RAND_BYTES);
 
-      if ((res = EVP_DecryptInit_ex(local_ctx, NULL, NULL, NULL, temp_cipher_text)) != 1){
+      if ((res = EVP_DecryptInit_ex(local_ctx, NULL, NULL, NULL, tmp_buf)) != 1){
          ERROR_SHMEM("[T_%d] DecryptInit_ex failed: %lu %s\n",tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
          memset(NULL, 0, 10);
       }
 
 
-      if ((res = EVP_DecryptUpdate(local_ctx, ((unsigned char *)(temp_decrypt_text+dest)), (int *)(&local_cipherlen), temp_cipher_text+AES_RAND_BYTES+src, (enc_data-AES_TAG_LEN))) != 1){
+      if ((res = EVP_DecryptUpdate(local_ctx, ((unsigned char *)(tmp_buf2+dest)), (int *)(&local_cipherlen), tmp_buf+AES_RAND_BYTES+src, (enc_data-AES_TAG_LEN))) != 1){
       ERROR_SHMEM("[T_%d] DecryptUpdate failed: %lu %s\n", tn, ERR_get_error(), ERR_error_string(res, NULL));
       memset(NULL, 0, 10);
    }
@@ -829,27 +714,25 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
    DEBUG_SHMEM("T_%d DecryptUpdated passed; cipherlen: %u\n", tn, cipher_len);
 
 
-    if ((res = EVP_CIPHER_CTX_ctrl(local_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, temp_cipher_text+src+enc_data-AES_TAG_LEN))!= 1){
+    if ((res = EVP_CIPHER_CTX_ctrl(local_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, tmp_buf+src+enc_data-AES_TAG_LEN))!= 1){
        ERROR_SHMEM("[T_%d] CIPHER_CTX_ctrl failed: %lu %s\n", tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
        memset(NULL, 0, 10);
 
     }
  
     DEBUG_SHMEM("T_%d CTX_ctrl passed \n", tn);
-    if ((res = EVP_DecryptFinal_ex(local_ctx, (&temp_decrypt_text[dest+local_cipherlen]), (int *)( &local_cipherlen))) != 1){
+    if ((res = EVP_DecryptFinal_ex(local_ctx, (tmp_buf2+dest+local_cipherlen), (int *)( &local_cipherlen))) != 1){
         /*handleErrors*/
        ERROR_SHMEM("[T_%d] Decryption Tag Verification Failed %lu %s\n", tn, ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
     }
 
-    DEBUG_SHMEM("T_%d DecryptFinal_ex passed with text: %s\n", tn, temp_decrypt_text); 
+    DEBUG_SHMEM("T_%d DecryptFinal_ex passed\n", tn);
 
    }
-   for (count = 0; count < segment_count; count++){
-      memcpy(rbuf+(count*data), plain_chunks[count], data);
-   }
 
-   DEBUG_SHMEM("[END_DECRYPTION] plaintext: %s\n", ((char *)(rbuf)));
-   fprintf(stderr, "\n");
+   DEBUG_SHMEM("[END_DECRYPTION] plaintext: %*.*s\n", (data-AES_RAND_BYTES-1), (data-AES_RAND_BYTES), (char *)rbuf);
+
+
    return 0;
 }
 
@@ -955,6 +838,15 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 
    int thread_no = get_thread_count(nbytes);
 
+
+    pmix_t1 = shmemx_wtime();
+    shmemc_context_h ch = (shmemc_context_h) ctx; 
+    uint64_t r_dest;  /* address on other PE */
+    ucp_rkey_h r_key; /* rkey for remote address */
+    DEBUG_SHMEM("Getting rkey and addr\n");
+    get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
+    ucp_ep_h peer_ep = lookup_ucp_ep(ch, pe);
+
    memset(blocking_put_ciphertext, 0, nbytes+AES_TAG_LEN+AES_RAND_BYTES+1);
     //int res  = 0;
 //    unsigned char *blocking_put_ciphertext = malloc( nbytes+(AES_TAG_LEN+AES_RAND_BYTES));
@@ -966,22 +858,41 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
  //           0, src, 0, nbytes, ((size_t *)(&block_put_cipherlen)));
  //   enc_t2 = (shmemx_wtime() - enc_t1)*1e6;
 
-//   DEBUG_SHMEM("bytes: %lu\n", nbytes);
+   DEBUG_SHMEM("bytes: %lu\n", nbytes);
     int segment_count = shmemx_encrypt_single_buffer_omp(
           &(blocking_put_ciphertext[0]),
           0, src, 0, nbytes, ((size_t *)(&block_put_cipherlen)));
     
-//    DEBUG_SHMEM( "Encryption end, ciphertext: %p, cipherlen: %d \n",
-//          &(blocking_put_ciphertext[0]), block_put_cipherlen);
+    DEBUG_SHMEM( "Encryption end, ciphertext: %p, cipherlen: %d \n",
+          &(blocking_put_ciphertext[0]), block_put_cipherlen);
+
+    func_args_t *func_put = (func_args_t *)(malloc(sizeof(func_args_t) + (block_put_cipherlen +(segment_count*(AES_TAG_LEN+AES_RAND_BYTES)))));
 
     put_t1 = shmemx_wtime();
-    shmemc_ctx_put(ctx, dest, 
-            blocking_put_ciphertext,
-            block_put_cipherlen+(segment_count * (AES_TAG_LEN+AES_RAND_BYTES)),
+
+    ucp_request_param_t param = {
+       .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
+       .cb.send = NULL,
+       .datatype=  ucp_dt_make_contig(sizeof(char)),
+    };
+
+    ucs_status_ptr_t sp = ucp_am_send_nbx(peer_ep, AM_PUT_HANDLER, NULL, 0,
+          func_put, (sizeof(func_args_t) + (block_put_cipherlen +(segment_count*(AES_TAG_LEN+AES_RAND_BYTES)))),
+          &param);
+
+    ucs_status_t st = check_wait_for_request(ch, sp);
+    shmemu_assert(st == UCS_OK, "%s: put failed (status: %s)",
+          __func__, ucs_status_string(st));
+    free(func_put);
+
+
+ //   shmemc_ctx_put(ctx, dest, 
+ //           blocking_put_ciphertext,
+ //           block_put_cipherlen+(segment_count * AES_TAG_LEN+AES_RAND_BYTES),
 //            block_put_cipherlen+(AES_TAG_LEN+AES_RAND_BYTES), 
-            pe);
+ //           pe);
     put_t2 = (shmemx_wtime() - put_t1)*1e6;
- //   DEBUG_SHMEM( "Put end\n");
+    DEBUG_SHMEM( "Put end\n");
 
 //    free(blocking_put_ciphertext);
 
@@ -993,95 +904,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
      * Step 3: Profit?
      */
 
-    pmix_t1 = shmemx_wtime();
-    shmemc_context_h ch = (shmemc_context_h) ctx; 
-    uint64_t r_dest;  /* address on other PE */
-    ucp_rkey_h r_key; /* rkey for remote address */
- //   DEBUG_SHMEM("Getting rkey and addr\n");
-    get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
 
-
-    pmix_status_t ps;
-    pmix_info_t si[7];
-
-
-    pmix_proc_t *procs;
-    size_t nprocs = 1;
-    procs = (pmix_proc_t *)malloc(sizeof(pmix_proc_t)*nprocs);
-//    DEBUG_SHMEM("Entering PMIX_LOAD_PROC_ID\n");
-    PMIX_LOAD_PROCID(procs, my_second_pmix->nspace, pe);
-    //  PMIX_LOAD_PROCID(&procs[1], PMIX_RANGE_NAMESPACE, dest);
-
-    pmix_data_array_t pmix_darray;
-    pmix_darray.size = nprocs;
-    pmix_darray.type = PMIX_PROC;
-    PMIX_DATA_ARRAY_CONSTRUCT(&pmix_darray, nprocs, PMIX_PROC);
-    memcpy(pmix_darray.array, procs, nprocs*sizeof(pmix_proc_t));
-
-   
-    PMIX_INFO_CONSTRUCT(&si[0]);
-    PMIX_INFO_LOAD(&si[0], PMIX_EVENT_CUSTOM_RANGE, &pmix_darray, PMIX_DATA_ARRAY);
-   // DEBUG_SHMEM("dest ptr, one passed in 0x%lx: %p\n", r_dest, dest);
-
-    PMIX_INFO_CONSTRUCT(&si[1]);
-    PMIX_LOAD_KEY(si[1].key, "Remote_secure_buffer");
-    si[1].value.type = PMIX_UINT64;
-    si[1].value.data.uint64 = (uint64_t)r_dest;
-   // PMIX_INFO_LOAD(&si, PMIX_GRANK, &success, PMIX_INT);
-    PMIX_INFO_CONSTRUCT(&si[2]);
-    PMIX_LOAD_KEY(si[2].key, "Remote_buffer_enc_size");
-    si[2].value.type = PMIX_INT;
-    si[2].value.data.integer = block_put_cipherlen;  // +AES_TAG_LEN+AES_RAND_BYTES;
-
-    PMIX_INFO_CONSTRUCT(&si[3]);
-    PMIX_LOAD_KEY(si[3].key, "Destination_rank");
-    si[3].value.type = PMIX_UINT32;
-    si[3].value.data.uint32 = 0;
-
-
-    PMIX_INFO_CONSTRUCT(&si[4]);
-    PMIX_LOAD_KEY(si[4].key, "Source_rank");
-    si[4].value.type = PMIX_UINT32;
-    si[4].value.data.uint32 = 0;
-
-
-    PMIX_INFO_CONSTRUCT(&si[5]);
-    PMIX_LOAD_KEY(si[5].key, "is_nonblocking");
-    si[5].value.type = PMIX_INT;
-    si[5].value.data.integer = 0;
-
-    PMIX_INFO_CONSTRUCT(&si[6]);
-    PMIX_LOAD_KEY(si[5].key, "og_bytes");
-    si[6].value.type = PMIX_UINT32;
-    si[6].value.data.uint32 = nbytes;
-    double pmix_construct_time = (shmemx_wtime()-pmix_t1)*1e6;
-
-
-
- //   DEBUG_SHMEM( "Starting signaling\n");
-    pmix_t1 = shmemx_wtime();
-    ps = PMIx_Notify_event(DEC_SUCCESS, procs, PMIX_RANGE_CUSTOM, &(si[0]),
-            7, NULL, NULL);
-    pmix_t2 = (shmemx_wtime()-pmix_t1)*1e6;
-//    PMIx_Fence(NULL, 0, NULL, 0);
-
-    if (ps != PMIX_SUCCESS){
-        shmemu_assert(ps == PMIX_SUCCESS,
-                " shmem_ctx_secure_put: PMIx can't notify decryption: %s",
-                PMIx_Error_string(ps));
-    }
-
-//    DEBUG_SHMEM( "Signaling success? %s\n", ps == PMIX_SUCCESS ? "yes" : "no");
-
-    PMIX_DATA_ARRAY_DESTRUCT(&pmix_darray);
-    //free(blocking_put_ciphertext);
-    total_t2 = (shmemx_wtime()-total_t1)*1e6;
-
- /*  DEBUG_SHMEM("For %u bytes\n"
-                "Encrypt_time %.3f\nPut_time: %.3f\npmix_construct: %.3f\n"
-                "PMIX_notify_time: %.3f\nTotal_time: %.3f\n",
-                nbytes, enc_t2, put_t2, pmix_construct_time,
-                pmix_t2, total_t2);*/
 }
 
 
