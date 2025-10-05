@@ -216,22 +216,22 @@ ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
     NO_WARN_UNUSED(arg);
     NO_WARN_UNUSED(header);
     NO_WARN_UNUSED(h_size);
-
     int rank = proc.li.rank;
+
+    if (param->recv_attr & UCP_AM_RECV_ATTR_FLAG_DATA){
+       DEBUG_SHMEM("We SHOULD be able to use the data!!!!!!!!!!!!!!!!!!!!!!\n");
+    }
     func_args_t *func_data = (func_args_t *)data;
-    uint64_t dest = (uint64_t)(func_data->local_buffer);
+    unsigned char  *dest = (func_data->local_buffer);
     uint64_t r_dest = func_data->remote_buffer;
     DEBUG_SHMEM("dest: %p, r_dest: %p\n", dest, r_dest);
-//    const long r = lookup_region(r_dest);
-//    r_dest = translate_region_address(dest, r, rank);
-    DEBUG_SHMEM("rdest again %p\n", r_dest);
+    usleep(10);
     shmemu_assert (r_dest >= 0, "put_handler: rdest is 0, can't find region of %p", (void *) dest);
-   // memcpy((void *)r_dest, (void *)dest, func_data->local_size+AES_TAG_LEN+AES_RAND_BYTES);
 
     DEBUG_SHMEM("optype: %d\n", func_data->optype);
     switch (func_data->optype){
         case PT2PT:
-            shmemx_decrypt_single_buffer_omp(dest, 0, r_dest, 0, func_data->local_size + AES_RAND_BYTES, ((size_t)(func_data->local_size)));
+            shmemx_decrypt_single_buffer_omp(dest, 0, r_dest, 0, func_data->local_size + AES_RAND_BYTES, ((size_t)(func_data->encrypted_size)));
             break;
         case COLL:
             shmemx_decrypt_single_buffer_omp(dest, func_data->src_pe, r_dest, func_data->dst_pe, func_data->local_size + AES_RAND_BYTES, ((size_t)(func_data->local_size)));
@@ -863,7 +863,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     ucp_rkey_h r_key; /* rkey for remote address */
     DEBUG_SHMEM("Getting rkey and addr\n");
     get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
-    ucp_ep_h peer_ep = lookup_ucp_ep(defcp, pe);
+    ucp_ep_h peer_ep = lookup_ucp_ep(ch, pe);
 
    memset(blocking_put_ciphertext, 0, MAX_MSG_SIZE + OFFSET);
     //int res  = 0;
@@ -871,12 +871,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     total_t1 = shmemx_wtime();
 
     enc_t1 = shmemx_wtime();
- //   shmemx_encrypt_single_buffer(
- //           blocking_put_ciphertext,
- //           0, src, 0, nbytes, ((size_t *)(&block_put_cipherlen)));
- //   enc_t2 = (shmemx_wtime() - enc_t1)*1e6;
-
-   DEBUG_SHMEM("bytes: %lu\n", nbytes);
+    DEBUG_SHMEM("bytes: %lu\n", nbytes);
     int segment_count = shmemx_encrypt_single_buffer_omp(
           &(blocking_put_ciphertext[0]),
           0, src, 0, nbytes, ((size_t *)(&block_put_cipherlen)));
@@ -907,12 +902,10 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
           func_put, (sizeof(func_args_t) + (block_put_cipherlen +(segment_count*(AES_TAG_LEN+AES_RAND_BYTES)))),
           &param);
 
-    ucs_status_t st = check_wait_for_request(defcp, sp);
+    ucs_status_t st = check_wait_for_request(ch, sp);
     shmemu_assert(st == UCS_OK, "%s: put failed (status: %s)",
           __func__, ucs_status_string(st));
-    free(func_put->local_buffer);
-    free(func_put);
-    func_put = NULL;
+//    ucp_am_data_release(ch->w, func_put->local_buffer);
 
 
  //   shmemc_ctx_put(ctx, dest, 
@@ -922,6 +915,11 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
  //           pe);
     put_t2 = (shmemx_wtime() - put_t1)*1e6;
     DEBUG_SHMEM( "Put end\n");
+
+    //free(func_put->local_buffer);
+    //free(func_put);
+    //func_put = NULL;
+
 
 //    free(blocking_put_ciphertext);
 
