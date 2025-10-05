@@ -391,7 +391,7 @@ typedef struct func_args {
     int local_size;
     int encrypted_size;
     uint64_t remote_buffer; /* For get and put operations */
-    void *local_buffer; /* for get operations */
+    unsigned char *local_buffer; /* for get operations */
 } func_args_t;
 
 
