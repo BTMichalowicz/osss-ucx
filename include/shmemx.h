@@ -414,9 +414,6 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long sr
 int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
 
 
-int shmemx_secure_put_omp_threaded(shmem_ctx_t ctx, void *dest, const void *src,
-        size_t nbytes, int pe);
-
 int shmemx_secure_quiet(void);
 
 void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
