@@ -82,9 +82,10 @@ inline static ucs_status_t check_wait_for_request_sec(shmemc_context_h ch,
       ucp_worker_progress(ch->w);
 
       s = UCX_REQUEST_CHECK(req);
-//      PMIx_Fence(NULL, 0, NULL, 0);
     } while (s == UCS_INPROGRESS);
     ucp_request_free(req);
+    PMIx_Fence(NULL, 0, NULL, 0);
+    PMIx_Progress();
   
     return s;
   }
@@ -987,22 +988,20 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   fflush(stdout);
 */
 
-//  const ucp_request_param_t prm = {.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK,
-//     .cb.send = noop_callbackx};
+  const ucp_request_param_t prm = {.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK,
+     .cb.send = noop_callbackx};
 
- // sp = ucp_put_nbx(ep, src, nbytes, r_dest, r_key, &prm);
- // s = check_wait_for_request_sec(ch, sp);
- // shmemu_assert(s == UCS_OK, "shmemx_secure_put put failed (status: %s)",
- //       ucs_status_string(s));
+ sp = ucp_put_nbx(ep, blocking_put_ciphertext, block_put_cipherlen + (segment_count*(AES_TAG_LEN+AES_RAND_BYTES)), r_dest, r_key, &prm);
 
 
 
 
-  shmemc_ctx_put(ctx, dest, blocking_put_ciphertext,
-                 block_put_cipherlen +
-                     (segment_count * (AES_TAG_LEN + AES_RAND_BYTES)),
+
+//  shmemc_ctx_put(ctx, dest, blocking_put_ciphertext,
+//                 block_put_cipherlen +
+//                     (segment_count * (AES_TAG_LEN + AES_RAND_BYTES)),
                  //            block_put_cipherlen+(AES_TAG_LEN+AES_RAND_BYTES),
-                 pe);
+//                 pe);
   put_t2 = (shmemx_wtime() - put_t1) * 1e6;
   DEBUG_SHMEM("Put end\n");
 
@@ -1097,8 +1096,14 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   ps = PMIx_Notify_event(DEC_SUCCESS, procs, PMIX_RANGE_CUSTOM, &(global_si[0]), 5,
                          notif_cb_callback, NULL);
 
-  PMIx_Progress();
+  //PMIx_Progress();
   DEBUG_SHMEM("Signaling done! Result: %d\n", ps);
+
+  s = check_wait_for_request_sec(ch, sp);
+  shmemu_assert(s == UCS_OK, "shmemx_secure_put put failed (status: %s)",
+        ucs_status_string(s));
+
+
 
 
  // DEBUG_SHMEM(
