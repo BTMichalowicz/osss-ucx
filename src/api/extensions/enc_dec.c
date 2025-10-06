@@ -47,6 +47,7 @@
 #include "shmemu.h"
 #include "shmem_mutex.h"
 #include "shmemc.h"
+#include "../../shmemc/ucx/callbacks.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -58,6 +59,36 @@ const unsigned char gcm_key[GCM_KEY_SIZE] = {
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'a', 'b', 'c', 'd',
     'f', 'e', 'a', 'c', 'b', 'd', 'e', 'f', '0', '1', '2',
     '3', '4', '5', '6', '7', '8', '9', 'a', 'd', 'c'};
+
+
+
+#ifdef HAVE_UCP_REQUEST_CHECK_STATUS
+#define UCX_REQUEST_CHECK(_request) ucp_request_check_status(_request)
+#else
+#define UCX_REQUEST_CHECK(_request) ucp_request_test(_request, NULL)
+#endif /* HAVE_UCP_REQUEST_CHECK_STATUS */
+
+inline static ucs_status_t check_wait_for_request_sec(shmemc_context_h ch,
+                                                  void *req) {
+  if (req == NULL) { /* completed */
+    return UCS_OK;
+  } else if (UCS_PTR_IS_ERR(req)) {
+    ucp_request_cancel(ch->w, req);
+    return UCS_PTR_STATUS(req);
+  } else { /* wait for completion */
+    ucs_status_t s;
+
+    do {
+      ucp_worker_progress(ch->w);
+
+      s = UCX_REQUEST_CHECK(req);
+//      PMIx_Fence(NULL, 0, NULL, 0);
+    } while (s == UCS_INPROGRESS);
+    ucp_request_free(req);
+  
+    return s;
+  }
+}
 
 unsigned char blocking_put_ciphertext[MAX_MSG_SIZE + OFFSET] = {'\0'};
 unsigned char nbi_put_ciphertext[NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE + OFFSET];
@@ -904,6 +935,18 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
                        size_t nbytes, int pe) {
 
+   shmemc_context_h ch = (shmemc_context_h)ctx;
+   uint64_t r_dest;  /* address on other PE */
+   ucp_rkey_h r_key; /* rkey for remote address */
+   DEBUG_SHMEM("Getting rkey and addr\n");
+   get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
+   ucp_ep_h ep;
+   ucs_status_ptr_t sp;
+   ucs_status_t s;
+   ep = lookup_ucp_ep(ch, pe);
+
+
+
   DEBUG_SHMEM("Called from rank %d, sending to PE %d\n", proc.li.rank, pe);
 
   size_t cipherlen = 0;
@@ -944,6 +987,17 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   fflush(stdout);
 */
 
+//  const ucp_request_param_t prm = {.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK,
+//     .cb.send = noop_callbackx};
+
+ // sp = ucp_put_nbx(ep, src, nbytes, r_dest, r_key, &prm);
+ // s = check_wait_for_request_sec(ch, sp);
+ // shmemu_assert(s == UCS_OK, "shmemx_secure_put put failed (status: %s)",
+ //       ucs_status_string(s));
+
+
+
+
   shmemc_ctx_put(ctx, dest, blocking_put_ciphertext,
                  block_put_cipherlen +
                      (segment_count * (AES_TAG_LEN + AES_RAND_BYTES)),
@@ -963,13 +1017,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
    */
 
   pmix_t1 = shmemx_wtime();
-  shmemc_context_h ch = (shmemc_context_h)ctx;
-  uint64_t r_dest;  /* address on other PE */
-  ucp_rkey_h r_key; /* rkey for remote address */
-  DEBUG_SHMEM("Getting rkey and addr\n");
-  get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
-
-  pmix_status_t ps;
+   pmix_status_t ps;
 
   pmix_proc_t *procs;
   size_t nprocs = 1;
