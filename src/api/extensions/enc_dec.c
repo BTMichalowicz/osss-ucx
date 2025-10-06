@@ -82,10 +82,11 @@ inline static ucs_status_t check_wait_for_request_sec(shmemc_context_h ch,
       ucp_worker_progress(ch->w);
 
       s = UCX_REQUEST_CHECK(req);
+ //     PMIx_Fence(NULL, 0, NULL, 0);
+ //     PMIx_Progress();
     } while (s == UCS_INPROGRESS);
     ucp_request_free(req);
-    PMIx_Fence(NULL, 0, NULL, 0);
-    PMIx_Progress();
+
   
     return s;
   }
