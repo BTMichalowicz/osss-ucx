@@ -389,6 +389,7 @@ typedef struct func_args {
     int src_pe,
         dst_pe;
     int local_size;
+    int segment_count;
     int encrypted_size;
     uint64_t remote_buffer; /* For get and put operations */
     unsigned char local_buffer[]; /* for get operations */

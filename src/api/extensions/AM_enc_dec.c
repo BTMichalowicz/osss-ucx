@@ -25,8 +25,7 @@ unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 unsigned char nbi_put_ciphertext[NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
 unsigned long long nbput_count = 0;
 
-//unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
-unsigned char **nbi_get_ciphertext = NULL; //[NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
+unsigned char **nbi_get_ciphertext = NULL; 
 unsigned long long nbget_count = 0;
 
 shmem_secure_attr_t *nb_put_ctr = NULL;
@@ -40,8 +39,7 @@ static volatile int active = -1;
 
 int block_put_cipherlen = 0;
 int block_get_cipheren = 0;
-//unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
-//unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
+
 
 //pmix_proc_t *my_second_pmix;
 /*
@@ -228,6 +226,9 @@ ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
     DEBUG_SHMEM("ciphertext: %p %s\n", dest, dest);
     switch (func_data->optype){
         case PT2PT:
+           // Sort of TODO: Does the local size need to also include items for
+           // the RAND_BYTES and AES_TAG_LEN macros? 
+           // The outputs seem to help, but I could be wrong?
             shmemx_decrypt_single_buffer_omp(dest, 0, r_dest, 0, func_data->local_size + AES_RAND_BYTES + AES_TAG_LEN, ((size_t)(func_data->encrypted_size)));
             break;
         case COLL:
@@ -1015,6 +1016,14 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     func_put->src_pe = proc.li.rank;
     func_put->dst_pe = pe;
     func_put->local_size = nbytes;
+    func_put->segment_count = segment_count;
+    // TODO: Or is the calculation over here? 
+    // Outputs showcase that I could be writing past the end of the buffer
+    // but something doesn't sound quite right here. It's one of three potential
+    // options for lack of a better term
+    //
+    // Michael's tests showed that the encryption and decryption functions are
+    // OK for single-threaded items, so it's me being the idiot here.
     func_put->encrypted_size = count;
     func_put->remote_buffer = r_dest;
     memcpy(func_put->local_buffer, blocking_put_ciphertext, block_put_cipherlen);
