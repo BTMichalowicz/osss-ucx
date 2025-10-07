@@ -228,7 +228,7 @@ ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
     DEBUG_SHMEM("ciphertext: %p %s\n", dest, dest);
     switch (func_data->optype){
         case PT2PT:
-            shmemx_decrypt_single_buffer_omp(dest, 0, r_dest, 0, func_data->local_size + AES_RAND_BYTES, ((size_t)(func_data->encrypted_size)));
+            shmemx_decrypt_single_buffer_omp(dest, 0, r_dest, 0, func_data->local_size + AES_RAND_BYTES + AES_TAG_LEN, ((size_t)(func_data->encrypted_size)));
             break;
         case COLL:
             shmemx_decrypt_single_buffer_omp(dest, func_data->src_pe, r_dest, func_data->dst_pe, func_data->local_size + AES_RAND_BYTES, ((size_t)(func_data->local_size)));
@@ -1010,15 +1010,15 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 
     int count = block_put_cipherlen+ (segment_count * (AES_TAG_LEN+AES_RAND_BYTES));
 
-    func_args_t *func_put = (func_args_t *)(malloc(sizeof(func_args_t)) + count);
+    func_args_t *func_put = (func_args_t *)(malloc(sizeof(func_args_t)) + count +5);
     func_put->optype = PT2PT;
     func_put->src_pe = proc.li.rank;
     func_put->dst_pe = pe;
     func_put->local_size = nbytes;
-    func_put->encrypted_size = block_put_cipherlen;  //count;
+    func_put->encrypted_size = count;
     func_put->remote_buffer = r_dest;
-    //    memcpy(func_put->local_buffer, blocking_put_ciphertext, block_put_cipherlen);
-    memcpy(func_put->local_buffer, blocking_put_ciphertext, count ); 
+    memcpy(func_put->local_buffer, blocking_put_ciphertext, block_put_cipherlen);
+    //memcpy(func_put->local_buffer, blocking_put_ciphertext, count ); 
     put_t1 = shmemx_wtime();
 
     ucp_request_param_t param = {
@@ -1039,8 +1039,8 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     DEBUG_SHMEM( "Put end\n");
 
     //free(func_put->local_buffer);
-    memset(func_put->local_buffer, 0,count);
-    //free(func_put);
+   // memset(func_put->local_buffer, 0,count);
+//    free(func_put);
     func_put = NULL;
 
 }
