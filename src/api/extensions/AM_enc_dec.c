@@ -28,6 +28,7 @@ unsigned long long nbput_count = 0;
 // unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 unsigned char **nbi_get_ciphertext =
     NULL; //[NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
+
 unsigned long long nbget_count = 0;
 
 shmem_secure_attr_t *nb_put_ctr = NULL;
@@ -43,9 +44,9 @@ static volatile int active = -1;
 
 int block_put_cipherlen = 0;
 int block_get_cipheren = 0;
+
 // unsigned char blocking_put_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 // unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
-
 // pmix_proc_t *my_second_pmix;
 /*
  * -- helpers ----------------------------------------------------------------
@@ -256,6 +257,7 @@ ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
     shmemu_assert(0, "Error in decryption setup");
   }
   return UCS_OK;
+
 }
 
 ucs_status_t get_enc_handler(void *arg, const void *header, size_t h_size,
@@ -1137,6 +1139,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   // memset(func_put->local_buffer, 0,count);
   //    free(func_put);
   func_put = NULL;
+
 }
 
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,

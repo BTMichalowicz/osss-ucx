@@ -388,6 +388,7 @@ typedef struct func_args {
     op_type_t optype;
     int src_pe,
         dst_pe;
+
     size_t local_size;
     size_t encrypted_size;
     uint64_t remote_buffer; /* For get and put operations */
