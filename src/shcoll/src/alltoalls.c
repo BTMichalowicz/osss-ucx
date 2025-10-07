@@ -31,12 +31,12 @@
 #include "shmem.h"
 #include "shmemc.h"
 #include "shmemu.h"
-#include "shcoll/barrier.h" 
+#include "shcoll/barrier.h"
 
 #include <limits.h>
 #include <assert.h>
 #include <string.h>
-#include <math.h> 
+#include <math.h>
 
 #include <stdio.h>
 #include <shmem/api_types.h>

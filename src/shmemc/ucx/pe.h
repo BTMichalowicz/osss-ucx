@@ -24,7 +24,6 @@
 #include "shmem_enc.h"
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 
-
 /**
  * @brief Information exchanged between PEs at startup
  */

@@ -1,59 +1,37 @@
 #!/bin/bash
+rm -rf build
+mkdir build && ./autogen.sh && cd build
+PREFIX="$PWD/install"
 
-#
-# This script needs to be run from the project root directory.
-#
-# Example:
-#   cd /path/to/osss-ucx
-#   ./scripts/BUILD.sh
-#
-# This script will clean the build directory, run autogen, configure, and compile the project.
-#
+export PMIX_DIR="${PMIX_DIR:?set this}"
+export UCX_DIR="${UCX_DIR:?set this}"
 
-echo "SWHOME=$SWHOME"
-echo "PMIX_DIR=$PMIX_DIR"
-echo "UCX_DIR=$UCX_DIR"
-echo "OMPI_DIR=$OMPI_DIR"
+# 🔹 NEW: remove stale libtool archives that can drag in dead deps like libev.la
+find "$PMIX_DIR" "$UCX_DIR" -name '*.la' -print -delete 2>/dev/null
 
-HLINE="--------------------------------------------"
-pwd=$(pwd)
+# Make your PMIx pkgconfig discoverable
+export PKG_CONFIG_PATH="$PMIX_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
 
-# --- Clean up generated files
-echo $HLINE
-echo "            CLEANING BUILD"
-echo $HLINE
-./scripts/clean.sh
-echo ; echo
+# Hard-pin include/lib paths and link to pmix explicitly
+export CPPFLAGS="-I$PMIX_DIR/include ${CPPFLAGS}"
+export LDFLAGS="-L$PMIX_DIR/lib ${LDFLAGS}"
+export LIBS="-lpmix ${LIBS}"
 
-# --- Run autogen and configure
-echo $HLINE
-echo "            RUNNING AUTOGEN"
-echo $HLINE
-mkdir build
-./autogen.sh
-cd build
-echo ; echo
+# (Optional but helpful): make the pmix hints explicit too
+PMIX_CPPFLAGS="-I$PMIX_DIR/include" \
+PMIX_LDFLAGS="-L$PMIX_DIR/lib" \
+PMIX_LIBS="-lpmix" \
+../configure \
+  CFLAGS="-Wall -pipe -g -O0" \
+  --prefix="$PREFIX" \
+  --with-pmix="$PMIX_DIR" \
+  --with-ucx="$UCX_DIR" \
+  --with-heap-size=64M \
+  --enable-experimental \
+  --enable-encryption \
+  --enable-debug \
+  --enable-logging
 
-# --- Configure build
-echo $HLINE
-echo "            CONFIGURING"
-echo $HLINE
-PREFIX="$(pwd)/install"
-# PREFIX=$OSSS_DIR
+make -j $(( $(nproc) - 1 )) install
 
-export SHMEM_LAUNCHER="$OMPI_BIN/mpiexec"
-#export SHMEM_LAUNCHER="$OMPI_BIN/mpirun"
-#export SHMEM_LAUNCHER="$MPICH_BIN/mpirun"
 
-../configure              \
-  --prefix=$PREFIX        \
-  --with-pmix=$PMIX_DIR   \
-  --with-ucx=$UCX_DIR     \
-  --with-heap-size=128M   \
-  --enable-pshmem
-
-# ---  Compile
-echo $HLINE
-echo "            COMPILING"
-echo $HLINE
-make -j $(( $(nproc) - 1 )) install 
