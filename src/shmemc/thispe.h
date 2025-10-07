@@ -106,8 +106,8 @@ typedef struct env_info {
   char *heap_spec;    /**< how user told us about heap size */
 
 #if ENABLE_SHMEM_ENCRYPTION
-      unsigned int shmem_encryption; /**< are we securing comms? */
-#endif /* ENABLE_SHMEM_ENCRYPTION */
+  unsigned int shmem_encryption; /**< are we securing comms? */
+#endif                           /* ENABLE_SHMEM_ENCRYPTION */
 
   /*
    * this implementation

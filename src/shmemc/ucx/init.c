@@ -377,10 +377,10 @@ inline static void ucx_init_ready(void) {
   pm.features = UCP_FEATURE_RMA |   /* put/get */
                 UCP_FEATURE_AMO32 | /* 32-bit atomics */
                 UCP_FEATURE_AMO64;
-#if ENABLE_SHMEM_ENCRYPTION 
-                  /* 64-bit atomics */
-   pm.features |= UCP_FEATURE_AM;     /* Active messaging for put/get */
-#endif /* ENABLE_SHMEM_ENCRYPTION */
+#if ENABLE_SHMEM_ENCRYPTION
+  /* 64-bit atomics */
+  pm.features |= UCP_FEATURE_AM; /* Active messaging for put/get */
+#endif                           /* ENABLE_SHMEM_ENCRYPTION */
 
   pm.mt_workers_shared = (proc.td.osh_tl > SHMEM_THREAD_SINGLE);
 
