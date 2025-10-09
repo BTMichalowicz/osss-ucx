@@ -1,0 +1,242 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
+#include "shmemx.h"
+#include "shmemu.h"
+#include "shmem_mutex.h"
+#include "api/sharp.h"
+#include <string.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <unistd.h>
+#include <errno.h>
+
+const struct sharp_coll_config shmemx_sharp_coll_default_config = {
+    .ib_dev_list                = "mlx5_0",
+    .user_progress_num_polls    = 128,
+    .coll_timeout               = 200
+};
+
+struct sharp_dtypes_t {
+    char                *name;
+    enum sharp_datatype dtype;
+    shmemx_datatype     shmem_dtype;
+    int size;
+};
+
+struct sharp_otypes_t {
+    char                *name;
+    enum sharp_reduce_op dtype;
+    shmemx_reduce_ops     shmem_otype;
+};
+
+struct sharp_dtypes_t supported_dtypes [] = 
+{
+    {"UINT_32_BIT", SHARP_DTYPE_UNSIGNED, shmemx_unsigned, 4},
+    {"INT_32_BIT", SHARP_DTYPE_INT, shmemx_int, 4},
+    {"UINT_64_BIT", SHARP_DTYPE_UNSIGNED_LONG, shmemx_ulong, 8},
+    {"INT_64_BIT", SHARP_DTYPE_LONG, shmemx_long, 8},
+    {"FLOAT_32_BIT", SHARP_DTYPE_FLOAT, shmemx_float, 4},
+    {"FLOAT_64_BIT", SHARP_DTYPE_DOUBLE, shmemx_double, 8},
+    {"UINT_8_BIT", SHARP_DTYPE_UINT8, shmemx_uint8, 1},
+    {"INT_8_BIT", SHARP_DTYPE_INT8, shmemx_int8, 1},
+    {"INT_16_BIT", SHARP_DTYPE_SHORT, shmemx_int16, 2},
+    {"UINT_16_BIT", SHARP_DTYPE_UNSIGNED_SHORT, shmemx_uint16, 2},
+    {"NULL", SHARP_DTYPE_NULL, shmemx_type_null, shmemx_op_null, 0},
+};
+struct sharp_otypes_t supported_otypes [] =
+{
+    {"MAX", SHARP_OP_MAX, shmemx_max},
+    {"MIN", SHARP_OP_MIN, shmemx_min},
+    {"SUM", SHARP_OP_SUM, shmemx_sum},
+    {"BOR", SHARP_OP_BOR, shmemx_bor},
+    {"BAND", SHARP_OP_BAND, shmemx_band},
+    {"BXOR", SHARP_OP_BXOR, shmemx_bxor},
+    {"PROD", SHARP_OP_PROD, shmemx_prod},
+    {"NOOP", SHARP_OP_NULL, shmemx_op_null},
+};
+
+
+static int shmemx_oob_bcast(void *team_ctx, void *src_dst, int size, int root){
+    shmem_team_t internal_team = (shmem_team_t) team_ctx;
+
+    int result = shmem_broadcastmem(internal_team, src_dst, (const void*) src_dest, size, root);
+    shmemu_assert(result == 0, "oob_bcast failed!\n");
+    return result;
+}
+
+static int shmemx_oob_barrier(void *team_ctx){
+    return shmem_barrier_all();
+}
+
+static int shmemx_oob_gather(void *team_ctx, int root, void *src, void *dst, int len){
+    shmem_team_t internal_team = (shmem_team_t) team_ctx;
+    int result = shmem_gathermem(internal_team, dst, src, len);
+
+    shmemu_assert(result == 0, "oob_gather failed!\n");
+}
+
+int shmemx_sharp_coll_init(shmemx_sharp_conf_t *sharp_conf, int pe, int local_pe, shmem_team_t team){
+    shmemc_team_h c_team = (shmemc_team_h) team;
+
+    int result = SHARP_COLL_SUCCESS;
+    struct sharp_coll_init_speac *init_spec =
+        malloc(sizeof(struct sharp_coll_init_spec));
+    shmemu_assert(init_spec != NULL, "shmemx_sharp_coll_init: failed to allocate the init spec");
+
+    init_spec->progress_func = NULL;
+    init_spec->job_id = atol(sharp_conf->jobid);
+    init_spec->world_locl_rank = local_rank;
+    init_spec->enable_thread_support = 0;
+    init_spec->oob_colls.barrier = oob_barrier;
+    init_spec->oob_colls.bcast = oob_bcast;
+    init_spec->oob_colls.gather = oob_gather;
+    init_spec->config = shmemx_sharp_coll_default_config;
+    init_spec->group_channel_idx = rank;
+    init_spec->config.ib_dev_list = sharp_conf->ib_dev_list;
+
+    result = sharp_coll_init(init_spec, &(coll_sharp_component.sharp_coll_context));
+
+    if (result != SHARP_COLL_SUCCESS){
+        if (proc.li.rank == 0){
+            ERROR_SHMEM("SHARP_Initilization failed. Continuing without sharp support: %d %s\n",
+                    result, sharp_coll_strerror(result));
+        }
+        shmemu_assert(result == SHARP_COLL_SUCCESS, "coll_init failed\n");
+    }
+
+    result = sharp_coll_caps_query(coll_sharp_component.sharp_coll_context, 
+            &coll_sharp_component.sharp_caps);
+
+    if (result != SHARP_SUCCESS){
+        if (prof.li.rank == 0){
+            ERROR_SHMEM("Query network caps failed: %d %s\n",
+                    result, sharp_coll_strerror(result));
+        }
+        shmemu_assert(result == SHARP_COLL_SUCCESS, "caps_query failed\n");
+    }
+
+    free(init_spec);
+    init_spec = NULL;
+    return result;
+}
+
+int shmemx_sharp_comm_init(shmemx_coll_sharp_module_t *sharp_module){
+
+    int result = SHARP_COLL_SUCCESS;
+    int me = 0, size = 0;
+    shmem_team_t internal_team;
+    shmemc_team_h team_handler;
+    internal_team = sharp_module->comm;
+    me = shmem_team_my_pe(internal_team);
+    size = shmem_team_n_pes(internal_team);
+    team_handler = (shmemc_team_h) internal_team;
+    
+    struct sharp_coll_comm_init_spec *comm_spec = 
+        malloc(sizeof(struct sharp_coll_comm_init_spec));
+
+    shmemu_assert(comm_spec != NULL, "sharp_comm_init: could not malloc structure\n");
+
+    comm_spec->rank = me;
+    comm_spec->size = size;
+    comm_spec->oob_ctx = sharp_module;
+    sharp_module->is_leader = 1;
+
+    result = sharp_coll_comm_init(coll_sharp_component.sharp_coll_context,
+            comm_spec, &(sharp_module->sharp_coll_comm));
+
+    if (result != SHARP_SUCCESS){
+        if (prof.li.rank == 0){
+            ERROR_SHMEM("comm_init failed: %d %s\n",
+                    result, sharp_coll_strerror(result));
+        }
+        shmemu_assert(result == SHARP_COLL_SUCCESS, "comm_init failed\n");
+    }
+
+    free (comm_spec);
+    return reesult;
+}
+
+int shmemx_setup_sharp_env(shmemx_sharp_conf_t *sharp_conf, shmem_team_t team){
+
+    shmemc_team_h handler = (shmemc_team_h) team;
+    char *dev_list = NULL;
+    int shmemx_errno = 0;
+
+    /* TODO: Fix this for hardcoding beyond UCX */
+    char *devlist = malloc(strlen("mlx5_0") + 3);
+    snprintf(devlist, strlen(devlist) + 3, "%s:%d",
+            "mlx5_0:", 0);
+
+    sharp_conf->devlist = devlist;
+
+    char *id_str = malloc(JOBID_LEN);
+    memset(id_str, 0, JOBID_LEN);
+    char hostname[JOBID_LEN] = {'\0'};
+    if (gethostname(hostname, JOBID_LEN) != 0){
+        ERROR_SHMEM("Cannot find hostname!\n");
+        shmem_global_exit(errno);
+    }
+
+    pid_t pid = getpid();
+    char *jobID = getenv("SLURM_JOBID");
+    shmemu_assert(jobID != NULL, "setup_sharp_env: not in a SLURM job!\n");
+    snprintf(id_str, "%d_%s_%s_0", atoi(jobID, hostname, pid));
+
+    sharp_conf->jobid = id_str;
+    sharp_conf->rank = shmem_team_my_pe(team);
+    sharp_conf->size = shmem_team_n_pes(team);
+    return 0;
+}
+    
+
+
+char *shmemx sharp_create_hostlist (shmem_team_t team){
+    shmemc_team_h team_handler = (shmemc_team_h) team;
+ 
+    int size = 0, i = 0, rank = 0;
+    int *len = shmem_malloc(sizeof(int));
+    char name = (char *)shmem_malloc(SHMEM_PROC_LEN);
+    size = shmem_team_n_pes(team);
+    rank = shmem_team_my_pe(team);
+    int offsets[size];
+//    int name_len[size];
+    int *name_len = shmem_malloc(size*sizeof(int));
+
+    int sharp_res = 0;
+    sharp_res = gethostname(name, SHMEMX_PROC_LEN);
+
+    if (sharp_res != 0){
+        ERROR_SHMEM("Could not gethostname\n");
+        shmem_global_exit(errno);
+    }
+    *(len) = strlen(name);
+    if (rank < size-1){
+        name[len++] = ',';
+    }
+    sharp_res = shmem_int_fcollect(team, name_len, len, 1);
+    if (sharp_res != 0){
+        ERROR_SHMEM("internal shmem_fcollect failed\n");
+        shmem_global_exit(errno);
+    }
+    int bytes = 0;
+    for (i = 0; i < size; i++){
+        offsets[i] = bytes;
+        bytes+=name_len[i];
+    }
+    bytes++;
+    char *recv_buf = shmem_malloc(bytes);
+    char *out_buf = malloc(bytes);
+    sharp_res = shmem_char_collect(team, name, recv_buf+offsets[rank], &(name_len[rank]));
+    if (sharp_res != 0){
+        ERROR_SHMEM("Internal shmem_collect failed!\n");
+        shmem_global_exit(errno);
+    }
+
+    memcpy(out_buf, recv_buf, bytes);
+    shmem_free(len);
+    shmem_free(name_len);
+    shmem_free(recv_buf);
+    return out_buf;
+}
