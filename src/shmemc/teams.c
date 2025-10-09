@@ -31,6 +31,10 @@
 
 #include <stdlib.h>
 
+#if ENABLE_SHMEM_SHARP
+#include "shmemx.h"
+#endif
+
 /**
  * @brief Default teams that are always available
  * @{
@@ -299,6 +303,12 @@ static void initialize_team_world(void) {
     k = kh_put(map, world->rev, i, &absent);
     kh_val(world->rev, k) = i;
   }
+
+#if ENABLE_SHARP_SHMEM
+  if (proc.env.enable_sharp == 1){
+      shmemx_sharp_init(world);
+  }
+#endif /*ENABLE_SHARP_SHMEM */
 }
 
 /**

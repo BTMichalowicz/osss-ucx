@@ -14,6 +14,11 @@
 
 #include <shmem.h>
 
+#if ENABLE_SHMEM_SHARP
+#include <api/sharp.h>
+#include <api/sharp_coll.h>
+#endif /*ENABLE_SHMEM_SHARP*/
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -312,6 +317,7 @@ int shmemx_query_interoperability(int property);
  * @{
  */
 
+#if ENABLE_SHMEM_SHARP
 
 typedef enum shmemx_datatype {
     shmemx_unsigned,
@@ -320,7 +326,6 @@ typedef enum shmemx_datatype {
     shmemx_long,
     shmemx_float,
     shmemx_double,
-    shmemx_float,
     shmemx_ushort,
     shmemx_short,
     shmemx_uint8,
@@ -372,8 +377,6 @@ typedef struct shmemx_coll_sharp_component {
     struct sharp_coll_caps  sharp_caps;
 } shmemx_coll_sharp_component_t;
 
-shmemx_coll_sharp_component coll_sharp_component;
-
 typedef struct shmemx_sharp_info {
     shmemx_coll_sharp_module_t *sharp_comm_module;
     shmemx_sharp_conf_t        *sharp_conf;
@@ -381,11 +384,14 @@ typedef struct shmemx_sharp_info {
 
 int shmemx_sharp_coll_init(shmemx_sharp_conf_t *sharp_conf, int pe, int local_pe, shmem_team_t team);
 int shmemx_sharp_comm_init(shmemx_coll_sharp_module_t *sharp_module);
-char *shmemx sharp_create_hostlist (shmem_team_t team);
+char *shmemx_sharp_create_hostlist (shmem_team_t team);
 int shmemx_setup_sharp_env(shmemx_sharp_conf_t *sharp_conf, shmem_team_t team);
+int shmemx_sharp_init(shmemc_team_t team);
 
 #define SHMEMX_PROC_LEN 256
 #define JOBID_LEN 100
+#endif /* ENABLE_SHMEM_SHARP */
+
 
 #if 1
 #define DEBUG_SHMEM(fmt, args...)                       \

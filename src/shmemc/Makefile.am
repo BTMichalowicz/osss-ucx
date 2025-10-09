@@ -28,6 +28,7 @@ LIBSHMEMC_SOURCES        += \
 				ucx/teams.c \
 				ucx/test.c ucx/waituntil.c
 
+
 if HAVE_PMIX
 LIBSHMEMC_SOURCES        += ucx/pmix_client.c
 EXTRA_CFLAGS              = @PMIX_CFLAGS@

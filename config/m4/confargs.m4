@@ -37,11 +37,32 @@ AC_ARG_ENABLE([experimental],
 AS_IF([test "x$enable_experimental" = "xyes"],
 	[AC_DEFINE([ENABLE_EXPERIMENTAL], [1], [Enable non-standard extensions])
 	AC_SUBST([ENABLE_EXPERIMENTAL], [1])],
-	[AC_SUBST([ENABLE_EXPERIMENTAL], [0])]
+	[AC_SUBST([ENABLE_EXPERIMENTAL], [0]),
+     AC_SUBST([ENABLE_SHARP], [0])]
 	)
 AM_CONDITIONAL([ENABLE_EXPERIMENTAL], [test "x$enable_experimental" = "xyes"])
 
 AS_IF([test "x$enable_experimental" != "xyes"], [enable_experimental=no])
+
+AC_ARG_ENABLE([sharp],
+    AS_HELP_STRING([--enable-sharp],
+            [Enable-sharp functionality for reductions: Requires experimental extensions to be turned on and CFLAGS and LDFLAGS to be updated accordingly @<:@default=no@:>@]))
+
+AS_IF([test "x$enable_experimental" = "xyes"],
+    [AS_IF([test "x$enable_sharp" = "xyes"],
+        [
+            AC_DEFINE([ENABLE_SHMEM_SHARP], [1], [Enable SHARP reduction protocols])
+            AC_SUBST([ENABLE_SHMEM_SHARP], [1])
+            CFLAGS="-DENABLE_SHMEM_SHARP $CFLAGS"
+        ],
+        [AC_SUBST([ENABLE_SHMEM_SHARP], [0])]
+        )
+    ],
+    [AC_SUBST([ENABLE_SHMEM_SHARP], [0])]
+    )
+AM_CONDITIONAL([ENABLE_SHMEM_SHARP], [test "x$enable_sharp" = "xyes"])
+AS_IF([test "x$enable_sharp" != "xyes"], [enable_sharp=no])
+
 
 #
 # profiling API: disabled by default

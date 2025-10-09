@@ -148,6 +148,11 @@ all_cppflags          += -I$(srcdir)/extensions
 
 endif # experimental
 
+if ENABLE_SHMEM_SHARP
+MY_SOURCES			+= \
+			extensions/shmemx_sharp.c
+endif #SHARP
+
 LIBSHMEM_SOURCES       = $(MY_SOURCES)
 
 lib_LTLIBRARIES        = libshmem.la
@@ -156,3 +161,8 @@ libshmem_la_CFLAGS     = $(AM_CFLAGS)
 libshmem_la_CPPFLAGS   = $(all_cppflags)
 libshmem_la_LDFLAGS    = -version-info 0:0:0
 libshmem_la_LIBADD     = liballocator.la
+
+if ENABLE_SHMEM_SHARP
+libshmem_la_CFLAGS     += $(AM_CFLAGS)
+endif # SHARP
+

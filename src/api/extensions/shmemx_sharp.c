@@ -12,6 +12,9 @@
 #include <unistd.h>
 #include <errno.h>
 
+
+shmemx_coll_sharp_component_t coll_sharp_component;
+
 const struct sharp_coll_config shmemx_sharp_coll_default_config = {
     .ib_dev_list                = "mlx5_0",
     .user_progress_num_polls    = 128,
@@ -192,7 +195,7 @@ int shmemx_setup_sharp_env(shmemx_sharp_conf_t *sharp_conf, shmem_team_t team){
     
 
 
-char *shmemx sharp_create_hostlist (shmem_team_t team){
+char *shmemx_sharp_create_hostlist (shmem_team_t team){
     shmemc_team_h team_handler = (shmemc_team_h) team;
  
     int size = 0, i = 0, rank = 0;
@@ -240,3 +243,34 @@ char *shmemx sharp_create_hostlist (shmem_team_t team){
     shmem_free(recv_buf);
     return out_buf;
 }
+
+
+int shmemx_sharp_init(shmemc_team_t team){
+    team.sharp_conf = malloc(sizeof(shmemx_sharp_conf_t));
+    shmemu_assert(team.sharp_conf != NULL, "shmemx_sharp_init: Failed to malloc 1\n");
+    team.sharp_module = malloc(sizeof(shmemx_coll_sharp_module_t));
+    shmemu_assert(team.sharp_coll_module != NULL, "shmemx_sharp_init: Failed to malloc 1\n");
+
+    if (shmemx_setup_sharp_env(team.sharp_conf, SHMEM_TEAM_WORLD) != 0){
+        ERROR_SHMEM("Failed to set up sharp env!\n");
+        shmem_global_exit(-1);
+    }
+    team.sharp_conf->hostlist = shmemx_sharp_create_hostlist(SHMEM_TEAM_WORLD);
+    if (team.sharp_conf->hostlist == NULL){
+        ERROR_SHMEM("Failed to set up sharp hostlist!\n");
+        shmem_global_exit(-1);
+    }
+    team.sharp_module->comm = (void *)(&team);
+
+    if (shmemx_sharp_coll_init(team.sharp_conf, team.li.rank, team.li.rank, team.sharp_module->comm)!= 0){
+        ERROR_SHMEM("Failed to initialize collective items!\n");
+        shmem_global_exit(-1);
+    }
+
+    if (shmemx_sharp_coll_comm_init(team.sharp_coll_module, team.sharp_module->comm)!=0){
+        PRINT_ERROR("Failed to finish comm_init!\n");
+        shmem_global_exit(-1);
+    }
+    return 0;
+}
+

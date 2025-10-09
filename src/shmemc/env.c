@@ -318,6 +318,11 @@ void shmemc_env_init(void) {
     proc.env.progress_threads = strdup(e); /* free@end */
   }
 
+#if ENABLE_SHMEM_SHARP
+  char *yn = getenv("SHMEM_ENABLE_SHARP");
+  proc.env.enable_sharp = (yn ? atoi(yn) : 0);
+#endif /* ENABLE_SHMEM_SHARP */
+
   delay = "1000"; /* magic number */
   proc.env.progress_delay_ns = strtol(delay, NULL, 10);
 

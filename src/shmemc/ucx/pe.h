@@ -129,6 +129,12 @@ typedef struct shmemc_team {
   // clang-format on
 
   long *pSyncs[SHMEMC_NUM_PSYNCS];
+
+#if ENABLE_SHMEM_SHARP
+  shmemx_sharp_conf_t *sharp_conf;
+  shmemx_coll_sharp_module_t *sharp_module;
+#endif
+
 } shmemc_team_t;
 
 /**

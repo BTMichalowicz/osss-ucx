@@ -120,6 +120,10 @@ typedef struct env_info {
 
   size_t prealloc_contexts; /**< set up this many at start */
   bool memfatal;            /**< force exit on memory usage error? */
+
+#if ENABLE_SHMEM_SHARP
+  int enable_sharp;         /**< Enables SHARP-based runtimes for OpenSHMEM */
+#endif /* ENABLE_SHMEM_SHARP */
 } env_info_t;
 
 /**
@@ -165,6 +169,7 @@ typedef struct thispe_info {
   char *nodename;         /**< node we're running on */
   shmemc_team_t *teams;   /**< PE teams we belong to */
   size_t nteams;          /**< how many teams? */
+
 } thispe_info_t;
 
 #endif /* ! _THISPE_H */
