@@ -24,6 +24,10 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <math.h>
+#if ENABLE_SHMEM_SHARP
+#include "shmemx.h"
+struct sharp_coll_comm *sharp_comm;
+#endif /* ENABLE_SHMEM_SHARP */
 
 /*
  * @brief Helper macro to define local reduction operations
@@ -41,6 +45,86 @@
       dest[i] = _op(src1[i], src2[i]);                                         \
     }                                                                          \
   }
+
+#if ENABLE_SHMEM_SHARP
+
+/* 
+ * @Brief Helper macro to define sharp reduction operations
+ * Implements SHARP-based reductions in which we perform a SHARP allreduce and
+ * copy the data back to PE 0
+ *
+ * @param _name Name of the reduction operation
+ * @param _type Datatype to operate on
+ * @param _op Binary operator to apply
+ */
+
+#define REDUCE_HELPER_SHARP(_name, _type, _op)                                  \
+    void reduce_helper_##_name##_sharp(                                         \
+            _type *dest, const _type *source, int nreduce, int PE_start,        \
+            int logPE_stride, int PE_size, _type *pWrk, long *pSync) {          \
+                                                                                \
+        if (proc.env.enable_sharp == 0){                                        \
+            reduce_helper_##_name##_rec_dbl(dest, source, nreduce, PE_start,    \
+                    logPE_stride, PE_size, pWrk, pSync);                        \
+            return;                                                             \
+        }                                                                       \
+        shmemx_datatype_t dtype = find_datatype(#_type);                        \
+        shmemu_assert (dtype != shmemx_type_null, "null datatype\n");           \
+        shmemx_reduce_ops op = find_op_type(#_op);                              \
+        shmemu_assert(op != shmemx_op_null, "null reduction type\n");           \
+        shmemx_sharp_reduce_type_size_t *dtype_size = NULL;                     \
+        enum sharp_reduce_op sharp_op = shmemx_get_sharp_reduce_op(op);         \
+        shmemu_assert(sharp_op != SHARP_OP_NULL, "bad sharp op\n");             \
+        shmemx_get_sharp_datatype(dtype, &out);                                 \
+        shmemu_assert(out != NULL && out->dtype != SHARP_DTYPE_NULL,            \
+                "bad sharp datatype\n");                                        \
+        const int strude = 1 << logPE_stride;                                   \
+        const int me = shmem_my_pe();                                           \
+        const int me_as = (me - PE_start) / stride;                             \
+        const int bytes = sizeof(_type) * nreduce;                              \
+        void *send_entry, *recv_entry, *tmp_array_d, *tmp_array_src;            \
+        int sharp_errno = 0;                                                    \
+        struct sharp_coll_reduce_spec reduce_spec = {};                         \
+        void *memhandle = NULL;                                                 \
+        shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync);          \
+        reduce_spec.sbuf_desc.type = SHARP_DATA_BUFFER;                         \
+        reduce_spec.sbuc_desc.mem_type = SHARP_MEM_TYPE_HOST;                   \
+        reduce_spec.rbuf_desc.mem_type = SHARP_MEM_TYPE_HOST;                   \
+        reduce_spec.rbuf_desc.type = SHARP_DATA_BUFFER;                         \
+        tmp_array_d = malloc(bytes);                                            \
+        shmemu_assert(tmp_array_d != NULL, "Cannot malloc tmp_buffer_d\n");     \
+        tmp_array_s = malloc(bytes);                                            \
+        shmemu_assert(tmp_array_s != NULL, "Cannot malloc tmp_buffer_s\n");     \
+        memcpy(tmp_array_s, source, bytes);                                     \
+        reduce_spec.dtype = out->dtype;                                         \
+        reduce_spec.op = sharp_op;                                              \
+        reduce_spec.length = nreduce;                                           \
+        reduce_spec.sbuf_desc.buffer.ptr = tmp_buffer_s;                        \
+        reduce_spec.rbuf_desc.buffer.ptr = tmp_buffer_d;                        \
+        reduce_spec.sbuf_desc.buffer.length = bytes;                            \
+        reduce_spec.rbuf_desc.buffer.length = bytes;                            \
+        shmemx_register_sharp_buffer(bytes, tmp_buffer_s, &send_entry);         \
+        shmemx_register_sharp_buffer(bytes, tmp_buffer_d, &recv_entry);         \
+        reduce_spec.sbuf_desc.buffer.mem_handle = send_entry;                   \
+        reduce_spec.rbuf_desc.buffer.mem_handle = recv_entry;                   \
+        reduce_spec.aggr_mode = SHARP_AGGREGATION_NONE;                         \
+                                                                                \
+        sharp_errno = sharp_coll_do_allreduce(sharp_comm, &reduce_spec);        \
+        if (sharp_errno != SHARP_COLL_SUCCESS) {                                \
+            fprintf(stderr, "Failed to allreduce. Ending now\n");               \
+            shmemu_assert(sharp_errno == SHARP_COLL_SUCCESS,                    \
+                    "Failed to sharp allreduce with code %d %s\n",              \
+                    sharp_errno, sharp_coll_strerror(sharp_errno));             \
+        }                                                                       \
+        if (me_as == 0) {                                                       \
+            memcpy(dest, tmp_buffer_d, bytes);                                  \
+        }                                                                       \
+        free(tmp_buffer_d);                                                     \
+        free(tmp_buffer_s);                                                     \
+        free(out);                                                              \
+    }
+
+#endif /* ENABLE_SHMEM_SHARP */
 
 /*
  * @brief Helper macro to define linear reduction operations
@@ -1075,6 +1159,37 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
  *
  * FIXME: branch to check that pwrk is valid should only be done in debug mode
  */
+
+#if ENABLE_SHMEM_SHARP
+#define SHCOLL_REDUCE_DEFINITION(_typename, _type, _op, _algo)                 \
+  int shcoll_##_typename##_##_op##_reduce_##_algo(                             \
+      shmem_team_t team, _type *dest, const _type *source, size_t nreduce) {   \
+    SHMEMU_CHECK_INIT();                                                       \
+    SHMEMU_CHECK_TEAM_VALID(team);                                             \
+    SHMEMU_CHECK_SYMMETRIC(dest, "dest");                                      \
+    SHMEMU_CHECK_SYMMETRIC(source, "source");                                  \
+    shmemc_team_h team_h = (shmemc_team_h)team;                                \
+    sharp_coll_comm = team;                                                    \
+    SHMEMU_CHECK_TEAM_STRIDE(team_h->stride, __func__);                        \
+    SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_REDUCE),      \
+                      "team_h->pSyncs[REDUCE]");                               \
+                                                                               \
+    _type *pWrk =                                                              \
+        shmem_malloc(SHCOLL_REDUCE_MIN_WRKDATA_SIZE * sizeof(_type));          \
+                                                                               \
+    reduce_helper_##_typename##_##_op##_##_algo(                               \
+        dest, source, nreduce, team_h->start,                                  \
+        (team_h->stride > 0) ? (int)log2((double)team_h->stride) : 0,          \
+        team_h->nranks, pWrk,                                                  \
+        shmemc_team_get_psync(team_h, SHMEMC_PSYNC_REDUCE));                   \
+                                                                               \
+    shmemc_team_reset_psync(team_h, SHMEMC_PSYNC_REDUCE);                      \
+    shmem_free(pWrk);                                                          \
+    return 0;                                                                  \
+  }
+
+#else /* ENABLE_SHMEM_SHARP */
+
 #define SHCOLL_REDUCE_DEFINITION(_typename, _type, _op, _algo)                 \
   int shcoll_##_typename##_##_op##_reduce_##_algo(                             \
       shmem_team_t team, _type *dest, const _type *source, size_t nreduce) {   \
@@ -1100,6 +1215,7 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
     shmem_free(pWrk);                                                          \
     return 0;                                                                  \
   }
+#endif /*ENABLE_SHMEM__SHARP*/
 
 #define SHIM_REDUCE_DECLARE(_typename, _type, _op, _algo)                      \
   SHCOLL_REDUCE_DEFINITION(_typename, _type, _op, _algo)

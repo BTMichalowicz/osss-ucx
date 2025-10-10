@@ -310,6 +310,10 @@ enum sharp_reduce_op shmemx_get_sharp_reduce_op(shmemx_reduce_ops op){
     return SHARP_OP_NULL;
 }
 
+void shmemx_register_sharp_buffer(size_t len, void *buffer, void **memhandle){
+    sharp_coll_reg_mr(coll_sharp_component.sharp_coll_context, buffer, len, memhandle);
+}
+
 
 void shmemx_get_sharp_datatype(shmemx_datatype_t dtype, shmemx_sharp_reduce_type_size_t **out){
     int i = 0;

@@ -432,7 +432,7 @@ shmemx_reduce_ops find_op_type(const char *op);
 shmemx_datatype find_datatype(const char *type);
 enum sharp_reduce_op shmemx_get_sharp_reduce_op(shmemx_reduce_ops op);
 void shmemx_get_sharp_datatype(shmemx_datatype_t dtype, shmemx_sharp_reduce_type_size_t **out);, 
-
+void shmemx_register_sharp_buffer(size_t len, void *buffer, void **memhandle);
 
 #define EXPAND_AND_STRINGIFY(x) #x
 #define STRINGIFY_EXPANDED(x) EXPAND_AND_STRINGIFY(x)
