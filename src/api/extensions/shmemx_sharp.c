@@ -30,7 +30,7 @@ struct sharp_dtypes_t {
 
 struct sharp_otypes_t {
     char                *name;
-    enum sharp_reduce_op dtype;
+    enum sharp_reduce_op sharp_op_type;
     shmemx_reduce_ops     shmem_otype;
 };
 
@@ -272,5 +272,58 @@ int shmemx_sharp_init(shmemc_team_t team){
         shmem_global_exit(-1);
     }
     return 0;
+}
+
+shmemx_reduce_ops find_op_type(const char *op){
+    int len = strlen(op);
+
+    int i = 0;
+    for (i = 0 ; i< shmemx_op_null; i++){
+        if (strncmp(op_to_string[i], op, len) == 0){
+            return i;
+        }
+    }
+
+    return shmemx_op_null;
+}
+
+shmemx_datatype find_datatype(const char *type){
+    int len = strlen(type);
+
+    int i = 0;
+    for (i = 0; i<shmemx_type_null; i++){
+        if (strncmp(type_to_string[i], type, len) == 0){
+            return i;
+        }
+    }
+
+    return shmemx_type_null;
+}
+
+enum sharp_reduce_op shmemx_get_sharp_reduce_op(shmemx_reduce_ops op){
+    int i = 0;
+    for (i = 0; i< supported_otypes[i].sharp_op_type != SHARP_OP_NULL; i++){
+        if (op == supported_otypes[i].shmem_otype){
+            return supported_otypes[i].sharp_op_type;
+        }
+    }
+    return SHARP_OP_NULL;
+}
+
+
+void shmemx_get_sharp_datatype(shmemx_datatype_t dtype, shmemx_sharp_reduce_type_size_t **out){
+    int i = 0;
+    shmemx_sharp_reduce_type_size_t res = 
+        malloc(sizeof(shmemx_sharp_reduce_type_size_t));
+
+    res->dtype = SHARP_DTYPE_NULL;
+    for (i = 0; supported_dtypes[i].dtype != SHARP_DTYPE_NULL; i++){
+        if (dtype == supported_dtypes[i].shmem_dtype){
+            res->dtype = supported_dtypes[i].dtype;
+            res->size = supported_dtypes[i].size;
+            *out = res;
+            break;
+        }
+    }
 }
 

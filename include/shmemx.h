@@ -336,7 +336,7 @@ typedef enum shmemx_datatype {
     shmemx_int16,
     shmemx_int32,
     shmemx_int64, 
-    shmemx_type_null = 0
+    shmemx_type_null,
 } shmemx_datatype;
 
 typedef enum shmemx_reduce_ops{ 
@@ -347,8 +347,42 @@ typedef enum shmemx_reduce_ops{
     shmemx_min,
     shmemx_sum,
     shmemx_prod,
-    shmemx_op_null = 0
+    shmemx_op_null
 } shmemx_reduce_ops;
+
+
+char *op_to_string [shmemx_op_null+1] = {
+    [shmemx_band] = "band",
+    [shmemx_bor] = "bor",
+    [shmemx_bxor] = "bxor",
+    [shmemx_max] = "max",
+    [shmemx_min] = "min",
+    [shmemx_sum] = "sum",
+    [shmemx_prod] = "prod",
+    [shmemx_op_null] = "null_op"
+};
+
+char *type_to_string[shmemx_type_null+1] = {
+    [shmemx_unsigned]   = "uint",
+    [shmemx_int]        = "int",
+    [shmemx_ulong]      = "ulong",
+    [shmemx_long]       = "long",
+    [shmemx_float]      = "float",
+    [shmemx_double]     = "double"
+    [shmemx_ushort]     = "ushort",
+    [shmemx_short]      = "short"
+    [shmemx_uint8]      = "uint8",
+    [shmemx_uint16]     = "uint16",
+    [shmemx_uint32]     = "uint32"
+    [shmemx_uint64]     = "uint64"
+    [shmemx_int8]       = "int8",
+    [shmemx_int16]      = "int16",
+    [shmemx_int32]      = "int32",
+    [shmemx_int64]      = "int64", 
+    [shmemx_type_null]  = "null_type"
+};
+
+
 
 typedef struct shmemx_coll_sharp_module {
     struct sharp_coll_comm *sharp_coll_comm;
@@ -382,11 +416,27 @@ typedef struct shmemx_sharp_info {
     shmemx_sharp_conf_t        *sharp_conf;
 } shmemx_sharp_info_t;
 
+
+typedef struct shmemx_sharp_reduce_type_size {
+    enum sharp_datatype sharp_type;
+    int size;
+} shmemx_sharp_reduce_type_size_t;
+
 int shmemx_sharp_coll_init(shmemx_sharp_conf_t *sharp_conf, int pe, int local_pe, shmem_team_t team);
 int shmemx_sharp_comm_init(shmemx_coll_sharp_module_t *sharp_module);
 char *shmemx_sharp_create_hostlist (shmem_team_t team);
 int shmemx_setup_sharp_env(shmemx_sharp_conf_t *sharp_conf, shmem_team_t team);
 int shmemx_sharp_init(shmemc_team_t team);
+
+shmemx_reduce_ops find_op_type(const char *op);
+shmemx_datatype find_datatype(const char *type);
+enum sharp_reduce_op shmemx_get_sharp_reduce_op(shmemx_reduce_ops op);
+void shmemx_get_sharp_datatype(shmemx_datatype_t dtype, shmemx_sharp_reduce_type_size_t **out);, 
+
+
+#define EXPAND_AND_STRINGIFY(x) #x
+#define STRINGIFY_EXPANDED(x) EXPAND_AND_STRINGIFY(x)
+
 
 #define SHMEMX_PROC_LEN 256
 #define JOBID_LEN 100
