@@ -188,6 +188,8 @@ inline static void broadcast_helper_linear(void *target, const void *source,
     segment_count = shmemx_encrypt_single_buffer_omp(
         (unsigned char *)(enc_src), 0, source, 0, nbytes, &encrypt_size);
     temp_size = encrypt_size;
+    temp_size = encrypt_size + (segment_count*(AES_RAND_BYTES + AES_TAG_LEN));
+
   }
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 
@@ -195,8 +197,9 @@ inline static void broadcast_helper_linear(void *target, const void *source,
   if (me != root) {
 #if ENABLE_SHMEM_ENCRYPTION
     if (proc.env.shmem_encryption) {
-      encrypt_size = nbytes + AES_RAND_BYTES;
-      shmemc_ctx_get(SHMEM_CTX_DEFAULT, target, source,
+       encrypt_size = nbytes + (segment_count*(AES_RAND_BYTES + AES_TAG_LEN));
+
+            shmemc_ctx_get(SHMEM_CTX_DEFAULT, target, source,
                      nbytes + AES_TAG_LEN + AES_RAND_BYTES, root);
       shmemx_decrypt_single_buffer_omp((unsigned char *)(target), 0, target, 0,
                                        nbytes + AES_RAND_BYTES, encrypt_size);
@@ -209,7 +212,7 @@ inline static void broadcast_helper_linear(void *target, const void *source,
     if (proc.env.shmem_encryption) {
       shmemx_decrypt_single_buffer_omp((unsigned char *)(enc_src), 0,
                                        (void *)source, 0,
-                                       nbytes + AES_RAND_BYTES, temp_size);
+                                       nbytes, temp_size);
     }
   }
   shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync + 1);
@@ -343,7 +346,7 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
 #if ENABLE_SHMEM_ENCRYPTION
       if (proc.env.shmem_encryption)
         shmemc_ctx_put_nbi(SHMEM_CTX_DEFAULT, target, (void *)(enc_src),
-                           nbytes + AES_TAG_LEN + AES_RAND_BYTES, dst);
+                           nbytes + (segment_count*(AES_TAG_LEN + AES_RAND_BYTES)), dst);
       else
 #endif /* ENABLE_SHMEM_ENCRYPTION */
         shmem_putmem_nbi(target, source, nbytes, dst);
@@ -363,10 +366,11 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
 
 #if ENABLE_SHMEM_ENCRYPTION
   if (proc.env.shmem_encryption) {
+     temp_size = encrypt_size + (segment_count *(AES_TAG_LEN + AES_RAND_BYTES));
     if (node.children_num != 0) {
       shmemx_decrypt_single_buffer_omp((unsigned char *)(enc_src), 0,
                                        (void *)source, 0,
-                                       nbytes + AES_RAND_BYTES, temp_size);
+                                       nbytes, temp_size);
     }
     // else{
     //        get_remote_key_and_addr(defcp, (uint64_t) target, me_as, &r_key,
