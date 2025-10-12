@@ -26,6 +26,7 @@
 #include <math.h>
 #if ENABLE_SHMEM_SHARP
 #include "shmemx.h"
+#include "shmemx_sharp.h"
 struct sharp_coll_comm *sharp_comm;
 #endif /* ENABLE_SHMEM_SHARP */
 
@@ -1169,7 +1170,7 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
     SHMEMU_CHECK_SYMMETRIC(dest, "dest");                                      \
     SHMEMU_CHECK_SYMMETRIC(source, "source");                                  \
     shmemc_team_h team_h = (shmemc_team_h)team;                                \
-    sharp_coll_comm = team;                                                    \
+    sharp_comm = team;                                                    \
     SHMEMU_CHECK_TEAM_STRIDE(team_h->stride, __func__);                        \
     SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_REDUCE),      \
                       "team_h->pSyncs[REDUCE]");                               \

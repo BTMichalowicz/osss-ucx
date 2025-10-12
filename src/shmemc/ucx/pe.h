@@ -20,6 +20,9 @@
 
 #include <sys/types.h>
 #include <ucp/api/ucp.h>
+#if ENABLE_SHMEM_SHARP
+#include "shmemx_sharp.h"
+#endif /*ENABLE_SHMEM_SHARP*/
 
 /**
  * @brief Information exchanged between PEs at startup

@@ -304,11 +304,11 @@ static void initialize_team_world(void) {
     kh_val(world->rev, k) = i;
   }
 
-#if ENABLE_SHARP_SHMEM
+#if ENABLE_SHMEM_SHARP
   if (proc.env.enable_sharp == 1){
       shmemx_sharp_init(world);
   }
-#endif /*ENABLE_SHARP_SHMEM */
+#endif /*ENABLE_SHMEM_SHARP */
 }
 
 /**

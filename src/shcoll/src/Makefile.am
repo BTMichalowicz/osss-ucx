@@ -30,6 +30,10 @@ lib_LTLIBRARIES         = libshcoll.la
 libshcoll_la_SOURCES    = $(SOURCES)
 libshcoll_la_CFLAGS     = $(BUILD_CFLAGS)
 
+if ENABLE_SHMEM_SHARP
+libshcoll_la_CFLAGS		+= -DENABLE_SHMEM_SHARP
+endif #ENABLE_SHMEM_SHARP
+
 nobase_include_HEADERS  = shcoll.h \
 				shcoll/alltoall.h \
 				shcoll/alltoalls.h \
