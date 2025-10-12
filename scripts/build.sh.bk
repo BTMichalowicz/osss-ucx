@@ -1,0 +1,64 @@
+#!/bin/bash
+
+#
+# This script needs to be run from the project root directory.
+#
+# Example:
+#   cd /path/to/osss-ucx
+#   ./scripts/BUILD.sh
+#
+# This script will clean the build directory, run autogen, configure, and compile the project.
+#
+
+echo "SWHOME=$SWHOME"
+echo "PMIX_DIR=$PMIX_DIR"
+echo "UCX_DIR=$UCX_DIR"
+echo "OMPI_DIR=$OMPI_DIR"
+
+HLINE="--------------------------------------------"
+pwd=$(pwd)
+
+# --- Clean up generated files
+echo $HLINE
+echo "            CLEANING BUILD"
+echo $HLINE
+./scripts/clean.sh
+echo ; echo
+
+# --- Run autogen and configure
+echo $HLINE
+echo "            RUNNING AUTOGEN"
+echo $HLINE
+mkdir build
+./autogen.sh
+cd build
+echo ; echo
+
+# --- Configure build
+echo $HLINE
+echo "            CONFIGURING"
+echo $HLINE
+PREFIX="$(pwd)/install"
+
+export SHMEM_LAUNCHER="$OMPI_BIN/mpiexec"
+
+../configure                  \
+  CFLAGS="-Wall -pipe -g -O0" \
+  --prefix=$PREFIX            \
+  --with-pmix=$PMIX_DIR       \
+  --with-ucx=$UCX_DIR         \
+  --with-heap-size=64M        \
+  --enable-experimental       \
+  --enable-encryption         \
+  --enable-debug              \
+  --enable-logging
+
+# ---  Compile
+echo $HLINE
+echo "            COMPILING"
+echo $HLINE
+make -j $(( $(nproc) - 1 )) install 
+
+
+
+
