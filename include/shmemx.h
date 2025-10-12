@@ -388,9 +388,10 @@ typedef struct func_args {
     op_type_t optype;
     int src_pe,
         dst_pe;
-    int local_size;
-    int encrypted_size;
+    size_t local_size;
+    size_t encrypted_size;
     uint64_t remote_buffer; /* For get and put operations */
+    uint64_t local_buf;
     unsigned char local_buffer[]; /* for get operations */
 } func_args_t;
 
@@ -433,7 +434,7 @@ extern pmix_proc_t *my_second_pmix;
 #define PROC_ENC_DEC_FENCE_COUNT 2
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-#if 1
+#if 0
 #define DEBUG_SHMEM(fmt, args...)                       \
    do {                                                 \
       fflush(stdout);                                   \

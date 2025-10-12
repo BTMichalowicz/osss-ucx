@@ -201,7 +201,7 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
     void const *source_ptr = ((uint8_t *)source) + me_as * nelems;             \
                                                                                \
     int i;                                                                     \
-    int peer_as, dst, src;                                                     \
+    int peer_as, dst, src, segment_count[PE_size];                             \
     size_t enc_size[PE_size], dec_size[PE_size], temp_size = 0;                \
     uint64_t enc_src = 0, dec_src = 0;                                         \
     ucp_rkey_h r_key = 0;                                                      \
@@ -216,7 +216,7 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
       for (i = 0; i < PE_size; i++) {                                          \
         dst = i * nelems;                                                      \
         src = i * (nelems + AES_TAG_LEN + AES_RAND_BYTES);                     \
-        shmemx_encrypt_single_buffer_omp((unsigned char *)&(put_ciphtext[0]),  \
+        segment_count[i] = shmemx_encrypt_single_buffer_omp((unsigned char *)&(put_ciphtext[0]),  \
                                          src, source, dst, nelems,             \
                                          &(enc_size[i]));                      \
       }                                                                        \
@@ -228,7 +228,7 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
       if (proc.env.shmem_encryption) {                                         \
         source_ptr = ((uint8_t *)&(put_ciphtext[0])) + peer_as * nelems;       \
         shmemc_ctx_put_nbi(SHMEM_CTX_DEFAULT, dest_ptr, source_ptr,            \
-                           nelems + AES_TAG_LEN + AES_RAND_BYTES,              \
+                           enc_size[i] + (segment_count[i] * (AES_TAG_LEN + AES_RAND_BYTES)),              \
                            PE_start + peer_as * stride);                       \
       } else {                                                                 \
         shmem_putmem_nbi(dest_ptr, source_ptr, nelems,                         \
@@ -240,10 +240,10 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
         shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);  \
       }                                                                        \
     }                                                                          \
-    shmem_quiet();                                                             \
+                                                                \
     if (proc.env.shmem_encryption) {                                           \
       for (i = 0; i < PE_size; i++) {                                          \
-        dec_size[i] = enc_size[i];                                             \
+        dec_size[i] = enc_size[i] + (segment_count[i] * (AES_TAG_LEN + AES_RAND_BYTES));                                             \
         dst = (i * nelems);                                                    \
         src = (i * (nelems + AES_TAG_LEN + AES_RAND_BYTES));                   \
         shmemx_decrypt_single_buffer_omp(                                      \
