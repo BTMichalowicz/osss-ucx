@@ -1126,27 +1126,27 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
       block_put_cipherlen + (segment_count * (AES_TAG_LEN + AES_RAND_BYTES));
 
   func_args_t *func_put =
-      (func_args_t *)malloc(sizeof(func_args_t) + count);
+      (func_args_t *)malloc(sizeof(func_args_t));
   func_put->optype = PT2PT;
   func_put->src_pe = proc.li.rank;
   func_put->dst_pe = pe;
   func_put->local_size = nbytes;
   func_put->encrypted_size = count;
   func_put->remote_buffer = r_dest;
-  memcpy(func_put->local_buffer, blocking_put_ciphertext, count);
-  put_t1 = shmemx_wtime();
+    put_t1 = shmemx_wtime();
 
   ucp_request_param_t param = {
       .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
       .cb.send = NULL,
       .datatype = ucp_dt_make_contig(sizeof(unsigned char)),
   };
+  shmemc_ctx_put(ctx, dest, blocking_put_ciphertext, count, pe);
 
   // DEBUG_SHMEM("local_buffer %p, remote_buffer %p\n", func_put->local_buffer,
   // r_dest);
   ucs_status_ptr_t sp =
-      ucp_am_send_nbx(peer_ep, AM_PUT_HANDLER, NULL, 0, func_put,
-                      (sizeof(func_args_t) + count), &param);
+      ucp_am_send_nbx(peer_ep, AM_NBPUT_HANDLER, NULL, 0, func_put,
+                      (sizeof(func_args_t)), &param);
 
   ucs_status_t st = check_wait_for_request(ch, sp);
   shmemu_assert(st == UCS_OK, "%s: put failed (status: %s)", __func__,
