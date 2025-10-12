@@ -378,6 +378,8 @@ typedef struct shmem_secure_attr {
 #define AM_GET_ENC_RESPONSE 103
 #define AM_GET_DEC_HANDLER 104
 #define AM_GET_DEC_RESPONSE 105
+#define AM_NBPUT_HANDLER 106
+
 
 typedef enum PUT_GET_COLLECTIVE {
     PT2PT = 1,
@@ -387,7 +389,8 @@ typedef enum PUT_GET_COLLECTIVE {
 typedef struct func_args {
     op_type_t optype;
     int src_pe,
-        dst_pe;
+        dst_pe,
+        is_nonblocking;
     size_t local_size;
     size_t encrypted_size;
     uint64_t remote_buffer; /* For get and put operations */
@@ -434,7 +437,7 @@ extern pmix_proc_t *my_second_pmix;
 #define PROC_ENC_DEC_FENCE_COUNT 2
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-#if 0
+#if 1
 #define DEBUG_SHMEM(fmt, args...)                       \
    do {                                                 \
       fflush(stdout);                                   \
