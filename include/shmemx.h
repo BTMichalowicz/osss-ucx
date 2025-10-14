@@ -375,10 +375,10 @@ typedef struct shmem_secure_attr {
 
 #define AM_PUT_HANDLER 101
 #define AM_GET_ENC_HANDLER 102
-#define AM_GET_ENC_RESPONSE 103
-#define AM_GET_DEC_HANDLER 104
 #define AM_GET_DEC_RESPONSE 105
 #define AM_NBPUT_HANDLER 106
+#define AM_NBGET_HANDLER 107
+#define AM_NBGET_DEC_HANDLER 108
 
 
 typedef enum PUT_GET_COLLECTIVE {
@@ -431,8 +431,6 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe);
-
-extern pmix_proc_t *my_second_pmix;
 
 #define PROC_ENC_DEC_FENCE_COUNT 2
 

@@ -39,10 +39,6 @@ static pmix_key_t k1; /* re-usable key spaces */
 static pmix_key_t k2;
 #endif /* ENABLE_ALIGNED_ADDRESSES */
 
-#if ENABLE_SHMEM_ENCRYPTION
-pmix_proc_t *my_second_pmix = &my_pmix;
-#endif /* ENABLE_SHMEM_ENCRYPTION */
-
 /*
  * Make local info available to PMIx
  */
