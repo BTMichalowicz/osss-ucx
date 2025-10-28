@@ -307,7 +307,6 @@ int shmemx_query_interoperability(int property);
 
 /* BEGINNING SHMEM ENCRYPTION ADDITIONS: BTM */
 #if ENABLE_SHMEM_ENCRYPTION
-#include <pmix.h>
 #define KILO 1024
 #define MEGA KILO*KILO
 #define GIGA KILO*MGEA
@@ -325,7 +324,7 @@ int shmemx_query_interoperability(int property);
 #define PUT_TEMP_BUF_LEN 20
 
 #define MAX_THREAD_COUNT 16
-
+#define SIXTEEN_K 16*KILO
 #define THIRTY_TWO_K 32*KILO
 #define SIX_FOUR_K 64 * KILO
 #define ONE_TWO_EIGHT_K 128 * KILO
@@ -381,20 +380,17 @@ typedef struct shmem_secure_attr {
 #define AM_NBGET_DEC_HANDLER 108
 
 
-typedef enum PUT_GET_COLLECTIVE {
-    PT2PT = 1,
-    COLL = 2
-} op_type_t;
-
 typedef struct func_args {
-    op_type_t optype;
     int src_pe,
-        dst_pe,
-        is_nonblocking;
-    size_t local_size;
+        dst_pe;
+   size_t local_size;
     size_t encrypted_size;
     uint64_t remote_buffer; /* For get and put operations */
     uint64_t local_buf;
+    int offset_from_start; // For get operations - threading + pipelineing I suppose?
+    int remainder;
+    int segment_count;
+    char IV[AES_TAG_LEN];
     unsigned char local_buffer[]; /* for get operations */
 } func_args_t;
 
