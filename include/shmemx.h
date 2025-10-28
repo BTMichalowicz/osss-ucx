@@ -369,6 +369,7 @@ typedef struct shmem_secure_attr {
     uintptr_t remote_buf_addr;
     uintptr_t local_buf_addr;
     uintptr_t local_buf;
+    unsigned char IV[AES_TAG_LEN];
 } shmem_secure_attr_t;
 
 

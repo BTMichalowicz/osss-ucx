@@ -23,7 +23,9 @@ const unsigned char gcm_key[GCM_KEY_SIZE] = {
     'f', 'e', 'a', 'c', 'b', 'd', 'e', 'f', '0', '1', '2',
     '3', '4', '5', '6', '7', '8', '9', 'a', 'd', 'c'};
 
+#if use_ctr
 unsigned char IV[AES_TAG_LEN] = {'\0'};
+#endif /* use_ctr */
 
 
 unsigned char blocking_put_ciphertext[MAX_MSG_SIZE + OFFSET] = {'\0'};
@@ -280,6 +282,11 @@ int shmemx_decrypt_single_buffer_noomp(unsigned char *cipherbuf,
 
     EVP_CIPHER_CTX *local_ctx = openmp_dec_ctx[tn];
 
+#if use_ctr
+    local_ctx = EVP_CIPHER_CTX_new();
+    assert(local_ctx);
+#endif /* use_ctr */
+
     if ((count == segment_count - 1)) {
       enc_data = (bytes - data * (segment_count - 1));
       max_data = enc_data + AES_TAG_LEN;
@@ -349,7 +356,9 @@ ucs_status_t put_dec_handler(void *arg, const void *header, size_t h_size,
 
   func_args_t *func_data = (func_args_t *)data;
   uint64_t r_dest = func_data->remote_buffer;
+#if use_ctr
   memcpy(IV, func_data->IV, AES_TAG_LEN);
+#endif /*use_ctr*/
 
   shmemu_assert(r_dest >= 0, "put_dec_handler: rdest is 0, can't find region of %p",
                 (void *)r_dest);
@@ -374,7 +383,9 @@ ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
   func_args_t *func_data = (func_args_t *)data;
   unsigned char *dest = (func_data->local_buffer);
   uint64_t r_dest = func_data->remote_buffer;
+#if use_ctr
   memcpy(IV, func_data->IV, AES_TAG_LEN);
+#endif /* use_ctr */
 
   //    DEBUG_SHMEM("dest: %p, r_dest: %p\n", dest, r_dest);
   //    usleep(10);
@@ -417,7 +428,10 @@ ucs_status_t get_enc_handler(void *arg, const void *header, size_t h_size,
   response->local_buf = func_data->local_buf;
   response->remote_buffer = func_data->remote_buffer;
   response->offset_from_start = offset_from_start;
-  response->encrypted_size = res_size;
+#if use_ctr
+  memcpy(response->IV, IV, AES_TAG_LEN);
+#endif
+  response->encrypted_size = func_data->encrypted_size;
 
   memcpy(response->local_buffer, temp_buffer, res_size);
 
@@ -457,6 +471,9 @@ ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
   int offset_from_start = func_data->offset_from_start;
   int local_size = func_data->local_size;
   int remainder = func_data->remainder;
+#if use_ctr
+  memcpy(IV, func_data->IV, AES_TAG_LEN);
+#endif /* use_ctr */
   unsigned char *local_ptr = func_data->local_buffer;
   DEBUG_SHMEM("Local_ptr: %p\n", local_ptr);
   shmemx_decrypt_single_buffer_noomp((unsigned char *)local_ptr, 0, (void *)dest + offset_from_start, 0,
@@ -477,6 +494,9 @@ ucs_status_t nbget_handler(void *arg, const void *header, size_t h_size,
   func_args_t *func_data = (func_args_t *)data;
   uint64_t r_dest = (uint64_t)(func_data->remote_buffer);
    unsigned char *put_ptr = malloc(func_data->local_size + KILO);
+#if use_ctr
+   memcpy(IV, func_data->IV, AES_TAG_LEN);
+#endif /* use_ctr */
 
   int segment_count = 0;
     segment_count = shmemx_encrypt_single_buffer_omp((unsigned char *)r_dest, 0, (void *)r_dest, 0,
@@ -696,11 +716,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
   for (count = 0; count < segment_count; count++) {
 
     int tn = omp_get_thread_num();
-    // int cipher_temp = 0;
-    //
-    // cipherbuf[count*(data+AES_TAG_LEN+AES_RAND_BYTES)+src]
-    //   void *tmp_buf = cipherbuf + (count *
-    //   (data+AES_TAG_LEN+AES_RAND_BYTES))+src;
+    
     position = count * (data + AES_TAG_LEN + AES_RAND_BYTES);
     int pos2 = count * data;
     void *tmp_buf =  cipherbuf + position;
@@ -962,11 +978,11 @@ static void aes_ctr_dec(unsigned long long counter_val,
                            unsigned char *outbuf, 
                            size_t len, size_t *cipherlen, EVP_CIPHER_CTX *ctx) {
 
-   RAND_bytes(IV, AES_RAND_BYTES);
-   IV[AES_RAND_BYTES] = (counter_val >> 24) & 0xFF;
-   IV[AES_RAND_BYTES+1] = (counter_val >> 16) & 0xFF;
-   IV[AES_RAND_BYTES+2] = (counter_val >> 8 ) & 0xFF;
-   IV[AES_RAND_BYTES+3] = (counter_val) & 0xFF;
+//   RAND_bytes(IV, AES_RAND_BYTES);
+//   IV[AES_RAND_BYTES] = (counter_val >> 24) & 0xFF;
+//   IV[AES_RAND_BYTES+1] = (counter_val >> 16) & 0xFF;
+//   IV[AES_RAND_BYTES+2] = (counter_val >> 8 ) & 0xFF;
+//   IV[AES_RAND_BYTES+3] = (counter_val) & 0xFF;
    if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,gcm_key, IV) != 1){
       handleErrors("EncryptInit Failed\n");
    }
@@ -975,6 +991,10 @@ static void aes_ctr_dec(unsigned long long counter_val,
 
    if (EVP_EncryptUpdate(ctx, outbuf, cipherlen, inbuf, (int) len) != 1){
       handleErrors("EncryptUpdate Failed\n");
+   }
+
+   if (EVP_EncryptFinal_ex(ctx, outbuf+(*cipherlen), cipherlen) != 1){
+      handleErrors("EncryptFinal Failed\n");
    }
 
    DEBUG_SHMEM("Cipherlen: %lu\n", *cipherlen);
@@ -1019,10 +1039,6 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
 
    DEBUG_SHMEM("segment_count %d, enc_data %d, max_data %d\n", segment_count, enc_data, max_data);
  
-
-
-  
-
   DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: %s \n",
         (char *)sbuf);
 #pragma omp parallel for schedule(dynamic) default(none)                       \
@@ -1306,10 +1322,13 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
   nb_put_ctr[nbput_count].dst_pe = 0;
   nb_put_ctr[nbput_count].res_pe = pe;
   nb_put_ctr[nbput_count].plaintext_size = nbytes;
-  nb_put_ctr[nbput_count].encrypted_size = res_bytes;
+  nb_put_ctr[nbput_count].encrypted_size = cipherlen;
   nb_put_ctr[nbput_count].remote_buf_addr = r_dest;
   nb_put_ctr[nbput_count].local_buf_addr = (uintptr_t)src;
   nb_put_ctr[nbput_count].local_buf = (uintptr_t)src;
+#if use_ctr
+  memcpy(nb_put_ctr[nbput_count].IV, IV, AES_TAG_LEN);
+#endif /*use_ctr*/
 
   nbput_count++;
 
@@ -1355,9 +1374,16 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   func_put->src_pe = proc.li.rank;
   func_put->dst_pe = pe;
   func_put->local_size = nbytes;
+#if use_gcm
+  func_put->encrypted_size = count;
+#elif use_ctr
   func_put->encrypted_size = block_put_cipherlen; //count;
-  func_put->remote_buffer = r_dest;
   memcpy(func_put->IV, IV, AES_TAG_LEN);
+
+#endif /* use_gcm or use_ctr */
+  func_put->remote_buffer = r_dest;
+#if use_ctr
+#endif /*use_ctr*/
    put_t1 = shmemx_wtime();
 
   ucp_request_param_t param = {
@@ -1425,6 +1451,18 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
   func_get->remote_buffer = r_dest;
   func_get->local_buf = l_dest;
 
+  int counter_val = 1;
+
+#if use_ctr
+  RAND_bytes(func_get->IV, AES_RAND_BYTES);
+  func_get->IV[AES_RAND_BYTES] = (counter_val >> 24) & 0xFF;
+  func_get->IV[AES_RAND_BYTES+1] = (counter_val >> 16) & 0xFF;
+  func_get->IV[AES_RAND_BYTES+2] = (counter_val >> 8 ) & 0xFF;
+  func_get->IV[AES_RAND_BYTES+3] = (counter_val) & 0xFF;
+#endif /* use_ctr */
+
+
+
   ucp_request_param_t ack_param = {
      .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
       .cb.send = NULL,
@@ -1447,10 +1485,17 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
   nb_get_ctr[nbget_count].dst_pe = proc.li.rank;
   nb_get_ctr[nbget_count].res_pe = pe;
   nb_get_ctr[nbget_count].plaintext_size = nbytes;
+#if use_gcm
   nb_get_ctr[nbget_count].encrypted_size = nbytes + (segment_count * (AES_TAG_LEN + AES_RAND_BYTES)); 
+#elif use_ctr
+  nb_get_ctr[nbget_count].encrypted_size = nbytes;
+#endif /* use_gcm ^ use_ctr */
   nb_get_ctr[nbget_count].local_buf_addr = (uintptr_t)dest;
   nb_get_ctr[nbget_count].local_buf = (uintptr_t)dest;
   nb_get_ctr[nbget_count].remote_buf_addr = src;
+#if use_ctr
+  memcpy(nb_get_ctr[nbget_count].IV, func_get->IV, AES_TAG_LEN);
+#endif /* use_ctr */
   nbget_count++;
 
 }
@@ -1471,6 +1516,9 @@ int shmemx_secure_quiet(void) {
       func_put->dst_pe = put_data.res_pe; /* Will need this for peer EP calculation */
       func_put->encrypted_size = put_data.encrypted_size;
       func_put->local_size = put_data.plaintext_size;
+#if use_ctr
+      memcpy(func_put->IV, nb_put_ctr[ctr].IV, AES_TAG_LEN);
+#endif /*use_ctr*/
 
       ucp_request_param_t param = {
          .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
@@ -1523,6 +1571,9 @@ int shmemx_secure_quiet(void) {
       nb_get->encrypted_size = enc_size;
       nb_get->remote_buffer = r_dest; // get_data.remote_buf_addr;
       nb_get->local_buf = addr;
+#if use_ctr
+      memcpy(nb_get->IV, get_data.IV, AES_TAG_LEN);
+#endif /* use_ctr */
       ep = lookup_ucp_ep(defcp, get_data.src_pe);
       DEBUG_SHMEM("Starting remote decryption via active messages\n");
 
