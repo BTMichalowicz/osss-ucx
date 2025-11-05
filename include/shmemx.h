@@ -351,14 +351,18 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long long src, 
         void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
 
+
+int shmemx_encrypt_single_buffer_omp_2(unsigned char *cipherbuf, unsigned long long src,
+      const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipherlen, char *inIV);
+int shmemx_decrypt_single_buffer_omp_2(unsigned char *cipherbuf, unsigned long long src, 
+        void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len, char *inIV);
+
+
 /** @brief A structure for metadata for commanding the peer process do perform
  * encryption or decryption
  */
 
 
-/* TODO: Do we send the below in the encrypted section? alongside buffer
- * addresses and the like?  */
-/* ANSWER: Yes, for non-blocking put/get */
 
 typedef struct shmem_secure_attr {
     int src_pe;
@@ -372,13 +376,30 @@ typedef struct shmem_secure_attr {
     unsigned char IV[AES_TAG_LEN];
 } shmem_secure_attr_t;
 
+#include "shmemc.h"
 
+
+typedef enum AM_1SC_HANDLERS {
+   AM_PUT_HANDLER = 101,
+   AM_GET_ENC_HANDLER,
+   AM_GET_DEC_RESPONSE,
+   AM_GET_DEC_RESPONSE_2,
+   AM_NBPUT_HANDLER,
+   AM_NBGET_HANDLER,
+   AM_NBGET_HANDLER_2,
+   AM_NBGET_DEC_HANDLER,
+} AM_1SC_HANDLERS;
+
+/*
 #define AM_PUT_HANDLER 101
 #define AM_GET_ENC_HANDLER 102
-#define AM_GET_DEC_RESPONSE 105
-#define AM_NBPUT_HANDLER 106
-#define AM_NBGET_HANDLER 107
+#define AM_GET_DEC_RESPONSE 103
+#define AM_GET_DEC_RESPONSE_2 104
+#define AM_NBPUT_HANDLER 105
+#define AM_NBGET_HANDLER 106
+#define AM_NBGET_HANDLER_2 107
 #define AM_NBGET_DEC_HANDLER 108
+*/
 
 
 typedef struct func_args {
@@ -388,11 +409,13 @@ typedef struct func_args {
     size_t encrypted_size;
     uint64_t remote_buffer; /* For get and put operations */
     uint64_t local_buf;
+    uint64_t get_rem_buf;
+    uint64_t put_rem_buf;
+
     int offset_from_start; // For get operations - threading + pipelineing I suppose?
     int remainder;
     int segment_count;
-    char IV[AES_TAG_LEN];
-    unsigned char local_buffer[]; /* for get operations */
+    unsigned char IV[AES_TAG_LEN];
 } func_args_t;
 
 
@@ -429,7 +452,6 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe);
 
-#define PROC_ENC_DEC_FENCE_COUNT 2
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 #if 1
