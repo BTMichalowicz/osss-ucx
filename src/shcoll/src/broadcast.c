@@ -181,13 +181,18 @@ inline static void broadcast_helper_linear(void *target, const void *source,
   ucp_rkey_h r_key;
   int segment_count = 0;
   size_t temp_size = 0;
-  if (proc.env.shmem_encryption && me == root) {
+  if (proc.env.shmem_encryption ){
+     if ( me == root) {
     get_remote_key_and_addr(defcp, (uint64_t)source, me, &r_key, &enc_src);
     shmemu_assert(enc_src, "linear_broadcast: Buffer is NULL!\n");
     segment_count = shmemx_encrypt_single_buffer_omp(
-        (unsigned char *)(enc_src), 0, source, 0, nbytes, &encrypt_size);
+        (unsigned char *)(source), 0, source, 0, nbytes, &encrypt_size);
     temp_size = encrypt_size;
-    temp_size = encrypt_size + (segment_count*(AES_RAND_BYTES + AES_TAG_LEN));
+    //temp_size = encrypt_size + (segment_count*(AES_RAND_BYTES + AES_TAG_LEN));
+     
+   }
+     shmem_barrier_all();
+
 
   }
 #endif /* ENABLE_SHMEM_ENCRYPTION */
@@ -195,19 +200,23 @@ inline static void broadcast_helper_linear(void *target, const void *source,
   if (me != root) {
 #if ENABLE_SHMEM_ENCRYPTION
     if (proc.env.shmem_encryption) {
-       encrypt_size = nbytes + (segment_count*(AES_RAND_BYTES + AES_TAG_LEN));
+       encrypt_size = nbytes; //+ (segment_count*(AES_RAND_BYTES + AES_TAG_LEN));
 
             shmemc_ctx_get(SHMEM_CTX_DEFAULT, target, source,
-                     nbytes + AES_TAG_LEN + AES_RAND_BYTES, root);
+                     nbytes, root);
+//            DEBUG_SHMEM("Result: %s\n", (char *)target);
       shmemx_decrypt_single_buffer_omp((unsigned char *)(target), 0, target, 0,
-                                       nbytes + AES_RAND_BYTES, encrypt_size);
+                                       nbytes, encrypt_size);
     } else
 #endif /* ENABLE_SHMEM_ENCRYPTION */
       shmem_getmem(target, source, nbytes, root);
   }
+
 #if ENABLE_SHMEM_ENCRYPTION
-  else {
-    if (proc.env.shmem_encryption) {
+ if(proc.env.shmem_encryption){
+    shmem_barrier_all();
+    if (me == root) {
+//       DEBUG_SHMEM("Rank 0 buffer: %s %s\n", (char *)enc_src, (char *)source);
       shmemx_decrypt_single_buffer_omp((unsigned char *)(enc_src), 0,
                                        (void *)source, 0,
                                        nbytes, temp_size);
@@ -324,7 +333,7 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
 
      if (node.children_num != 0){
         
-        tmp_buf = malloc(nbytes);
+        tmp_buf = malloc(nbytes + 4096);
         segment_count = shmemx_encrypt_single_buffer_omp(
               (unsigned char *)tmp_buf, 0, source, 0, nbytes, &encrypt_size);
      }
@@ -353,6 +362,7 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
 #if ENABLE_SHMEM_ENCRYPTION
         
         if (proc.env.shmem_encryption){
+   //        DEBUG_SHMEM("Sending to %d\n", dst);
 #if 0
                 shmemx_secure_put_nbi(SHMEM_CTX_DEFAULT,
                       target, source, nbytes, dst);
@@ -376,13 +386,14 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
   }
 
 #if ENABLE_SHMEM_ENCRYPTION
-#if 0
+#if 1
   if (proc.env.shmem_encryption){
-     shmem_quiet();
+     //shmem_quiet();
+     //shmem_barrier_all();
+//     if (me_as != PE_root){
+//        DEBUG_SHMEM("Encrypted target: %s\n", (char *) target);
+//      }
      shmem_barrier_all();
-     if (me_as != PE_root){
-        DEBUG_SHMEM("Decrypted target: %s\n", (char *) target);
-      }
     }
 #endif /* 0/1 */
 #endif /* ENABLE_SHMEM_ENCRYPTION */
@@ -397,20 +408,19 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
   //            (void *)source, 0,
   //            nbytes, temp_size);
   //   } else{
-     if (me_as != PE_root){   
+     if (me_as != PE_root){  
+//        DEBUG_SHMEM("Before: %s\n", (char *) target);
         get_remote_key_and_addr(defcp, (uint64_t) target, me_as, &r_key,
               &dec_src); 
         shmemx_decrypt_single_buffer_omp((unsigned
-                 char*)(dec_src), 0, (void *) dec_src, 0,
+                 char*)(target), 0, (void *) target, 0,
               nbytes, temp);
         
      }
      if (node.children_num != 0){
         free(tmp_buf);
      }
-   //fprintf(stdout, "rank %d: output: %s\n", me, (char *) target);
-
-         
+//     fprintf(stdout, "rank %d: output: %s\n", me, (char *) target);    
   }
 #endif /* 0/1 */
 #endif /* ENABLE_SHMEM_ENCRYPTION */
