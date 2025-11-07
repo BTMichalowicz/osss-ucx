@@ -242,7 +242,7 @@ ucs_status_t put_dec_handler(void *arg, const void *header, size_t h_size,
   func_args_t *func_data = (func_args_t *)data;
   uint64_t r_dest = func_data->remote_buffer;
 #if use_ctr
-  memcpy(IV, func_data->IV, AES_TAG_LEN);
+  //memcpy(IV, func_data->IV, AES_TAG_LEN);
 #endif /*use_ctr*/
 
   shmemu_assert(r_dest >= 0, "put_dec_handler: rdest is 0, can't find region of %p",
@@ -369,7 +369,7 @@ DEBUG_SHMEM("Setting up a callback to ensure that we decrypt appropriately...\n"
   response->get_rem_buf = func_data->get_rem_buf;
   DEBUG_SHMEM("get_rem_buf: %p\n", func_data->get_rem_buf);
 #if use_ctr
-  memcpy(response->IV, IV, AES_TAG_LEN);
+  //memcpy(response->IV, IV, AES_TAG_LEN);
 #endif
   response->encrypted_size = func_data->encrypted_size;
 
@@ -466,7 +466,7 @@ ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
   int local_size = func_data->local_size;
   int remainder = func_data->remainder;
 #if use_ctr
-  memcpy(IV, func_data->IV, AES_TAG_LEN);
+  //memcpy(IV, func_data->IV, AES_TAG_LEN);
 #endif /* use_ctr */
 
 
@@ -513,7 +513,7 @@ ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
   response->dst_pe = func_data->dst_pe;
   response->get_rem_buf = func_data->get_rem_buf;
 #if use_ctr
-  memcpy(response->IV, IV, AES_TAG_LEN);
+  //memcpy(response->IV, IV, AES_TAG_LEN);
 #endif
   response->encrypted_size = func_data->encrypted_size;
 
@@ -1616,17 +1616,30 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
 
   DEBUG_SHMEM("Starting Nonblocking get\n");
-  ucs_status_ptr_t sp = ucp_am_send_nbx(ep, AM_NBGET_HANDLER, NULL, 0, func_get,
+  ucs_status_ptr_t sp = ucp_am_send_nbx(ep, AM_GET_ENC_HANDLER, NULL, 0, func_get,
         sizeof(func_args_t), &ack_param);
   //shmemc_progress();
   ucs_status_t st = check_wait_for_request(ch, sp);
   shmemu_assert(st == UCS_OK, "%s: nb_get enc failed (status: %s)", __func__,
         ucs_status_string(st));
-//
-//    shmemc_progress();
 
-  //  shmemc_progress();
-    DEBUG_SHMEM("NbGet end\n");
+
+     int k = 0;
+     int magic = FOUR_M;
+     int kilo = 512;
+     int magic2 = 1;
+
+     if (nbytes < magic){
+        while(k++ < magic2 * kilo )
+           shmemc_progress();
+     }else{
+        while(k++ < magic2 * kilo * (nbytes/magic)) 
+           shmemc_progress();
+     }
+
+     shmemc_ctx_get_nbi(defcp, dest, src, nbytes, pe);
+  
+     DEBUG_SHMEM("NbGet end\n");
 
   nb_get_ctr[nbget_count].src_pe = pe;
   nb_get_ctr[nbget_count].dst_pe = proc.li.rank;
@@ -1706,9 +1719,7 @@ int shmemx_secure_quiet(void) {
       size_t enc_size = get_data.encrypted_size;
 
       DEBUG_SHMEM("Fulfilling 'non-blocking' get (iteration %d)\n", ctr);
- //     shmemc_ctx_get(defcp, addr, get_data.remote_buf_addr, enc_size, get_data.src_pe); 
-
-      //get_remote_key_and_addr(defcp, get_data.remote_buf_addr, get_data.src_pe, &r_key, &r_dest);
+ 
 
       nb_get->src_pe = get_data.src_pe;
       nb_get->dst_pe = get_data.dst_pe;
@@ -1728,8 +1739,10 @@ int shmemx_secure_quiet(void) {
       st = check_wait_for_request(defcp, sp);
       shmemu_assert(st == UCS_OK, "%s: nb_get failed (status: %s)", __func__,
             ucs_status_string(st));
-      //shmemc_progress();
 
+      for (int i = 0; i < 90; i ++){
+         shmemc_progress();
+      }
 
    
       DEBUG_SHMEM("Doing local_decryption on buffer %p with ciphertext %s\n", addr, (unsigned char*) addr);
