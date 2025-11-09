@@ -1500,29 +1500,44 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
       .cb.send = NULL,
       .datatype = ucp_dt_make_contig(sizeof(unsigned char)),
   };
-  shmemc_ctx_put(ctx, dest, blocking_put_ciphertext, count, pe);
+  //shmemc_ctx_put(ctx, dest, blocking_put_ciphertext, count, pe);
+
+  const ucp_request_param_t prm = {.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK,
+     .cb.send = noop_callbackx};
+
+  ucs_status_ptr_t sp = ucp_put_nbx(peer_ep, blocking_put_ciphertext, count, r_dest, r_key, &prm);
+  ucs_status_t st = check_wait_for_request(ch, sp);
+
+
 
   // DEBUG_SHMEM("local_buffer %p, remote_buffer %p\n", func_put->local_buffer,
   // r_dest);
-  ucs_status_ptr_t sp =
+   sp =
       ucp_am_send_nbx(peer_ep, AM_NBPUT_HANDLER, NULL, 0, func_put,
                       (sizeof(func_args_t)), &param);
-  //shmemc_progress();
-  ucs_status_t st = check_wait_for_request(ch, sp);
+//  shmemc_progress();
+   st = check_wait_for_request(ch, sp);
   shmemu_assert(st == UCS_OK, "%s: put failed (status: %s)", __func__,
                 ucs_status_string(st));
   put_t2 = (shmemx_wtime() - put_t1) * 1e6;
+
+   shmemc_progress();
   DEBUG_SHMEM("Put end\n");
-  for (int i = 0; i< 10 ; i++){
-     shmemc_progress();
-  }
+/*
+     int k = 0;
+     int magic = 16;
+     int kilo = KILO;
+     int magic2 = 1;
 
-  // free(func_put->local_buffer);
-  // memset(func_put->local_buffer, 0,count);
-  //    free(func_put);
-  func_put = NULL;
+     if (nbytes < magic){
+        while(k++ < magic2 * kilo )
+           shmemc_progress();
+     }else{
+        while(k++ < magic2 * kilo * (nbytes/magic)) 
+           shmemc_progress();
+     }
+*/
 }
-
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
                            size_t nbytes, int pe) {
 
