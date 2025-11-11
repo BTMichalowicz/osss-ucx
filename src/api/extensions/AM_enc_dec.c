@@ -218,9 +218,9 @@ inline static int get_thread_count(size_t bytes) {
   } else if (bytes < TWO_FIVE_SIX_K) {
     thread_no = 4;
   } else if (bytes < FIVE_TWELVE_K) {
-    thread_no = 8;
+    thread_no = 4;
   } else {
-    thread_no = 16;
+    thread_no = 4;
   }
 
   return thread_no;
@@ -981,7 +981,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
               data, thread_no);
 
 
-  DEBUG_SHMEM("[START_DECRYPTION] Ciphertext: %s\n", cipherbuf);
+//  DEBUG_SHMEM("[START_DECRYPTION] Ciphertext: %s\n", cipherbuf);
 #pragma omp parallel for schedule(dynamic) default(none)                       \
     private(count, max_data, position, res, local_cipherlen, enc_data)         \
     shared(segment_count, stdout, stderr, openmp_dec_ctx, data, cipherbuf,     \
@@ -1065,7 +1065,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
 
   memset(rbuf+bytes, 0, 10);
 
-  DEBUG_SHMEM("[END_DECRYPTION] plaintext: %s\n", (char *)rbuf);
+//  DEBUG_SHMEM("[END_DECRYPTION] plaintext: %s\n", (char *)rbuf);
 
   return 0;
 }
@@ -1140,30 +1140,39 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
 //   IV[AES_RAND_BYTES+1] = (counter_val >> 16) & 0xFF;
 //   IV[AES_RAND_BYTES+2] = (counter_val >> 8 ) & 0xFF;
 //   IV[AES_RAND_BYTES+3] = (counter_val) & 0xFF;
+//
+
+  for (count = 0 ; count < thread_no; count++){
+      openmp_enc_ctx[count] = EVP_CIPHER_CTX_new();
+      if (!(openmp_enc_ctx[count])){
+          handleErrors("Can't create cipher_ctx\n");
+      }
+  }
 
    DEBUG_SHMEM("segment_count %d, enc_data %d, max_data %d\n", segment_count, enc_data, max_data);
  
-  DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: %s \n",
-        (char *)sbuf);
-#pragma omp parallel for schedule(dynamic) default(none)                       \
-  private(max_data, local_cipherlen, counter_val)                \
-  shared(src, dest, openmp_enc_ctx, stdout, stderr, segment_count, data,     \
-        sbuf, enc_data, cipherbuf, temp_cipherlen, bytes, gcm_key, plain_chunks, enc_chunks, thread_no, IV, \
-        proc)          \
-  num_threads(thread_no)
+//  DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: %s \n",
+//        (char *)sbuf);
+//
+//   //default(none)  private(local_cipherlen) shared(src, dest, openmp_enc_ctx, stdout, stderr, segment_count, data, sbuf, enc_data, cipherbuf, temp_cipherlen, bytes, gcm_key, plain_chunks, enc_chunks, thread_no, IV, proc) num_threads(thread_no)d config.log
+//
+#pragma omp parallel for num_threads(thread_no)
   for (count = 0; count < segment_count; count++) {
-     counter_val = (count * (enc_data/thread_no));
-     int offset = (count * enc_data);
-     int chunk_size = (offset + data <= bytes) ? data : bytes - offset;
-     unsigned char* tmp_plain = sbuf + offset;
-     unsigned char* tmp_enc = cipherbuf + offset;
-     int tn = omp_get_thread_num();
+
+     
+  //   counter_val = (count * (enc_data/thread_no));
+      int offset = (count * enc_data);
+      unsigned char* tmp_plain = sbuf + offset;
+      unsigned char* tmp_enc = cipherbuf + offset;
+      int tn = omp_get_thread_num();
+
+      DEBUG_SHMEM("Running on thread %d\n", tn);
 
      EVP_CIPHER_CTX *ctx = openmp_enc_ctx[count];
-     ctx = EVP_CIPHER_CTX_new();
-     if (!ctx) { 
-        handleErrors("Can't create a cipher ctx\n");
-     }
+  //   ctx = EVP_CIPHER_CTX_new();
+  //   if (!ctx) { 
+  //      handleErrors("Can't create a cipher ctx\n");
+  //   }
 
      if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,gcm_key, IV) != 1){
         handleErrors("EncryptInit Failed\n");
@@ -1187,8 +1196,12 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
 
      temp_cipherlen += local_cipherlen;
 
-     EVP_CIPHER_CTX_free(ctx);
   }
+
+  for (count = 0 ; count < thread_no; count++){
+      EVP_CIPHER_CTX_free(openmp_enc_ctx[count]);
+  }
+
 
   *cipherlen = temp_cipherlen;
   DEBUG_SHMEM("Cipherlen: %lu\n", temp_cipherlen);
@@ -1258,15 +1271,21 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
 
   unsigned long long counter_val = 0;
 
+
+  /*               \
+    */
+
   DEBUG_SHMEM("[START_DECRYPTION] Ciphertext: %s\n", cipherbuf);
-#pragma omp parallel for schedule(dynamic) default(none)                       \
-    private(count, position, res, local_cipherlen)         \
-    shared(segment_count, max_data, enc_data, stdout, stderr, openmp_dec_ctx, data, cipherbuf,     \
-               rbuf, cipher_len, src, dest, bytes, proc, gcm_key, plain_chunks, dec_chunks, thread_no, counter_val)              \
-    num_threads(thread_no)
+#pragma omp parallel for default(none)                       \
+  private(count, position, res, local_cipherlen)         \
+  shared(segment_count, max_data, enc_data, stdout, stderr, openmp_dec_ctx, data, cipherbuf,     \
+          rbuf, cipher_len, src, dest, bytes, proc, gcm_key, plain_chunks, dec_chunks, thread_no, counter_val) num_threads(thread_no)
   for (count = 0; count < segment_count; count++) {
     // counter_val = (count * enc_data/thread_no);
-     aes_ctr_dec( counter_val, cipherbuf + (count * enc_data), rbuf + (count*enc_data), enc_data, &local_cipherlen, openmp_dec_ctx[count]);
+     
+      int tn = omp_get_thread_num();
+      DEBUG_SHMEM("T_%d starting decryption\n", tn);
+      aes_ctr_dec( counter_val, cipherbuf + (count * enc_data), rbuf + (count*enc_data), enc_data, &local_cipherlen, openmp_dec_ctx[count]);
 
    }
 
@@ -1521,10 +1540,10 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
                 ucs_status_string(st));
   put_t2 = (shmemx_wtime() - put_t1) * 1e6;
 
-   shmemc_progress();
+   //shmemc_progress();
   DEBUG_SHMEM("Put end\n");
-/*
-     int k = 0;
+
+  /*   int k = 0;
      int magic = 16;
      int kilo = KILO;
      int magic2 = 1;
@@ -1533,10 +1552,10 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
         while(k++ < magic2 * kilo )
            shmemc_progress();
      }else{
-        while(k++ < magic2 * kilo * (nbytes/magic)) 
+        while(k++ < magic2 * kilo * (nbytes*2/magic)) 
            shmemc_progress();
-     }
-*/
+     }*/
+
 }
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
                            size_t nbytes, int pe) {
