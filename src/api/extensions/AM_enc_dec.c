@@ -1610,16 +1610,6 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
   // data++;
   DEBUG_SHMEM("bytes = %d  max_thread_no %d\n", data, thread_no);
 
-  if (nbytes <= 16) {
-    segment_count = 1;
-    data = nbytes;
-  } else {
-    segment_count = (nbytes - 1) / data +1;
-  }
-
-  DEBUG_SHMEM("data per thread: %d, segment_count: %d\n", data, segment_count);
-
-
   func_get->src_pe = pe;
   func_get->dst_pe = proc.li.rank;
   func_get->local_size = nbytes;
@@ -1629,14 +1619,6 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
   func_get->local_buf = dest;
  
   unsigned long long counter_val = 0; //nbget_count % (segment_count + pe); //0xFF / (unsigned long long) nbget_count % (unsigned long long) nbget_count;
-
-#if use_ctr
-  //RAND_bytes(func_get->IV, AES_RAND_BYTES);
-//  func_get->IV[AES_RAND_BYTES] = (counter_val >> 24) & 0xFF;
-//  func_get->IV[AES_RAND_BYTES+1] = (counter_val >> 16) & 0xFF;
-//  func_get->IV[AES_RAND_BYTES+2] = (counter_val >> 8 ) & 0xFF;
-//  func_get->IV[AES_RAND_BYTES+3] = (counter_val) & 0xFF;
-#endif /* use_ctr */
 
 
 
@@ -1659,7 +1641,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
      int k = 0;
      int magic = FOUR_M;
-     int kilo = 512;
+     int kilo = KILO;
      int magic2 = 1;
 
      if (nbytes < magic){
