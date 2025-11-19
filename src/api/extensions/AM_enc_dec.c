@@ -981,7 +981,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
               data, thread_no);
 
 
-//  DEBUG_SHMEM("[START_DECRYPTION] Ciphertext: %s\n", cipherbuf);
+  DEBUG_SHMEM("[START_DECRYPTION] Ciphertext: %s\n", cipherbuf);
 #pragma omp parallel for schedule(dynamic) default(none)                       \
     private(count, max_data, position, res, local_cipherlen, enc_data)         \
     shared(segment_count, stdout, stderr, openmp_dec_ctx, data, cipherbuf,     \
@@ -1075,7 +1075,8 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
 static void aes_ctr_dec(unsigned long long counter_val,
                            unsigned char *inbuf,
                            unsigned char *outbuf, 
-                           size_t len, size_t *cipherlen, EVP_CIPHER_CTX *ctx) {
+                           unsigned long long len, unsigned long long src, int dest,
+                           size_t *cipherlen, EVP_CIPHER_CTX *ctx) {
 
 //   RAND_bytes(IV, AES_RAND_BYTES);
 //   IV[AES_RAND_BYTES] = (counter_val >> 24) & 0xFF;
@@ -1088,7 +1089,7 @@ static void aes_ctr_dec(unsigned long long counter_val,
 
    *cipherlen = 0;
 
-   if (EVP_EncryptUpdate(ctx, outbuf, cipherlen, inbuf, (int) len) != 1){
+   if (EVP_EncryptUpdate(ctx, outbuf, cipherlen, inbuf+src, (int) len) != 1){
       handleErrors("EncryptUpdate Failed\n");
    }
 
@@ -1151,8 +1152,8 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
 
    DEBUG_SHMEM("segment_count %d, enc_data %d, max_data %d\n", segment_count, enc_data, max_data);
  
-//  DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: %s \n",
-//        (char *)sbuf);
+  DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: %s \n",
+        (char *)sbuf);
 //
 //   //default(none)  private(local_cipherlen) shared(src, dest, openmp_enc_ctx, stdout, stderr, segment_count, data, sbuf, enc_data, cipherbuf, temp_cipherlen, bytes, gcm_key, plain_chunks, enc_chunks, thread_no, IV, proc) num_threads(thread_no)d config.log
 //
@@ -1178,7 +1179,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
         handleErrors("EncryptInit Failed\n");
      }
 
-     if (EVP_EncryptUpdate(ctx, tmp_enc, &local_cipherlen, tmp_plain, (int) enc_data) != 1){
+     if (EVP_EncryptUpdate(ctx, tmp_enc+src, &local_cipherlen, tmp_plain, (int) enc_data) != 1){
         handleErrors("EncryptUpdate Failed\n");
      }
 
@@ -1187,7 +1188,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
      DEBUG_SHMEM("[T_%d] Local_cipherlen 1: %lu\n", tn, local_cipherlen);
 
 
-     if (EVP_EncryptFinal_ex(ctx, tmp_enc+local_cipherlen, &local_cipherlen) != 1){
+     if (EVP_EncryptFinal_ex(ctx, tmp_enc+local_cipherlen+src, &local_cipherlen) != 1){
         handleErrors("EncryptFinal Failed\n");
      }
 
@@ -1285,7 +1286,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
      
       int tn = omp_get_thread_num();
       DEBUG_SHMEM("T_%d starting decryption\n", tn);
-      aes_ctr_dec( counter_val, cipherbuf + (count * enc_data), rbuf + (count*enc_data), enc_data, &local_cipherlen, openmp_dec_ctx[count]);
+      aes_ctr_dec( counter_val, cipherbuf + (count * enc_data), rbuf + (count*enc_data), enc_data, src, dest, &local_cipherlen, openmp_dec_ctx[count]);
 
    }
 
