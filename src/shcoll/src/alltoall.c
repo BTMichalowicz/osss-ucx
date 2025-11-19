@@ -199,6 +199,7 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
                                                                                \
     void *const dest_ptr = ((uint8_t *)dest) + me_as * nelems;                 \
     void const *source_ptr = ((uint8_t *)source) + me_as * nelems;             \
+    void *temp_src = ((uint8_t *) source) + me_as * nelems;                    \
                                                                                \
     int i;                                                                     \
     int peer_as, dst, src, segment_count[PE_size];                             \
@@ -211,24 +212,24 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
      * source buffer back to the dest buffer for ourselves */                  \
     memcpy(dest_ptr, source_ptr, nelems);                                      \
                                                                                \
-    if (proc.env.shmem_encryption) {                                           \
+  /*  if (proc.env.shmem_encryption) {                                           \
       get_remote_key_and_addr(defcp, (uint64_t)dest, me_as, &r_key, &dec_src); \
-      for (i = 0; i < PE_size; i++) {                                          \
-        dst = i * nelems;                                                      \
-        src = i * (nelems + AES_TAG_LEN + AES_RAND_BYTES);                     \
-        segment_count[i] = shmemx_encrypt_single_buffer_omp((unsigned char *)&(put_ciphtext[0]),  \
-                                         src, source, dst, nelems,             \
-                                         &(enc_size[i]));                      \
+      for (i = 1; i < PE_size; i++) {                                          \
+        peer_as = _peer(i, me_as, PE_size);                                    \
+        dst = peer_as * nelems;                                                      \
+        src = peer_as * (nelems);                     \
+        segment_count[peer_as] = shmemx_encrypt_single_buffer_omp((unsigned char *)(source_ptr),  \
+                                         0, source_ptr, 0, nelems,             \
+                                         &(enc_size[peer_as]));                      \
       }                                                                        \
-    }                                                                          \
-    for (i = 1; i < PE_size; i++) {                                            \
+    }   */                                                                       \
+    for (i = 0; i < PE_size; i++) {                                            \
       peer_as = _peer(i, me_as, PE_size);                                      \
       source_ptr = ((uint8_t *)source) + peer_as * nelems;                     \
                                                                                \
       if (proc.env.shmem_encryption) {                                         \
-        source_ptr = ((uint8_t *)&(put_ciphtext[0])) + peer_as * nelems;       \
-        shmemc_ctx_put_nbi(SHMEM_CTX_DEFAULT, dest_ptr, source_ptr,            \
-                           enc_size[i] + (segment_count[i] * (AES_TAG_LEN + AES_RAND_BYTES)),              \
+        shmemx_secure_put_nbi(SHMEM_CTX_DEFAULT, dest_ptr, source_ptr,            \
+                           nelems,              \
                            PE_start + peer_as * stride);                       \
       } else {                                                                 \
         shmem_putmem_nbi(dest_ptr, source_ptr, nelems,                         \
@@ -241,15 +242,17 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
       }                                                                        \
     }                                                                          \
                                                                 \
-    if (proc.env.shmem_encryption) {                                           \
-      for (i = 0; i < PE_size; i++) {                                          \
-        dec_size[i] = enc_size[i] + (segment_count[i] * (AES_TAG_LEN + AES_RAND_BYTES));                                             \
-        dst = (i * nelems);                                                    \
-        src = (i * (nelems + AES_TAG_LEN + AES_RAND_BYTES));                   \
+/*    if (proc.env.shmem_encryption) {                                           \
+       for (i = 0; i < PE_size; i++) {                                          \
+          peer_as = _peer(i, me_as, PE_size);                                    \
+        dec_size[peer_as] = enc_size[peer_as] ;                                             \
+        dst = (peer_as * nelems);                                                    \
+        src = (peer_as * (nelems ));                   \
         shmemx_decrypt_single_buffer_omp(                                      \
-            dec_src, src, dest, dst, nelems + AES_RAND_BYTES, dec_size[i]);    \
-      }                                                                        \
-    }                                                                          \
+            dest_ptr, 0, dest_ptr, 0, nelems, dec_size[peer_as]);    \
+      }  \
+       shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);    \
+    }      */                                                                    \
     /* TODO: change to auto shcoll barrier */                                  \
     shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
   }
