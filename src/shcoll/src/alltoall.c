@@ -196,66 +196,130 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
                                                                                \
     /* Get my index in the active set */                                       \
     const int me_as = (me - PE_start) / stride;                                \
-                                                                               \
-    void *const dest_ptr = ((uint8_t *)dest) + me_as * nelems;                 \
+    int i = 0;                                                                 \
+    int peer_as = 0, dst = 0, src = 0;                                         \
+    size_t enc_size[PE_size];                               \
+    void const *dest_ptr = ((uint8_t *)dest) + me_as * nelems;                 \
     void const *source_ptr = ((uint8_t *)source) + me_as * nelems;             \
-    void *temp_src = ((uint8_t *) source) + me_as * nelems;                    \
-                                                                               \
-    int i;                                                                     \
-    int peer_as, dst, src, segment_count[PE_size];                             \
-    size_t enc_size[PE_size], dec_size[PE_size], temp_size = 0;                \
-    uint64_t enc_src = 0, dec_src = 0;                                         \
-    ucp_rkey_h r_key = 0;                                                      \
-                                                                               \
+    void *temp = malloc(nelems * PE_size);                              \
+                                                                                \
+    if (proc.env.shmem_encryption) {                                           \
+      for (i = 0; i < PE_size; i++) {                                          \
+        peer_as = _peer(i, me_as, PE_size);                                    \
+        dst = peer_as * nelems;                                                \
+        src = peer_as * (nelems);                                              \
+        DEBUG_SHMEM("ENCRYPTION: iter %d , peer_as: %d src/dst %d\n",i, peer_as, src);                                                                          \
+        source_ptr = ((uint8_t *) source) + me_as * nelems;                    \
+        shmemx_encrypt_single_buffer_omp((unsigned char *)(temp + dst),              \
+                                         0, source + src, 0, nelems,             \
+                                         &(enc_size[peer_as]));                \
+      }                                                                        \
+    shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
+    } else{                                                                    \
+        memcpy(temp, source, nelems * PE_size);                                          \
+    }                                                                           \
+    source_ptr = ((uint8_t *) temp) + me_as * nelems;                         \
+                                                                                \
     assert(_cond);                                                             \
     /* Right, this just copies the                                             \
      * source buffer back to the dest buffer for ourselves */                  \
-    memcpy(dest_ptr, source_ptr, nelems);                                      \
+    memcpy(dest_ptr, temp, nelems);                                      \
                                                                                \
-  /*  if (proc.env.shmem_encryption) {                                           \
-      get_remote_key_and_addr(defcp, (uint64_t)dest, me_as, &r_key, &dec_src); \
-      for (i = 1; i < PE_size; i++) {                                          \
-        peer_as = _peer(i, me_as, PE_size);                                    \
-        dst = peer_as * nelems;                                                      \
-        src = peer_as * (nelems);                     \
-        segment_count[peer_as] = shmemx_encrypt_single_buffer_omp((unsigned char *)(source_ptr),  \
-                                         0, source_ptr, 0, nelems,             \
-                                         &(enc_size[peer_as]));                      \
-      }                                                                        \
-    }   */                                                                       \
-    for (i = 0; i < PE_size; i++) {                                            \
+    for (i = 1; i < PE_size; i++) {                                            \
       peer_as = _peer(i, me_as, PE_size);                                      \
-      source_ptr = ((uint8_t *)source) + peer_as * nelems;                     \
+      source_ptr = ((uint8_t *)temp) + peer_as * nelems;                     \
                                                                                \
-      if (proc.env.shmem_encryption) {                                         \
-        shmemx_secure_put_nbi(SHMEM_CTX_DEFAULT, dest_ptr, source_ptr,            \
-                           nelems,              \
-                           PE_start + peer_as * stride);                       \
-      } else {                                                                 \
+                                                               \
         shmem_putmem_nbi(dest_ptr, source_ptr, nelems,                         \
                          PE_start + peer_as * stride);                         \
-      }                                                                        \
+                                                                              \
                                                                                \
       if (i % alltoall_rounds_sync == 0) {                                     \
         /* TODO: change to auto shcoll barrier */                              \
         shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);  \
       }                                                                        \
     }                                                                          \
-                                                                \
-/*    if (proc.env.shmem_encryption) {                                           \
-       for (i = 0; i < PE_size; i++) {                                          \
-          peer_as = _peer(i, me_as, PE_size);                                    \
-        dec_size[peer_as] = enc_size[peer_as] ;                                             \
-        dst = (peer_as * nelems);                                                    \
-        src = (peer_as * (nelems ));                   \
-        shmemx_decrypt_single_buffer_omp(                                      \
-            dest_ptr, 0, dest_ptr, 0, nelems, dec_size[peer_as]);    \
-      }  \
-       shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);    \
-    }      */                                                                    \
+      if (proc.env.shmem_encryption) {                                            \
+          shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
+       for (i = 0; i < PE_size; i++) {                                         \
+           peer_as = _peer(i, me_as, PE_size);                                  \
+           dst = (peer_as * nelems);                                              \
+        DEBUG_SHMEM("DECRYPTION: iter %d, peer_as %d src/dst: %d\n",i, peer_as, dst);                                     \
+        dest_ptr = ((uint8_t *)dest) + dst;                                    \
+           src = (peer_as * (nelems ));                                           \
+        shmemx_decrypt_single_buffer_omp(                                  \
+            dest_ptr, 0, dest_ptr, 0, nelems, enc_size[peer_as]);          \
+      }                                                                        \
+       shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);   \
+    }                                                                   \
     /* TODO: change to auto shcoll barrier */                                  \
     shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
   }
+
+
+/**
+ * @brief Helper macro to define counter-based alltoall implementations
+ *
+ * @param _algo Algorithm name
+ * @param _peer Function to calculate peer PE
+ * @param _cond Condition that must be satisfied
+ */
+#define ALLTOALL_HELPER_COUNTER_DEFINITION(_algo, _peer, _cond)                \
+  inline static void alltoall_helper_##_algo##_counter(                        \
+      void *dest, const void *source, size_t nelems, int PE_start,             \
+      int logPE_stride, int PE_size, long *pSync) {                            \
+    const int stride = 1 << logPE_stride;                                      \
+    const int me = shmem_my_pe();                                              \
+                                                                               \
+    /* Get my index in the active set */                                       \
+    const int me_as = (me - PE_start) / stride;                                \
+                                                                               \
+    void *const dest_ptr = ((uint8_t *)dest) + me_as * nelems;                 \
+    void const *source_ptr;                                                    \
+                                                                               \
+    int i;                                                                     \
+    int peer_as;                                                               \
+    int encrypt_temp[PE_size];                                                 \
+                                                                               \
+    assert(_cond);                                                             \
+    if (proc.env.shmem_encryption){                                            \
+                                                                               \
+    for (i = 0; i< PE_size; i++){                                              \
+      source_ptr = ((uint8_t *)source) + i * nelems;                     \
+          shmemx_encrypt_single_buffer_omp(source_ptr, 0, source_ptr, 0,       \
+                  nelems, &(encrypt_temp));                                    \
+      }                                                                        \
+    }                                                                          \
+                                                                               \
+    for (i = 1; i < PE_size; i++) {                                            \
+      peer_as = _peer(i, me_as, PE_size);                                      \
+      source_ptr =  ((uint8_t *)source) + peer_as * nelems;                    \
+      shmem_putmem_nbi(dest_ptr, source_ptr, nelems,                           \
+                       PE_start + peer_as * stride);                           \
+    }                                                                          \
+                                                                               \
+    source_ptr = ((uint8_t *)source) + me_as * nelems;                         \
+    memcpy(dest_ptr, source_ptr, nelems);                                      \
+                                                                               \
+    shmem_fence();                                                             \
+                                                                               \
+    for (i = 1; i < PE_size; i++) {                                            \
+      peer_as = _peer(i, me_as, PE_size);                                      \
+      shmem_long_atomic_inc(pSync, PE_start + peer_as * stride);               \
+    }                                                                          \
+                                                                               \
+    shmem_long_wait_until(pSync, SHMEM_CMP_EQ,                                 \
+                          SHCOLL_SYNC_VALUE + PE_size - 1);                    \
+    shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);                                \
+    if (proc.env.shmem_encryption){                                            \
+        for (i = 0; i < PE_size; i++){                                         \
+        int peer_as = _peer(i, me_as, PE_size);                                \
+            shmemx_decrypt_single_buffer_omp(dest, (peer_as * nelems), dest,         \
+                (peer_as * nelems), nelems, encrypt_temp[i]);                        \
+        }                                                                      \
+    }                                                                          \
+  }
+
 
 #else /* ENABLE_SHMEM_ENCRYPTION */
 
@@ -291,12 +355,12 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
         shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);  \
       }                                                                        \
     }                                                                          \
+      free(temp);                                                              \
                                                                                \
     /* TODO: change to auto shcoll barrier */                                  \
     shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
   }
 
-#endif /* ENABLE_SHMEM_ENCRYPTION */
 
 /**
  * @brief Helper macro to define counter-based alltoall implementations
@@ -345,6 +409,10 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
                           SHCOLL_SYNC_VALUE + PE_size - 1);                    \
     shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);                                \
   }
+
+
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 
 /**
  * @brief Helper macro to define signal-based alltoall implementations

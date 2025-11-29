@@ -1089,13 +1089,13 @@ static void aes_ctr_dec(unsigned long long counter_val,
 
    *cipherlen = 0;
 
-   if (EVP_EncryptUpdate(ctx, outbuf, cipherlen, inbuf+src, (int) len) != 1){
+   if (EVP_EncryptUpdate(ctx, outbuf+dest, cipherlen, inbuf+src, (int) len) != 1){
       handleErrors("EncryptUpdate Failed\n");
    }
 
    DEBUG_SHMEM("Cipherlen 1: %lu\n", *cipherlen);
 
-   if (EVP_EncryptFinal_ex(ctx, outbuf+(*cipherlen), cipherlen) != 1){
+   if (EVP_EncryptFinal_ex(ctx, outbuf+(*cipherlen)+dest, cipherlen) != 1){
       handleErrors("EncryptFinal Failed\n");
    }
 
@@ -1150,18 +1150,18 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
       }
   }
 
+  char *sbuf2 = (char *)sbuf;
+
    DEBUG_SHMEM("segment_count %d, enc_data %d, max_data %d\n", segment_count, enc_data, max_data);
  
-  DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: %s \n",
-        (char *)sbuf);
+  DEBUG_SHMEM("[START_ENCRYPTION] Starting parallel for plaintext: %x %x %x %x %s\n",
+        sbuf2[0],  sbuf2[1],  sbuf2[2], sbuf2[3], sbuf );
 //
 //   //default(none)  private(local_cipherlen) shared(src, dest, openmp_enc_ctx, stdout, stderr, segment_count, data, sbuf, enc_data, cipherbuf, temp_cipherlen, bytes, gcm_key, plain_chunks, enc_chunks, thread_no, IV, proc) num_threads(thread_no)d config.log
 //
 #pragma omp parallel for num_threads(thread_no)
   for (count = 0; count < segment_count; count++) {
 
-     
-  //   counter_val = (count * (enc_data/thread_no));
       int offset = (count * enc_data);
       unsigned char* tmp_plain = sbuf + offset;
       unsigned char* tmp_enc = cipherbuf + offset;
@@ -1179,7 +1179,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
         handleErrors("EncryptInit Failed\n");
      }
 
-     if (EVP_EncryptUpdate(ctx, tmp_enc+src, &local_cipherlen, tmp_plain, (int) enc_data) != 1){
+     if (EVP_EncryptUpdate(ctx, tmp_enc+src, &local_cipherlen, tmp_plain+src, (int) enc_data) != 1){
         handleErrors("EncryptUpdate Failed\n");
      }
 
@@ -1188,7 +1188,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
      DEBUG_SHMEM("[T_%d] Local_cipherlen 1: %lu\n", tn, local_cipherlen);
 
 
-     if (EVP_EncryptFinal_ex(ctx, tmp_enc+local_cipherlen+src, &local_cipherlen) != 1){
+     if (EVP_EncryptFinal_ex(ctx, tmp_enc+local_cipherlen+dest, &local_cipherlen) != 1){
         handleErrors("EncryptFinal Failed\n");
      }
 
@@ -1206,9 +1206,9 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
 
   *cipherlen = temp_cipherlen;
   DEBUG_SHMEM("Cipherlen: %lu\n", temp_cipherlen);
-  memset(cipherbuf+(*cipherlen), 0,32);
+//  memset(cipherbuf+(*cipherlen), 0,32);
 
-  DEBUG_SHMEM("[END_ENCRYPTION] CIPHERTEXT: %s\n", cipherbuf);
+  DEBUG_SHMEM("[END_ENCRYPTION] CIPHERTEXT: %x %x %x %x %s\n", cipherbuf[0], cipherbuf[1], cipherbuf[2], cipherbuf[3], cipherbuf);
 
   return segment_count;
 }
@@ -1276,7 +1276,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
   /*               \
     */
 
-  DEBUG_SHMEM("[START_DECRYPTION] Ciphertext: %s\n", cipherbuf);
+  DEBUG_SHMEM("[START_DECRYPTION] CIPHERTEXT: %x %x %x %x %s\n", cipherbuf[0], cipherbuf[1], cipherbuf[2], cipherbuf[3], cipherbuf);
 #pragma omp parallel for default(none)                       \
   private(count, position, res, local_cipherlen)         \
   shared(segment_count, max_data, enc_data, stdout, stderr, openmp_dec_ctx, data, cipherbuf,     \
@@ -1290,7 +1290,9 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
 
    }
 
-  DEBUG_SHMEM("[END_DECRYPTION] plaintext: %s\n", (char *)rbuf);
+  char *rbuf2 = (char *) rbuf;
+
+  DEBUG_SHMEM("[END_DECRYPTION] plaintext: %x %x %x %x %s\n",  rbuf2[0], rbuf2[1], rbuf2[2], rbuf2[3], rbuf);
 
   return 0;
 }
@@ -1541,12 +1543,15 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
                 ucs_status_string(st));
   put_t2 = (shmemx_wtime() - put_t1) * 1e6;
 
-   //shmemc_progress();
+
+  //for (int k = 0; k < 30 ; k++){
+  // shmemc_progress();
+ // }
   DEBUG_SHMEM("Put end\n");
 
-  /*   int k = 0;
+     int k = 0;
      int magic = 16;
-     int kilo = KILO;
+     int kilo = 256;
      int magic2 = 1;
 
      if (nbytes < magic){
@@ -1555,7 +1560,8 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
      }else{
         while(k++ < magic2 * kilo * (nbytes*2/magic)) 
            shmemc_progress();
-     }*/
+     }
+     
 
 }
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
@@ -1676,6 +1682,9 @@ int shmemx_secure_quiet(void) {
       ucs_status_t st = check_wait_for_request(defcp, sp);
       shmemu_assert(st == UCS_OK, "%s: put failed (status: %s)", __func__,
             ucs_status_string(st));
+      for (int k = 0 ; k < 10; k++){
+          shmemc_progress();
+      }
     
       ctr++;
     }
