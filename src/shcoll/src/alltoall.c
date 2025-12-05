@@ -187,6 +187,18 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
  */
 
 #if ENABLE_SHMEM_ENCRYPTION
+
+static inline double avg(double *arr, int PE_size){
+    int i = 0;
+    double res = 0.000;
+    double avg = 0.000;
+    for (i = 0; i<PE_size; i++){
+        res+=arr[i];
+    }
+    avg = res/PE_size;
+    return avg;
+}
+
 #define ALLTOALL_HELPER_BARRIER_DEFINITION(_algo, _peer, _cond)                \
   inline static void alltoall_helper_##_algo##_barrier(                        \
       void *dest, const void *source, size_t nelems, int PE_start,             \
@@ -203,6 +215,8 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
     void const *source_ptr = ((uint8_t *)source) + me_as * nelems;             \
     void *temp = malloc(nelems * PE_size);                              \
                                                                                 \
+    double enc_t1[PE_size], enc_t2[PE_size], dec_t1[PE_size], dec_t2[PE_size],  \
+      put_t1[PE_size], put_t2[PE_size], barrier_t1[PE_size], barrier_t2[PE_size];                \
     if (proc.env.shmem_encryption) {                                           \
       for (i = 0; i < PE_size; i++) {                                          \
         peer_as = _peer(i, me_as, PE_size);                                    \
@@ -210,29 +224,34 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
         src = peer_as * (nelems);                                              \
         DEBUG_SHMEM("ENCRYPTION: iter %d , peer_as: %d src/dst %d\n",i, peer_as, src);                                                                          \
         source_ptr = ((uint8_t *) source) + me_as * nelems;                    \
+         enc_t1[peer_as] =  shmemx_wtime();                                         \
         shmemx_encrypt_single_buffer_omp((unsigned char *)(temp + dst),              \
                                          0, source + src, 0, nelems,             \
                                          &(enc_size[peer_as]));                \
+        enc_t2[peer_as] = (shmemx_wtime() - enc_t1[peer_as]) * 1e6;             \
       }                                                                        \
     shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
     } else{                                                                    \
         memcpy(temp, source, nelems * PE_size);                                          \
+        memset(enc_t2, 0, sizeof(double));                             \
+        memset(dec_t2, 0, sizeof(double));                            \
     }                                                                           \
     source_ptr = ((uint8_t *) temp) + me_as * nelems;                         \
                                                                                 \
     assert(_cond);                                                             \
     /* Right, this just copies the                                             \
      * source buffer back to the dest buffer for ourselves */                  \
-    memcpy(dest_ptr, temp, nelems);                                      \
-                                                                               \
+     put_t1[me_as] = shmemx_wtime();                                        \
+      memcpy(dest_ptr, temp, nelems);                                      \
+      put_t2[me_as] = (shmemx_wtime() - put_t1[me_as]) * 1e6;                                                                         \
     for (i = 1; i < PE_size; i++) {                                            \
       peer_as = _peer(i, me_as, PE_size);                                      \
       source_ptr = ((uint8_t *)temp) + peer_as * nelems;                     \
                                                                                \
-                                                               \
+        put_t1[peer_as] = shmemx_wtime();                                                       \
         shmem_putmem_nbi(dest_ptr, source_ptr, nelems,                         \
                          PE_start + peer_as * stride);                         \
-                                                                              \
+        put_t2[peer_as] = (shmemx_wtime() - put_t1[peer_as]) * 1e6;                                                                       \
                                                                                \
       if (i % alltoall_rounds_sync == 0) {                                     \
         /* TODO: change to auto shcoll barrier */                              \
@@ -240,20 +259,33 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
       }                                                                        \
     }                                                                          \
       if (proc.env.shmem_encryption) {                                            \
+          barrier_t1[0] = shmemx_wtime();                                          \
           shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
+          barrier_t2[0] = (shmemx_wtime() - barrier_t1[0]) * 1e6;               \
        for (i = 0; i < PE_size; i++) {                                         \
            peer_as = _peer(i, me_as, PE_size);                                  \
            dst = (peer_as * nelems);                                              \
         DEBUG_SHMEM("DECRYPTION: iter %d, peer_as %d src/dst: %d\n",i, peer_as, dst);                                     \
         dest_ptr = ((uint8_t *)dest) + dst;                                    \
            src = (peer_as * (nelems ));                                           \
+        dec_t1[peer_as] = shmemx_wtime();                                   \
         shmemx_decrypt_single_buffer_omp(                                  \
             dest_ptr, 0, dest_ptr, 0, nelems, enc_size[peer_as]);          \
+        dec_t2[peer_as] = (shmemx_wtime() - dec_t1[peer_as]) * 1e6;         \
       }                                                                        \
+       barrier_t1[1] = shmemx_wtime();                                          \
        shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);   \
+       barrier_t2[1] = (shmemx_wtime() - barrier_t1[1]) * 1e6;              \
     }                                                                   \
     /* TODO: change to auto shcoll barrier */                                  \
+    barrier_t1[2] = shmemx_wtime();                                             \
     shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
+    barrier_t2[2] = (shmemx_wtime() - barrier_t1[2]) * 1e6;                      \
+      if (me == 0 ){                                                              \
+          peer_as = _peer(i, me_as, PE_size);                                  \
+          DEBUG_TIME("Stats for rank 0: msg_size: %lu avg(enc %.3f) avg(put %.3f) (b1) %.3f (b2) %.3f (b3) %.3f avg(dec) %.3f\n",       \
+                  nelems, avg(enc_t2, PE_size), avg(put_t2, PE_size), barrier_t2[0], barrier_t2[1], barrier_t2[2], avg(dec_t2, PE_size));    \
+    }\
   }
 
 
@@ -355,7 +387,7 @@ void shcoll_set_alltoall_round_sync(int rounds_sync) {
         shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);  \
       }                                                                        \
     }                                                                          \
-      free(temp);                                                              \
+                                                                               \
                                                                                \
     /* TODO: change to auto shcoll barrier */                                  \
     shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \

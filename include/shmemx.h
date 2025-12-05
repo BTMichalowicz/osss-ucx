@@ -457,6 +457,23 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
         size_t nbytes, int pe);
 
 
+#define TIMER 0
+#if TIMER
+#define DEBUG_TIME(fmt, args...)                       \
+   do {                                                 \
+      fflush(stdout);                                   \
+      fflush(stderr);                                   \
+      fprintf(stdout, "[rank_%d][%s:%d][%s] "fmt,       \
+            proc.li.rank, __FILE__, __LINE__, __func__, \
+            ##args);                                    \
+      fflush(stdout);                                   \
+      fflush(stderr);                                   \
+   } while(0);
+#else
+#define DEBUG_TIME(...)
+#endif /* TIMER */
+
+
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 #define DEBUG_PRINT 0
 
