@@ -147,6 +147,15 @@ inline static int init_thread_helper(int requested, int *provided) {
   shmemxa_init(proc.heaps.nheaps);
 #endif /* ENABLE_EXPERIMENTAL */
 
+#if ENABLE_SHMEM_SHARP
+  if (proc.env.enable_sharp == 1){
+      shmemx_sharp_init(SHMEM_TEAM_WORLD);
+      /* just sync, no collect */
+      shmemc_pmi_barrier_all(false);
+  }
+#endif /*ENABLE_SHMEM_SHARP */
+
+
   s = atexit(finalize_helper);
   if (s != 0) {
     shmemu_fatal(MODULE ": unable to register atexit() handler: %s",

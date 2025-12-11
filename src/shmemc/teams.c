@@ -303,12 +303,6 @@ static void initialize_team_world(void) {
     k = kh_put(map, world->rev, i, &absent);
     kh_val(world->rev, k) = i;
   }
-
-#if ENABLE_SHMEM_SHARP
-  if (proc.env.enable_sharp == 1){
-      shmemx_sharp_init(world);
-  }
-#endif /*ENABLE_SHMEM_SHARP */
 }
 
 /**
