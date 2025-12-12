@@ -49,7 +49,11 @@
   SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, binomial);                     \
   SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, rec_dbl);                      \
   SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, rabenseifner);                 \
-  SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, rabenseifner2);
+  SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, rabenseifner2);                \
+  SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, sharp);                        \
+  SHCOLL_TO_ALL_DECLARE(_typename##_and, _type, sharp);                        \
+  SHCOLL_TO_ALL_DECLARE(_typename##_or, _type, sharp);                        
+
 SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECLARE_TO_ALL_BITWISE)
 #undef DECLARE_TO_ALL_BITWISE
 
@@ -59,11 +63,13 @@ SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECLARE_TO_ALL_BITWISE)
   SHCOLL_TO_ALL_DECLARE(_typename##_min, _type, rec_dbl);                      \
   SHCOLL_TO_ALL_DECLARE(_typename##_min, _type, rabenseifner);                 \
   SHCOLL_TO_ALL_DECLARE(_typename##_min, _type, rabenseifner2);                \
+  SHCOLL_TO_ALL_DECLARE(_typename##_min, _type, sharp);                        \
   SHCOLL_TO_ALL_DECLARE(_typename##_max, _type, linear);                       \
   SHCOLL_TO_ALL_DECLARE(_typename##_max, _type, binomial);                     \
   SHCOLL_TO_ALL_DECLARE(_typename##_max, _type, rec_dbl);                      \
   SHCOLL_TO_ALL_DECLARE(_typename##_max, _type, rabenseifner);                 \
-  SHCOLL_TO_ALL_DECLARE(_typename##_max, _type, rabenseifner2);
+  SHCOLL_TO_ALL_DECLARE(_typename##_max, _type, rabenseifner2);                \
+  SHCOLL_TO_ALL_DECLARE(_typename##_max, _type, sharp);                        
 SHMEM_TO_ALL_MINMAX_TYPE_TABLE(DECLARE_TO_ALL_MINMAX)
 #undef DECLARE_TO_ALL_MINMAX
 
@@ -73,11 +79,13 @@ SHMEM_TO_ALL_MINMAX_TYPE_TABLE(DECLARE_TO_ALL_MINMAX)
   SHCOLL_TO_ALL_DECLARE(_typename##_sum, _type, rec_dbl);                      \
   SHCOLL_TO_ALL_DECLARE(_typename##_sum, _type, rabenseifner);                 \
   SHCOLL_TO_ALL_DECLARE(_typename##_sum, _type, rabenseifner2);                \
+  SHCOLL_TO_ALL_DECLARE(_typename##_sum, _type, sharp);                        \
   SHCOLL_TO_ALL_DECLARE(_typename##_prod, _type, linear);                      \
   SHCOLL_TO_ALL_DECLARE(_typename##_prod, _type, binomial);                    \
   SHCOLL_TO_ALL_DECLARE(_typename##_prod, _type, rec_dbl);                     \
   SHCOLL_TO_ALL_DECLARE(_typename##_prod, _type, rabenseifner);                \
-  SHCOLL_TO_ALL_DECLARE(_typename##_prod, _type, rabenseifner2);
+  SHCOLL_TO_ALL_DECLARE(_typename##_prod, _type, rabenseifner2);               \
+  SHCOLL_TO_ALL_DECLARE(_typename##_prod, _type, sharp);
 SHMEM_TO_ALL_ARITH_TYPE_TABLE(DECLARE_TO_ALL_ARITH)
 #undef DECLARE_TO_ALL_ARITH
 

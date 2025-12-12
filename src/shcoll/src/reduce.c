@@ -69,6 +69,7 @@ struct sharp_coll_comm *sharp_comm;
                     logPE_stride, PE_size, pWrk, pSync);                        \
             return;                                                             \
         }                                                                       \
+        DEBUG_SHMEM( "In SHARP HELPER \n");                                     \
         shmemx_datatype_t dtype = find_datatype(#_type);                        \
         shmemu_assert (dtype != shmemx_type_null, "null datatype\n");           \
         shmemx_reduce_ops op = find_op_type(#_op);                              \
