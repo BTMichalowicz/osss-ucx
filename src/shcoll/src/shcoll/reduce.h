@@ -40,20 +40,19 @@
   SHCOLL_TO_ALL_DECLARE(_typename##_and, _type, rec_dbl);                      \
   SHCOLL_TO_ALL_DECLARE(_typename##_and, _type, rabenseifner);                 \
   SHCOLL_TO_ALL_DECLARE(_typename##_and, _type, rabenseifner2);                \
+  SHCOLL_TO_ALL_DECLARE(_typename##_and, _type, sharp);                        \
   SHCOLL_TO_ALL_DECLARE(_typename##_or, _type, linear);                        \
   SHCOLL_TO_ALL_DECLARE(_typename##_or, _type, binomial);                      \
   SHCOLL_TO_ALL_DECLARE(_typename##_or, _type, rec_dbl);                       \
   SHCOLL_TO_ALL_DECLARE(_typename##_or, _type, rabenseifner);                  \
   SHCOLL_TO_ALL_DECLARE(_typename##_or, _type, rabenseifner2);                 \
+  SHCOLL_TO_ALL_DECLARE(_typename##_or, _type, sharp);                         \
   SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, linear);                       \
   SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, binomial);                     \
   SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, rec_dbl);                      \
   SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, rabenseifner);                 \
   SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, rabenseifner2);                \
-  SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, sharp);                        \
-  SHCOLL_TO_ALL_DECLARE(_typename##_and, _type, sharp);                        \
-  SHCOLL_TO_ALL_DECLARE(_typename##_or, _type, sharp);                        
-
+  SHCOLL_TO_ALL_DECLARE(_typename##_xor, _type, sharp);                        
 SHMEM_TO_ALL_BITWISE_TYPE_TABLE(DECLARE_TO_ALL_BITWISE)
 #undef DECLARE_TO_ALL_BITWISE
 
@@ -158,7 +157,7 @@ SHMEM_REDUCE_ARITH_TYPE_TABLE(DECLARE_REDUCE_ARITH)
 #undef DECLARE_REDUCE_ARITH
 
 
-#else /* ENABLE_SHMEM_SHARP */
+#else /* ENABLE_SHMEM_sharp */
 
 /**
  * @brief Macro to declare a single reduction operation

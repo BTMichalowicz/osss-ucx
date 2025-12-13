@@ -69,28 +69,30 @@ struct sharp_coll_comm *sharp_comm;
                     logPE_stride, PE_size, pWrk, pSync);                        \
             return;                                                             \
         }                                                                       \
-        DEBUG_SHMEM( "In SHARP HELPER \n");                                     \
-        shmemx_datatype_t dtype = find_datatype(#_type);                        \
+        DEBUG_SHMEM( "In SHARP HELPER for type %s\n", #_type);                  \
+        shmemx_datatype dtype = find_datatype(#_type);                          \
         shmemu_assert (dtype != shmemx_type_null, "null datatype\n");           \
         shmemx_reduce_ops op = find_op_type(#_op);                              \
         shmemu_assert(op != shmemx_op_null, "null reduction type\n");           \
         shmemx_sharp_reduce_type_size_t *dtype_size = NULL;                     \
         enum sharp_reduce_op sharp_op = shmemx_get_sharp_reduce_op(op);         \
         shmemu_assert(sharp_op != SHARP_OP_NULL, "bad sharp op\n");             \
-        shmemx_get_sharp_datatype(dtype, &out);                                 \
-        shmemu_assert(out != NULL && out->dtype != SHARP_DTYPE_NULL,            \
+        shmemx_get_sharp_datatype(dtype, &dtype_size);                                 \
+        if (dtype_size == NULL || dtype_size->sharp_type == SHARP_DTYPE_NULL){  \
+            ERROR_SHMEM("Bad sharp datatype: %p %d %d\n",                       \
+                    dtype_size, dtype, dtype_size->sharp_type);                 \
+            shmem_global_exit(-1);                                              \
+        }                                                                       \
+        shmemu_assert(dtype_size != NULL && dtype_size->sharp_type != SHARP_DTYPE_NULL,            \
                 "bad sharp datatype\n");                                        \
-        const int strude = 1 << logPE_stride;                                   \
-        const int me = shmem_my_pe();                                           \
-        const int me_as = (me - PE_start) / stride;                             \
         const int bytes = sizeof(_type) * nreduce;                              \
-        void *send_entry, *recv_entry, *tmp_array_d, *tmp_array_src;            \
+        void *send_entry, *recv_entry, *tmp_array_d, *tmp_array_s;              \
+        DEBUG_SHMEM("byte count %d, element count %d\n", bytes, nreduce);       \
         int sharp_errno = 0;                                                    \
         struct sharp_coll_reduce_spec reduce_spec = {};                         \
-        void *memhandle = NULL;                                                 \
         shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync);          \
         reduce_spec.sbuf_desc.type = SHARP_DATA_BUFFER;                         \
-        reduce_spec.sbuc_desc.mem_type = SHARP_MEM_TYPE_HOST;                   \
+        reduce_spec.sbuf_desc.mem_type = SHARP_MEM_TYPE_HOST;                   \
         reduce_spec.rbuf_desc.mem_type = SHARP_MEM_TYPE_HOST;                   \
         reduce_spec.rbuf_desc.type = SHARP_DATA_BUFFER;                         \
         tmp_array_d = malloc(bytes);                                            \
@@ -98,32 +100,33 @@ struct sharp_coll_comm *sharp_comm;
         tmp_array_s = malloc(bytes);                                            \
         shmemu_assert(tmp_array_s != NULL, "Cannot malloc tmp_buffer_s\n");     \
         memcpy(tmp_array_s, source, bytes);                                     \
-        reduce_spec.dtype = out->dtype;                                         \
+        reduce_spec.dtype = dtype_size->sharp_type;                             \
         reduce_spec.op = sharp_op;                                              \
         reduce_spec.length = nreduce;                                           \
-        reduce_spec.sbuf_desc.buffer.ptr = tmp_buffer_s;                        \
-        reduce_spec.rbuf_desc.buffer.ptr = tmp_buffer_d;                        \
+        reduce_spec.sbuf_desc.buffer.ptr = tmp_array_s;                        \
+        reduce_spec.rbuf_desc.buffer.ptr = tmp_array_d;                        \
         reduce_spec.sbuf_desc.buffer.length = bytes;                            \
         reduce_spec.rbuf_desc.buffer.length = bytes;                            \
-        shmemx_register_sharp_buffer(bytes, tmp_buffer_s, &send_entry);         \
-        shmemx_register_sharp_buffer(bytes, tmp_buffer_d, &recv_entry);         \
+        shmemx_register_sharp_buffer(bytes, tmp_array_s, &send_entry);         \
+        shmemx_register_sharp_buffer(bytes, tmp_array_d, &recv_entry);         \
         reduce_spec.sbuf_desc.buffer.mem_handle = send_entry;                   \
         reduce_spec.rbuf_desc.buffer.mem_handle = recv_entry;                   \
         reduce_spec.aggr_mode = SHARP_AGGREGATION_NONE;                         \
                                                                                 \
         sharp_errno = sharp_coll_do_allreduce(sharp_comm, &reduce_spec);        \
         if (sharp_errno != SHARP_COLL_SUCCESS) {                                \
-            fprintf(stderr, "Failed to allreduce. Ending now\n");               \
-            shmemu_assert(sharp_errno == SHARP_COLL_SUCCESS,                    \
+            ERROR_SHMEM("Failed to allreduce. Ending now\n");               \
+            ERROR_SHMEM(                   \
                     "Failed to sharp allreduce with code %d %s\n",              \
                     sharp_errno, sharp_coll_strerror(sharp_errno));             \
+            shmem_global_exit(sharp_errno);                                     \
         }                                                                       \
-        if (me_as == 0) {                                                       \
-            memcpy(dest, tmp_buffer_d, bytes);                                  \
-        }                                                                       \
-        free(tmp_buffer_d);                                                     \
-        free(tmp_buffer_s);                                                     \
-        free(out);                                                              \
+        /*if (me_as == 0) {                                                       \
+            memcpy(dest, tmp_array_d, bytes);                                  \
+        } */                                                                      \
+        memcpy(dest, tmp_array_d, bytes);                                       \
+        free(tmp_array_d);                                                     \
+        free(tmp_array_s);                                                     \
     }
 
 #endif /* ENABLE_SHMEM_SHARP */
@@ -964,6 +967,24 @@ struct sharp_coll_comm *sharp_comm;
 #define REDUCE_HELPER_RABENSEIFNER2_PROD_HELPER(_type, _typename)              \
   REDUCE_HELPER_RABENSEIFNER2(_typename##_prod, _type, PROD_OP)
 
+#if ENABLE_SHMEM_SHARP
+#define REDUCE_HELPER_SHARP_AND_HELPER(_type, _typename)               \
+  REDUCE_HELPER_SHARP(_typename##_and, _type, AND_OP)
+#define REDUCE_HELPER_SHARP_OR_HELPER(_type, _typename)                \
+  REDUCE_HELPER_SHARP(_typename##_or, _type, OR_OP)
+#define REDUCE_HELPER_SHARP_XOR_HELPER(_type, _typename)               \
+  REDUCE_HELPER_SHARP(_typename##_xor, _type, XOR_OP)
+#define REDUCE_HELPER_SHARP_MAX_HELPER(_type, _typename)               \
+  REDUCE_HELPER_SHARP(_typename##_max, _type, MAX_OP)
+#define REDUCE_HELPER_SHARP_MIN_HELPER(_type, _typename)               \
+  REDUCE_HELPER_SHARP(_typename##_min, _type, MIN_OP)
+#define REDUCE_HELPER_SHARP_SUM_HELPER(_type, _typename)               \
+  REDUCE_HELPER_SHARP(_typename##_sum, _type, SUM_OP)
+#define REDUCE_HELPER_SHARP_PROD_HELPER(_type, _typename)              \
+  REDUCE_HELPER_SHARP(_typename##_prod, _type, PROD_OP)
+#endif /*ENABLE_SHMEM_SHARP*/
+
+
 /* Combined macro that generates all implementations */
 #define SHCOLL_TO_ALL_DEFINE(_name)                                            \
   SHCOLL_TO_ALL_DEFINE_AND(_name)                                              \
@@ -982,6 +1003,9 @@ SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_BINOMIAL)
 SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_REC_DBL)
 SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_RABENSEIFNER)
 SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_RABENSEIFNER2)
+#if ENABLE_SHMEM_SHARP
+SHCOLL_TO_ALL_DEFINE(REDUCE_HELPER_SHARP)
+#endif /* ENABLE_SHMEM_SHARP */
 
 /* Generate additional helpers for TO_ALL bitwise types (which don't overlap
  * with REDUCE bitwise types) */
@@ -1003,6 +1027,11 @@ SHMEM_TO_ALL_BITWISE_TYPE_TABLE(REDUCE_HELPER_RABENSEIFNER_XOR_HELPER)
 SHMEM_TO_ALL_BITWISE_TYPE_TABLE(REDUCE_HELPER_RABENSEIFNER2_AND_HELPER)
 SHMEM_TO_ALL_BITWISE_TYPE_TABLE(REDUCE_HELPER_RABENSEIFNER2_OR_HELPER)
 SHMEM_TO_ALL_BITWISE_TYPE_TABLE(REDUCE_HELPER_RABENSEIFNER2_XOR_HELPER)
+#if ENABLE_SHMEM_SHARP
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(REDUCE_HELPER_SHARP_AND_HELPER)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(REDUCE_HELPER_SHARP_OR_HELPER)
+SHMEM_TO_ALL_BITWISE_TYPE_TABLE(REDUCE_HELPER_SHARP_XOR_HELPER)
+#endif /* ENABLE_SHMEM_SHARP */
 
 /* @formatter:on */
 // clang-format on
@@ -1122,6 +1151,26 @@ SHMEM_TO_ALL_BITWISE_TYPE_TABLE(REDUCE_HELPER_RABENSEIFNER2_XOR_HELPER)
 #define TO_ALL_WRAPPER_PROD_rabenseifner2(_type, _typename)                    \
   TO_ALL_WRAPPER(_typename##_prod, _type, PROD_OP, rabenseifner2)
 
+#if ENABLE_SHMEM_SHARP
+
+#define TO_ALL_WRAPPER_AND_sharp(_type, _typename)                     \
+  TO_ALL_WRAPPER(_typename##_and, _type, AND_OP, sharp)
+#define TO_ALL_WRAPPER_OR_sharp(_type, _typename)                      \
+  TO_ALL_WRAPPER(_typename##_or, _type, OR_OP, sharp)
+#define TO_ALL_WRAPPER_XOR_sharp(_type, _typename)                     \
+  TO_ALL_WRAPPER(_typename##_xor, _type, XOR_OP, sharp)
+#define TO_ALL_WRAPPER_MAX_sharp(_type, _typename)                     \
+  TO_ALL_WRAPPER(_typename##_max, _type, MAX_OP, sharp)
+#define TO_ALL_WRAPPER_MIN_sharp(_type, _typename)                     \
+  TO_ALL_WRAPPER(_typename##_min, _type, MIN_OP, sharp)
+#define TO_ALL_WRAPPER_SUM_sharp(_type, _typename)                     \
+  TO_ALL_WRAPPER(_typename##_sum, _type, SUM_OP, sharp)
+#define TO_ALL_WRAPPER_PROD_sharp(_type, _typename)                    \
+  TO_ALL_WRAPPER(_typename##_prod, _type, PROD_OP, sharp)
+
+#endif /*ENABLE_SHMEM_SHARP*/
+
+
 /* Group by operation type using TO_ALL type tables for wrappers (only generate
  * for supported types) */
 #define TO_ALL_WRAPPER_BITWISE(_algo)                                          \
@@ -1149,6 +1198,9 @@ TO_ALL_WRAPPER_ALL(binomial)
 TO_ALL_WRAPPER_ALL(rec_dbl)
 TO_ALL_WRAPPER_ALL(rabenseifner)
 TO_ALL_WRAPPER_ALL(rabenseifner2)
+#if ENABLE_SHMEM_SHARP
+TO_ALL_WRAPPER_ALL(sharp)
+#endif /* ENABLE_SHMEM_SHARP */
 
 /*
  * @brief Macro to define team-based reduction operations
@@ -1240,6 +1292,30 @@ TO_ALL_WRAPPER_ALL(rabenseifner2)
 
 /* Define specific type declaration macros for each operation/algorithm
  * combination */
+
+
+#if ENABLE_SHMEM_SHARP
+
+#define DECLARE_BITWISE_REDUCE_TYPE_and_sharp(_type, _typename)        \
+  SHIM_REDUCE_DECLARE(_typename, _type, and, sharp)
+#define DECLARE_BITWISE_REDUCE_TYPE_or_sharp(_type, _typename)         \
+  SHIM_REDUCE_DECLARE(_typename, _type, or, sharp)
+#define DECLARE_BITWISE_REDUCE_TYPE_xor_sharp(_type, _typename)        \
+  SHIM_REDUCE_DECLARE(_typename, _type, xor, sharp)
+
+#define DECLARE_ARITH_REDUCE_TYPE_sum_sharp(_type, _typename)                 \
+  SHIM_REDUCE_DECLARE(_typename, _type, sum, sharp)
+#define DECLARE_ARITH_REDUCE_TYPE_prod_sharp(_type, _typename)                \
+  SHIM_REDUCE_DECLARE(_typename, _type, prod, sharp)
+
+#define DECLARE_MINMAX_REDUCE_TYPE_min_sharp(_type, _typename)                \
+  SHIM_REDUCE_DECLARE(_typename, _type, min, sharp)
+#define DECLARE_MINMAX_REDUCE_TYPE_max_sharp(_type, _typename)                \
+  SHIM_REDUCE_DECLARE(_typename, _type, max, sharp)
+
+#endif /* ENABLE_SHMEM_SHARP */
+
+
 #define DECLARE_BITWISE_REDUCE_TYPE_and_linear(_type, _typename)               \
   SHIM_REDUCE_DECLARE(_typename, _type, and, linear)
 #define DECLARE_BITWISE_REDUCE_TYPE_or_linear(_type, _typename)                \
@@ -1352,3 +1428,6 @@ SHIM_REDUCE_ALL(binomial)
 SHIM_REDUCE_ALL(rec_dbl)
 SHIM_REDUCE_ALL(rabenseifner)
 SHIM_REDUCE_ALL(rabenseifner2)
+#if ENABLE_SHMEM_SHARP
+SHIM_REDUCE_ALL(sharp)
+#endif /* ENABLE_SHMEM_SHARP */

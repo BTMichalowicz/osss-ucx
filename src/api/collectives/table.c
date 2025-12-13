@@ -336,6 +336,21 @@ static sized_op_t broadcast_size_tab[] = {
     SIZED_REG(broadcast, scatter_collect),
     SIZED_LAST};
 
+
+#if ENABLE_SHMEM_SHARP
+
+/**
+ * @brief Table of and_to_all collective algorithms (deprecated)
+ */
+#define AND_TO_ALL_REG(_type, _typename)                                       \
+  TYPED_TO_ALL_REG(and, linear, _typename),                                    \
+      TYPED_TO_ALL_REG(and, binomial, _typename),                              \
+      TYPED_TO_ALL_REG(and, rec_dbl, _typename),                               \
+      TYPED_TO_ALL_REG(and, rabenseifner, _typename),                          \
+      TYPED_TO_ALL_REG(and, rabenseifner2, _typename),                         \
+      TYPED_TO_ALL_REG(and, sharp, _typename),
+
+#else /* ENABLE_SHMEM_SHARP */
 /**
  * @brief Table of and_to_all collective algorithms (deprecated)
  */
@@ -346,6 +361,7 @@ static sized_op_t broadcast_size_tab[] = {
       TYPED_TO_ALL_REG(and, rabenseifner, _typename),                          \
       TYPED_TO_ALL_REG(and, rabenseifner2, _typename),
 
+#endif /*ENABLE_SHMEM_SHARP */
 static typed_to_all_op_t and_to_all_tab[] = {
     SHMEM_TO_ALL_BITWISE_TYPE_TABLE(AND_TO_ALL_REG) TYPED_LAST};
 #undef AND_TO_ALL_REG
@@ -353,12 +369,24 @@ static typed_to_all_op_t and_to_all_tab[] = {
 /**
  * @brief Table of or_to_all collective algorithms (deprecated)
  */
+
+#if ENABLE_SHMEM_SHARP
+#define OR_TO_ALL_REG(_type, _typename)                                        \
+  TYPED_TO_ALL_REG(or, linear, _typename),                                     \
+      TYPED_TO_ALL_REG(or, binomial, _typename),                               \
+      TYPED_TO_ALL_REG(or, rec_dbl, _typename),                                \
+      TYPED_TO_ALL_REG(or, rabenseifner, _typename),                           \
+      TYPED_TO_ALL_REG(or, rabenseifner2, _typename),                          \
+      TYPED_TO_ALL_REG(or, sharp, _typename),
+
+#else /* ENABLE_SHMEM_SHARP */
 #define OR_TO_ALL_REG(_type, _typename)                                        \
   TYPED_TO_ALL_REG(or, linear, _typename),                                     \
       TYPED_TO_ALL_REG(or, binomial, _typename),                               \
       TYPED_TO_ALL_REG(or, rec_dbl, _typename),                                \
       TYPED_TO_ALL_REG(or, rabenseifner, _typename),                           \
       TYPED_TO_ALL_REG(or, rabenseifner2, _typename),
+#endif /*ENABLE_SHMEM_SHARP */
 
 static typed_to_all_op_t or_to_all_tab[] = {
     SHMEM_TO_ALL_BITWISE_TYPE_TABLE(OR_TO_ALL_REG) TYPED_LAST};
@@ -367,12 +395,25 @@ static typed_to_all_op_t or_to_all_tab[] = {
 /**
  * @brief Table of xor_to_all collective algorithms (deprecated)
  */
+#if ENABLE_SHMEM_SHARP
+#define XOR_TO_ALL_REG(_type, _typename)                                       \
+  TYPED_TO_ALL_REG(xor, linear, _typename),                                    \
+      TYPED_TO_ALL_REG(xor, binomial, _typename),                              \
+      TYPED_TO_ALL_REG(xor, rec_dbl, _typename),                               \
+      TYPED_TO_ALL_REG(xor, rabenseifner, _typename),                          \
+      TYPED_TO_ALL_REG(xor, rabenseifner2, _typename),                         \
+      TYPED_TO_ALL_REG(xor, sharp, _typename),
+
+#else
 #define XOR_TO_ALL_REG(_type, _typename)                                       \
   TYPED_TO_ALL_REG(xor, linear, _typename),                                    \
       TYPED_TO_ALL_REG(xor, binomial, _typename),                              \
       TYPED_TO_ALL_REG(xor, rec_dbl, _typename),                               \
       TYPED_TO_ALL_REG(xor, rabenseifner, _typename),                          \
       TYPED_TO_ALL_REG(xor, rabenseifner2, _typename),
+
+
+#endif /*ENABLE_SHMEM_SHARP*/
 
 static typed_to_all_op_t xor_to_all_tab[] = {
     SHMEM_TO_ALL_BITWISE_TYPE_TABLE(XOR_TO_ALL_REG) TYPED_LAST};
@@ -381,12 +422,23 @@ static typed_to_all_op_t xor_to_all_tab[] = {
 /**
  * @brief Table of max_to_all collective algorithms (deprecated)
  */
+#if ENABLE_SHMEM_SHARP
+#define MAX_TO_ALL_REG(_type, _typename)                                       \
+  TYPED_TO_ALL_REG(max, linear, _typename),                                    \
+      TYPED_TO_ALL_REG(max, binomial, _typename),                              \
+      TYPED_TO_ALL_REG(max, rec_dbl, _typename),                               \
+      TYPED_TO_ALL_REG(max, rabenseifner, _typename),                          \
+      TYPED_TO_ALL_REG(max, rabenseifner2, _typename),                         \
+      TYPED_TO_ALL_REG(max, sharp, _typename),
+#else
 #define MAX_TO_ALL_REG(_type, _typename)                                       \
   TYPED_TO_ALL_REG(max, linear, _typename),                                    \
       TYPED_TO_ALL_REG(max, binomial, _typename),                              \
       TYPED_TO_ALL_REG(max, rec_dbl, _typename),                               \
       TYPED_TO_ALL_REG(max, rabenseifner, _typename),                          \
       TYPED_TO_ALL_REG(max, rabenseifner2, _typename),
+
+#endif /* ENABLE_SHMEM_SHARP */
 
 static typed_to_all_op_t max_to_all_tab[] = {
     SHMEM_TO_ALL_MINMAX_TYPE_TABLE(MAX_TO_ALL_REG) TYPED_LAST};
@@ -395,12 +447,25 @@ static typed_to_all_op_t max_to_all_tab[] = {
 /**
  * @brief Table of min_to_all collective algorithms (deprecated)
  */
+
+#if ENABLE_SHMEM_SHARP
+#define MIN_TO_ALL_REG(_type, _typename)                                       \
+  TYPED_TO_ALL_REG(min, linear, _typename),                                    \
+      TYPED_TO_ALL_REG(min, binomial, _typename),                              \
+      TYPED_TO_ALL_REG(min, rec_dbl, _typename),                               \
+      TYPED_TO_ALL_REG(min, rabenseifner, _typename),                          \
+      TYPED_TO_ALL_REG(min, rabenseifner2, _typename),                         \
+      TYPED_TO_ALL_REG(min, sharp, _typename),
+
+#else
 #define MIN_TO_ALL_REG(_type, _typename)                                       \
   TYPED_TO_ALL_REG(min, linear, _typename),                                    \
       TYPED_TO_ALL_REG(min, binomial, _typename),                              \
       TYPED_TO_ALL_REG(min, rec_dbl, _typename),                               \
       TYPED_TO_ALL_REG(min, rabenseifner, _typename),                          \
       TYPED_TO_ALL_REG(min, rabenseifner2, _typename),
+
+#endif /* ENABLE_SHMEM_SHARP */
 
 static typed_to_all_op_t min_to_all_tab[] = {
     SHMEM_TO_ALL_MINMAX_TYPE_TABLE(MIN_TO_ALL_REG) TYPED_LAST};
@@ -409,6 +474,15 @@ static typed_to_all_op_t min_to_all_tab[] = {
 /**
  * @brief Table of sum_to_all collective algorithms (deprecated)
  */
+#if ENABLE_SHMEM_SHARP
+#define SUM_TO_ALL_REG(_type, _typename)                                       \
+  TYPED_TO_ALL_REG(sum, linear, _typename),                                    \
+      TYPED_TO_ALL_REG(sum, binomial, _typename),                              \
+      TYPED_TO_ALL_REG(sum, rec_dbl, _typename),                               \
+      TYPED_TO_ALL_REG(sum, rabenseifner, _typename),                          \
+      TYPED_TO_ALL_REG(sum, rabenseifner2, _typename),                         \
+      TYPED_TO_ALL_REG(sum, sharp, _typename),
+#else
 #define SUM_TO_ALL_REG(_type, _typename)                                       \
   TYPED_TO_ALL_REG(sum, linear, _typename),                                    \
       TYPED_TO_ALL_REG(sum, binomial, _typename),                              \
@@ -416,6 +490,7 @@ static typed_to_all_op_t min_to_all_tab[] = {
       TYPED_TO_ALL_REG(sum, rabenseifner, _typename),                          \
       TYPED_TO_ALL_REG(sum, rabenseifner2, _typename),
 
+#endif /*ENABLE_SHMEM_SHARP*/
 static typed_to_all_op_t sum_to_all_tab[] = {
     SHMEM_TO_ALL_ARITH_TYPE_TABLE(SUM_TO_ALL_REG) TYPED_LAST};
 #undef SUM_TO_ALL_REG
@@ -423,12 +498,23 @@ static typed_to_all_op_t sum_to_all_tab[] = {
 /**
  * @brief Table of prod_to_all collective algorithms (deprecated)
  */
+#if ENABLE_SHMEM_SHARP
+#define PROD_TO_ALL_REG(_type, _typename)                                      \
+  TYPED_TO_ALL_REG(prod, linear, _typename),                                   \
+      TYPED_TO_ALL_REG(prod, binomial, _typename),                             \
+      TYPED_TO_ALL_REG(prod, rec_dbl, _typename),                              \
+      TYPED_TO_ALL_REG(prod, rabenseifner, _typename),                         \
+      TYPED_TO_ALL_REG(prod, rabenseifner2, _typename),                        \
+      TYPED_TO_ALL_REG(prod, sharp, _typename),
+
+#else
 #define PROD_TO_ALL_REG(_type, _typename)                                      \
   TYPED_TO_ALL_REG(prod, linear, _typename),                                   \
       TYPED_TO_ALL_REG(prod, binomial, _typename),                             \
       TYPED_TO_ALL_REG(prod, rec_dbl, _typename),                              \
       TYPED_TO_ALL_REG(prod, rabenseifner, _typename),                         \
       TYPED_TO_ALL_REG(prod, rabenseifner2, _typename),
+#endif /*ENABLE_SHARP_SHMEM*/
 
 static typed_to_all_op_t prod_to_all_tab[] = {
     SHMEM_TO_ALL_ARITH_TYPE_TABLE(PROD_TO_ALL_REG) TYPED_LAST};
@@ -437,13 +523,23 @@ static typed_to_all_op_t prod_to_all_tab[] = {
 /**
  * @brief Table of and_reduce collective algorithms (deprecated)
  */
+
+#if ENABLE_SHMEM_SHARP
+#define AND_REDUCE_REG(_type, _typename)                                       \
+  TYPED_REDUCE_REG(and, linear, _typename),                                    \
+      TYPED_REDUCE_REG(and, binomial, _typename),                              \
+      TYPED_REDUCE_REG(and, rec_dbl, _typename),                               \
+      TYPED_REDUCE_REG(and, rabenseifner, _typename),                          \
+      TYPED_REDUCE_REG(and, rabenseifner2, _typename),                         \
+      TYPED_REDUCE_REG(and, sharp, _typename),
+#else
 #define AND_REDUCE_REG(_type, _typename)                                       \
   TYPED_REDUCE_REG(and, linear, _typename),                                    \
       TYPED_REDUCE_REG(and, binomial, _typename),                              \
       TYPED_REDUCE_REG(and, rec_dbl, _typename),                               \
       TYPED_REDUCE_REG(and, rabenseifner, _typename),                          \
       TYPED_REDUCE_REG(and, rabenseifner2, _typename),
-
+#endif /*ENABLE_SHMEM_SHARP*/
 static typed_op_t and_reduce_tab[] = {
     SHMEM_REDUCE_BITWISE_TYPE_TABLE(AND_REDUCE_REG) TYPED_LAST};
 #undef AND_REDUCE_REG
@@ -451,12 +547,23 @@ static typed_op_t and_reduce_tab[] = {
 /**
  * @brief Table of or_reduce collective algorithms
  */
+#if ENABLE_SHMEM_SHARP
+#define OR_REDUCE_REG(_type, _typename)                                        \
+  TYPED_REDUCE_REG(or, linear, _typename),                                     \
+      TYPED_REDUCE_REG(or, binomial, _typename),                               \
+      TYPED_REDUCE_REG(or, rec_dbl, _typename),                                \
+      TYPED_REDUCE_REG(or, rabenseifner, _typename),                           \
+      TYPED_REDUCE_REG(or, rabenseifner2, _typename),                          \
+      TYPED_REDUCE_REG(or, sharp, _typename),
+
+#else
 #define OR_REDUCE_REG(_type, _typename)                                        \
   TYPED_REDUCE_REG(or, linear, _typename),                                     \
       TYPED_REDUCE_REG(or, binomial, _typename),                               \
       TYPED_REDUCE_REG(or, rec_dbl, _typename),                                \
       TYPED_REDUCE_REG(or, rabenseifner, _typename),                           \
       TYPED_REDUCE_REG(or, rabenseifner2, _typename),
+#endif /* ENABLE_SHMEM_SHARP */
 
 static typed_op_t or_reduce_tab[] = {
     SHMEM_REDUCE_BITWISE_TYPE_TABLE(OR_REDUCE_REG) TYPED_LAST};
@@ -465,12 +572,22 @@ static typed_op_t or_reduce_tab[] = {
 /**
  * @brief Table of xor_reduce collective algorithms
  */
+#if ENABLE_SHMEM_SHARP
+#define XOR_REDUCE_REG(_type, _typename)                                       \
+  TYPED_REDUCE_REG(xor, linear, _typename),                                    \
+      TYPED_REDUCE_REG(xor, binomial, _typename),                              \
+      TYPED_REDUCE_REG(xor, rec_dbl, _typename),                               \
+      TYPED_REDUCE_REG(xor, rabenseifner, _typename),                          \
+      TYPED_REDUCE_REG(xor, rabenseifner2, _typename),                         \
+      TYPED_REDUCE_REG(xor, sharp, _typename),
+#else
 #define XOR_REDUCE_REG(_type, _typename)                                       \
   TYPED_REDUCE_REG(xor, linear, _typename),                                    \
       TYPED_REDUCE_REG(xor, binomial, _typename),                              \
       TYPED_REDUCE_REG(xor, rec_dbl, _typename),                               \
       TYPED_REDUCE_REG(xor, rabenseifner, _typename),                          \
       TYPED_REDUCE_REG(xor, rabenseifner2, _typename),
+#endif
 
 static typed_op_t xor_reduce_tab[] = {
     SHMEM_REDUCE_BITWISE_TYPE_TABLE(XOR_REDUCE_REG) TYPED_LAST};
@@ -479,12 +596,22 @@ static typed_op_t xor_reduce_tab[] = {
 /**
  * @brief Table of max_reduce collective algorithms
  */
+#if ENABLE_SHMEM_SHARP
+#define MAX_REDUCE_REG(_type, _typename)                                       \
+  TYPED_REDUCE_REG(max, linear, _typename),                                    \
+      TYPED_REDUCE_REG(max, binomial, _typename),                              \
+      TYPED_REDUCE_REG(max, rec_dbl, _typename),                               \
+      TYPED_REDUCE_REG(max, rabenseifner, _typename),                          \
+      TYPED_REDUCE_REG(max, rabenseifner2, _typename),                         \
+      TYPED_REDUCE_REG(max, sharp, _typename),
+#else
 #define MAX_REDUCE_REG(_type, _typename)                                       \
   TYPED_REDUCE_REG(max, linear, _typename),                                    \
       TYPED_REDUCE_REG(max, binomial, _typename),                              \
       TYPED_REDUCE_REG(max, rec_dbl, _typename),                               \
       TYPED_REDUCE_REG(max, rabenseifner, _typename),                          \
       TYPED_REDUCE_REG(max, rabenseifner2, _typename),
+#endif /*ENABLE_SHARP_SHMEM*/
 
 static typed_op_t max_reduce_tab[] = {
     SHMEM_REDUCE_MINMAX_TYPE_TABLE(MAX_REDUCE_REG) TYPED_LAST};
@@ -493,12 +620,24 @@ static typed_op_t max_reduce_tab[] = {
 /**
  * @brief Table of min_reduce collective algorithms
  */
+#if ENABLE_SHMEM_SHARP
+#define MIN_REDUCE_REG(_type, _typename)                                       \
+  TYPED_REDUCE_REG(min, linear, _typename),                                    \
+      TYPED_REDUCE_REG(min, binomial, _typename),                              \
+      TYPED_REDUCE_REG(min, rec_dbl, _typename),                               \
+      TYPED_REDUCE_REG(min, rabenseifner, _typename),                          \
+      TYPED_REDUCE_REG(min, rabenseifner2, _typename),                         \
+      TYPED_REDUCE_REG(min, sharp, _typename),
+
+#else
 #define MIN_REDUCE_REG(_type, _typename)                                       \
   TYPED_REDUCE_REG(min, linear, _typename),                                    \
       TYPED_REDUCE_REG(min, binomial, _typename),                              \
       TYPED_REDUCE_REG(min, rec_dbl, _typename),                               \
       TYPED_REDUCE_REG(min, rabenseifner, _typename),                          \
       TYPED_REDUCE_REG(min, rabenseifner2, _typename),
+
+#endif /* ENABLE_SHMEM_SHARP */
 
 static typed_op_t min_reduce_tab[] = {
     SHMEM_REDUCE_MINMAX_TYPE_TABLE(MIN_REDUCE_REG) TYPED_LAST};
@@ -507,12 +646,24 @@ static typed_op_t min_reduce_tab[] = {
 /**
  * @brief Table of sum_reduce collective algorithms
  */
+
+#if ENABLE_SHMEM_SHARP
+#define SUM_REDUCE_REG(_type, _typename)                                       \
+  TYPED_REDUCE_REG(sum, linear, _typename),                                    \
+      TYPED_REDUCE_REG(sum, binomial, _typename),                              \
+      TYPED_REDUCE_REG(sum, rec_dbl, _typename),                               \
+      TYPED_REDUCE_REG(sum, rabenseifner, _typename),                          \
+      TYPED_REDUCE_REG(sum, rabenseifner2, _typename),                         \
+      TYPED_REDUCE_REG(sum, sharp, _typename),
+
+#else
 #define SUM_REDUCE_REG(_type, _typename)                                       \
   TYPED_REDUCE_REG(sum, linear, _typename),                                    \
       TYPED_REDUCE_REG(sum, binomial, _typename),                              \
       TYPED_REDUCE_REG(sum, rec_dbl, _typename),                               \
       TYPED_REDUCE_REG(sum, rabenseifner, _typename),                          \
       TYPED_REDUCE_REG(sum, rabenseifner2, _typename),
+#endif /* ENABLE_SHMEM_SHARP */
 
 static typed_op_t sum_reduce_tab[] = {
     SHMEM_REDUCE_ARITH_TYPE_TABLE(SUM_REDUCE_REG) TYPED_LAST};
@@ -521,12 +672,23 @@ static typed_op_t sum_reduce_tab[] = {
 /**
  * @brief Table of prod_reduce collective algorithms
  */
+#if ENABLE_SHMEM_SHARP
+#define PROD_REDUCE_REG(_type, _typename)                                      \
+  TYPED_REDUCE_REG(prod, linear, _typename),                                   \
+      TYPED_REDUCE_REG(prod, binomial, _typename),                             \
+      TYPED_REDUCE_REG(prod, rec_dbl, _typename),                              \
+      TYPED_REDUCE_REG(prod, rabenseifner, _typename),                         \
+      TYPED_REDUCE_REG(prod, rabenseifner2, _typename),                        \
+      TYPED_REDUCE_REG(prod, sharp, _typename),
+
+#else
 #define PROD_REDUCE_REG(_type, _typename)                                      \
   TYPED_REDUCE_REG(prod, linear, _typename),                                   \
       TYPED_REDUCE_REG(prod, binomial, _typename),                             \
       TYPED_REDUCE_REG(prod, rec_dbl, _typename),                              \
       TYPED_REDUCE_REG(prod, rabenseifner, _typename),                         \
       TYPED_REDUCE_REG(prod, rabenseifner2, _typename),
+#endif /*ENABLE_SHMEM_SHARP */
 
 static typed_op_t prod_reduce_tab[] = {
     SHMEM_REDUCE_ARITH_TYPE_TABLE(PROD_REDUCE_REG) TYPED_LAST};

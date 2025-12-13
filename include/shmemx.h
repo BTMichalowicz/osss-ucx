@@ -306,9 +306,9 @@ int shmemx_query_interoperability(int property);
 /** @} */
 
 
+#define DEBUG_PRINT 0
 
-
-#if 1
+#if DEBUG_PRINT
 #define DEBUG_SHMEM(fmt, args...)                       \
     do {                                                 \
         fflush(stdout);                                   \

@@ -40,7 +40,7 @@
 #define COLLECTIVES_DEFAULT_FCOLLECT "bruck_inplace"
 
 /** Default algorithm for reduction operations */
-#define COLLECTIVES_DEFAULT_REDUCTIONS "rec_dbl"
+#define COLLECTIVES_DEFAULT_REDUCTIONS "sharp"
 
 /** Default algorithm for and-to-all reductions */
 #define COLLECTIVES_DEFAULT_AND_TO_ALL COLLECTIVES_DEFAULT_REDUCTIONS

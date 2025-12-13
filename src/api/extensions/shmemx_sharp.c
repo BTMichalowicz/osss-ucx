@@ -37,22 +37,22 @@ char *op_to_string [shmemx_op_null+1] = {
 };
 
 char *type_to_string[shmemx_type_null+1] = {
-    [shmemx_unsigned]   = "uint",
+    [shmemx_unsigned]   = "unsigned int",
     [shmemx_int]        = "int",
-    [shmemx_ulong]      = "ulong",
+    [shmemx_ulong]      = "unsigned long",
     [shmemx_long]       = "long",
     [shmemx_float]      = "float",
     [shmemx_double]     = "double",
-    [shmemx_ushort]     = "ushort",
+    [shmemx_ushort]     = "unsigned short",
     [shmemx_short]      = "short",
-    [shmemx_uint8]      = "uint8",
-    [shmemx_uint16]     = "uint16",
-    [shmemx_uint32]     = "uint32",
-    [shmemx_uint64]     = "uint64",
-    [shmemx_int8]       = "int8",
-    [shmemx_int16]      = "int16",
-    [shmemx_int32]      = "int32",
-    [shmemx_int64]      = "int64", 
+    [shmemx_uint8]      = "uint8_t",
+    [shmemx_uint16]     = "uint16_t",
+    [shmemx_uint32]     = "uint32_t",
+    [shmemx_uint64]     = "uint64_t",
+    [shmemx_int8]       = "int8_t",
+    [shmemx_int16]      = "int16_t",
+    [shmemx_int32]      = "int32_t",
+    [shmemx_int64]      = "int64_t", 
     [shmemx_type_null]  = "null_type"
 };
 
@@ -556,10 +556,12 @@ shmemx_reduce_ops find_op_type(const char *op){
 }
 
 shmemx_datatype find_datatype(const char *type){
+    DEBUG_SHMEM("Datatype: %s\n", type);
     int len = strlen(type);
 
     int i = 0;
     for (i = 0; i<shmemx_type_null; i++){
+        DEBUG_SHMEM("Comparing to %s\n", type_to_string[i]);
         if (strncmp(type_to_string[i], type, len) == 0){
             return i;
         }
