@@ -362,6 +362,8 @@ int shmemx_sharp_coll_init(shmemx_sharp_conf_t *sharp_conf, int pe, int local_pe
       //  if (proc.li.rank == 0){
             ERROR_SHMEM("Query network caps failed: %d %s\n",
                     result, sharp_coll_strerror(result));
+            memset(NULL, 0, 10);
+            shmem_global_exit(result);
      //   }
         shmemu_assert(result == SHARP_COLL_SUCCESS, "caps_query failed\n");
         shmem_global_exit(result);
@@ -388,6 +390,10 @@ int shmemx_sharp_comm_init(shmemx_coll_sharp_module_t *sharp_module){
         malloc(sizeof(struct sharp_coll_comm_init_spec));
 
     shmemu_assert(comm_spec != NULL, "sharp_comm_init: could not malloc structure\n");
+    if(comm_spec == NULL){
+        ERROR_SHMEM("sharp_comm_init: could not allocate structure\n");
+        shmem_global_exit(-1);
+    }
 
     comm_spec->rank = me;
     comm_spec->size = size;
@@ -402,6 +408,7 @@ int shmemx_sharp_comm_init(shmemx_coll_sharp_module_t *sharp_module){
             ERROR_SHMEM("comm_init failed: %d %s\n",
                     result, sharp_coll_strerror(result));
         }
+        shmem_global_exit(result);
         shmemu_assert(result == SHARP_COLL_SUCCESS, "comm_init failed\n");
     }
 
@@ -436,6 +443,10 @@ int shmemx_setup_sharp_env(shmemx_sharp_conf_t *sharp_conf, shmem_team_t team){
     char *jobID = getenv("SLURM_JOBID");
     DEBUG_SHMEM("jobID: %s\n", jobID);
     shmemu_assert(jobID != NULL, "setup_sharp_env: not in a SLURM job!\n");
+    if (jobID == NULL){
+        ERROR_SHMEM("JOBID is NULL for SLURM_JOBID\n");
+        shmem_global_exit(-1);
+    }
     sprintf(id_str, "%d_%s_%d_0", atoi(jobID), hostname, pid);
     DEBUG_SHMEM("Job_ID: %s\n", id_str);
 
@@ -585,7 +596,15 @@ enum sharp_reduce_op shmemx_get_sharp_reduce_op(shmemx_reduce_ops op){
 }
 
 void shmemx_register_sharp_buffer(size_t len, void *buffer, void **memhandle){
+    if (buffer == NULL || len <0){
+        ERROR_SHMEM("Bad buffer or length %p %d\n", buffer, len);
+        shmem_global_exit(-1);
+    }
     sharp_coll_reg_mr(coll_sharp_component.sharp_coll_ctx, buffer, len, memhandle);
+    if (*memhandle == NULL){
+        ERROR_SHMEM("bad registration on buffer %p\n", buffer);
+        shmem_global_exit(-1);
+    }
 }
 
 
