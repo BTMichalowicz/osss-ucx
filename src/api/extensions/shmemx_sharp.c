@@ -26,14 +26,14 @@ const struct sharp_coll_config shmemx_sharp_coll_default_config = {
 
 
 char *op_to_string [shmemx_op_null+1] = {
-    [shmemx_band] = "band",
-    [shmemx_bor] = "bor",
-    [shmemx_bxor] = "bxor",
-    [shmemx_max] = "max",
-    [shmemx_min] = "min",
-    [shmemx_sum] = "sum",
-    [shmemx_prod] = "prod",
-    [shmemx_op_null] = "null_op"
+    [shmemx_band] = "AND_OP",
+    [shmemx_bor] = "OR_OP",
+    [shmemx_bxor] = "XOR_OP",
+    [shmemx_max] = "MAX_OP",
+    [shmemx_min] = "MIN_OP",
+    [shmemx_sum] = "SUM_OP",
+    [shmemx_prod] = "PROD_OP",
+    [shmemx_op_null] = "NULL_OP"
 };
 
 char *type_to_string[shmemx_type_null+1] = {
@@ -96,8 +96,6 @@ struct sharp_otypes_t supported_otypes [] =
     {"PROD", SHARP_OP_PROD, shmemx_prod},
     {"NOOP", SHARP_OP_NULL, shmemx_op_null},
 };
-
-#define CODE 2
 
 static int shmemx_oob_bcast(void *team_ctx, void *buf, int size, int root){
     shmem_team_t internal_team = (shmem_team_t) team_ctx;
@@ -545,8 +543,11 @@ int shmemx_sharp_init(shmem_team_t team){
 shmemx_reduce_ops find_op_type(const char *op){
     int len = strlen(op);
 
+    DEBUG_SHMEM("op: %s\n", op);
+
     int i = 0;
     for (i = 0 ; i< shmemx_op_null; i++){
+        DEBUG_SHMEM("Compared to %s\n", op_to_string[i]);
         if (strncmp(op_to_string[i], op, len) == 0){
             return i;
         }
@@ -572,8 +573,11 @@ shmemx_datatype find_datatype(const char *type){
 
 enum sharp_reduce_op shmemx_get_sharp_reduce_op(shmemx_reduce_ops op){
     int i = 0;
+    DEBUG_SHMEM("Sharp op: %d\n", op);
     for (i = 0; supported_otypes[i].sharp_op_type != SHARP_OP_NULL; i++){
+        DEBUG_SHMEM("Compared to op %d\n", supported_otypes[i].sharp_op_type);
         if (op == supported_otypes[i].shmem_otype){
+            DEBUG_SHMEM("We have a match!\n");
             return supported_otypes[i].sharp_op_type;
         }
     }

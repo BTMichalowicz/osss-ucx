@@ -76,17 +76,22 @@ struct sharp_coll_comm *sharp_comm;
         shmemu_assert(op != shmemx_op_null, "null reduction type\n");           \
         shmemx_sharp_reduce_type_size_t *dtype_size = NULL;                     \
         enum sharp_reduce_op sharp_op = shmemx_get_sharp_reduce_op(op);         \
+        if (sharp_op == SHARP_OP_NULL) {                                        \
+            ERROR_SHMEM("Bad sharp_op %d\n", op);                               \
+            shmem_global_exit(-1);                                              \
+        }                                                                       \
         shmemu_assert(sharp_op != SHARP_OP_NULL, "bad sharp op\n");             \
-        shmemx_get_sharp_datatype(dtype, &dtype_size);                                 \
+        shmemx_get_sharp_datatype(dtype, &dtype_size);                          \
         if (dtype_size == NULL || dtype_size->sharp_type == SHARP_DTYPE_NULL){  \
             ERROR_SHMEM("Bad sharp datatype: %p %d %d\n",                       \
                     dtype_size, dtype, dtype_size->sharp_type);                 \
             shmem_global_exit(-1);                                              \
         }                                                                       \
-        shmemu_assert(dtype_size != NULL && dtype_size->sharp_type != SHARP_DTYPE_NULL,            \
+        shmemu_assert(dtype_size != NULL &&                                     \
+                dtype_size->sharp_type != SHARP_DTYPE_NULL,                     \
                 "bad sharp datatype\n");                                        \
         const int bytes = sizeof(_type) * nreduce;                              \
-        void *send_entry, *recv_entry, *tmp_array_d, *tmp_array_s;              \
+        void *send_entry, *recv_entry;                                          \
         DEBUG_SHMEM("byte count %d, element count %d\n", bytes, nreduce);       \
         int sharp_errno = 0;                                                    \
         struct sharp_coll_reduce_spec reduce_spec = {};                         \
@@ -95,38 +100,35 @@ struct sharp_coll_comm *sharp_comm;
         reduce_spec.sbuf_desc.mem_type = SHARP_MEM_TYPE_HOST;                   \
         reduce_spec.rbuf_desc.mem_type = SHARP_MEM_TYPE_HOST;                   \
         reduce_spec.rbuf_desc.type = SHARP_DATA_BUFFER;                         \
-        tmp_array_d = malloc(bytes);                                            \
-        shmemu_assert(tmp_array_d != NULL, "Cannot malloc tmp_buffer_d\n");     \
-        tmp_array_s = malloc(bytes);                                            \
-        shmemu_assert(tmp_array_s != NULL, "Cannot malloc tmp_buffer_s\n");     \
-        memcpy(tmp_array_s, source, bytes);                                     \
         reduce_spec.dtype = dtype_size->sharp_type;                             \
         reduce_spec.op = sharp_op;                                              \
         reduce_spec.length = nreduce;                                           \
-        reduce_spec.sbuf_desc.buffer.ptr = tmp_array_s;                        \
-        reduce_spec.rbuf_desc.buffer.ptr = tmp_array_d;                        \
+        reduce_spec.sbuf_desc.buffer.ptr = source;                              \
+        reduce_spec.rbuf_desc.buffer.ptr = dest;                                \
         reduce_spec.sbuf_desc.buffer.length = bytes;                            \
         reduce_spec.rbuf_desc.buffer.length = bytes;                            \
-        shmemx_register_sharp_buffer(bytes, tmp_array_s, &send_entry);         \
-        shmemx_register_sharp_buffer(bytes, tmp_array_d, &recv_entry);         \
+        shmemx_register_sharp_buffer(bytes, source, &send_entry);               \
+        if (send_entry == NULL){                                                \
+            ERROR_SHMEM("send entry is NULL\n");                                \
+            shmem_global_exit(-1);                                              \
+        }                                                                       \
+        shmemx_register_sharp_buffer(bytes, dest, &recv_entry);                 \
+        if (recv_entry == NULL){                                                \
+            ERROR_SHMEM("recv entry is NULL\n");                                \
+            shmem_global_exit(-1);                                              \
+        }                                                                       \
         reduce_spec.sbuf_desc.buffer.mem_handle = send_entry;                   \
         reduce_spec.rbuf_desc.buffer.mem_handle = recv_entry;                   \
         reduce_spec.aggr_mode = SHARP_AGGREGATION_NONE;                         \
                                                                                 \
         sharp_errno = sharp_coll_do_allreduce(sharp_comm, &reduce_spec);        \
         if (sharp_errno != SHARP_COLL_SUCCESS) {                                \
-            ERROR_SHMEM("Failed to allreduce. Ending now\n");               \
-            ERROR_SHMEM(                   \
+            ERROR_SHMEM("Failed to allreduce. Ending now\n");                   \
+            ERROR_SHMEM(                                                        \
                     "Failed to sharp allreduce with code %d %s\n",              \
                     sharp_errno, sharp_coll_strerror(sharp_errno));             \
             shmem_global_exit(sharp_errno);                                     \
         }                                                                       \
-        /*if (me_as == 0) {                                                       \
-            memcpy(dest, tmp_array_d, bytes);                                  \
-        } */                                                                      \
-        memcpy(dest, tmp_array_d, bytes);                                       \
-        free(tmp_array_d);                                                     \
-        free(tmp_array_s);                                                     \
     }
 
 #endif /* ENABLE_SHMEM_SHARP */
