@@ -107,12 +107,12 @@ struct sharp_coll_comm *sharp_comm;
         reduce_spec.rbuf_desc.buffer.ptr = dest;                                \
         reduce_spec.sbuf_desc.buffer.length = bytes;                            \
         reduce_spec.rbuf_desc.buffer.length = bytes;                            \
-        shmemx_register_sharp_buffer(bytes, source, &send_entry);               \
+        shmemx_register_sharp_buffer(bytes, (void *)source, &send_entry);       \
         if (send_entry == NULL){                                                \
             ERROR_SHMEM("send entry is NULL\n");                                \
             shmem_global_exit(-1);                                              \
         }                                                                       \
-        shmemx_register_sharp_buffer(bytes, dest, &recv_entry);                 \
+        shmemx_register_sharp_buffer(bytes, (void *)dest, &recv_entry);         \
         if (recv_entry == NULL){                                                \
             ERROR_SHMEM("recv entry is NULL\n");                                \
             shmem_global_exit(-1);                                              \
@@ -120,7 +120,6 @@ struct sharp_coll_comm *sharp_comm;
         reduce_spec.sbuf_desc.buffer.mem_handle = send_entry;                   \
         reduce_spec.rbuf_desc.buffer.mem_handle = recv_entry;                   \
         reduce_spec.aggr_mode = SHARP_AGGREGATION_NONE;                         \
-                                                                                \
         sharp_errno = sharp_coll_do_allreduce(sharp_comm, &reduce_spec);        \
         if (sharp_errno != SHARP_COLL_SUCCESS) {                                \
             ERROR_SHMEM("Failed to allreduce. Ending now\n");                   \
@@ -1225,7 +1224,7 @@ TO_ALL_WRAPPER_ALL(sharp)
     SHMEMU_CHECK_SYMMETRIC(dest, "dest");                                      \
     SHMEMU_CHECK_SYMMETRIC(source, "source");                                  \
     shmemc_team_h team_h = (shmemc_team_h)team;                                \
-    sharp_comm = team;                                                    \
+    sharp_comm = team;                                                         \
     SHMEMU_CHECK_TEAM_STRIDE(team_h->stride, __func__);                        \
     SHMEMU_CHECK_NULL(shmemc_team_get_psync(team_h, SHMEMC_PSYNC_REDUCE),      \
                       "team_h->pSyncs[REDUCE]");                               \
