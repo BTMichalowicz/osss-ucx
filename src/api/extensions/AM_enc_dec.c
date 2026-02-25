@@ -210,18 +210,81 @@ inline static void get_remote_key_and_addr(shmemc_context_h ch,
 
 inline static int get_thread_count(size_t bytes) {
   int thread_no = 1;
+  int ppn = proc.li.npeers;
 
-  if (bytes < SIX_FOUR_K) {
-    thread_no = 1;
-  } else if (bytes < ONE_TWO_EIGHT_K) {
-    thread_no = 2;
-  } else if (bytes < TWO_FIVE_SIX_K) {
-    thread_no = 4;
-  } else if (bytes < FIVE_TWELVE_K) {
-    thread_no = 4;
-  } else {
-    thread_no = 4;
+  if (ppn < 4){
+      if (bytes < THIRTY_TWO_K){
+          thread_no = 1;
+      }else if (bytes < SIX_FOUR_K) {
+          thread_no = 2;
+      } else if (bytes < ONE_TWO_EIGHT_K) {
+          thread_no = 4;
+      } else if (bytes < TWO_FIVE_SIX_K) {
+          thread_no = 8;
+      } else if (bytes < FIVE_TWELVE_K) {
+          thread_no = 8;
+      } else {
+          thread_no = 8;
+      }
+  }else if (ppn < 8){
+      if (bytes < THIRTY_TWO_K){
+          thread_no = 1;
+      }else if (bytes < SIX_FOUR_K) {
+          thread_no = 2;
+      } else if (bytes < ONE_TWO_EIGHT_K) {
+          thread_no = 4;
+      } else if (bytes < TWO_FIVE_SIX_K) {
+          thread_no = 8;
+      } else if (bytes < FIVE_TWELVE_K) {
+          thread_no = 8;
+      } else {
+          thread_no = 8;
+      }
+  }else if (ppn < 16){
+      if (bytes < THIRTY_TWO_K){
+          thread_no = 1;
+      }else if (bytes < SIX_FOUR_K) {
+          thread_no = 2;
+      } else if (bytes < ONE_TWO_EIGHT_K) {
+          thread_no = 4;
+      } else if (bytes < TWO_FIVE_SIX_K) {
+          thread_no = 8;
+      } else if (bytes < FIVE_TWELVE_K) {
+          thread_no = 8;
+      } else {
+          thread_no = 8;
+      }
+  }else if (ppn < 32){
+      if (bytes < THIRTY_TWO_K){
+          thread_no = 1;
+      }else if (bytes < SIX_FOUR_K) {
+          thread_no = 2;
+      } else if (bytes < ONE_TWO_EIGHT_K) {
+          thread_no = 4;
+      } else if (bytes < TWO_FIVE_SIX_K) {
+          thread_no = 4;
+      } else if (bytes < FIVE_TWELVE_K) {
+          thread_no = 4;
+      } else {
+          thread_no = 4;
+      }
+  }else{
+      if (bytes < THIRTY_TWO_K){
+          thread_no = 1;
+      }else if (bytes < SIX_FOUR_K) {
+          thread_no = 2;
+      } else if (bytes < ONE_TWO_EIGHT_K) {
+          thread_no = 2;
+      } else if (bytes < TWO_FIVE_SIX_K) {
+          thread_no = 2;
+      } else if (bytes < FIVE_TWELVE_K) {
+          thread_no = 2;
+      } else {
+          thread_no = 2;
+      }
   }
+
+
 
   return thread_no;
 }
