@@ -405,11 +405,7 @@ typedef enum AM_1SC_HANDLERS {
 typedef struct func_args {
     int src_pe,
         dst_pe;
-<<<<<<< HEAD
     size_t local_size;
-=======
-   size_t local_size;
->>>>>>> Separate branch to focus on CTR-based encryption/decryption.
     size_t encrypted_size;
     uint64_t remote_buffer; /* For get and put operations */
     uint64_t local_buf;

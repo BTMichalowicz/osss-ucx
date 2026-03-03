@@ -432,7 +432,6 @@ DEBUG_SHMEM("Setting up a callback to ensure that we decrypt appropriately...\n"
   response->get_rem_buf = func_data->get_rem_buf;
   DEBUG_SHMEM("get_rem_buf: %p\n", func_data->get_rem_buf);
 #if use_ctr
-  //memcpy(response->IV, IV, AES_TAG_LEN);
 #endif
   response->encrypted_size = func_data->encrypted_size;
 

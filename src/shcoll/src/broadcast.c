@@ -175,7 +175,6 @@ inline static void broadcast_helper_linear(void *target, const void *source,
 
   shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync + 1);
 
-
 #if ENABLE_SHMEM_ENCRYPTION
   size_t encrypt_size = 0;
   uint64_t enc_src = 0;
@@ -197,7 +196,6 @@ inline static void broadcast_helper_linear(void *target, const void *source,
 
   }
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-
 
   if (me != root) {
 #if ENABLE_SHMEM_ENCRYPTION
@@ -226,7 +224,6 @@ inline static void broadcast_helper_linear(void *target, const void *source,
   }
   shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync + 1);
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-
 }
 
 /**
@@ -387,6 +384,46 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
            SHCOLL_SYNC_VALUE + node.children_num +
            (me_as == PE_root ? 0 : 1));
   }
+
+#if ENABLE_SHMEM_ENCRYPTION
+#if 1
+  if (proc.env.shmem_encryption){
+     //shmem_quiet();
+     //shmem_barrier_all();
+//     if (me_as != PE_root){
+//        DEBUG_SHMEM("Encrypted target: %s\n", (char *) target);
+//      }
+     shmem_barrier_all();
+    }
+#endif /* 0/1 */
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
+
+#if ENABLE_SHMEM_ENCRYPTION
+#if 1
+  if (proc.env.shmem_encryption) {
+     int temp=nbytes;
+    //   if (node.children_num != 0) {
+  //      shmemx_decrypt_single_buffer_omp((unsigned char *)(enc_src), 0,
+  //            (void *)source, 0,
+  //            nbytes, temp_size);
+  //   } else{
+     if (me_as != PE_root){  
+//        DEBUG_SHMEM("Before: %s\n", (char *) target);
+        get_remote_key_and_addr(defcp, (uint64_t) target, me_as, &r_key,
+              &dec_src); 
+        shmemx_decrypt_single_buffer_omp((unsigned
+                 char*)(target), 0, (void *) target, 0,
+              nbytes, temp);
+        
+     }
+     if (node.children_num != 0){
+        free(tmp_buf);
+     }
+//     fprintf(stdout, "rank %d: output: %s\n", me, (char *) target);    
+  }
+#endif /* 0/1 */
+#endif /* ENABLE_SHMEM_ENCRYPTION */
 
 #if ENABLE_SHMEM_ENCRYPTION
 #if 1
