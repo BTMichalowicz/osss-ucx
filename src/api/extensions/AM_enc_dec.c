@@ -36,7 +36,6 @@ unsigned long long nbput_count = 0;
 unsigned char blocking_get_ciphertext[MAX_MSG_SIZE+OFFSET] = {'\0'};
 unsigned char **nbi_get_ciphertext =
     NULL; //[NON_BLOCKING_OP_COUNT][MAX_MSG_SIZE+OFFSET];
-
 unsigned long long nbget_count = 0;
 
 shmem_secure_attr_t *nb_put_ctr = NULL;
@@ -54,9 +53,6 @@ unsigned char dec_chunks[MAX_THREAD_COUNT][MAX_MSG_SIZE+COLL_OFFSET];
 unsigned char plain_chunks[MAX_THREAD_COUNT][MAX_MSG_SIZE+COLL_OFFSET];
 
 int block_put_cipherlen = 0;
-int block_get_cipheren = 0;
-
-// pmix_proc_t *my_second_pmix;
 /*
  * -- helpers ----------------------------------------------------------------
  */
@@ -216,11 +212,30 @@ inline static int get_thread_count(size_t bytes) {
   int thread_no = 1;
   int ppn = proc.li.npeers;
 
+
+/*     if (bytes < THIRTY_TWO_K){
+          thread_no = 1;
+      }else if (bytes < SIX_FOUR_K) {
+          thread_no = 1;
+      } else if (bytes < ONE_TWO_EIGHT_K) {
+          thread_no = 4;
+      } else if (bytes < TWO_FIVE_SIX_K) {
+          thread_no = 8;
+      } else if (bytes < FIVE_TWELVE_K) {
+          thread_no = 8;
+      } else {
+          thread_no = 8;
+      } */
+
+
+
+
+
   if (ppn < 4){
       if (bytes < THIRTY_TWO_K){
           thread_no = 1;
       }else if (bytes < SIX_FOUR_K) {
-          thread_no = 2;
+          thread_no = 1;
       } else if (bytes < ONE_TWO_EIGHT_K) {
           thread_no = 4;
       } else if (bytes < TWO_FIVE_SIX_K) {
@@ -234,7 +249,7 @@ inline static int get_thread_count(size_t bytes) {
       if (bytes < THIRTY_TWO_K){
           thread_no = 1;
       }else if (bytes < SIX_FOUR_K) {
-          thread_no = 2;
+          thread_no = 1;
       } else if (bytes < ONE_TWO_EIGHT_K) {
           thread_no = 4;
       } else if (bytes < TWO_FIVE_SIX_K) {
@@ -248,7 +263,7 @@ inline static int get_thread_count(size_t bytes) {
       if (bytes < THIRTY_TWO_K){
           thread_no = 1;
       }else if (bytes < SIX_FOUR_K) {
-          thread_no = 2;
+          thread_no = 1;
       } else if (bytes < ONE_TWO_EIGHT_K) {
           thread_no = 4;
       } else if (bytes < TWO_FIVE_SIX_K) {
@@ -262,7 +277,7 @@ inline static int get_thread_count(size_t bytes) {
       if (bytes < THIRTY_TWO_K){
           thread_no = 1;
       }else if (bytes < SIX_FOUR_K) {
-          thread_no = 2;
+          thread_no = 1;
       } else if (bytes < ONE_TWO_EIGHT_K) {
           thread_no = 4;
       } else if (bytes < TWO_FIVE_SIX_K) {
@@ -276,20 +291,20 @@ inline static int get_thread_count(size_t bytes) {
       if (bytes < THIRTY_TWO_K){
           thread_no = 1;
       }else if (bytes < SIX_FOUR_K) {
-          thread_no = 2;
+          thread_no = 1;
       } else if (bytes < ONE_TWO_EIGHT_K) {
           thread_no = 2;
       } else if (bytes < TWO_FIVE_SIX_K) {
           thread_no = 2;
       } else if (bytes < FIVE_TWELVE_K) {
-          thread_no = 2;
+          thread_no = 4;
       } else {
-          thread_no = 2;
+          thread_no = 4;
       }
   }
 
 
-
+  DEBUG_SHMEM("ppn: %d, thread_count %d\n", ppn, thread_no);
   return thread_no;
 }
 
@@ -318,35 +333,6 @@ ucs_status_t put_dec_handler(void *arg, const void *header, size_t h_size,
   return UCS_OK;
 }
 
-
-ucs_status_t put_handler(void *arg, const void *header, size_t h_size,
-                         void *data, size_t len,
-                         const ucp_am_recv_param_t *param) {
-
-  DEBUG_SHMEM("Entering put_handler\n");
-  //  NO_WARN_UNUSED(arg);
-  NO_WARN_UNUSED(header);
-  NO_WARN_UNUSED(h_size);
-
-  func_args_t *func_data = (func_args_t *)data;
-  unsigned char *dest = (func_data->local_buffer);
-  uint64_t r_dest = func_data->remote_buffer;
-#if use_ctr
-  memcpy(IV, func_data->IV, AES_TAG_LEN);
-#endif /* use_ctr */
-
-  //    DEBUG_SHMEM("dest: %p, r_dest: %p\n", dest, r_dest);
-  //    usleep(10);
-  shmemu_assert(r_dest >= 0, "put_handler: rdest is 0, can't find region of %p",
-                (void *)dest);
-
-  DEBUG_SHMEM("ciphertext: %p %s\n", dest, dest);
-    shmemx_decrypt_single_buffer_omp(dest, 0, (void *)r_dest, 0,
-                                     func_data->local_size,
-                                     func_data->encrypted_size);
-  return UCS_OK;
-
-}
 
 
 ucs_status_t get_enc_handler(void *arg, const void *header, size_t h_size,
@@ -432,6 +418,7 @@ DEBUG_SHMEM("Setting up a callback to ensure that we decrypt appropriately...\n"
   response->get_rem_buf = func_data->get_rem_buf;
   DEBUG_SHMEM("get_rem_buf: %p\n", func_data->get_rem_buf);
 #if use_ctr
+  memcpy(response->IV, IV, AES_TAG_LEN);
 #endif
   response->encrypted_size = func_data->encrypted_size;
 
@@ -474,7 +461,7 @@ am_fallback:
   response->get_rem_buf = func_data->get_rem_buf;
   DEBUG_SHMEM("get_rem_buf: %p\n", func_data->get_rem_buf);
 #if use_ctr
-  memcpy(response->IV, IV, AES_TAG_LEN);
+  //memcpy(response->IV, IV, AES_TAG_LEN);
 #endif
   response->encrypted_size = func_data->encrypted_size;
 
@@ -1659,14 +1646,20 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
      int magic = FOUR_M;
      int kilo = KILO;
      int magic2 = 1;
+       if (nbytes < magic){
+        while(k++ < magic2 * kilo )
+           shmemc_progress();
+     }else{
+        while(k++ < magic2 * kilo * (nbytes*2/magic)) 
+           shmemc_progress();
+     }
+   
+fn_end:
+       polling_t2 = (shmemx_wtime() - polling_t1) * 1e6;
+       total_t2 = (shmemx_wtime() - total_t1) * 1e6;
 
-
-  // free(func_put->local_buffer);
-  // memset(func_put->local_buffer, 0,count);
-  //    free(func_put);
-  func_put = NULL;
-
-
+     DEBUG_TIME("Msg sz: %d, total %.3f enc %.3f put_setup %.3f put %.3f AM %.3f polling %.3f\n",
+             nbytes, total_t2, enc_t2, put_set_t2, put_t2, am_t2, polling_t2);   
 
 }
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
