@@ -295,9 +295,9 @@ static inline double avg2(double *arr, int PE_size){
               dec_t2[peer_as] = (shmemx_wtime() - dec_t1[peer_as]) * 1e6;         \
               DEBUG_SHMEM("Finished decryption iter %d, peer_as %d, bytes %lu\n", i, peer_as, nelems);         \
           }                                                                        \
-          barrier_t1[1] = shmemx_wtime();                                          \
+     /*     barrier_t1[1] = shmemx_wtime();                                          \
           shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);   \
-          barrier_t2[1] = (shmemx_wtime() - barrier_t1[1]) * 1e6;              \
+          barrier_t2[1] = (shmemx_wtime() - barrier_t1[1]) * 1e6;   */           \
       }                                                                   \
       /* TODO: change to auto shcoll barrier */                                  \
       barrier_t1[2] = shmemx_wtime();                                             \
