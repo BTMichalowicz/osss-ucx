@@ -332,6 +332,7 @@ int shmemx_query_interoperability(int property);
 #define FIVE_TWELVE_K 512 * KILO
 #define ONE_M MEGA
 #define TWO_M 2 * MEGA
+#define THREE_M 3 * MEGA
 #define FOUR_M 4 * MEGA
 #define PIPELINE_SIZE FIVE_TWELVE_K
 

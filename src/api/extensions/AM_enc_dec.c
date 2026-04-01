@@ -228,9 +228,6 @@ inline static int get_thread_count(size_t bytes) {
       } */
 
 
-
-
-
   if (ppn < 4){
       if (bytes < THIRTY_TWO_K){
           thread_no = 1;
@@ -1645,8 +1642,8 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
      int k = 0;
      int magic = FOUR_M;
      int kilo = KILO;
-     int magic2 = 1;
-       if (nbytes < magic){
+     int magic2 = 3;
+     if (nbytes < magic){
         while(k++ < magic2 * kilo )
            shmemc_progress();
      }else{
@@ -1714,7 +1711,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
      int k = 0;
      int magic = FOUR_M;
      int kilo = KILO;
-     int magic2 = 1;
+     int magic2 = 3;
 
      if (nbytes < magic){
         while(k++ < magic2 * kilo )
@@ -1974,7 +1971,7 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
      int k = 0;
      int magic = FOUR_M;
      int kilo = KILO;
-     int magic2 = 1;
+     int magic2 = 3;
 
      if (nbytes < magic){
         while(k++ < magic2 * kilo )
@@ -2009,7 +2006,7 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
            ucs_status_string(st));
      am2_t2 = (shmemx_wtime() - am2_t1) * 1e6;
      polling2_t1 = shmemx_wtime();
-      for (int i = 0; i < 20; i ++){
+      for (int i = 0; i < 30; i ++){
          shmemc_progress();
       }
       polling2_t2 = (shmemx_wtime() - polling2_t1) * 1e6;
