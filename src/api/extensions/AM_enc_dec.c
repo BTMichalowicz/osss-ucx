@@ -294,9 +294,9 @@ inline static int get_thread_count(size_t bytes) {
       } else if (bytes < TWO_FIVE_SIX_K) {
           thread_no = 2;
       } else if (bytes < FIVE_TWELVE_K) {
-          thread_no = 4;
+          thread_no = 2;
       } else {
-          thread_no = 4;
+          thread_no = 2;
       }
   }
 
@@ -1545,6 +1545,190 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
 }
 
+
+#define PIPELINE 1
+
+
+#if PIPELINE
+
+void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
+                       size_t nbytes, int pe) {
+
+    size_t cipherlen[1] = {0};
+
+    double total_t1, total_t2, enc_t1, enc_t2, put_t1, put_t2, am_t1,
+      am_t2, polling_t1, polling_t2; /* These last 2 would be for decrypting/encrypting */
+
+
+    //   RAND_bytes(IV, AES_RAND_BYTES);
+    //   IV[AES_RAND_BYTES] = (counter_val >> 24) & 0xFF;
+    //   IV[AES_RAND_BYTES+1] = (counter_val >> 16) & 0xFF;
+    //   IV[AES_RAND_BYTES+2] = (counter_val >> 8 ) & 0xFF;
+    //   IV[AES_RAND_BYTES+3] = (counter_val) & 0xFF;
+    //
+    double put_set_t1, put_set_t2;
+    total_t1 = shmemx_wtime();
+    put_set_t1 = shmemx_wtime();
+    shmemc_context_h ch = (shmemc_context_h)ctx;
+    uint64_t r_dest;  /* address on other PE */
+    ucp_rkey_h r_key; /* rkey for remote address */
+    DEBUG_SHMEM("Getting rkey and addr\n");
+    get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
+    ucp_ep_h peer_ep = lookup_ucp_ep(ch, pe);
+    const ucp_request_param_t prm = {.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK,
+        .cb.send = noop_callbackx};
+    put_set_t2 = (shmemx_wtime() - put_set_t1) * 1e6;
+
+    enc_t1 = shmemx_wtime();
+    memset(blocking_put_ciphertext, 0, MAX_MSG_SIZE + OFFSET);
+
+    int thread_count = get_thread_count(nbytes);
+    int data = nbytes/thread_count,
+        segment_count = 0,
+        count = 0;
+
+    unsigned long long counter_val = (data*AES_TAG_LEN) % thread_count;
+
+    for (count = 0 ; count < thread_count; count++){
+        openmp_enc_ctx[count] = EVP_CIPHER_CTX_new();
+        if (!(openmp_enc_ctx[count])){
+            handleErrors("Can't create cipher_ctx\n");
+        }
+    }
+    if (nbytes <=16){
+        segment_count = 1;
+        data = nbytes;
+    }else{
+        segment_count = (nbytes - 1) / data + 1;
+    }
+    int enc_data = data;
+    int max_data = enc_data + AES_TAG_LEN;
+    int local_cipherlen = 0, temp_cipherlen = 0;
+#pragma omp parallel for num_threads(thread_count)
+    for(count = 0; count < segment_count; count++){
+        int offset = (count * enc_data);
+        unsigned char *tmp_plain = (src) + offset;
+        unsigned char *tmp_enc = &(blocking_put_ciphertext[offset]);
+        int tn = omp_get_thread_num();
+    
+        EVP_CIPHER_CTX *ctx = openmp_enc_ctx[count];
+        //   ctx = EVP_CIPHER_CTX_new();
+        //   if (!ctx) { 
+        //      handleErrors("Can't create a cipher ctx\n");
+        //   }
+
+        if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,gcm_key, IV) != 1){
+            handleErrors("EncryptInit Failed\n");
+        }
+
+        if (EVP_EncryptUpdate(ctx, tmp_enc, &local_cipherlen, tmp_plain, (int) enc_data) != 1){
+            handleErrors("EncryptUpdate Failed\n");
+        }
+
+        temp_cipherlen += local_cipherlen;
+
+        DEBUG_SHMEM("[T_%d] Local_cipherlen 1: %lu\n", tn, local_cipherlen);
+
+
+        if (EVP_EncryptFinal_ex(ctx, tmp_enc+local_cipherlen, &local_cipherlen) != 1){
+            handleErrors("EncryptFinal Failed\n");
+        }
+
+        DEBUG_SHMEM("[T_%d] Local_cipherlen 2: %lu\n", tn, local_cipherlen);
+   //  aes_ctr_enc(counter_val, sbuf + (count*enc_data), cipherbuf + (count*enc_data), enc_data, &local_cipherlen,openmp_enc_ctx[count]);
+   //
+        DEBUG_SHMEM("[T_%d] cipherlen %lu, plaintext %s, ciphertext %s\n", tn, temp_cipherlen, tmp_plain, tmp_enc);
+        temp_cipherlen += local_cipherlen;
+        ucs_status_ptr_t sp = ucp_put_nbx(peer_ep, tmp_enc, local_cipherlen, r_dest + offset, r_key, &prm);
+        ucs_status_t st = check_wait_for_request(ch, sp);
+        shmemc_progress();
+
+
+        if (st != UCS_OK){
+            ERROR_SHMEM("NOT OKAY\n");
+            shmem_global_exit(-1);
+        }
+        
+    }
+   
+    for (count = 0 ; count < thread_count; count++){
+        EVP_CIPHER_CTX_free(openmp_enc_ctx[count]);
+    }
+
+
+    *cipherlen = temp_cipherlen;
+    DEBUG_SHMEM("Cipherlen: %lu\n", temp_cipherlen);
+    //  memset(cipherbuf+(*cipherlen), 0,32);
+    am_t1 = shmemx_wtime(); 
+
+    func_args_t *func_put =
+        (func_args_t *)malloc(sizeof(func_args_t));
+
+    func_put->src_pe = proc.li.rank;
+    func_put->dst_pe = pe;
+    func_put->local_size = nbytes;
+    count =
+        block_put_cipherlen + (segment_count * (AES_TAG_LEN + AES_RAND_BYTES));
+
+#if use_gcm
+
+    func_put->encrypted_size = count;
+#elif use_ctr
+    func_put->encrypted_size = block_put_cipherlen; //count;
+    //  memcpy(func_put->IV, IV, AES_TAG_LEN);
+
+#endif /* use_gcm or use_ctr */
+    func_put->remote_buffer = r_dest;
+#if use_ctr
+#endif /*use_ctr*/
+
+    ucp_request_param_t param = {
+        .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
+        .cb.send = NULL,
+        .datatype = ucp_dt_make_contig(sizeof(unsigned char)),
+    };
+
+    ucs_status_ptr_t sp =
+        ucp_am_send_nbx(peer_ep, AM_NBPUT_HANDLER, NULL, 0, func_put,
+                (sizeof(func_args_t)), &param);
+    //  shmemc_progress();
+    ucs_status_t st = check_wait_for_request(ch, sp);
+    shmemu_assert(st == UCS_OK, "%s: put failed (status: %s)", __func__,
+            ucs_status_string(st));
+
+    am_t2 = (shmemx_wtime() - am_t1) * 1e6;
+
+    polling_t1 = shmemx_wtime();
+
+    // for (int k = 0; k < 30 ; k++){
+    //  shmemc_progress();
+    // }
+    DEBUG_SHMEM("Put end\n");
+
+    //goto fn_end;
+
+    int k = 0;
+    int magic = FOUR_M;
+    int kilo = KILO;
+    int magic2 = 3;
+    if (nbytes < magic){
+        while(k++ < magic2 * kilo )
+            shmemc_progress();
+    }else{
+        while(k++ < magic2 * kilo * (nbytes*2/magic)) 
+            shmemc_progress();
+    }
+
+fn_end:
+    polling_t2 = (shmemx_wtime() - polling_t1) * 1e6;
+    total_t2 = (shmemx_wtime() - total_t1) * 1e6;
+
+    DEBUG_TIME("Msg sz: %d, total %.3f enc %.3f put_setup %.3f put %.3f AM %.3f polling %.3f\n",
+            nbytes, total_t2, enc_t2, put_set_t2, put_t2, am_t2, polling_t2);   
+
+}
+
+#else /* if PIPELINE */
 void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
                        size_t nbytes, int pe) {
 
@@ -1581,7 +1765,6 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   DEBUG_SHMEM("Encryption end, ciphertext: %p, cipherlen: %d \n",
               &(blocking_put_ciphertext[0]), block_put_cipherlen);
 
-
   put_t1 = shmemx_wtime();
 
   ucs_status_ptr_t sp = ucp_put_nbx(peer_ep, blocking_put_ciphertext, block_put_cipherlen, r_dest, r_key, &prm);
@@ -1589,8 +1772,6 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   ucs_status_t st = check_wait_for_request(ch, sp);
   put_t2 = (shmemx_wtime() - put_t1) * 1e6;
 
-  // DEBUG_SHMEM("local_buffer %p, remote_buffer %p\n", func_put->local_buffer,
-  // r_dest);
   am_t1 = shmemx_wtime(); 
   
   func_args_t *func_put =
@@ -1659,6 +1840,8 @@ fn_end:
              nbytes, total_t2, enc_t2, put_set_t2, put_t2, am_t2, polling_t2);   
 
 }
+
+#endif /* PIPELINE */
 void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
                            size_t nbytes, int pe) {
 
@@ -1858,6 +2041,208 @@ int shmemx_secure_quiet(void) {
   return 0;
 }
 
+
+
+#if PIPELINE
+
+void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
+                       size_t nbytes, int pe) {
+
+    memset(blocking_get_ciphertext, 0, MAX_MSG_SIZE + OFFSET);
+    size_t cipherlen = 0;
+    double total_t1, total_t2, enc_t1, enc_t2, put_t1, put_t2, am1_t1,
+           am1_t2, polling1_t1, polling1_t2, polling2_t1, polling2_t2, am2_t1, am2_t2; /* These last 2 would be for decrypting/encrypting */
+    double get_set_t1, get_set_t2;
+
+    total_t1 = shmemx_wtime();
+
+    get_set_t1 = shmemx_wtime();
+    shmemc_context_h ch = (shmemc_context_h)ctx;
+    uint64_t r_src;
+    ucp_rkey_h r_key;
+    uint64_t l_rdest;
+    ucp_rkey_h l_rkey;
+    ucp_ep_h ep;
+#if defined(HAVE_UCP_GET_NBX) || defined(HAVE_UCP_GET_NB)
+    ucs_status_ptr_t sp;
+#endif /* HAVE_UCP_GET_NBX || HAVE_UCP_GET_NB */
+    ucs_status_t s;
+
+    get_remote_key_and_addr(ch, (uint64_t)src, pe, &r_key, &r_src);
+    get_remote_key_and_addr(ch, (uint64_t)dest, proc.li.rank, &l_rkey, &l_rdest);
+
+    ep = lookup_ucp_ep(ch, pe);
+    get_set_t2 = (shmemx_wtime() - get_set_t1) * 1e6;
+
+
+    am1_t1 = shmemx_wtime();
+    func_args_t *func_get = 
+        (func_args_t *)malloc(sizeof(func_args_t));
+
+    int max_offset = SIXTEEN_K;
+
+    int segment_count = (nbytes/max_offset == 0 ? 1 : nbytes/max_offset);
+    int seg_bytes = nbytes / segment_count;
+    int seg_bytes_last = seg_bytes + (nbytes % max_offset);
+    int remainder_bytes = nbytes % segment_count;
+
+    DEBUG_SHMEM("nbytes %d Segment_count %d seg_bytes %d seg_bytes_last %d\n", nbytes, segment_count, seg_bytes, seg_bytes_last);
+    func_get->segment_count = segment_count;
+    func_get->remote_buffer = r_src;
+    func_get->local_buf = dest;
+    func_get->get_rem_buf = src;
+
+
+    int i = 0;
+
+#if use_gcm
+    for (i = 0 ; i < segment_count ; i++){
+
+        DEBUG_SHMEM("Sending segment %d\n", i);
+
+        func_get->src_pe = pe;
+        func_get->dst_pe = proc.li.rank;
+        func_get->local_size = seg_bytes;
+        func_get->offset_from_start = (i*seg_bytes);
+        func_get->local_buf = dest + (i*seg_bytes);
+        func_get->remote_buffer = r_src + (i*seg_bytes);
+        // if ( i == segment_count -1){
+        //    func_get->local_size = seg_bytes_last;
+        // }
+        func_get->encrypted_size = 0; // for now 
+
+        ucp_request_param_t ack_param = {
+            .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
+            .cb.send = NULL,
+            .datatype = ucp_dt_make_contig(sizeof(unsigned char))};
+        DEBUG_SHMEM("Starting blocking get\n");
+        sp = ucp_am_send_nbx(ep, AM_GET_ENC_HANDLER, NULL, 0, func_get,
+                sizeof(func_args_t), &ack_param);
+        ucs_status_t st = check_wait_for_request(ch, sp);
+        shmemu_assert(st == UCS_OK, "%s: get enc failed (status: %s)", __func__,
+                ucs_status_string(st));
+
+        st = check_wait_for_request(ch, sp);
+        shmemu_assert(st == UCS_OK, "%s: get enc failed (status: %s)", __func__,
+                ucs_status_string(st));
+        //     shmemc_progress();
+
+        //     shmemc_quiet();
+    }
+#elif use_ctr
+    DEBUG_SHMEM("dest ptr: %p\n", dest);
+    func_get->src_pe = pe;
+    func_get->dst_pe = proc.li.rank;
+    func_get->local_size = nbytes;
+    func_get->offset_from_start = 0;
+    func_get->put_rem_buf = l_rdest;
+    func_get->local_buf = dest;
+    shmem_fence();
+    ucp_request_param_t ack_param = {
+        .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
+        .cb.send = NULL,
+        .datatype = ucp_dt_make_contig(sizeof(unsigned char))};
+    DEBUG_SHMEM("Starting blocking get\n");
+    am1_t1 = shmemx_wtime();
+    sp = ucp_am_send_nbx(ep, AM_GET_ENC_HANDLER, NULL, 0, func_get,
+            sizeof(func_args_t), &ack_param);
+    shmemc_progress();
+    ucs_status_t st = check_wait_for_request(ch, sp);
+
+    shmemu_assert(st == UCS_OK, "%s: get enc failed (status: %s)", __func__,
+            ucs_status_string(st));
+    am1_t2 = (shmemx_wtime() - am1_t1) * 1e6;
+
+
+    polling1_t1 = shmemx_wtime();
+    int k = 0;
+    int magic = FOUR_M;
+    int kilo = KILO;
+    int magic2 = 3;
+
+    if (nbytes < magic){
+        while(k++ < magic2 * kilo )
+            shmemc_progress();
+    }else{
+        while(k++ < magic2 * kilo * (nbytes/magic)) 
+            shmemc_progress();
+    }
+    polling1_t2 = (shmemx_wtime() - polling1_t1) * 1e6;
+    //  shmem_fence();
+
+    int data = 0;
+    int thread_no = get_thread_count(nbytes);
+    if (nbytes <= 16) {
+        segment_count = 1;
+        data = nbytes;
+    } else {
+        segment_count = (nbytes - 1) / data + 1;
+    }
+
+    int local_cipherlen = 0,
+        temp_cipherlen = 0,
+        enc_data = data,
+        max_data = enc_data + AES_TAG_LEN,
+        count = 0;
+    unsigned long long counter_val = 0;
+
+    for (count = 0 ; count < thread_no; count++){
+        openmp_enc_ctx[count] = EVP_CIPHER_CTX_new();
+        if (!(openmp_enc_ctx[count])){
+            handleErrors("Can't create cipher_ctx\n");
+        }
+    }
+    unsigned char *cipherbuf = &(blocking_get_ciphertext[0]);
+    unsigned char *rbuf = dest;
+
+#pragma omp parallel for default(none)                       \
+    private(count, local_cipherlen)         \
+    shared(segment_count, enc_data, stdout, stderr, openmp_dec_ctx, data, cipherbuf,     \
+            rbuf, src, dest, proc, gcm_key, thread_no, counter_val, defcp, pe) num_threads(thread_no) 
+    for (count = 0; count < segment_count; count++) {
+        // counter_val = (count * enc_data/thread_no); 
+        int tn = omp_get_thread_num();
+        DEBUG_SHMEM("T_%d starting decryption\n", tn);
+        shmemc_ctx_get(defcp, cipherbuf+(count*enc_data), src+(count*enc_data), enc_data, pe);
+        aes_ctr_dec( counter_val, cipherbuf + (count * enc_data), rbuf + (count*enc_data), enc_data, src, dest, &local_cipherlen, openmp_dec_ctx[count]);
+
+    }
+
+    ucp_request_param_t ack_param2 = {
+       .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
+       .cb.send = NULL,
+       .datatype = ucp_dt_make_contig(sizeof(unsigned char))};
+    DEBUG_SHMEM("Starting blocking get\n");
+    am2_t1 = shmemx_wtime();
+    sp = ucp_am_send_nbx(ep, AM_GET_DEC_RESPONSE_2, NULL, 0, func_get,
+          sizeof(func_args_t), &ack_param2);
+       st = check_wait_for_request(ch, sp);
+     shmemu_assert(st == UCS_OK, "%s: get enc failed (status: %s)", __func__,
+           ucs_status_string(st));
+     am2_t2 = (shmemx_wtime() - am2_t1) * 1e6;
+     polling2_t1 = shmemx_wtime();
+      for (int i = 0; i < 500; i ++){
+         shmemc_progress();
+      }
+      polling2_t2 = (shmemx_wtime() - polling2_t1) * 1e6;
+      total_t2 = (shmemx_wtime() - total_t1) *1e6;
+      DEBUG_TIME("Msg sz %d total %.3f get %.3f am1 %.3f am2 %.3f polling1 %.3f polling2 %.3f dec %.3f\n",
+              nbytes, total_t2, put_t2, am1_t2, am2_t2, polling1_t2, polling2_t2, enc_t2);
+
+
+#endif /* use_gcm ^ use_ctr */
+ 
+    DEBUG_SHMEM("Get end\n");
+    DEBUG_SHMEM("Final plaintext: %s\n", (char *)dest);
+
+
+
+}
+
+
+
+
+#else /* if PIPELINE */
 void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
                        size_t nbytes, int pe) {
 
@@ -2023,5 +2408,6 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
 
 
 }
+#endif /* if PIPELINE */
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
