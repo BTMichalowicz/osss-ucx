@@ -1641,7 +1641,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 
      int k = 0;
      int magic = FOUR_M;
-     int kilo = KILO;
+     int kilo = KILO*3/2; /* 1.5K */
      int magic2 = 3;
      if (nbytes < magic){
         while(k++ < magic2 * kilo )
@@ -1777,7 +1777,7 @@ int shmemx_secure_quiet(void) {
       ucs_status_t st = check_wait_for_request(defcp, sp);
       shmemu_assert(st == UCS_OK, "%s: put failed (status: %s)", __func__,
             ucs_status_string(st));
-      for (int k = 0 ; k < 10; k++){
+      for (int k = 0 ; k < 30; k++){
           shmemc_progress();
       }
     
@@ -1830,7 +1830,7 @@ int shmemx_secure_quiet(void) {
       int k = 0;
       int magic = FOUR_M;
      int kilo = 512;
-     int magic2 = 1;
+     int magic2 = 2;
 
      if (enc_size < magic){
         while(k++ < magic2 * kilo )
