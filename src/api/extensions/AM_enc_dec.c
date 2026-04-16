@@ -1546,7 +1546,7 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 }
 
 
-#define PIPELINE 1
+#define PIPELINE 0
 
 
 #if PIPELINE
@@ -1570,10 +1570,14 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     total_t1 = shmemx_wtime();
     put_set_t1 = shmemx_wtime();
     shmemc_context_h ch = (shmemc_context_h)ctx;
-    uint64_t r_dest;  /* address on other PE */
+    uint64_t r_dest = 0;  /* address on other PE */
     ucp_rkey_h r_key; /* rkey for remote address */
     DEBUG_SHMEM("Getting rkey and addr\n");
     get_remote_key_and_addr(ch, (uint64_t)dest, pe, &r_key, &r_dest);
+    if (r_dest == 0){
+        ERROR_SHMEM("r_dest == NULL\n");
+        shmem_global_exit(-1);
+    }
     ucp_ep_h peer_ep = lookup_ucp_ep(ch, pe);
     const ucp_request_param_t prm = {.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK,
         .cb.send = noop_callbackx};
@@ -1604,6 +1608,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
     int enc_data = data;
     int max_data = enc_data + AES_TAG_LEN;
     int local_cipherlen = 0, temp_cipherlen = 0;
+    int local_len_2;
 #pragma omp parallel for num_threads(thread_count)
     for(count = 0; count < segment_count; count++){
         int offset = (count * enc_data);
@@ -1621,14 +1626,14 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
             handleErrors("EncryptInit Failed\n");
         }
 
-        if (EVP_EncryptUpdate(ctx, tmp_enc, &local_cipherlen, tmp_plain, (int) enc_data) != 1){
+        if (EVP_EncryptUpdate(ctx, tmp_enc, &local_len_2, tmp_plain, (int) enc_data) != 1){
             handleErrors("EncryptUpdate Failed\n");
         }
 
-        temp_cipherlen += local_cipherlen;
+        temp_cipherlen += local_len_2;
 
         DEBUG_SHMEM("[T_%d] Local_cipherlen 1: %lu\n", tn, local_cipherlen);
-
+       // int local_len_2 = local_cipherlen;
 
         if (EVP_EncryptFinal_ex(ctx, tmp_enc+local_cipherlen, &local_cipherlen) != 1){
             handleErrors("EncryptFinal Failed\n");
@@ -1639,10 +1644,9 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
    //
         DEBUG_SHMEM("[T_%d] cipherlen %lu, plaintext %s, ciphertext %s\n", tn, temp_cipherlen, tmp_plain, tmp_enc);
         temp_cipherlen += local_cipherlen;
-        ucs_status_ptr_t sp = ucp_put_nbx(peer_ep, tmp_enc, local_cipherlen, r_dest + offset, r_key, &prm);
+        ucs_status_ptr_t sp = ucp_put_nbx(peer_ep, tmp_enc, local_len_2, r_dest + offset, r_key, &prm);
         ucs_status_t st = check_wait_for_request(ch, sp);
         shmemc_progress();
-
 
         if (st != UCS_OK){
             ERROR_SHMEM("NOT OKAY\n");
@@ -1688,6 +1692,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
         .datatype = ucp_dt_make_contig(sizeof(unsigned char)),
     };
 
+    DEBUG_SHMEM("AM send\n");
     ucs_status_ptr_t sp =
         ucp_am_send_nbx(peer_ep, AM_NBPUT_HANDLER, NULL, 0, func_put,
                 (sizeof(func_args_t)), &param);

@@ -472,7 +472,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-#define DEBUG_PRINT 1
+#define DEBUG_PRINT 0
 
 #if DEBUG_PRINT
 #define DEBUG_SHMEM(fmt, args...)                       \
