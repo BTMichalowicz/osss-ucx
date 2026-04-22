@@ -47,6 +47,16 @@ EVP_CIPHER_CTX
 EVP_CIPHER_CTX
     *openmp_dec_ctx[MAX_THREAD_COUNT]; /* Answer to the above comment? Yes */
 
+int rem_enc_done = 0;
+int rem_dec_done = 0;
+int nb_rem_enc_done = 0;
+int nb_put_dec_done = 0;
+int nb_get_dec_done = 0;
+
+
+//int nb_put_dec_done[NON_BLOCKING_OP_COUNT] = {0};
+int nb_get_dec_done[NON_BOCKING_OP_COUNT] = {0};
+
 
 unsigned char enc_chunks[MAX_THREAD_COUNT][MAX_MSG_SIZE+COLL_OFFSET];
 unsigned char dec_chunks[MAX_THREAD_COUNT][MAX_MSG_SIZE+COLL_OFFSET];
@@ -69,6 +79,74 @@ inline static void noop_callbackx(void *req, ucs_status_t status, void *user_dat
  */
 inline static ucp_ep_h lookup_ucp_ep(shmemc_context_h ch, int pe) {
   return ch->eps[pe];
+}
+
+ucs_status_t am_enc_sig_done(void *arg, const void *header, size_t h_size,
+        void *data, size_t len,
+        const ucp_am_recv_param_t *param) {
+
+    NO_WARN_UNUSED(header);
+    NO_WARN_UNUSED(h_size);
+    NO_WARN_UNUSED(len);
+    NO_WARN_UNUSED(data);
+    NO_WARN_UNuSED(arg);
+    rem_enc_done = 1;
+
+    return UCS_OK;
+}
+
+ucs_status_t am_dec_sig_done(void *arg, const void *header, size_t h_size,
+        void *data, size_t len,
+        const ucp_am_recv_param_t *param) {
+
+    NO_WARN_UNUSED(header);
+    NO_WARN_UNUSED(h_size);
+    NO_WARN_UNUSED(len);
+    NO_WARN_UNUSED(data);
+    NO_WARN_UNuSED(arg);
+    rem_dec_done = 1;
+
+    return UCS_OK;
+}
+
+ucs_status_t am_nb_enc_sig_done(void *arg, const void *header, size_t h_size,
+        void *data, size_t len,
+        const ucp_am_recv_param_t *param) {
+
+    NO_WARN_UNUSED(header);
+    NO_WARN_UNUSED(h_size);
+    NO_WARN_UNUSED(len);
+    NO_WARN_UNUSED(data);
+    NO_WARN_UNuSED(arg);
+    nb_rem_enc_done = 1;
+
+    return UCS_OK;
+}
+ucs_status_t am_nb_put_dec_sig_done(void *arg, const void *header, size_t h_size,
+        void *data, size_t len,
+        const ucp_am_recv_param_t *param) {
+
+    NO_WARN_UNUSED(header);
+    NO_WARN_UNUSED(h_size);
+    NO_WARN_UNUSED(len);
+    NO_WARN_UNUSED(data);
+    NO_WARN_UNuSED(arg);
+    nb_put_dec_done = 1;
+
+    return UCS_OK;
+}
+ucs_status_t am_nb_get_dec_sig_done(void *arg, const void *header, size_t h_size,
+        void *data, size_t len,
+        const ucp_am_recv_param_t *param) {
+
+    NO_WARN_UNUSED(header);
+    NO_WARN_UNUSED(h_size);
+    NO_WARN_UNUSED(len);
+    NO_WARN_UNUSED(data);
+    NO_WARN_UNuSED(arg);
+    nb_get_dec_done = 1;
+
+    return UCS_OK;
 }
 
 static void am_send_cb(void *request, ucs_status_t status, void *user_data)
@@ -305,6 +383,45 @@ inline static int get_thread_count(size_t bytes) {
   return thread_no;
 }
 
+
+ucs_status_t put_dec_handler(void *arg, const void *header, size_t h_size,
+                         void *data, size_t len,
+                         const ucp_am_recv_param_t *param) {
+
+  DEBUG_SHMEM("Entering put_dec_handler\n");
+  //  NO_WARN_UNUSED(arg);
+  NO_WARN_UNUSED(header);
+  NO_WARN_UNUSED(h_size);
+
+  func_args_t *func_data = (func_args_t *)data;
+  uint64_t r_dest = func_data->remote_buffer;
+#if use_ctr
+  //memcpy(IV, func_data->IV, AES_TAG_LEN);
+#endif /*use_ctr*/
+
+  shmemu_assert(r_dest >= 0, "put_dec_handler: rdest is 0, can't find region of %p",
+                (void *)r_dest);
+
+  DEBUG_SHMEM("ciphertext: %p %s\n", r_dest, r_dest);
+    shmemx_decrypt_single_buffer_omp(r_dest, 0, (void *)r_dest, 0,
+                                     func_data->local_size,
+                                     func_data->encrypted_size);
+
+    ucp_request_param p = {
+        .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
+        .cb.send = NULL,
+        datatype = ucp_dt_make_contig(sizeof(unsigned char));
+    };
+    int sig = 1;
+
+    ucs_status_ptr_t sp = ucp_am_end_nbx(src_ep, AM_PUT_HANDLER, NULL, 0, &sig,
+            (sizeof(int)), &p);
+
+    ucs_status_t st = check_wait_for_request(defcp, sp);
+    
+  return UCS_OK;
+}
+
 ucs_status_t put_dec_handler(void *arg, const void *header, size_t h_size,
                          void *data, size_t len,
                          const ucp_am_recv_param_t *param) {
@@ -379,74 +496,7 @@ ucs_status_t get_enc_handler(void *arg, const void *header, size_t h_size,
   ucs_status_t s;
   ucp_ep_h return_ep = lookup_ucp_ep(defcp, func_data->dst_pe);
 
-
-#if 0
-//  ucp_rkey_h rkey = func_data->put_rem_rkey;
-  uint64_t caller_rdest = func_data->put_rem_buf;
-
-  int pe = func_data->dst_pe;
-
-
-//  ucp_request_param_t prm = {.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK,
-//                                   .cb.send = noop_callbackx};
-
-  DEBUG_SHMEM("Going back to the put based idea?\n");
-
-  shmemc_ctx_put(defcp, caller_rdest, temp_buffer, func_data->encrypted_size, pe); 
-//  sp = ucp_put_nbx(return_ep, temp_buffer, func_data->encrypted_size, caller_rdest, rkey, &prm);
-//  s = check_wait_for_request(defcp, sp);
-  shmemc_progress();
-//  if (s != UCS_OK){
-//     ERROR_SHMEM("Get-via-put failed. Going to fallback\n");
-//     goto am_fallback;
-//     //shmem_global_exit(s);
-//  }
-
-  free(temp_buffer);
-  free(temp_buffer_2);
-DEBUG_SHMEM("Setting up a callback to ensure that we decrypt appropriately...\n");
-  func_args_t *response = (func_args_t *)malloc(sizeof(func_args_t)); 
-  response->local_size = func_data->local_size;
-  response->encrypted_size = func_data->encrypted_size;
-  response->local_buf = func_data->local_buf;
-  response->remote_buffer = func_data->local_buf;
-  response->src_pe = func_data->src_pe;
-  response->dst_pe = func_data->dst_pe;
-  response->get_rem_buf = func_data->get_rem_buf;
-  DEBUG_SHMEM("get_rem_buf: %p\n", func_data->get_rem_buf);
-#if use_ctr
-  memcpy(response->IV, IV, AES_TAG_LEN);
-#endif
-  response->encrypted_size = func_data->encrypted_size;
-
-  ucp_request_param_t ack_param = {
-      .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
-      .cb.send = noop_callbackx,
-      .datatype = ucp_dt_make_contig(sizeof(unsigned char))};
-
-
-  sp =
-     ucp_am_send_nbx(return_ep, AM_NBPUT_HANDLER, NULL, 0, response,
-           sizeof(func_args_t), &ack_param);
-  DEBUG_SHMEM("Progressing....\n");
-  shmemc_progress();
-  s = check_wait_for_request(defcp, sp);
-  shmemu_assert(s == UCS_OK, "%s: failed (status: %s)", __func__,
-        ucs_status_string(s));
-
-  if (s != UCS_OK){
-     ERROR_SHMEM("Get-via-put failed. Going to fallback\n");
-     goto am_fallback;
-     //shmem_global_exit(s);
-  }
-
-  free(response);
-  goto fn_exit;
-
-
-am_fallback:
-#endif
-  //free(response);
+  
   func_args_t *response = (func_args_t *)malloc(sizeof(func_args_t)); // func_data->local_size+AES_TAG_LEN+AES_RAND_BYTES);
   response->local_size = func_data->local_size;
   response->local_buf = func_data->local_buf;
@@ -492,10 +542,6 @@ am_fallback:
   free(response);
 
   DEBUG_SHMEM("Done with the encryption and return to sender\n");
-
-//  shmemx_decrypt_single_buffer_omp((unsigned char *)r_dest, 0, (void *)r_dest,
-//        0, func_data->local_size,
-//        ((size_t *)(func_data->encrypted_size)));
 
 
 fn_exit:
@@ -584,14 +630,6 @@ ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
   ucs_status_t st = check_wait_for_request(defcp, sp);
   shmemu_assert(st == UCS_OK, "%s: failed (status: %s)", __func__,
                 ucs_status_string(st));
-
- // st = check_wait_for_request(defcp, sp);
- // shmemu_assert(st == UCS_OK, "%s: failed (status: %s)", __func__,
-  //              ucs_status_string(st));
-
- 
-   // memset(local_ptr+func_data->local_size, 0, 10);
-
 
   return UCS_OK;
 }
@@ -824,9 +862,19 @@ void shmemx_sec_init() {
   }
 
 
+  recv_handler_param.id = AM_PUT_HANDLER;
+  DEBUG_SHMEM("Registering put handler\n");
+  recv_handler_param.cb = put_dec_handler;
+
+  reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
+  if (reg_status != UCS_OK) {
+    handleErrors("am_recv_handler put failed\n");
+  }
+
+
   recv_handler_param.id = AM_NBPUT_HANDLER;
   DEBUG_SHMEM("Registering nbput handler\n");
-  recv_handler_param.cb = put_dec_handler;
+  recv_handler_param.cb = nbput_dec_handler;
 
   reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
   if (reg_status != UCS_OK) {
@@ -850,6 +898,40 @@ void shmemx_sec_init() {
   if (reg_status != UCS_OK) {
     handleErrors("am_recv_handler 7 failed\n");
   }
+
+  recv_handler_param.od = AM_REM_ENC_DONE;
+  recv_handler_param.cb = am_enc_sig_done;
+
+  reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
+  if (reg_status != UCS_OK) {
+    handleErrors("am_sig_handler_rem_enc failed\n");
+  }
+
+  recv_handler_param.od = AM_REM_DEC_DONE;
+  recv_handler_param.cb = am_dec_sig_done;
+
+  reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
+  if (reg_status != UCS_OK) {
+    handleErrors("am_sig_handler_rem_dec failed\n");
+  }
+
+  recv_handler_param.od = AM_NB_REM_ENC_DONE;
+  recv_handler_param.cb = am_dec_sig_done;
+
+  reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
+  if (reg_status != UCS_OK) {
+    handleErrors("am_sig_handler_nb_rem_enc failed\n");
+  }
+
+  recv_handler_param.od = AM_NB_PUT_DEC_DONE;
+  recv_handler_param.cb = am_dec_sig_done;
+
+  reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
+  if (reg_status != UCS_OK) {
+    handleErrors("am_sig_handler_nb_put_dec failed\n");
+  }
+
+
 
 
   return;
@@ -1621,7 +1703,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   };
 
   sp =
-      ucp_am_send_nbx(peer_ep, AM_NBPUT_HANDLER, NULL, 0, func_put,
+      ucp_am_send_nbx(peer_ep, AM_PUT_HANDLER, NULL, 0, func_put,
                       (sizeof(func_args_t)), &param);
 //  shmemc_progress();
    st = check_wait_for_request(ch, sp);
@@ -1638,18 +1720,24 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   DEBUG_SHMEM("Put end\n");
 
   //goto fn_end;
+  //
+  while (rem_enc_done == 0){}
 
-     int k = 0;
-     int magic = FOUR_M;
-     int kilo = KILO*3/2; /* 1.5K */
-     int magic2 = 3;
+  rem_enc_done == 0;
+
+#if 0
+  int k = 0;
+  int magic = FOUR_M;
+     int kilo = KILO+256; /* 1.25K */
+     int magic2 = 2;
      if (nbytes < magic){
-        while(k++ < magic2 * kilo )
-           shmemc_progress();
+         while(k++ < magic2 * kilo )
+             shmemc_progress();
      }else{
-        while(k++ < magic2 * kilo * (nbytes*2/magic)) 
-           shmemc_progress();
+         while(k++ < magic2 * kilo * (nbytes*2/magic)) 
+             shmemc_progress();
      }
+#endif
    
 fn_end:
        polling_t2 = (shmemx_wtime() - polling_t1) * 1e6;
