@@ -55,7 +55,7 @@ int nb_get_dec_done = 0;
 
 
 //int nb_put_dec_done[NON_BLOCKING_OP_COUNT] = {0};
-int nb_get_dec_done[NON_BOCKING_OP_COUNT] = {0};
+//int nb_get_dec_done[NON_BLOCKING_OP_COUNT] = {0};
 
 
 unsigned char enc_chunks[MAX_THREAD_COUNT][MAX_MSG_SIZE+COLL_OFFSET];
@@ -72,6 +72,8 @@ inline static void noop_callbackx(void *req, ucs_status_t status, void *user_dat
   NO_WARN_UNUSED(req);
   NO_WARN_UNUSED(status);
   NO_WARN_UNUSED(user_data);
+
+  DEBUG_SHMEM("Made it here\n");
 }
 
 /*
@@ -89,7 +91,7 @@ ucs_status_t am_enc_sig_done(void *arg, const void *header, size_t h_size,
     NO_WARN_UNUSED(h_size);
     NO_WARN_UNUSED(len);
     NO_WARN_UNUSED(data);
-    NO_WARN_UNuSED(arg);
+    NO_WARN_UNUSED(arg);
     rem_enc_done = 1;
 
     return UCS_OK;
@@ -103,8 +105,10 @@ ucs_status_t am_dec_sig_done(void *arg, const void *header, size_t h_size,
     NO_WARN_UNUSED(h_size);
     NO_WARN_UNUSED(len);
     NO_WARN_UNUSED(data);
-    NO_WARN_UNuSED(arg);
+    NO_WARN_UNUSED(arg);
     rem_dec_done = 1;
+
+    DEBUG_SHMEM("Local signal should be done, right?\n");
 
     return UCS_OK;
 }
@@ -117,7 +121,7 @@ ucs_status_t am_nb_enc_sig_done(void *arg, const void *header, size_t h_size,
     NO_WARN_UNUSED(h_size);
     NO_WARN_UNUSED(len);
     NO_WARN_UNUSED(data);
-    NO_WARN_UNuSED(arg);
+    NO_WARN_UNUSED(arg);
     nb_rem_enc_done = 1;
 
     return UCS_OK;
@@ -130,7 +134,7 @@ ucs_status_t am_nb_put_dec_sig_done(void *arg, const void *header, size_t h_size
     NO_WARN_UNUSED(h_size);
     NO_WARN_UNUSED(len);
     NO_WARN_UNUSED(data);
-    NO_WARN_UNuSED(arg);
+    NO_WARN_UNUSED(arg);
     nb_put_dec_done = 1;
 
     return UCS_OK;
@@ -143,7 +147,7 @@ ucs_status_t am_nb_get_dec_sig_done(void *arg, const void *header, size_t h_size
     NO_WARN_UNUSED(h_size);
     NO_WARN_UNUSED(len);
     NO_WARN_UNUSED(data);
-    NO_WARN_UNuSED(arg);
+    NO_WARN_UNUSED(arg);
     nb_get_dec_done = 1;
 
     return UCS_OK;
@@ -407,22 +411,41 @@ ucs_status_t put_dec_handler(void *arg, const void *header, size_t h_size,
                                      func_data->local_size,
                                      func_data->encrypted_size);
 
-    ucp_request_param p = {
+    ucp_request_param_t p = {
         .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE,
-        .cb.send = NULL,
-        datatype = ucp_dt_make_contig(sizeof(unsigned char));
+        .cb.send = noop_callbackx,
+        .datatype = ucp_dt_make_contig(sizeof(unsigned char))
     };
     int sig = 1;
+    ucp_ep_h src_ep = lookup_ucp_ep(defcp, func_data->src_pe);
 
-    ucs_status_ptr_t sp = ucp_am_end_nbx(src_ep, AM_PUT_HANDLER, NULL, 0, &sig,
-            (sizeof(int)), &p);
+    if (src_ep == NULL){
+        ERROR_SHMEM("src_ep is NULL\n");
+        shmem_global_exit(EINVAL);
+    }
 
+    DEBUG_SHMEM("Sending signal back to pe %d\n", func_data->src_pe);
+
+    ucs_status_ptr_t sp = ucp_am_send_nbx(src_ep, AM_REM_DEC_DONE, NULL, 0, &sig, sizeof(int), &p);
+
+    if (sp == NULL){
+        ERROR_SHMEM("NULL status ptr\n");
+        memset(NULL, 0, 10);
+        shmem_global_exit(-1);
+    }
     ucs_status_t st = check_wait_for_request(defcp, sp);
+
+    if (st != UCS_OK){
+        ERROR_SHMEM("Status request failed: sp %p st %ld\n", sp, st);
+        shmem_global_exit(st);
+    }
+   
+    DEBUG_SHMEM("Leaving decryption \n");
     
-  return UCS_OK;
+  return st ;
 }
 
-ucs_status_t put_dec_handler(void *arg, const void *header, size_t h_size,
+ucs_status_t nbput_dec_handler(void *arg, const void *header, size_t h_size,
                          void *data, size_t len,
                          const ucp_am_recv_param_t *param) {
 
@@ -832,10 +855,8 @@ void shmemx_sec_init() {
       .field_mask =
           UCP_AM_HANDLER_PARAM_FIELD_ID | UCP_AM_HANDLER_PARAM_FIELD_CB |
           UCP_AM_HANDLER_PARAM_FIELD_FLAGS | UCP_AM_HANDLER_PARAM_FIELD_ARG,
-      //.id = AM_PUT_HANDLER,
-      .flags = UCP_AM_FLAG_WHOLE_MSG,
-      //.cb = put_handler,
-      .arg = NULL};
+       .flags = UCP_AM_FLAG_WHOLE_MSG,
+       .arg = NULL};
 
   recv_handler_param.id = AM_GET_ENC_HANDLER;
   DEBUG_SHMEM("Registering get_enc handler\n");
@@ -871,7 +892,6 @@ void shmemx_sec_init() {
     handleErrors("am_recv_handler put failed\n");
   }
 
-
   recv_handler_param.id = AM_NBPUT_HANDLER;
   DEBUG_SHMEM("Registering nbput handler\n");
   recv_handler_param.cb = nbput_dec_handler;
@@ -899,7 +919,7 @@ void shmemx_sec_init() {
     handleErrors("am_recv_handler 7 failed\n");
   }
 
-  recv_handler_param.od = AM_REM_ENC_DONE;
+  recv_handler_param.id = AM_REM_ENC_DONE;
   recv_handler_param.cb = am_enc_sig_done;
 
   reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
@@ -907,7 +927,7 @@ void shmemx_sec_init() {
     handleErrors("am_sig_handler_rem_enc failed\n");
   }
 
-  recv_handler_param.od = AM_REM_DEC_DONE;
+  recv_handler_param.id = AM_REM_DEC_DONE;
   recv_handler_param.cb = am_dec_sig_done;
 
   reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
@@ -915,25 +935,21 @@ void shmemx_sec_init() {
     handleErrors("am_sig_handler_rem_dec failed\n");
   }
 
-  recv_handler_param.od = AM_NB_REM_ENC_DONE;
-  recv_handler_param.cb = am_dec_sig_done;
+  recv_handler_param.id = AM_NB_REM_ENC_DONE;
+  recv_handler_param.cb = am_nb_enc_sig_done;
 
   reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
   if (reg_status != UCS_OK) {
     handleErrors("am_sig_handler_nb_rem_enc failed\n");
   }
 
-  recv_handler_param.od = AM_NB_PUT_DEC_DONE;
-  recv_handler_param.cb = am_dec_sig_done;
+  recv_handler_param.id = AM_NB_PUT_DEC_DONE;
+  recv_handler_param.cb = am_nb_put_dec_sig_done;
 
   reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
   if (reg_status != UCS_OK) {
     handleErrors("am_sig_handler_nb_put_dec failed\n");
   }
-
-
-
-
   return;
 }
 
@@ -1721,9 +1737,11 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
 
   //goto fn_end;
   //
-  while (rem_enc_done == 0){}
+  //
+  DEBUG_SHMEM("Waiting for the request from the decrypting proc to finish\n");
+  while (rem_dec_done == 0){}
 
-  rem_enc_done == 0;
+  rem_dec_done = 0;
 
 #if 0
   int k = 0;
