@@ -693,7 +693,7 @@ ucs_status_t get_enc_handler(void *arg, const void *header, size_t h_size,
     DEBUG_SHMEM("encryption time for ctr\n");
     segment_count_2 = shmemx_encrypt_single_buffer_omp((unsigned char *)r_dest, 0, (void *)temp_buffer_2,
             0, func_data->local_size,
-            ((size_t *)(&func_data->encrypted_size)));
+            ((size_t *)(&func_data->encrypted_size)), func_data->dst_pe);
 
 #endif /* use_ctr ^ use_gcm */
 
@@ -980,10 +980,12 @@ void shmemx_sec_init() {
         assert (gcm_key[i] != NULL);
         memset(gcm_key[i], NULL, GCM_KEY_SIZE);
     }
-    for (j = 0; j< GCM_KEY_SIZE; j++){
+ //   for (j = 0; j< GCM_KEY_SIZE; j++){
 
-        gcm_key[me][j] = (unsigned char)(rand() % 256); /* For randomization */
-    }
+        RAND_bytes(gcm_key[me], GCM_KEY_SIZE);
+        //gcm_key[me][j] = (unsigned char)(rand() % 256); 
+        /* For randomization */
+ //   }
 
     res = PMIx_Allgather(my_second_pmix, gcm_key, GCM_KEY_SIZE, proc.li.nranks, me);
     
@@ -1002,10 +1004,12 @@ void shmemx_sec_init() {
         assert (IV[i] != NULL);
         memset(IV[i], NULL, AES_TAG_LEN);
     }
-    for (j = 0; j< AES_TAG_LEN; j++){
+    RAND_bytes(IV[me], AES_TAG_LEN);
+   // for (j = 0; j< AES_TAG_LEN; j++){
 
-        IV[me][j] = (unsigned char)(rand() % 256); /* For randomization */
-    }
+     //   IV[me][j] = (unsigned char)(rand() % 256); 
+     /* For randomization */
+   // }
 
     res = PMIx_Allgather(my_second_pmix, IV, AES_TAG_LEN, proc.li.nranks, me);
     
@@ -1430,14 +1434,14 @@ static void aes_ctr_dec(unsigned long long counter_val,
                            unsigned char *inbuf,
                            unsigned char *outbuf, 
                            unsigned long long len, unsigned long long src, int dest,
-                           size_t *cipherlen, EVP_CIPHER_CTX *ctx) {
+                           size_t *cipherlen, EVP_CIPHER_CTX *ctx, int pe) {
 
 //   RAND_bytes(IV, AES_RAND_BYTES);
 //   IV[AES_RAND_BYTES] = (counter_val >> 24) & 0xFF;
 //   IV[AES_RAND_BYTES+1] = (counter_val >> 16) & 0xFF;
 //   IV[AES_RAND_BYTES+2] = (counter_val >> 8 ) & 0xFF;
 //   IV[AES_RAND_BYTES+3] = (counter_val) & 0xFF;
-   if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,gcm_key, IV) != 1){
+   if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,gcm_key[pe], IV[pe]) != 1){
       handleErrors("EncryptInit Failed\n");
    }
 
@@ -1460,7 +1464,7 @@ static void aes_ctr_dec(unsigned long long counter_val,
 int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
                                      unsigned long long src, const void *sbuf,
                                      unsigned long long dest, size_t bytes,
-                                     size_t *cipherlen) {
+                                     size_t *cipherlen, int pe) {
 
 
   int thread_no = get_thread_count(bytes); // Starting thread point
@@ -1529,7 +1533,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
   //      handleErrors("Can't create a cipher ctx\n");
   //   }
 
-     if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,gcm_key, IV) != 1){
+     if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,gcm_key[pe], IV[pe]) != 1){
         handleErrors("EncryptInit Failed\n");
      }
 
@@ -1570,7 +1574,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
 int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
                                      unsigned long long src, void *rbuf,
                                      unsigned long long dest, size_t bytes,
-                                     size_t cipher_len) {
+                                     size_t cipher_len, int pe) {
 
   int res = 0;
   int segment_count = 0, count = 0;
@@ -1641,7 +1645,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
      
       int tn = omp_get_thread_num();
       DEBUG_SHMEM("T_%d starting decryption\n", tn);
-      aes_ctr_dec( counter_val, cipherbuf + (count * enc_data), rbuf + (count*enc_data), enc_data, src, dest, &local_cipherlen, openmp_dec_ctx[count]);
+      aes_ctr_dec( counter_val, cipherbuf + (count * enc_data), rbuf + (count*enc_data), enc_data, src, dest, &local_cipherlen, openmp_dec_ctx[count], pe);
 
    }
 
@@ -2089,7 +2093,7 @@ int shmemx_secure_quiet(void) {
       rem_dec_done = 0;
 
       DEBUG_SHMEM("Doing local_decryption on buffer %p with ciphertext %s\n", addr, (unsigned char*) addr);
-      shmemx_decrypt_single_buffer_omp(addr, 0, addr, 0, local_size, enc_size);
+      shmemx_decrypt_single_buffer_omp(addr, 0, addr, 0, local_size, enc_sizenb_get->dst_pe);
 
       ctr++;
     }
@@ -2230,7 +2234,7 @@ void shmemx_secure_get(shmem_ctx_t ctx, void *dest, const void *src,
     enc_t1 = shmemx_wtime();
     shmemx_decrypt_single_buffer_omp((unsigned char *)dest, 0, (void *)dest, 0,
           nbytes,
-          ((size_t)(func_get->encrypted_size)));
+          ((size_t)(func_get->encrypted_size)), proc.li.rank);
     enc_t2 = (shmemx_wtime() - enc_t1) * 1e6;
 
     ucp_request_param_t ack_param2 = {

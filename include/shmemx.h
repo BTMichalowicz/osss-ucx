@@ -433,9 +433,9 @@ typedef struct func_args {
  */
 
 
-int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipher_len);
+int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipher_len, int pe);
 
-int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
+int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len, int pe);
 
 
 int shmemx_secure_quiet(void);
