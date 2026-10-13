@@ -26,6 +26,13 @@
     '3', '4', '5', '6', '7', '8', '9', 'a', 'd', 'c'};*/
 
 
+
+const unsigned char g_key_coll[GCM_KEY_SIZE] = {
+     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'a', 'b', 'c', 'd',
+    'f', 'e', 'a', 'c', 'b', 'd', 'e', 'f', '0', '1', '2',
+    '3', '4', '5', '6', '7', '8', '9', 'a', 'd', 'c'};
+
+
 int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers, 
         size_t count, uint32_t nranks, 
         int my_rank){
@@ -55,7 +62,7 @@ int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers,
     snprintf(key, sizeof(key), "ag_len_%u",
             (unsigned)my_second_pmix->rank);
 
-    uint64_t len64 = (uint64_t)sendlen;
+    uint64_t len64 = (uint64_t)count;
     PMIX_VALUE_LOAD(&val, &len64, PMIX_UINT64);
 
     rc = PMIx_Put(PMIX_GLOBAL, key, &val);
@@ -612,7 +619,7 @@ ucs_status_t put_dec_handler(void *arg, const void *header, size_t h_size,
   DEBUG_SHMEM("ciphertext: %p %s\n", r_dest, r_dest);
     shmemx_decrypt_single_buffer_omp(r_dest, 0, (void *)r_dest, 0,
                                      func_data->local_size,
-                                     func_data->encrypted_size);
+                                     func_data->encrypted_size, func_data->dst_pe);
 
     ucp_request_param_t p = {
         .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK,
@@ -658,7 +665,7 @@ ucs_status_t nbput_dec_handler(void *arg, const void *header, size_t h_size,
     DEBUG_SHMEM("ciphertext: %p %s\n", r_dest, r_dest);
     shmemx_decrypt_single_buffer_omp(r_dest, 0, (void *)r_dest, 0,
             func_data->local_size,
-            func_data->encrypted_size);
+            func_data->encrypted_size, func_data->dst_pe);
     return UCS_OK;
 }
 
@@ -779,7 +786,7 @@ ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
 
     shmemx_decrypt_single_buffer_omp((unsigned char *)local_ptr, 0, (void *)dest, 0,
             func_data->local_size,
-            ((size_t)(func_data->encrypted_size)));
+            ((size_t)(func_data->encrypted_size)), func_data->dst_pe);
 
     ucp_ep_h return_ep;
     return_ep = lookup_ucp_ep(defcp, func_data->src_pe);
@@ -822,7 +829,7 @@ ucs_status_t get_dec_resp_handler_rem(void *arg, const void *header, size_t h_si
     DEBUG_SHMEM("Decryption on remote side for remote dest: %p\n", dest); 
     shmemx_decrypt_single_buffer_omp((unsigned char *)dest, 0, (void *)dest, 0,
             func_data->local_size,
-            ((size_t)(func_data->encrypted_size)));
+            ((size_t)(func_data->encrypted_size)), func_data->dst_pe);
 
     return UCS_OK;
 }
@@ -843,7 +850,7 @@ ucs_status_t nbget_handler(void *arg, const void *header, size_t h_size,
     int segment_count = 0;
     segment_count = shmemx_encrypt_single_buffer_omp((unsigned char *)r_dest, 0, (void *)r_dest, 0,
             func_data->local_size,
-            &(func_data->encrypted_size));
+            &(func_data->encrypted_size), func_data->dst_pe);
 
     DEBUG_SHMEM("Encrypted size is: %d, local_size is %d\n", func_data->encrypted_size, func_data->local_size);
     // int count = func_data->encrypted_size + (segment_count * (AES_TAG_LEN + AES_RAND_BYTES));
@@ -945,7 +952,7 @@ void shmemx_sec_init() {
 #if use_gcm
         /* Begin using AES_256_gcm */
         res = EVP_EncryptInit_ex(openmp_enc_ctx[i], EVP_aes_256_gcm(), NULL,
-                gcm_key, NULL);
+                gcm_key[dest], NULL);
         if (res != 1) {
             handleErrors("failed to begin encryption portion");
         }
@@ -958,7 +965,7 @@ void shmemx_sec_init() {
 
         /* Begin using AES_256_gcm */
         res = EVP_DecryptInit_ex(openmp_dec_ctx[i], EVP_aes_256_gcm(), NULL,
-                gcm_key, NULL);
+                gcm_key[dest], NULL);
         if (res != 1) {
             handleErrors("failed to begin encryption portion");
         }
@@ -987,17 +994,16 @@ void shmemx_sec_init() {
  //   }
 
     res = PMIx_Allgather(my_second_pmix, gcm_key, GCM_KEY_SIZE, proc.li.nranks, me);
-    
-    int success = 0;
+  
 
-    if (res != success){
+    if (res != PMIX_SUCCESS){
         handleErrors("distribution of keys has failed!\n");
     }
 
 
     IV = malloc(sizeof(unsigned char*) * nranks);
     assert (IV != NULL);
-    int j = 0;
+  //  int j = 0;
     for (i = 0; i < nranks; i++){
         IV[i] = malloc(sizeof(unsigned char) * AES_TAG_LEN);
         assert (IV[i] != NULL);
@@ -1011,10 +1017,7 @@ void shmemx_sec_init() {
    // }
 
     res = PMIx_Allgather(my_second_pmix, IV, AES_TAG_LEN, proc.li.nranks, me);
-    
-    int success = 0;
-
-    if (res != success){
+    if (res != PMIX_SUCCESS){
         handleErrors("distribution of keys has failed!\n");
     }
 
@@ -1027,7 +1030,7 @@ void shmemx_sec_init() {
     }
 >>>>>>> Stashed changes
 
-
+#endif
 #endif /* use_ctr or use_gcm */
     }
 
@@ -1638,7 +1641,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
 #pragma omp parallel for default(none)                       \
   private(count, local_cipherlen)         \
   shared(segment_count, enc_data, stdout, stderr, openmp_dec_ctx, data, cipherbuf,     \
-          rbuf, src, dest, proc, gcm_key, thread_no, counter_val) num_threads(thread_no) 
+          rbuf, src, dest, proc, gcm_key, thread_no, counter_val, pe) num_threads(thread_no) 
   for (count = 0; count < segment_count; count++) {
     // counter_val = (count * enc_data/thread_no);
      
@@ -1677,7 +1680,7 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf,
 
   //    DEBUG_SHMEM("Byte count :%d \n", (int)bytes);
   if ((res = EVP_EncryptInit_ex(defcp->enc_ctx, EVP_aes_256_gcm(), NULL,
-                                gcm_key, cipherbuf + src)) != 1) {
+                                gcm_key[dest], cipherbuf + src)) != 1) {
     ERROR_SHMEM("EncryptInit_ex from error %lu: %s\n", ERR_get_error(),
                 ERR_error_string(ERR_get_error(), NULL));
     shmem_global_exit(ERR_get_error());
@@ -1735,7 +1738,7 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf,
               cipherbuf, src, (void *)rbuf, dest, bytes);
 
   if ((res = EVP_DecryptInit_ex(defcp->dec_ctx, EVP_aes_256_gcm(), NULL,
-                                gcm_key, cipherbuf + src)) != 1) {
+                                gcm_key[dest], cipherbuf + src)) != 1) {
     ERROR_SHMEM("DecryptInit_ex failed: %lu %s\n", ERR_get_error(),
                 ERR_error_string(res, NULL));
     shmem_global_exit(ERR_get_error());
@@ -1787,7 +1790,7 @@ void shmemx_secure_put_nbi(shmem_ctx_t ctx, void *dest, const void *src,
          MAX_MSG_SIZE + OFFSET);
   int segment_count = shmemx_encrypt_single_buffer_omp(
       ((unsigned char *)(&(nbi_put_ciphertext[nbput_count][0]))), 0, src, 0,
-      nbytes, ((size_t *)(&cipherlen)));
+      nbytes, ((size_t *)(&cipherlen)), pe);
 
   int res_bytes = cipherlen ;//+ (segment_count *(AES_TAG_LEN + AES_RAND_BYTES));
 
@@ -1850,7 +1853,7 @@ void shmemx_secure_put(shmem_ctx_t ctx, void *dest, const void *src,
   DEBUG_SHMEM("bytes: %lu\n", nbytes);
   int segment_count = shmemx_encrypt_single_buffer_omp(
       &(blocking_put_ciphertext[0]), 0, src, 0, nbytes,
-      ((size_t *)(&block_put_cipherlen)));
+      ((size_t *)(&block_put_cipherlen)), pe);
   enc_t2 = (shmemx_wtime() - enc_t1) * 1e6;
 
   DEBUG_SHMEM("Encryption end, ciphertext: %p, cipherlen: %d \n",
@@ -2092,7 +2095,7 @@ int shmemx_secure_quiet(void) {
       rem_dec_done = 0;
 
       DEBUG_SHMEM("Doing local_decryption on buffer %p with ciphertext %s\n", addr, (unsigned char*) addr);
-      shmemx_decrypt_single_buffer_omp(addr, 0, addr, 0, local_size, enc_sizenb_get->dst_pe);
+      shmemx_decrypt_single_buffer_omp(addr, 0, addr, 0, local_size, enc_size,nb_get->dst_pe);
 
       ctr++;
     }

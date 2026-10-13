@@ -351,9 +351,9 @@ void shmemx_sec_init(void);
 void shmemx_sec_ctx_init(shmem_ctx_t shmem_ctx);
 
 int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long long src,
-      const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipherlen);
+      const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipherlen, int pe);
 int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long long src, 
-        void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
+        void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len, int pe);
 
 
 int shmemx_encrypt_single_buffer_omp_2(unsigned char *cipherbuf, unsigned long long src,
@@ -433,9 +433,9 @@ typedef struct func_args {
  */
 
 
-int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipher_len, int pe);
+int shmemx_encrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipher_len);
 
-int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len, int pe);
+int shmemx_decrypt_single_buffer(unsigned char *cipherbuf, unsigned long long src, void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
 
 
 int shmemx_secure_quiet(void);

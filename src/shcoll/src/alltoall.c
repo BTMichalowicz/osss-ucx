@@ -238,7 +238,7 @@ static inline double avg2(double *arr, int PE_size){
          enc_t1[peer_as] =  shmemx_wtime();                                         \
         shmemx_encrypt_single_buffer_omp((unsigned char *)(temp + dst),              \
                                          0, source + src, 0, nelems,             \
-                                         &(enc_size[peer_as]));                \
+                                         &(enc_size[peer_as]), peer_as);                \
           enc_t2[peer_as] = (shmemx_wtime() - enc_t1[peer_as]) * 1e6;             \
       }                                                                        \
     shcoll_barrier_binomial_tree(PE_start, logPE_stride, PE_size, pSync);      \
@@ -291,7 +291,7 @@ static inline double avg2(double *arr, int PE_size){
               src = (peer_as * (nelems ));                                           \
               dec_t1[peer_as] = shmemx_wtime();                                   \
               shmemx_decrypt_single_buffer_omp(                                  \
-                      dest_ptr, 0, dest_ptr, 0, nelems, enc_size[peer_as]);          \
+                      dest_ptr, 0, dest_ptr, 0, nelems, enc_size[peer_as], peer_as);          \
               dec_t2[peer_as] = (shmemx_wtime() - dec_t1[peer_as]) * 1e6;         \
               DEBUG_SHMEM("Finished decryption iter %d, peer_as %d, bytes %lu\n", i, peer_as, nelems);         \
           }                                                                        \
@@ -339,9 +339,10 @@ static inline double avg2(double *arr, int PE_size){
     if (proc.env.shmem_encryption){                                            \
                                                                                \
     for (i = 0; i< PE_size; i++){                                              \
+peer_as = _peer(i, me_as, PE_size);                                             \
       source_ptr = ((uint8_t *)source) + i * nelems;                     \
           shmemx_encrypt_single_buffer_omp(source_ptr, 0, source_ptr, 0,       \
-                  nelems, &(encrypt_temp));                                    \
+                  nelems, &(encrypt_temp), peer_as);                                    \
       }                                                                        \
     }                                                                          \
                                                                                \
@@ -369,7 +370,7 @@ static inline double avg2(double *arr, int PE_size){
         for (i = 0; i < PE_size; i++){                                         \
         int peer_as = _peer(i, me_as, PE_size);                                \
             shmemx_decrypt_single_buffer_omp(dest, (peer_as * nelems), dest,         \
-                (peer_as * nelems), nelems, encrypt_temp[i]);                        \
+                (peer_as * nelems), nelems, encrypt_temp[i], peer_as);                        \
         }                                                                      \
     }                                                                          \
   }
