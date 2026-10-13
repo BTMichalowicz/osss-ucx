@@ -169,10 +169,9 @@ int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers,
         if (rc != PMIX_SUCCESS || got == NULL)
             goto fail;
 
-        if (got->type != PMIX_BYTE_OBJECT){
-            //||
-            //   got->data.bo.size != result->sizes[r]) {
-
+        if (got->type != PMIX_BYTE_OBJECT || 
+                got->data.bo.size != count){
+ 
             PMIX_VALUE_RELEASE(got);
             goto fail;
         }
@@ -183,39 +182,39 @@ int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers,
         //       goto fail;
         //   }
 
-           memcpy(buffers[r], got->data.bo.bytes,
-                   got->data.bo.size);
+        memcpy(buffers[r], got->data.bo.bytes,
+                got->data.bo.size);
 
         PMIX_VALUE_RELEASE(got);
-        }
+    }
 
 #if INIT_DEBUG
-        for (uint32_t r = 0; r < nranks; ++r) {
-           // printf("Rank %u (%zu bytes):",
-           //         r, gathered.si[r]);
+    for (uint32_t r = 0; r < nranks; ++r) {
+        // printf("Rank %u (%zu bytes):",
+        //         r, gathered.si[r]);
 
-            for (size_t j = 0; j < count; ++j)
-                printf(" %02x", buffers[r][j]);
+        for (size_t j = 0; j < count; ++j)
+            printf(" %02x", buffers[r][j]);
 
-            printf("\n");
-        }
+        printf("\n");
+    }
 #endif
 
 
 
-        return 0;
+    return 0;
 
 fail:
-        //   if (result->data) {
-        //        for (uint32_t r = 0; r < nranks; ++r)
-        //            free(result->data[r]);
-        //    }
+    //   if (result->data) {
+    //        for (uint32_t r = 0; r < nranks; ++r)
+    //            free(result->data[r]);
+    //    }
 
-        //      free(result->data);
-        //      free(result->sizes);
-        //      memset(result, 0, sizeof(*result));
-        return -1;
-    }
+    //      free(result->data);
+    //      free(result->sizes);
+    //      memset(result, 0, sizeof(*result));
+    return -1;
+}
 
 
 
