@@ -15,17 +15,221 @@
 #include <assert.h>
 #include <omp.h>
 
+#include <pmix.h>
+
 #define use_ctr 1
 #define use_gcm 0
 
-const unsigned char gcm_key[GCM_KEY_SIZE] = {
+/*const unsigned char gcm_key[GCM_KEY_SIZE] = {
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'a', 'b', 'c', 'd',
     'f', 'e', 'a', 'c', 'b', 'd', 'e', 'f', '0', '1', '2',
-    '3', '4', '5', '6', '7', '8', '9', 'a', 'd', 'c'};
+    '3', '4', '5', '6', '7', '8', '9', 'a', 'd', 'c'};*/
+
+
+int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers, 
+        size_t count, uint32_t nranks, 
+        int my_rank){
+
+
+    //    (const pmix_proc_t *self,
+    //     uint32_t nranks,
+    //     const unsigned char *sendbuf,
+    //     size_t sendlen,
+    //     byte_allgather_result_t *result)
+    //    {
+    pmix_status_t rc;
+    pmix_value_t val;
+    pmix_info_t info;
+    char key[PMIX_MAX_KEYLEN + 1];
+
+    if (count > 0 && buffers[my_rank == NULL]){
+        return -1;
+    }
+
+    //        if (result == NULL || (sendlen > 0 && buffers[my_rank] == NULL))
+    //            return -1;
+
+    //        memset(result, 0, sizeof(*result));
+
+    /* Publish this rank's contribution size. */
+    snprintf(key, sizeof(key), "ag_len_%u",
+            (unsigned)my_second_pmix->rank);
+
+    uint64_t len64 = (uint64_t)sendlen;
+    PMIX_VALUE_LOAD(&val, &len64, PMIX_UINT64);
+
+    rc = PMIx_Put(PMIX_GLOBAL, key, &val);
+    PMIX_VALUE_DESTRUCT(&val);
+    if (rc != PMIX_SUCCESS)
+        return -1;
+
+    rc = PMIx_Commit();
+    if (rc != PMIX_SUCCESS)
+        return -1;
+
+    int collect = true;
+    PMIX_INFO_LOAD(&info, PMIX_COLLECT_DATA, &collect, PMIX_INT);
+
+    rc = PMIx_Fence(NULL, 0, &info, 1);
+    PMIX_INFO_DESTRUCT(&info);
+    if (rc != PMIX_SUCCESS)
+        return -1;
+
+    /* Retrieve
+     * all
+     * contribution
+     * sizes.
+     * */
+    //   result->sizes = calloc(nranks, sizeof(*result->sizes));
+    //   result->data = calloc(nranks, sizeof(*result->data));
+
+    //    if (!result->sizes || !result->data)
+    //        goto fail;
+
+    //    result->nranks = nranks;
+
+    for (uint32_t r = 0; r < nranks; ++r) {
+        pmix_proc_t peer;
+        pmix_value_t *got = NULL;
+
+        PMIX_PROC_LOAD(&peer, my_second_pmix->nspace, r);
+        snprintf(key, sizeof(key), "ag_len_%u", r);
+
+        rc = PMIx_Get(&peer, key, NULL, 0, &got);
+        if (rc != PMIX_SUCCESS || got == NULL)
+            goto fail;
+
+        if (got->type != PMIX_UINT64) {
+            PMIX_VALUE_RELEASE(got);
+            goto fail;
+        }
+
+        uint64_t n = got->data.uint64;
+        PMIX_VALUE_RELEASE(got);
+
+        if (n > SIZE_MAX)
+            goto fail;
+
+        //    result->sizes[r] = (size_t)n;
+    }
+
+    /* Publish
+     * this
+     * rank's
+     * actual
+     * byte
+     * buffer.
+     * */
+    snprintf(key, sizeof(key), "ag_data_%u",
+            (unsigned)my_second_pmix->rank);
+
+    pmix_byte_object_t bo;
+    bo.bytes = buffers[my_rank];
+    bo.size = count;
+
+    PMIX_VALUE_LOAD(&val, &bo, PMIX_BYTE_OBJECT);
+    rc = PMIx_Put(PMIX_GLOBAL, key, &val);
+    PMIX_VALUE_DESTRUCT(&val);
+
+    if (rc != PMIX_SUCCESS)
+        goto fail;
+
+    rc = PMIx_Commit();
+    if (rc != PMIX_SUCCESS)
+        goto fail;
+
+    /* Ensure
+     * all
+     * payloads
+     * are
+     * published
+     * before
+     * retrieving
+     * them.
+     * */
+    PMIX_INFO_LOAD(&info, PMIX_COLLECT_DATA, &collect, PMIX_BOOL);
+
+    rc = PMIx_Fence(NULL, 0, &info, 1);
+    PMIX_INFO_DESTRUCT(&info);
+
+    if (rc != PMIX_SUCCESS)
+        goto fail;
+
+    for (uint32_t r = 0; r < nranks; ++r) {
+        pmix_proc_t peer;
+        pmix_value_t *got = NULL;
+
+        PMIX_PROC_LOAD(&peer, my_second_pmix->nspace, r);
+        snprintf(key, sizeof(key), "ag_data_%u", r);
+
+        // if (result->sizes[r] == 0)
+        //     continue;
+
+        rc = PMIx_Get(&peer, key, NULL, 0, &got);
+        if (rc != PMIX_SUCCESS || got == NULL)
+            goto fail;
+
+        if (got->type != PMIX_BYTE_OBJECT){
+            //||
+            //   got->data.bo.size != result->sizes[r]) {
+
+            PMIX_VALUE_RELEASE(got);
+            goto fail;
+        }
+
+        //   result->data[r] = malloc(result->sizes[r]);
+        //   if (result->data[r] == NULL) {
+        //       PMIX_VALUE_RELEASE(got);
+        //       goto fail;
+        //   }
+
+           memcpy(buffers[r], got->data.bo.bytes,
+                   got->data.bo.size);
+
+        PMIX_VALUE_RELEASE(got);
+        }
+
+#if INIT_DEBUG
+        for (uint32_t r = 0; r < nranks; ++r) {
+           // printf("Rank %u (%zu bytes):",
+           //         r, gathered.si[r]);
+
+            for (size_t j = 0; j < count; ++j)
+                printf(" %02x", buffers[r][j]);
+
+            printf("\n");
+        }
+#endif
+
+
+
+        return 0;
+
+fail:
+        //   if (result->data) {
+        //        for (uint32_t r = 0; r < nranks; ++r)
+        //            free(result->data[r]);
+        //    }
+
+        //      free(result->data);
+        //      free(result->sizes);
+        //      memset(result, 0, sizeof(*result));
+        return -1;
+    }
+
+
+
+
+   
+
+unsigned char **gcm_key = NULL;
+
 
 #if use_ctr
-unsigned char IV[AES_TAG_LEN] = {'L','F','g','l','j','2','M','T','M','z',
-                                 'i','s','n','O','g','p'};
+//unsigned char IV[AES_TAG_LEN] = {'L','F','g','l','j','2','M','T','M','z',
+//                                 'i','s','n','O','g','p'};
+
+unsigned char **IV = NULL;
 #endif /* use_ctr */
 
 
@@ -710,10 +914,13 @@ void shmemx_sec_init() {
     char *enc_dec = NULL;
     int res = 0;
 
-    if ((enc_dec = getenv("SHMEM_ENABLE_ENCRYPTION")) != NULL) {
-        proc.env.shmem_encryption = !!atoi(enc_dec);
-        assert(proc.env.shmem_encryption == 0 || proc.env.shmem_encryption == 1);
-    }
+  int nranks = proc.li.nranks;
+  int me = proc.li.rank;
+
+  if ((enc_dec = getenv("SHMEM_ENABLE_ENCRYPTION")) != NULL) {
+    proc.env.shmem_encryption = !!atoi(enc_dec);
+    assert(proc.env.shmem_encryption == 0 || proc.env.shmem_encryption == 1);
+  }
 
 
     // nbi_put_ciphertext = malloc(sizeof(unsigned char
@@ -763,6 +970,59 @@ void shmemx_sec_init() {
             handleErrors("Failed to set up the Initialization Vector Length");
         }
 #elif use_ctr
+
+
+    gcm_key = malloc(sizeof(unsigned char*) * nranks);
+    assert (gcm_key != NULL);
+    int j = 0;
+    for (i = 0; i < nranks; i++){
+        gcm_key[i] = malloc(sizeof(unsigned char) * GCM_KEY_SIZE);
+        assert (gcm_key[i] != NULL);
+        memset(gcm_key[i], NULL, GCM_KEY_SIZE);
+    }
+    for (j = 0; j< GCM_KEY_SIZE; j++){
+
+        gcm_key[me][j] = (unsigned char)(rand() % 256); /* For randomization */
+    }
+
+    res = PMIx_Allgather(my_second_pmix, gcm_key, GCM_KEY_SIZE, proc.li.nranks, me);
+    
+    int success = 0;
+
+    if (res != success){
+        handleErrors("distribution of keys has failed!\n");
+    }
+
+
+    IV = malloc(sizeof(unsigned char*) * nranks);
+    assert (IV != NULL);
+    int j = 0;
+    for (i = 0; i < nranks; i++){
+        IV[i] = malloc(sizeof(unsigned char) * AES_TAG_LEN);
+        assert (IV[i] != NULL);
+        memset(IV[i], NULL, AES_TAG_LEN);
+    }
+    for (j = 0; j< AES_TAG_LEN; j++){
+
+        IV[me][j] = (unsigned char)(rand() % 256); /* For randomization */
+    }
+
+    res = PMIx_Allgather(my_second_pmix, IV, AES_TAG_LEN, proc.li.nranks, me);
+    
+    int success = 0;
+
+    if (res != success){
+        handleErrors("distribution of keys has failed!\n");
+    }
+
+
+#if 0
+   res = EVP_EncryptInit_ex(openmp_enc_ctx[i], EVP_aes_256_ctr(), NULL,
+          gcm_key, NULL);
+    if (res != 1) {
+      handleErrors("failed to begin encryption portion");
+    }
+>>>>>>> Stashed changes
 
 
 #endif /* use_ctr or use_gcm */

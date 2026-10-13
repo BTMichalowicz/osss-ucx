@@ -310,7 +310,7 @@ int shmemx_query_interoperability(int property);
 #define KILO 1024
 #define MEGA KILO*KILO
 #define GIGA KILO*MGEA
-
+#include <pmix.h>
 /* Constant items */
 #define MAX_MSG_SIZE (4*MEGA)
 //const unsigned long long max_msg_size = 2<<27ul;
@@ -322,6 +322,9 @@ int shmemx_query_interoperability(int property);
 #define AES_RAND_BYTES 12
 #define NON_BLOCKING_OP_COUNT 450
 #define PUT_TEMP_BUF_LEN 20
+
+
+extern pmix_proc_t *my_second_pmix;
 
 #define MAX_THREAD_COUNT 16
 #define SIXTEEN_K 16*KILO
@@ -374,7 +377,9 @@ typedef struct shmem_secure_attr {
     uintptr_t remote_buf_addr;
     uintptr_t local_buf_addr;
     uintptr_t local_buf;
-    unsigned char IV[AES_TAG_LEN];
+    unsigned char put_IV[AES_TAG_LEN];
+    unsigned char get_IV[AES_TAG_LEN];
+    unsigned char rem_key[GCM_KEY_SIZE];
 } shmem_secure_attr_t;
 
 #include "shmemc.h"
@@ -395,17 +400,6 @@ typedef enum AM_1SC_HANDLERS {
    AM_NB_PUT_DEC_DONE,
    AM_NB_GET_DEC_DONE
 } AM_1SC_HANDLERS;
-
-/*
-#define AM_PUT_HANDLER 101
-#define AM_GET_ENC_HANDLER 102
-#define AM_GET_DEC_RESPONSE 103
-#define AM_GET_DEC_RESPONSE_2 104
-#define AM_NBPUT_HANDLER 105
-#define AM_NBGET_HANDLER 106
-#define AM_NBGET_HANDLER_2 107
-#define AM_NBGET_DEC_HANDLER 108
-*/
 
 
 typedef struct func_args {
@@ -504,7 +498,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
       fflush(stdout);                              */     \
    } while(0);
 
-
+#define INIT_DEBUG 0
 
 
 /* ENDING SHMEM ENCRYPTION ADDITIONS: BTM */
