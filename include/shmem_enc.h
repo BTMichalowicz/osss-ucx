@@ -9,8 +9,8 @@
 #include<openssl/err.h>
 #include<openssl/rand.h>
 #include<openssl/modes.h>
-#include<openssl/core_names.h>
-#include<openssl/provider.h>
+//#include<openssl/core_names.h>
+//#include<openssl/provider.h>
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 #endif /* _SHMEM_ENC_H_ */

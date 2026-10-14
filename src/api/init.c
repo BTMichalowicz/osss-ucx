@@ -113,9 +113,6 @@ inline static int init_thread_helper(int requested, int *provided) {
   /* utiltiies */
   shmemt_init();
 
-#if ENABLE_SHMEM_ENCRYPTION
-  shmemx_sec_init();
-#endif /* ENABLE_SHMEM_ENCRYPTION */
   shmemu_init();
   collectives_init();
 
@@ -124,6 +121,7 @@ inline static int init_thread_helper(int requested, int *provided) {
 #endif /* ENABLE_ALIGNED_ADDRESSES */
 
   shmemu_progress_init();
+
 
   /* save and return thread level */
 #ifdef ENABLE_THREADS
@@ -150,9 +148,15 @@ inline static int init_thread_helper(int requested, int *provided) {
 
   proc.td.invoking_thread = threadwrap_thread_id();
 
+
 #ifdef ENABLE_EXPERIMENTAL
   shmemxa_init(proc.heaps.nheaps);
 #endif /* ENABLE_EXPERIMENTAL */
+
+#if ENABLE_SHMEM_ENCRYPTION
+  shmemx_sec_init();
+#endif /* ENABLE_SHMEM_ENCRYPTION */
+
 
   s = atexit(finalize_helper);
   if (s != 0) {

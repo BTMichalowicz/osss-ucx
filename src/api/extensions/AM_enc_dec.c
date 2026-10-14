@@ -25,222 +25,20 @@
     'f', 'e', 'a', 'c', 'b', 'd', 'e', 'f', '0', '1', '2',
     '3', '4', '5', '6', '7', '8', '9', 'a', 'd', 'c'};*/
 
-int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers, 
-        size_t count, uint32_t nranks, 
-        int my_rank){
-
-    size_t backup_count = count;
-
-
-    //    (const pmix_proc_t *self,
-    //     uint32_t nranks,
-    //     const unsigned char *sendbuf,
-    //     size_t sendlen,
-    //     byte_allgather_result_t *result)
-    //    {
-    pmix_status_t rc;
-    pmix_value_t val;
-    pmix_info_t info;
-    char key[PMIX_MAX_KEYLEN + 1];
-
-    if (count > 0 && buffers[my_rank] == NULL){
-        ERROR_SHMEM("count: %d, buffer rank %d %p\n", count, my_rank, buffers[my_rank]);
-        return -1;
-    }
-
-    //        if (result == NULL || (sendlen > 0 && buffers[my_rank] == NULL))
-    //            return -1;
-
-    //        memset(result, 0, sizeof(*result));
-
-    /* Publish this rank's contribution size. */
-    snprintf(key, sizeof(key), "ag_len_%u",
-            (unsigned)my_second_pmix->rank);
-
-    uint64_t len64 = (uint64_t)count;
-    PMIX_VALUE_LOAD(&val, &len64, PMIX_UINT64);
-
-    rc = PMIx_Put(PMIX_GLOBAL, key, &val);
-    PMIX_VALUE_DESTRUCT(&val);
-    if (rc != PMIX_SUCCESS){
-        ERROR_SHMEM("Failed to PMIx_Put\n");
-        return -1;
-    }
-
-    rc = PMIx_Commit();
-    if (rc != PMIX_SUCCESS){
-        ERROR_SHMEM("Failed to commit \n");
-        return -1;
-    }
-
-    int collect = true;
-    PMIX_INFO_LOAD(&info, PMIX_COLLECT_DATA, &collect, PMIX_INT);
-
-    rc = PMIx_Fence(NULL, 0, &info, 1);
-    PMIX_INFO_DESTRUCT(&info);
-    if (rc != PMIX_SUCCESS){
-        ERROR_SHMEM("Failed to Fence\n");
-        return -1;
-    } 
-
-    for (uint32_t r = 0; r < nranks; ++r) {
-        pmix_proc_t peer;
-        pmix_value_t *got = NULL;
-
-        PMIX_PROC_LOAD(&peer, my_second_pmix->nspace, r);
-        snprintf(key, sizeof(key), "ag_len_%u", r);
-
-        rc = PMIx_Get(&peer, key, NULL, 0, &got);
-        if (rc != PMIX_SUCCESS || got == NULL){
-            ERROR_SHMEM("Failed to PMIx Get\n");
-            goto fail;
-        }
-
-        if (got->type != PMIX_UINT64) {
-            ERROR_SHMEM("Incorrect got->type: %d, PMIX_UINT64: %d\n",
-                    got->type, PMIX_UINT64);
-            PMIX_VALUE_RELEASE(got);
-            goto fail;
-        }
-
-        uint64_t n = got->data.uint64;
-        PMIX_VALUE_RELEASE(got);
-
-        if (n > SIZE_MAX){
-            ERROR_SHMEM("Data exceeds SIZE_MAX\n");
-            goto fail;
-        } 
-    }
-
-    /* Publish
-     * this
-     * rank's
-     * actual
-     * byte
-     * buffer.
-     * */
-    snprintf(key, sizeof(key), "ag_data_%u",
-            (unsigned)my_second_pmix->rank);
-
-    pmix_byte_object_t bo;
-    bo.bytes = buffers[my_rank];
-    bo.size = count;
-
-    ERROR_SHMEM("bytes: %p, size: %d, PMIX_BYTE_OBJECT: %d\n", bo.bytes, bo.size, PMIX_BYTE_OBJECT);
-
-    PMIX_VALUE_LOAD(&val, &bo, PMIX_BYTE_OBJECT);
-    rc = PMIx_Put(PMIX_GLOBAL, key, &val);
-    PMIX_VALUE_DESTRUCT(&val);
-
-    if (rc != PMIX_SUCCESS){
-        ERROR_SHMEM("Failed to PMIx_Put\n");
-        goto fail;
-    }
-
-    rc = PMIx_Commit();
-    if (rc != PMIX_SUCCESS){
-        ERROR_SHMEM("Failed to commit post-put\n");
-        goto fail;
-    }
-
-    /* Ensure
-     * all
-     * payloads
-     * are
-     * published
-     * before
-     * retrieving
-     * them.
-     * */
-    PMIX_INFO_LOAD(&info, PMIX_COLLECT_DATA, &collect, PMIX_INT);
-
-    rc = PMIx_Fence(NULL, 0, &info, 1);
-    PMIX_INFO_DESTRUCT(&info);
-
-    if (rc != PMIX_SUCCESS){
-        ERROR_SHMEM("Failed to commit\n");
-        goto fail;
-    }
-
-    for (uint32_t r = 0; r < nranks; ++r) {
-        count = backup_count;
-        pmix_proc_t peer;
-        pmix_value_t *got = NULL;
-
-        PMIX_PROC_LOAD(&peer, my_second_pmix->nspace, r);
-        snprintf(key, sizeof(key), "ag_data_%u", r);
-
-        // if (result->sizes[r] == 0)
-        //     continue;
-
-        rc = PMIx_Get(&peer, key, NULL, 0, &got);
-        if (rc != PMIX_SUCCESS || got == NULL){
-            ERROR_SHMEM("rc: %d, got %p\n", rc, got);
-            goto fail;
-        }
-
-        if (got->type != PMIX_BYTE_OBJECT || 
-                (got->data.bo.size != count && got->data.bo.size != backup_count)){
-
-            ERROR_SHMEM("type != PMIX_BYTE_OBJECT (got->type %d, PMIX_BYTE_OBJECT %d),  OR the incorrect count(%d versus %d)\n",
-                    got->data.bo.size, count);
-            PMIX_VALUE_RELEASE(got);
-            goto fail;
-        }
-
-        //   result->data[r] = malloc(result->sizes[r]);
-        //   if (result->data[r] == NULL) {
-        //       PMIX_VALUE_RELEASE(got);
-        //       goto fail;
-        //   }
-
-        memcpy(buffers[r], got->data.bo.bytes,
-                got->data.bo.size);
-
-        PMIX_VALUE_RELEASE(got);
-    }
-
-#if INIT_DEBUG
-    for (uint32_t r = 0; r < nranks; ++r) {
-        // printf("Rank %u (%zu bytes):",
-        //         r, gathered.si[r]);
-
-        for (size_t j = 0; j < count; ++j)
-            printf(" %02x", buffers[r][j]);
-
-        printf("\n");
-    }
-#endif
-
-
-
-    return 0;
-
-fail:
-    //   if (result->data) {
-    //        for (uint32_t r = 0; r < nranks; ++r)
-    //            free(result->data[r]);
-    //    }
-
-    //      free(result->data);
-    //      free(result->sizes);
-    //      memset(result, 0, sizeof(*result));
-    return -1;
-}
-
-
-
-
-   
-
-unsigned char **gcm_key = NULL;
-
-
+#define UPPER_RANK_COUNT 16384
+//static unsigned char gcm_key[UPPER_RANK_COUNT][GCM_KEY_SIZE];
+//static unsigned char gcm_key[UPPER_RANK_COUNT * GCM_KEY_SIZE];
+unsigned char *global_keys = NULL;
+static unsigned char local_key[GCM_KEY_SIZE] = {'\0'};
 #if use_ctr
 //unsigned char IV[AES_TAG_LEN] = {'L','F','g','l','j','2','M','T','M','z',
 //                                 'i','s','n','O','g','p'};
 
-unsigned char **IV = NULL;
+static unsigned char local_IV[AES_TAG_LEN] = {'\0'}; 
+unsigned char *global_IV = NULL;
+//unsigned char **IV = NULL;
+//static unsigned char IV[UPPER_RANK_COUNT][AES_TAG_LEN];
+//static unsigned char IV[UPPER_RANK_COUNT * AES_TAG_LEN];
 #endif /* use_ctr */
 
 
@@ -267,10 +65,6 @@ int rem_dec_done = 0;
 int nb_rem_enc_done = 0;
 int nb_put_dec_done = 0;
 int nb_get_dec_done = 0;
-
-
-//int nb_put_dec_done[NON_BLOCKING_OP_COUNT] = {0};
-//int nb_get_dec_done[NON_BLOCKING_OP_COUNT] = {0};
 
 
 unsigned char enc_chunks[MAX_THREAD_COUNT][MAX_MSG_SIZE+COLL_OFFSET];
@@ -452,6 +246,7 @@ inline static long lookup_region(uint64_t addr) {
     }
   }
 
+  ERROR_SHMEM("Cannot find region, returning -1L\n");
   return -1L;
 }
 
@@ -496,6 +291,10 @@ inline static void get_remote_key_and_addr(shmemc_context_h ch,
                                            ucp_rkey_h *rkey_p,
                                            uint64_t *raddr_p) {
   const long r = lookup_region(local_addr);
+
+  if (r < 0){
+      ERROR_SHMEM("Failed to find a region with addr %p\n", local_addr);
+  }
 
   shmemu_assert(r >= 0,
                 "shmem_enc/dec, get_rkey/addr: can't find memory region for %p",
@@ -614,9 +413,6 @@ ucs_status_t put_dec_handler(void *arg, const void *header, size_t h_size,
 
   func_args_t *func_data = (func_args_t *)data;
   uint64_t r_dest = func_data->remote_buffer;
-#if use_ctr
-  //memcpy(IV, func_data->IV, AES_TAG_LEN);
-#endif /*use_ctr*/
 
   shmemu_assert(r_dest >= 0, "put_dec_handler: rdest is 0, can't find region of %p",
                 (void *)r_dest);
@@ -784,9 +580,7 @@ ucs_status_t get_dec_resp_handler(void *arg, const void *header, size_t h_size,
     response->src_pe = func_data->src_pe;
     response->dst_pe = func_data->dst_pe;
     response->get_rem_buf = func_data->get_rem_buf;
-#if use_ctr
-    //memcpy(response->IV, IV, AES_TAG_LEN);
-#endif
+
     response->encrypted_size = func_data->encrypted_size;
 
     shmemx_decrypt_single_buffer_omp((unsigned char *)local_ptr, 0, (void *)dest, 0,
@@ -913,11 +707,61 @@ ucs_status_t nbget_handler_local(void *arg, const void *header, size_t h_size,
     return UCS_OK;
 }
 
-
-
 static inline void handleErrors(char *message) {
     ERR_print_errors_fp(stderr);
     shmemu_fatal("shmem_enc_dec: %s\n", message);
+}
+
+/* UCX based allgather for IV's and Keys */
+
+int ucx_based_1sc_allgather(shmemc_context_h ch, 
+        unsigned char ** buffers, size_t count, uint32_t nranks,
+        int rank){
+
+    uint64_t r_dest;
+    ucp_rkey_h r_key;
+    int i = 0;
+
+    int local_len = count;
+    ucp_ep_h peer_ep = NULL;
+    size_t got = 0;
+
+    unsigned char *c = &(buffers[rank][0]); /* What I am sending */
+    DEBUG_SHMEM("c: %p\n", c);
+//    peer_ep = lookup_ucp_ep(ch, next);
+   // const uint64_t dest = (uint64_t)buffers[next];
+  //  get_remote_key_and_addr(ch, dest, next, &r_key, &r_dest);
+  const ucp_request_param_t prm = {0};
+  ucs_status_ptr_t sp = NULL;
+  ucs_status_t st = 0;
+//  DEBUG_SHMEM("malloc-ing dest\n");
+//  unsigned char *dest = shmem_malloc(sizeof(unsigned char) *count);
+//  assert (dest != NULL);
+
+  DEBUG_SHMEM("Starting loop\n");
+    for (i = 0; i< nranks-1; i++){
+        //int block = (rank - i + nranks) % nranks;
+      //    memcpy(dest, buffers[next], count);
+ //       DEBUG_SHMEM("Memset\n");
+     //   memset(dest, NULL, count);
+        int next = (rank + 1 ) % nranks;
+        peer_ep = lookup_ucp_ep(ch, next);
+        int chunk = (rank - i + nranks) % nranks;
+        unsigned char *d = &(buffers[next][0]);
+        get_remote_key_and_addr(ch, (uint64_t) d, next, &r_key, &r_dest);
+        DEBUG_SHMEM("Sending to %d\n", next);
+
+        DEBUG_SHMEM("for next %d: rkey handle %p, dest: 0x%lx\n", next, r_key, r_dest);
+        sp = ucp_put_nbx(peer_ep, c, count, r_dest, r_key, &prm);
+
+        st = check_wait_for_request(ch, sp);
+        if (st != UCS_OK) return st;
+    }
+        //shmem_free(dest);
+
+    return UCS_OK;
+fail:
+    return -1;
 }
 
 void shmemx_sec_init() {
@@ -925,17 +769,14 @@ void shmemx_sec_init() {
     char *enc_dec = NULL;
     int res = 0;
 
-  int nranks = proc.li.nranks;
-  int me = proc.li.rank;
+    int nranks = proc.li.nranks;
+    int me = proc.li.rank;
 
-  if ((enc_dec = getenv("SHMEM_ENABLE_ENCRYPTION")) != NULL) {
-    proc.env.shmem_encryption = !!atoi(enc_dec);
-    assert(proc.env.shmem_encryption == 0 || proc.env.shmem_encryption == 1);
-  }
+    if ((enc_dec = getenv("SHMEM_ENABLE_ENCRYPTION")) != NULL) {
+        proc.env.shmem_encryption = !!atoi(enc_dec);
+        assert(proc.env.shmem_encryption == 0 || proc.env.shmem_encryption == 1);
+    }
 
-
-    // nbi_put_ciphertext = malloc(sizeof(unsigned char
-    // *)*NON_BLOCKING_OP_COUNT*2);
     nbi_get_ciphertext =
         malloc(sizeof(unsigned char *) * NON_BLOCKING_OP_COUNT * 2);
     nb_put_ctr = (shmem_secure_attr_t *)malloc(sizeof(shmem_secure_attr_t) *
@@ -951,8 +792,6 @@ void shmemx_sec_init() {
         if (!(openmp_dec_ctx[i] = EVP_CIPHER_CTX_new())) {
             handleErrors("OpenMP cipher failed to be created");
         }
-
-
 
 #if use_gcm
         /* Begin using AES_256_gcm */
@@ -982,62 +821,58 @@ void shmemx_sec_init() {
         }
 #elif use_ctr
 
-
-    gcm_key = malloc(sizeof(unsigned char*) * nranks);
-    assert (gcm_key != NULL);
-    int j = 0;
-    for (i = 0; i < nranks; i++){
-        gcm_key[i] = malloc(sizeof(unsigned char) * GCM_KEY_SIZE);
-        assert (gcm_key[i] != NULL);
-        memset(gcm_key[i], NULL, GCM_KEY_SIZE);
-    }
- //   for (j = 0; j< GCM_KEY_SIZE; j++){
-
-        RAND_bytes(gcm_key[me], GCM_KEY_SIZE);
-        //gcm_key[me][j] = (unsigned char)(rand() % 256); 
-        /* For randomization */
- //   }
-
-    res = PMIx_Allgather(my_second_pmix, gcm_key, GCM_KEY_SIZE, proc.li.nranks, me);
-  
-
-    if (res != PMIX_SUCCESS){
-        handleErrors("distribution of keys has failed!\n");
-    }
-
-
-    IV = malloc(sizeof(unsigned char*) * nranks);
-    assert (IV != NULL);
-  //  int j = 0;
-    for (i = 0; i < nranks; i++){
-        IV[i] = malloc(sizeof(unsigned char) * AES_TAG_LEN);
-        assert (IV[i] != NULL);
-        memset(IV[i], NULL, AES_TAG_LEN);
-    }
-    RAND_bytes(IV[me], AES_TAG_LEN);
-   // for (j = 0; j< AES_TAG_LEN; j++){
-
-     //   IV[me][j] = (unsigned char)(rand() % 256); 
-     /* For randomization */
-   // }
-
-    res = PMIx_Allgather(my_second_pmix, IV, AES_TAG_LEN, proc.li.nranks, me);
-    if (res != PMIX_SUCCESS){
-        handleErrors("distribution of IV has failed!\n");
-    }
-
-
-#if 0
-   res = EVP_EncryptInit_ex(openmp_enc_ctx[i], EVP_aes_256_ctr(), NULL,
-          gcm_key, NULL);
-    if (res != 1) {
-      handleErrors("failed to begin encryption portion");
-    }
->>>>>>> Stashed changes
-
-#endif
 #endif /* use_ctr or use_gcm */
     }
+
+#if use_ctr
+
+    shmem_barrier_all();
+    global_keys = shmem_malloc(GCM_KEY_SIZE * UPPER_RANK_COUNT);
+    RAND_bytes(local_key, GCM_KEY_SIZE);
+    shmem_uchar_fcollect(SHMEM_TEAM_WORLD, global_keys, local_key, GCM_KEY_SIZE);
+
+    RAND_bytes(local_IV, AES_TAG_LEN);
+    global_IV = shmem_malloc(AES_TAG_LEN * UPPER_RANK_COUNT);
+    shmem_uchar_fcollect(SHMEM_TEAM_WORLD, global_IV, local_IV, AES_TAG_LEN);
+
+   /* shmem_barrier_all();
+    if (gcm_key == NULL){
+        gcm_key = malloc (sizeof(unsigned char*) * nranks);
+        assert (gcm_key != NULL);
+    }
+    int j = 0;
+    for (i = 0; i < nranks; i++){
+        gcm_key[i] = malloc(sizeof (unsigned char) * GCM_KEY_SIZE);
+        memset((gcm_key[i]), NULL, GCM_KEY_SIZE);
+    }
+
+    RAND_bytes(gcm_key[me], GCM_KEY_SIZE);
+    DEBUG_SHMEM("Starting for keys\n");
+    
+    res = ucx_based_1sc_allgather((shmemc_context_h) SHMEM_CTX_DEFAULT, gcm_key, GCM_KEY_SIZE, proc.li.nranks, me);
+
+    if (res != UCS_OK){
+        handleErrors("distribution of keys has failed!\n");
+    }
+   shhmem_barrier_all();
+
+    DEBUG_SHMEM("Finished for keys, starting \n");
+    for (i = 0; i < nranks-1; i++){
+         memset((IV[i]), NULL, AES_TAG_LEN);
+    }
+    RAND_bytes((IV[me]), AES_TAG_LEN);
+    shmem_barrier_all();
+    
+    DEBUG_SHMEM("Starting for IV's\n");
+ 
+    res = ucx_based_1sc_allgather((shmemc_context_h) SHMEM_CTX_DEFAULT, IV, AES_TAG_LEN, proc.li.nranks, me);
+    if (res != UCS_OK){
+        handleErrors("distribution of IV has failed!\n");
+    }*/
+
+
+
+#endif
 
     ucs_status_t reg_status = UCS_OK;
     ucp_am_handler_param_t recv_handler_param = {
@@ -1087,20 +922,6 @@ void shmemx_sec_init() {
     if (reg_status != UCS_OK) {
         handleErrors("am_recv_handler 5 failed\n");
     }
-
- /*   recv_handler_param.id = AM_NBGET_HANDLER;
-    DEBUG_SHMEM("Registering nbget_handler\n");
-    recv_handler_param.cb = nbget_handler;
-
-    reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
-    if (reg_status != UCS_OK) {
-        handleErrors("am_recv_handler 6 failed\n");
-    }
-
-    recv_handler_param.id = AM_NBGET_HANDLER_2;
-    DEBUG_SHMEM("Registering nbget_handler_local\n");
-    recv_handler_param.cb = nbget_handler_local;
-    */
 
     reg_status = ucp_worker_set_am_recv_handler(defcp->w, &recv_handler_param);
     if (reg_status != UCS_OK) {
@@ -1197,7 +1018,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
 #pragma omp parallel for schedule(dynamic) default(none)                       \
     private(max_data, position, res, local_cipherlen, enc_data)                \
     shared(src, dest, openmp_enc_ctx, stdout, stderr, segment_count, data,     \
-               sbuf, cipherbuf, temp_cipherlen, proc, bytes, gcm_key, plain_chunks, enc_chunks)          \
+               sbuf, cipherbuf, temp_cipherlen, proc, bytes, global_keys, plain_chunks, enc_chunks)          \
     num_threads(thread_no)
   for (count = 0; count < segment_count; count++) {
 
@@ -1443,12 +1264,7 @@ static void aes_ctr_dec(unsigned long long counter_val,
                            unsigned long long len, unsigned long long src, int dest,
                            size_t *cipherlen, EVP_CIPHER_CTX *ctx, int pe) {
 
-//   RAND_bytes(IV, AES_RAND_BYTES);
-//   IV[AES_RAND_BYTES] = (counter_val >> 24) & 0xFF;
-//   IV[AES_RAND_BYTES+1] = (counter_val >> 16) & 0xFF;
-//   IV[AES_RAND_BYTES+2] = (counter_val >> 8 ) & 0xFF;
-//   IV[AES_RAND_BYTES+3] = (counter_val) & 0xFF;
-   if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,gcm_key[pe], IV[pe]) != 1){
+   if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,&(global_keys[pe*GCM_KEY_SIZE]), &(global_IV[pe*AES_TAG_LEN])) != 1){
       handleErrors("EncryptInit Failed\n");
    }
 
@@ -1540,7 +1356,7 @@ int shmemx_encrypt_single_buffer_omp(unsigned char *cipherbuf,
   //      handleErrors("Can't create a cipher ctx\n");
   //   }
 
-     if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,gcm_key[pe], IV[pe]) != 1){
+     if (EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL,&(global_keys[pe*GCM_KEY_SIZE]), &(global_IV[pe*AES_TAG_LEN])) != 1){
         handleErrors("EncryptInit Failed\n");
      }
 
@@ -1646,7 +1462,7 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf,
 #pragma omp parallel for default(none)                       \
   private(count, local_cipherlen)         \
   shared(segment_count, enc_data, stdout, stderr, openmp_dec_ctx, data, cipherbuf,     \
-          rbuf, src, dest, proc, gcm_key, thread_no, counter_val, pe) num_threads(thread_no) 
+          rbuf, src, dest, proc,global_keys, thread_no, counter_val, pe) num_threads(thread_no) 
   for (count = 0; count < segment_count; count++) {
     // counter_val = (count * enc_data/thread_no);
      
@@ -1685,7 +1501,7 @@ int shmemx_encrypt_single_buffer(unsigned char *cipherbuf,
 
   //    DEBUG_SHMEM("Byte count :%d \n", (int)bytes);
   if ((res = EVP_EncryptInit_ex(defcp->enc_ctx, EVP_aes_256_gcm(), NULL,
-                                gcm_key[dest], cipherbuf + src)) != 1) {
+                                &(global_keys[dest*GCM_KEY_SIZE]), cipherbuf + src)) != 1) {
     ERROR_SHMEM("EncryptInit_ex from error %lu: %s\n", ERR_get_error(),
                 ERR_error_string(ERR_get_error(), NULL));
     shmem_global_exit(ERR_get_error());
@@ -1743,7 +1559,7 @@ int shmemx_decrypt_single_buffer(unsigned char *cipherbuf,
               cipherbuf, src, (void *)rbuf, dest, bytes);
 
   if ((res = EVP_DecryptInit_ex(defcp->dec_ctx, EVP_aes_256_gcm(), NULL,
-                                gcm_key[dest], cipherbuf + src)) != 1) {
+                                &(global_keys[dest*GCM_KEY_SIZE]), cipherbuf + src)) != 1) {
     ERROR_SHMEM("DecryptInit_ex failed: %lu %s\n", ERR_get_error(),
                 ERR_error_string(res, NULL));
     shmem_global_exit(ERR_get_error());
