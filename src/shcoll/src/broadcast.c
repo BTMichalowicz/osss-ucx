@@ -185,8 +185,8 @@ inline static void broadcast_helper_linear(void *target, const void *source,
      if ( me == root) {
     get_remote_key_and_addr(defcp, (uint64_t)source, me, &r_key, &enc_src);
     shmemu_assert(enc_src, "linear_broadcast: Buffer is NULL!\n");
-    segment_count = shmemx_encrypt_single_buffer_omp(
-        (unsigned char *)(source), 0, source, 0, nbytes, &encrypt_size, root);
+    segment_count = shmemx_encrypt_single_buffer_omp_2(
+        (unsigned char *)(source), 0, source, 0, nbytes, &encrypt_size);
     temp_size = encrypt_size;
     //temp_size = encrypt_size + (segment_count*(AES_RAND_BYTES + AES_TAG_LEN));
      
@@ -205,8 +205,8 @@ inline static void broadcast_helper_linear(void *target, const void *source,
             shmemc_ctx_get(SHMEM_CTX_DEFAULT, target, source,
                      nbytes, root);
 //            DEBUG_SHMEM("Result: %s\n", (char *)target);
-      shmemx_decrypt_single_buffer_omp((unsigned char *)(target), 0, target, 0,
-                                       nbytes, encrypt_size, root);
+      shmemx_decrypt_single_buffer_omp_2((unsigned char *)(target), 0, target, 0,
+                                       nbytes, encrypt_size);
     } else
 #endif /* ENABLE_SHMEM_ENCRYPTION */
       shmem_getmem(target, source, nbytes, root);
@@ -217,9 +217,9 @@ inline static void broadcast_helper_linear(void *target, const void *source,
     shmem_barrier_all();
     if (me == root) {
 //       DEBUG_SHMEM("Rank 0 buffer: %s %s\n", (char *)enc_src, (char *)source);
-      shmemx_decrypt_single_buffer_omp((unsigned char *)(enc_src), 0,
+      shmemx_decrypt_single_buffer_omp_2((unsigned char *)(enc_src), 0,
                                        (void *)source, 0,
-                                       nbytes, temp_size, root);
+                                       nbytes, temp_size);
     }
   }
   shcoll_barrier_linear(PE_start, logPE_stride, PE_size, pSync + 1);
@@ -334,8 +334,8 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
      if (node.children_num != 0){
         
         tmp_buf = malloc(nbytes + 4096);
-        segment_count = shmemx_encrypt_single_buffer_omp(
-              (unsigned char *)tmp_buf, 0, source, 0, nbytes, &encrypt_size, PE_root);
+        segment_count = shmemx_encrypt_single_buffer_omp_2(
+              (unsigned char *)tmp_buf, 0, source, 0, nbytes, &encrypt_size);
      }
      //shmem_barrier_all();
   }
@@ -412,9 +412,9 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
 //        DEBUG_SHMEM("Before: %s\n", (char *) target);
         get_remote_key_and_addr(defcp, (uint64_t) target, me_as, &r_key,
               &dec_src); 
-        shmemx_decrypt_single_buffer_omp((unsigned
+        shmemx_decrypt_single_buffer_omp_2((unsigned
                  char*)(target), 0, (void *) target, 0,
-              nbytes, temp, PE_root);
+              nbytes, temp);
         
      }
      if (node.children_num != 0){
@@ -439,6 +439,7 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
 #endif /* ENABLE_SHMEM_ENCRYPTION */
 
 
+#if 0
 #if ENABLE_SHMEM_ENCRYPTION
 #if 1
   if (proc.env.shmem_encryption) {
@@ -464,6 +465,7 @@ broadcast_helper_binomial_tree(void *target, const void *source, size_t nbytes,
   }
 #endif /* 0/1 */
 #endif /* ENABLE_SHMEM_ENCRYPTION */
+#endif /* outer 0/1 */
 
   shmem_long_p(pSync, SHCOLL_SYNC_VALUE, me);
 

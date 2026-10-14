@@ -357,9 +357,9 @@ int shmemx_decrypt_single_buffer_omp(unsigned char *cipherbuf, unsigned long lon
 
 
 int shmemx_encrypt_single_buffer_omp_2(unsigned char *cipherbuf, unsigned long long src,
-      const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipherlen, char *inIV);
+      const void *sbuf, unsigned long long dest, size_t bytes, size_t *cipherlen);
 int shmemx_decrypt_single_buffer_omp_2(unsigned char *cipherbuf, unsigned long long src, 
-        void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len, char *inIV);
+        void *rbuf, unsigned long long dest, size_t bytes, size_t cipher_len);
 
 
 /** @brief A structure for metadata for commanding the peer process do perform
@@ -471,7 +471,7 @@ void shmemx_secure_get_nbi(shmem_ctx_t ctx, void *dest, const void *src,
 
 
 #endif /* ENABLE_SHMEM_ENCRYPTION */
-#define DEBUG_PRINT 1
+#define DEBUG_PRINT 0
 
 #if DEBUG_PRINT
 #define DEBUG_SHMEM(fmt, args...)                       \
