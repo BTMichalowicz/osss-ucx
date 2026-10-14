@@ -25,17 +25,11 @@
     'f', 'e', 'a', 'c', 'b', 'd', 'e', 'f', '0', '1', '2',
     '3', '4', '5', '6', '7', '8', '9', 'a', 'd', 'c'};*/
 
-
-
-const unsigned char g_key_coll[GCM_KEY_SIZE] = {
-     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'a', 'b', 'c', 'd',
-    'f', 'e', 'a', 'c', 'b', 'd', 'e', 'f', '0', '1', '2',
-    '3', '4', '5', '6', '7', '8', '9', 'a', 'd', 'c'};
-
-
 int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers, 
         size_t count, uint32_t nranks, 
         int my_rank){
+
+    size_t backup_count = count;
 
 
     //    (const pmix_proc_t *self,
@@ -49,7 +43,8 @@ int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers,
     pmix_info_t info;
     char key[PMIX_MAX_KEYLEN + 1];
 
-    if (count > 0 && buffers[my_rank == NULL]){
+    if (count > 0 && buffers[my_rank] == NULL){
+        ERROR_SHMEM("count: %d, buffer rank %d %p\n", count, my_rank, buffers[my_rank]);
         return -1;
     }
 
@@ -67,33 +62,26 @@ int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers,
 
     rc = PMIx_Put(PMIX_GLOBAL, key, &val);
     PMIX_VALUE_DESTRUCT(&val);
-    if (rc != PMIX_SUCCESS)
+    if (rc != PMIX_SUCCESS){
+        ERROR_SHMEM("Failed to PMIx_Put\n");
         return -1;
+    }
 
     rc = PMIx_Commit();
-    if (rc != PMIX_SUCCESS)
+    if (rc != PMIX_SUCCESS){
+        ERROR_SHMEM("Failed to commit \n");
         return -1;
+    }
 
     int collect = true;
     PMIX_INFO_LOAD(&info, PMIX_COLLECT_DATA, &collect, PMIX_INT);
 
     rc = PMIx_Fence(NULL, 0, &info, 1);
     PMIX_INFO_DESTRUCT(&info);
-    if (rc != PMIX_SUCCESS)
+    if (rc != PMIX_SUCCESS){
+        ERROR_SHMEM("Failed to Fence\n");
         return -1;
-
-    /* Retrieve
-     * all
-     * contribution
-     * sizes.
-     * */
-    //   result->sizes = calloc(nranks, sizeof(*result->sizes));
-    //   result->data = calloc(nranks, sizeof(*result->data));
-
-    //    if (!result->sizes || !result->data)
-    //        goto fail;
-
-    //    result->nranks = nranks;
+    } 
 
     for (uint32_t r = 0; r < nranks; ++r) {
         pmix_proc_t peer;
@@ -103,10 +91,14 @@ int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers,
         snprintf(key, sizeof(key), "ag_len_%u", r);
 
         rc = PMIx_Get(&peer, key, NULL, 0, &got);
-        if (rc != PMIX_SUCCESS || got == NULL)
+        if (rc != PMIX_SUCCESS || got == NULL){
+            ERROR_SHMEM("Failed to PMIx Get\n");
             goto fail;
+        }
 
         if (got->type != PMIX_UINT64) {
+            ERROR_SHMEM("Incorrect got->type: %d, PMIX_UINT64: %d\n",
+                    got->type, PMIX_UINT64);
             PMIX_VALUE_RELEASE(got);
             goto fail;
         }
@@ -114,10 +106,10 @@ int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers,
         uint64_t n = got->data.uint64;
         PMIX_VALUE_RELEASE(got);
 
-        if (n > SIZE_MAX)
+        if (n > SIZE_MAX){
+            ERROR_SHMEM("Data exceeds SIZE_MAX\n");
             goto fail;
-
-        //    result->sizes[r] = (size_t)n;
+        } 
     }
 
     /* Publish
@@ -134,16 +126,22 @@ int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers,
     bo.bytes = buffers[my_rank];
     bo.size = count;
 
+    ERROR_SHMEM("bytes: %p, size: %d, PMIX_BYTE_OBJECT: %d\n", bo.bytes, bo.size, PMIX_BYTE_OBJECT);
+
     PMIX_VALUE_LOAD(&val, &bo, PMIX_BYTE_OBJECT);
     rc = PMIx_Put(PMIX_GLOBAL, key, &val);
     PMIX_VALUE_DESTRUCT(&val);
 
-    if (rc != PMIX_SUCCESS)
+    if (rc != PMIX_SUCCESS){
+        ERROR_SHMEM("Failed to PMIx_Put\n");
         goto fail;
+    }
 
     rc = PMIx_Commit();
-    if (rc != PMIX_SUCCESS)
+    if (rc != PMIX_SUCCESS){
+        ERROR_SHMEM("Failed to commit post-put\n");
         goto fail;
+    }
 
     /* Ensure
      * all
@@ -154,15 +152,18 @@ int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers,
      * retrieving
      * them.
      * */
-    PMIX_INFO_LOAD(&info, PMIX_COLLECT_DATA, &collect, PMIX_BOOL);
+    PMIX_INFO_LOAD(&info, PMIX_COLLECT_DATA, &collect, PMIX_INT);
 
     rc = PMIx_Fence(NULL, 0, &info, 1);
     PMIX_INFO_DESTRUCT(&info);
 
-    if (rc != PMIX_SUCCESS)
+    if (rc != PMIX_SUCCESS){
+        ERROR_SHMEM("Failed to commit\n");
         goto fail;
+    }
 
     for (uint32_t r = 0; r < nranks; ++r) {
+        count = backup_count;
         pmix_proc_t peer;
         pmix_value_t *got = NULL;
 
@@ -173,12 +174,16 @@ int PMIx_Allgather(const pmix_proc_t *self, unsigned char **buffers,
         //     continue;
 
         rc = PMIx_Get(&peer, key, NULL, 0, &got);
-        if (rc != PMIX_SUCCESS || got == NULL)
+        if (rc != PMIX_SUCCESS || got == NULL){
+            ERROR_SHMEM("rc: %d, got %p\n", rc, got);
             goto fail;
+        }
 
         if (got->type != PMIX_BYTE_OBJECT || 
-                got->data.bo.size != count){
- 
+                (got->data.bo.size != count && got->data.bo.size != backup_count)){
+
+            ERROR_SHMEM("type != PMIX_BYTE_OBJECT (got->type %d, PMIX_BYTE_OBJECT %d),  OR the incorrect count(%d versus %d)\n",
+                    got->data.bo.size, count);
             PMIX_VALUE_RELEASE(got);
             goto fail;
         }
@@ -1018,7 +1023,7 @@ void shmemx_sec_init() {
 
     res = PMIx_Allgather(my_second_pmix, IV, AES_TAG_LEN, proc.li.nranks, me);
     if (res != PMIX_SUCCESS){
-        handleErrors("distribution of keys has failed!\n");
+        handleErrors("distribution of IV has failed!\n");
     }
 
 
