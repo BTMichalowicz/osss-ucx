@@ -141,6 +141,30 @@ typedef struct shmemc_context_attr {
   bool nostore;
 } shmemc_context_attr_t;
 
+/* TODO: sweep 2^{..16}, also see breakpoints in ucx
+ *       /tuning to see if there's a magic number */
+#define SHMEMC_SESSION_COALESCE_BUF_SIZE 4096
+
+/**
+ * @brief Software RMA coalescing buffer for sessions
+ */
+typedef struct shmemc_coalesce_buf {
+  int target_pe;
+  uint64_t remote_addr;
+  size_t len;
+  uint8_t data[SHMEMC_SESSION_COALESCE_BUF_SIZE];
+} shmemc_coalesce_buf_t;
+
+/**
+ * @brief Communication session tracking state
+ */
+typedef struct shmemc_session {
+  bool is_active;
+  long options;
+  shmem_ctx_session_config_t config;
+  shmemc_coalesce_buf_t coalesce;
+} shmemc_session_t;
+
 /**
  * @brief Structure representing an OpenSHMEM context
  */
@@ -157,6 +181,8 @@ typedef struct shmemc_context {
   mem_region_access_t *racc; /* for endpoint remote access */
 
   shmemc_team_h team; /* team we belong to */
+
+  shmemc_session_t session; /* active session info and hints */
 
   /*
    * possibly other things

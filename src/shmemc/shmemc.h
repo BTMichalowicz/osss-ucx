@@ -72,7 +72,6 @@ void shmemc_progress(void);
 
 void shmemc_ctx_fence(shmem_ctx_t ctx);
 void shmemc_ctx_quiet(shmem_ctx_t ctx);
-void shmemc_ctx_pe_quiet(shmem_ctx_t ctx, const int *target_pes, size_t npes);
 
 #ifdef ENABLE_EXPERIMENTAL
 
@@ -128,6 +127,8 @@ int shmemc_team_get_config(shmemc_team_h th, long config_mask,
 int shmemc_team_translate_pe(shmemc_team_h sh, int src_pe, shmemc_team_h dh);
 
 int shmemc_team_pe_to_world(shmemc_team_h sh, int src_pe);
+
+void *shmemc_team_ptr(shmemc_team_h th, const void *dest, int pe);
 
 int shmemc_team_split_strided(shmemc_team_h parh, int start, int stride,
                               int size, const shmem_team_config_t *config,
@@ -628,6 +629,11 @@ int shmemc_context_create(shmemc_team_h th, long options,
                           shmemc_context_h *ctxp);
 void shmemc_context_destroy(shmem_ctx_t ctx);
 unsigned long shmemc_context_id(shmem_ctx_t ctx);
+void shmemc_ctx_session_start(shmemc_context_h ch, long options,
+                              const shmem_ctx_session_config_t *config,
+                              long config_mask);
+void shmemc_ctx_session_stop(shmemc_context_h ch);
+void shmemc_ctx_session_coalesce_flush(shmemc_context_h ch);
 
 /*
  * Special handling for default context

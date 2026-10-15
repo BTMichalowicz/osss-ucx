@@ -1318,29 +1318,6 @@ void shmem_fence(void);
 void shmem_ctx_quiet(shmem_ctx_t ctx);
 void shmem_quiet(void);
 
-
-/**
- * @brief causes outbound communication to complete before
- * subsequent puts are sent for a subset of PEs.
- * @page shmem_ctx_quiet
- * @section Synopsis
- *
- * @subsection c C/C++
- @code
- void shmem_ctx_pe_quiet(shmem_ctx_t ctx, const int *target_pes, size_t npes);
- void shmem_pe_quiet(const int *target_pes, size_t npes);
- @endcode
- *
- * @section Effect
- * Remote completion
- *
- * @section Return
- * None.
- *
- */
- void shmem_ctx_pe_quiet(shmem_ctx_t ctx, const int *target_pes, size_t npes);
- void shmem_pe_quiet(const int *target_pes, size_t npes);
-
 ////////////////////////////////////////////////////////////////////////////////
 /*
  * accessibility
@@ -3867,6 +3844,60 @@ int shmem_ctx_create(long options, shmem_ctx_t *ctxp);
  *
  */
 void shmem_ctx_destroy(shmem_ctx_t ctx);
+
+//////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief starts a communication session on a context
+ * @page shmem_ctx_session_start
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ @code
+ void shmem_ctx_session_start(shmem_ctx_t ctx, long options,
+                              const shmem_ctx_session_config_t *config,
+                              long config_mask);
+ @endcode
+ *
+ * @param[in] ctx context handle
+ * @param[in] options session hint options
+ * @param[in] config pointer to configuration parameters
+ * @param[in] config_mask mask of configuration parameters to use
+ *
+ * @section Effect
+ *
+ * starts a communication session on communication context ctx with hints
+ * requested via options.
+ *
+ * @section Return
+ * None.
+ *
+ */
+void shmem_ctx_session_start(shmem_ctx_t ctx, long options,
+                             const shmem_ctx_session_config_t *config,
+                             long config_mask);
+
+//////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief stops a communication session on a context
+ * @page shmem_ctx_session_stop
+ * @section Synopsis
+ *
+ * @subsection c C/C++
+ @code
+ void shmem_ctx_session_stop(shmem_ctx_t ctx);
+ @endcode
+ *
+ * @param[in] ctx context handle
+ *
+ * @section Effect
+ *
+ * ends a communication session on context ctx.
+ *
+ * @section Return
+ * None.
+ *
+ */
+void shmem_ctx_session_stop(shmem_ctx_t ctx);
 
 //////////////////////////////////////////////////////////////////////////////////
 /*
