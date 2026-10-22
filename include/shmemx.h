@@ -13,6 +13,7 @@
 #define _SHMEMX_H 1
 
 #include <shmem.h>
+#include <shmemx_types.h>
 
 #ifdef __cplusplus
 extern "C" {

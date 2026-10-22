@@ -1,5 +1,5 @@
 #ifndef _SHMEM_TYPES_H_
-#define _SHMEM_TYPES_H_
+#define _SHMEM_TYPES_H_ 1
 
 
 #include <shmem.h>
@@ -8,28 +8,28 @@ typedef intptr_t shmem_internal_int;
 
 typedef int shmemx_datatype;
 
-#define shmemx_float            ((shmemx_datatype) 0x11000101)
-#define shmemx_double           ((shmemx_datatype) 0x11000118)
-#define shmemx_long_double      ((shmemx_datatype) 0x11000112)
-#define shmemx_char             ((shmemx_datatype) 0x11000113)
-#define shmemx_schar            ((shmemx_datatype) 0x11000114)
-#define shmemx_uchar            ((shmemx_datatype) 0x11000115)
-#define shmemx_int              ((shmemx_datatype) 0x11000120)
-#define shmemx_long             ((shmemx_datatype) 0x11000122)
-#define shmemx_long_long        ((shmemx_datatype) 0x11000123)
-#define shmemx_ulong            ((shmemx_datatype) 0x11000124)
-#define shmemx_ulong_long       ((shmemx_datatype) 0x11000125)
-#define shmemx_int8             ((shmemx_datatype) 0x11000130)
-#define shmemx_int16            ((shmemx_datatype) 0x11000131)
-#define shmemx_int32            ((shmemx_datatype) 0x11000132)
-#define shmemx_int64            ((shmemx_datatype) 0x11000133)
+#define shmemx_float            ((shmemx_datatype) 0x1100040a)
+#define shmemx_double           ((shmemx_datatype) 0x1100080b)
+#define shmemx_long_double      ((shmemx_datatype) 0x1100100c)
+#define shmemx_char             ((shmemx_datatype) 0x11000101)
+#define shmemx_schar            ((shmemx_datatype) 0x11000118)
+#define shmemx_uchar            ((shmemx_datatype) 0x11000102)
+#define shmemx_int              ((shmemx_datatype) 0x11000405)
+#define shmemx_long             ((shmemx_datatype) 0x11000807)
+#define shmemx_long_long        ((shmemx_datatype) 0x11000809)
+#define shmemx_ulong            ((shmemx_datatype) 0x11000808)
+#define shmemx_ulong_long       ((shmemx_datatype) 0x11000819)
+#define shmemx_int8             ((shmemx_datatype) 0x11000104)
+#define shmemx_int16            ((shmemx_datatype) 0x11000231)
+#define shmemx_int32            ((shmemx_datatype) 0x11000432)
+#define shmemx_int64            ((shmemx_datatype) 0x11000833)
 #define shmemx_uint8            ((shmemx_datatype) 0x11000140)
-#define shmemx_uint16           ((shmemx_datatype) 0x11000141)
-#define shmemx_uint32           ((shmemx_datatype) 0x11000142)
-#define shmemx_uint64           ((shmemx_datatype) 0x11000143)
-#define shmemx_size             ((shmemx_datatype) 0x11000150)
-#define shmemx_ptrdiff          ((shmemx_datatype) 0x11000160)
-#define shmemx_short            ((shmemx_datatype) 0x11000121)
+#define shmemx_uint16           ((shmemx_datatype) 0x11000241)
+#define shmemx_uint32           ((shmemx_datatype) 0x11000442)
+#define shmemx_uint64           ((shmemx_datatype) 0x11000843)
+#define shmemx_size             ((shmemx_datatype) 0x11000850)
+#define shmemx_ptrdiff          ((shmemx_datatype) 0x11000860)
+#define shmemx_short            ((shmemx_datatype) 0x11000221)
 
 #define shmemx_ident 0
 #define shmemx_congruent 1
@@ -44,6 +44,9 @@ typedef int shmemx_datatype;
 #define shmemx_handle_kind_mask 0x10000000
 #define shmemx_handle_kind_shift 30
 #define shmemx_handle_get_kind (((unsigned)(a)&shmemx_handle_kind_mask)>>shmemx_handle_kind_shift)
+
+#define shmemx_type_get_basic_id(a) ((a) & 0x000000ff)
+#define shmemx_type_get_basic_size(a) (((a) & 0x0000ff00) >> 8)
 
 typedef struct shmemx_datatype_contents {
     int combiner,
@@ -91,14 +94,31 @@ typedef struct shmemx_internal_datatype {
 
 } shmemx_internal_datatype_t;
 
-shmemx_dtype_create_contig(int elem_count, shmemx_datatype old_type, shmemx_datatype *new_type);
-shmemx_dtype_create_vector(int elem_count, int block_count, int stride, 
-                           shmemx_datatype old_type, shmemx_datatype *new_type);
 
-shmemx_ddt_put(shmem_ctx_t ctx, void *dst, const void *src, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_get(shmem_ctx_t ctx, const void *dst, void *src, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_put_nbi(shmem_ctx_t ctx, void *dst, const void *src, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_get_nbi(shmem_ctx_t ctx, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+typedef struct shmex_typed_hashmap {
+    shmemx_datatype handle;
+    shmemx_internal_*datatype representation;
+} shmemx_typed_hashmap;
+
+#define shmemx_dtype_add_ref(dptr)                          \
+    do {                                                    \
+        int kind_ = shmemx_handle_get_kind(dptr->handle);   \
+        if (kind_ != shmemx_dtype_builtin){                 \
+            dptr->ref_count++;                              \
+        }                                                   \
+    }while (0)
+
+#define shmemx_dtype_remove_ref(dptr, inuse_ptr)                            \
+do {                                                                        \
+    int kind_ = shmemx_handle_get_kind(dptr->handle);                       \
+    if (kind_ != shmemx_dtype_builtin){                                     \
+        dptr->ref_count--;                                                  \
+        (*inuse_ptr) = dptr->ref_count < 0 ? 0 : dptr->ref_count;           \
+        if (dptr->ref_count < 0) {                                          \
+            dptr->ref_count = 0;                                            \
+        }                                                                   \
+    }else{ *inuse_ptr = 1;}                                                 \
+}while (0)
 
 #define shmemx_dtype_contig_lb_ub (cnt_, old_lb_, old_ub_, old_extent_, lb_, ub_)       \
     do {                                                                                \
@@ -151,10 +171,34 @@ do {                                \
 }while (0)
 
 
-typedef struct shmex_typed_hashmap {
-    shmemx_datatype handle;
-    shmemx_internal_*datatype representation;
-} shmemx_typed_hashmap;
+/* The APIs themselves */
 
+/* put/get/put_nbi/get_nbi 
+ * look either at the shared heap to attempt to condense the buffers
+ * OR have it perform some level of optimized strided get (Verbs, see Kaushik's 
+ * discussion from years ago 
+ */
+
+/* Collectives are a little easier to deal with because we can do optimized
+ * pack/unpack within the collective call
+ * - Latency-hiding schemes
+ * - UMR schemes
+ * etc.
+ */
+
+
+shmemx_dtype_create_contig(int elem_count, shmemx_datatype old_type, shmemx_datatype *new_type);
+shmemx_dtype_create_vector(int elem_count, int block_count, int stride, 
+                           shmemx_datatype old_type, shmemx_datatype *new_type);
+
+shmemx_ddt_put(shmem_ctx_t ctx, void *dst, const void *src, shmemx_datatype dtype, int elem_count);
+shmemx_ddt_get(shmem_ctx_t ctx, const void *dst, void *src, shmemx_datatype dtype, int elem_count);
+shmemx_ddt_put_nbi(shmem_ctx_t ctx, void *dst, const void *src, shmemx_datatype dtype, int elem_count);
+shmemx_ddt_get_nbi(shmem_ctx_t ctx, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+shmemx_ddt_bcast(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+shmemx_ddt_collect(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+shmemx_ddt_fcollect(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+shmemx_ddt_alltoall(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+shmemx_ddt_alltoalls(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
 
 #endif /* _SHMEM_TYPES_H_ */
