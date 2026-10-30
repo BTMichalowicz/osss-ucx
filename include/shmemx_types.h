@@ -95,10 +95,10 @@ typedef struct shmemx_internal_datatype {
 } shmemx_internal_datatype_t;
 
 
-typedef struct shmex_typed_hashmap {
+typedef struct shmex_typed_entry {
     shmemx_datatype handle;
-    shmemx_internal_*datatype representation;
-} shmemx_typed_hashmap;
+    shmemx_internal_datatype_t *representation;
+} shmemx_typed_entry_t;
 
 #define shmemx_dtype_add_ref(dptr)                          \
     do {                                                    \
@@ -186,19 +186,32 @@ do {                                \
  * etc.
  */
 
+int shmemx_dtype_init();
 
-shmemx_dtype_create_contig(int elem_count, shmemx_datatype old_type, shmemx_datatype *new_type);
-shmemx_dtype_create_vector(int elem_count, int block_count, int stride, 
+int shmemx_dtype_create_contig(int elem_count, shmemx_datatype old_type, shmemx_datatype *new_type);
+int shmemx_dtype_create_vector(int elem_count, int block_count, int stride, 
                            shmemx_datatype old_type, shmemx_datatype *new_type);
 
-shmemx_ddt_put(shmem_ctx_t ctx, void *dst, const void *src, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_get(shmem_ctx_t ctx, const void *dst, void *src, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_put_nbi(shmem_ctx_t ctx, void *dst, const void *src, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_get_nbi(shmem_ctx_t ctx, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_bcast(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_collect(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_fcollect(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_alltoall(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
-shmemx_ddt_alltoalls(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+void shmemx_ddt_put(shmem_ctx_t ctx, void *dst, const void *src, shmemx_datatype dtype, int elem_count);
+void shmemx_ddt_get(shmem_ctx_t ctx, const void *dst, void *src, shmemx_datatype dtype, int elem_count);
+void shmemx_ddt_put_nbi(shmem_ctx_t ctx, void *dst, const void *src, shmemx_datatype dtype, int elem_count);
+void shmemx_ddt_get_nbi(shmem_ctx_t ctx, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+void shmemx_ddt_bcast(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+void shmemx_ddt_collect(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+void shmemx_ddt_fcollect(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+void shmemx_ddt_alltoall(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+void shmemx_ddt_alltoalls(shmem_team_t, const void *src, void *dst, shmemx_datatype dtype, int elem_count);
+
+
+#define ERROR_SHMEM(fmt, args...)                                   \
+    do {                                                            \
+        /* fflush(stdout);                                          \
+         *       fflush(stderr);                               */    \
+        fprintf(stderr, "[rank_%d][%s:%d][%s][ERROR] "fmt,          \
+                proc.li.rank, __FILE__, __LINE__, __func__,         \
+##args);                                                            \
+        /*fflush(stderr);                                           \
+         *       fflush(stdout);                              */     \
+    } while(0);
 
 #endif /* _SHMEM_TYPES_H_ */
